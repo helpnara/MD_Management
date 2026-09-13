@@ -191,6 +191,9 @@ private struct FolderSidebar: View {
     /// 화면이 나타날 때 선택만 비운다 — 어느 줄을 눌러도 값이 바뀌어 넘어간다.
     /// 그 비움이 `library` 까지 가면 목록이 지워지므로 여기 갈라 둔다.
     @State private var selection: String? = ""
+    /// 처음 나타날 때는 비우지 않는다 — 비우면 **앱이 폴더 화면으로 열린다**
+    /// (빌드 10 첫 시도, CI 스크린샷이 잡았다). 뒤로 돌아왔을 때만 비운다.
+    @State private var hasAppeared = false
 
     var body: some View {
         List(selection: $selection) {
@@ -208,7 +211,9 @@ private struct FolderSidebar: View {
         .navigationTitle("폴더")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            selection = horizontalSizeClass == .compact ? nil : library.selectedFolder
+            defer { hasAppeared = true }
+            guard hasAppeared, horizontalSizeClass == .compact, library.sheet == nil else { return }
+            selection = nil
         }
         .onChange(of: selection) { _, chosen in
             guard let chosen, chosen != library.selectedFolder else { return }
