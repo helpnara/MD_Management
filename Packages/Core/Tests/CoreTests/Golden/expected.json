@@ -1,0 +1,539 @@
+{
+  "_generator": "Tools/golden/generate.py (markdown-it-py + PyYAML)",
+  "_warning": "손으로 고치지 마세요. generate.py 를 다시 돌리세요.",
+  "cases": [
+    {
+      "body": "# 회의 기록\n\n첨부가 없는 가장 흔한 노트다. 공유하면 `.md` 하나가 나가야 한다.\n\n- 할 일 하나\n- [ ] 아직 안 한 것\n",
+      "existing": [],
+      "file": "basic.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "links": [],
+      "name": "basic.md",
+      "notePath": "회의/2026-09-13 회의.md",
+      "resolved": [],
+      "sharePlan": {
+        "includes": [
+          "회의/2026-09-13 회의.md"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "mdOnly"
+      },
+      "source": "# 회의 기록\n\n첨부가 없는 가장 흔한 노트다. 공유하면 `.md` 하나가 나가야 한다.\n\n- 할 일 하나\n- [ ] 아직 안 한 것\n",
+      "title": "회의 기록"
+    },
+    {
+      "body": "\n# 사진이 둘인 노트\n\n![화이트보드](assets/2026-09-13-1.jpg)\n\n본문 중간.\n\n![없는 사진](assets/사라진.png)\n\n[견적서](docs/견적.pdf)\n",
+      "existing": [
+        "회의/assets/2026-09-13-1.jpg",
+        "회의/docs/견적.pdf"
+      ],
+      "file": "images.md",
+      "followLinkedNotes": true,
+      "frontMatter": {
+        "created": "2026-09-13",
+        "tags": [
+          "회의",
+          "2026"
+        ],
+        "title": "사진이 둘인 노트"
+      },
+      "links": [
+        {
+          "destination": "assets/2026-09-13-1.jpg",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%EC%82%AC%EB%9D%BC%EC%A7%84.png",
+          "kind": "image"
+        },
+        {
+          "destination": "docs/%EA%B2%AC%EC%A0%81.pdf",
+          "kind": "link"
+        }
+      ],
+      "name": "images.md",
+      "notePath": "회의/사진이 둘인 노트.md",
+      "resolved": [
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "회의/assets/2026-09-13-1.jpg"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "회의/assets/사라진.png"
+        },
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "회의/docs/견적.pdf"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "회의/사진이 둘인 노트.md",
+          "회의/assets/2026-09-13-1.jpg",
+          "회의/docs/견적.pdf"
+        ],
+        "missing": [
+          "assets/%EC%82%AC%EB%9D%BC%EC%A7%84.png"
+        ],
+        "missingDecoded": [
+          "assets/사라진.png"
+        ],
+        "mode": "zip"
+      },
+      "source": "---\ntitle: 사진이 둘인 노트\ntags: [회의, 2026]\ncreated: 2026-09-13\n---\n\n# 사진이 둘인 노트\n\n![화이트보드](assets/2026-09-13-1.jpg)\n\n본문 중간.\n\n![없는 사진](assets/사라진.png)\n\n[견적서](docs/견적.pdf)\n",
+      "title": "사진이 둘인 노트"
+    },
+    {
+      "body": "# 한글 이름 첨부\n\n**공백이 든 경로는 두 가지 꼴로만 링크가 된다** — 퍼센트 인코딩이거나 `<…>` 로\n감싸거나. 그냥 `![](assets/내 사진.jpg)` 라고 적으면 CommonMark 에서 링크가 아니다.\n둘은 **같은 파일**이므로 공유 묶음에 한 번만 들어가야 한다.\n\n![](assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg)\n\n![다시](<assets/내 사진.jpg>)\n\n![공백 그대로 — 링크가 아니다](assets/내 사진.jpg)\n",
+      "existing": [
+        "assets/내 사진.jpg"
+      ],
+      "file": "korean-encoded.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "links": [
+        {
+          "destination": "assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg",
+          "kind": "image"
+        }
+      ],
+      "name": "korean-encoded.md",
+      "notePath": "한글 이름 첨부.md",
+      "resolved": [
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "assets/내 사진.jpg"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "assets/내 사진.jpg"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "한글 이름 첨부.md",
+          "assets/내 사진.jpg"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "zip"
+      },
+      "source": "# 한글 이름 첨부\n\n**공백이 든 경로는 두 가지 꼴로만 링크가 된다** — 퍼센트 인코딩이거나 `<…>` 로\n감싸거나. 그냥 `![](assets/내 사진.jpg)` 라고 적으면 CommonMark 에서 링크가 아니다.\n둘은 **같은 파일**이므로 공유 묶음에 한 번만 들어가야 한다.\n\n![](assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg)\n\n![다시](<assets/내 사진.jpg>)\n\n![공백 그대로 — 링크가 아니다](assets/내 사진.jpg)\n",
+      "title": "한글 이름 첨부"
+    },
+    {
+      "body": "# NFD 로 적힌 링크\n\niCloud · Files · 옵시디언이 한글 파일명을 이렇게 넘기는 일이 있다.\nNFC 로 맞춰야 디스크에서 찾는다 (A13 · S13).\n\n![](<assets/내 사진.jpg>)\n",
+      "existing": [
+        "assets/내 사진.jpg"
+      ],
+      "file": "nfd.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "links": [
+        {
+          "destination": "assets/%E1%84%82%E1%85%A2%20%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB.jpg",
+          "kind": "image"
+        }
+      ],
+      "name": "nfd.md",
+      "notePath": "nfd.md",
+      "resolved": [
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "assets/내 사진.jpg"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "nfd.md",
+          "assets/내 사진.jpg"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "zip"
+      },
+      "source": "# NFD 로 적힌 링크\n\niCloud · Files · 옵시디언이 한글 파일명을 이렇게 넘기는 일이 있다.\nNFC 로 맞춰야 디스크에서 찾는다 (A13 · S13).\n\n![](<assets/내 사진.jpg>)\n",
+      "title": "NFD 로 적힌 링크"
+    },
+    {
+      "body": "# 폴더 밖을 가리키는 링크\n\nzip 에 상위 경로가 들어가면 받는 쪽에서 다른 폴더를 덮는다.\n\n![](../비밀/열쇠.png)\n\n[위로](../../etc/passwd)\n",
+      "existing": [],
+      "file": "escape.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "links": [
+        {
+          "destination": "../%EB%B9%84%EB%B0%80/%EC%97%B4%EC%87%A0.png",
+          "kind": "image"
+        },
+        {
+          "destination": "../../etc/passwd",
+          "kind": "link"
+        }
+      ],
+      "name": "escape.md",
+      "notePath": "아이디어/폴더 밖.md",
+      "resolved": [
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "비밀/열쇠.png"
+        },
+        {
+          "linkKind": "link",
+          "target": "outside",
+          "value": "../../etc/passwd"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "아이디어/폴더 밖.md"
+        ],
+        "missing": [
+          "../%EB%B9%84%EB%B0%80/%EC%97%B4%EC%87%A0.png",
+          "../../etc/passwd"
+        ],
+        "missingDecoded": [
+          "../비밀/열쇠.png",
+          "../../etc/passwd"
+        ],
+        "mode": "mdOnly"
+      },
+      "source": "# 폴더 밖을 가리키는 링크\n\nzip 에 상위 경로가 들어가면 받는 쪽에서 다른 폴더를 덮는다.\n\n![](../비밀/열쇠.png)\n\n[위로](../../etc/passwd)\n",
+      "title": "폴더 밖을 가리키는 링크"
+    },
+    {
+      "body": "# 바깥으로 나가는 링크만 있는 노트\n\n[사이트](https://example.com/a.png)\n[메일](mailto:me@example.com)\n[절대경로](/var/tmp/a.png)\n[앵커](#머리말)\n",
+      "existing": [],
+      "file": "external.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "links": [
+        {
+          "destination": "https://example.com/a.png",
+          "kind": "link"
+        },
+        {
+          "destination": "mailto:me@example.com",
+          "kind": "link"
+        },
+        {
+          "destination": "/var/tmp/a.png",
+          "kind": "link"
+        },
+        {
+          "destination": "#%EB%A8%B8%EB%A6%AC%EB%A7%90",
+          "kind": "link"
+        }
+      ],
+      "name": "external.md",
+      "notePath": "external.md",
+      "resolved": [
+        {
+          "linkKind": "link",
+          "target": "external",
+          "value": "https://example.com/a.png"
+        },
+        {
+          "linkKind": "link",
+          "target": "external",
+          "value": "mailto:me@example.com"
+        },
+        {
+          "linkKind": "link",
+          "target": "absolute",
+          "value": "/var/tmp/a.png"
+        },
+        {
+          "linkKind": "link",
+          "target": "empty",
+          "value": ""
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "external.md"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "mdOnly"
+      },
+      "source": "# 바깥으로 나가는 링크만 있는 노트\n\n[사이트](https://example.com/a.png)\n[메일](mailto:me@example.com)\n[절대경로](/var/tmp/a.png)\n[앵커](#머리말)\n",
+      "title": "바깥으로 나가는 링크만 있는 노트"
+    },
+    {
+      "body": "# 다른 노트를 링크하는 노트\n\n[옆 노트](<아이디어/앱 구상.md>) 를 링크한다. **한 단계만** 따라간다.\n\n![](assets/그림.png)\n",
+      "existing": [
+        "assets/그림.png",
+        "아이디어/앱 구상.md"
+      ],
+      "file": "linked.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "links": [
+        {
+          "destination": "%EC%95%84%EC%9D%B4%EB%94%94%EC%96%B4/%EC%95%B1%20%EA%B5%AC%EC%83%81.md",
+          "kind": "link"
+        },
+        {
+          "destination": "assets/%EA%B7%B8%EB%A6%BC.png",
+          "kind": "image"
+        }
+      ],
+      "name": "linked.md",
+      "notePath": "linked.md",
+      "resolved": [
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "아이디어/앱 구상.md"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "assets/그림.png"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "linked.md",
+          "아이디어/앱 구상.md",
+          "assets/그림.png"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "zip"
+      },
+      "source": "# 다른 노트를 링크하는 노트\n\n[옆 노트](<아이디어/앱 구상.md>) 를 링크한다. **한 단계만** 따라간다.\n\n![](assets/그림.png)\n",
+      "title": "다른 노트를 링크하는 노트"
+    },
+    {
+      "body": "# 다른 노트를 링크하는 노트\n\n[옆 노트](<아이디어/앱 구상.md>) 를 링크한다. **한 단계만** 따라간다.\n\n![](assets/그림.png)\n",
+      "existing": [
+        "assets/그림.png",
+        "아이디어/앱 구상.md"
+      ],
+      "file": "linked.md",
+      "followLinkedNotes": false,
+      "frontMatter": null,
+      "links": [
+        {
+          "destination": "%EC%95%84%EC%9D%B4%EB%94%94%EC%96%B4/%EC%95%B1%20%EA%B5%AC%EC%83%81.md",
+          "kind": "link"
+        },
+        {
+          "destination": "assets/%EA%B7%B8%EB%A6%BC.png",
+          "kind": "image"
+        }
+      ],
+      "name": "linked-nofollow",
+      "notePath": "linked.md",
+      "resolved": [
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "아이디어/앱 구상.md"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "assets/그림.png"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "linked.md",
+          "assets/그림.png"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "zip"
+      },
+      "source": "# 다른 노트를 링크하는 노트\n\n[옆 노트](<아이디어/앱 구상.md>) 를 링크한다. **한 단계만** 따라간다.\n\n![](assets/그림.png)\n",
+      "title": "다른 노트를 링크하는 노트"
+    },
+    {
+      "body": "# 링크 안의 이미지\n\n[![섬네일](assets/thumb.png)](https://example.com)\n",
+      "existing": [
+        "assets/thumb.png"
+      ],
+      "file": "nested.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "links": [
+        {
+          "destination": "https://example.com",
+          "kind": "link"
+        },
+        {
+          "destination": "assets/thumb.png",
+          "kind": "image"
+        }
+      ],
+      "name": "nested.md",
+      "notePath": "nested.md",
+      "resolved": [
+        {
+          "linkKind": "link",
+          "target": "external",
+          "value": "https://example.com"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "assets/thumb.png"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "nested.md",
+          "assets/thumb.png"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "zip"
+      },
+      "source": "# 링크 안의 이미지\n\n[![섬네일](assets/thumb.png)](https://example.com)\n",
+      "title": "링크 안의 이미지"
+    },
+    {
+      "body": "\n본문 첫 줄.\n",
+      "existing": [],
+      "file": "frontmatter-block.md",
+      "followLinkedNotes": true,
+      "frontMatter": {
+        "created": "2026-09-13",
+        "tags": [
+          "앱",
+          "기획"
+        ],
+        "title": "따옴표 붙은 제목"
+      },
+      "links": [],
+      "name": "frontmatter-block.md",
+      "notePath": "frontmatter-block.md",
+      "resolved": [],
+      "sharePlan": {
+        "includes": [
+          "frontmatter-block.md"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "mdOnly"
+      },
+      "source": "---\ntitle: \"따옴표 붙은 제목\"\ntags:\n  - 앱\n  - 기획\ncreated: 2026-09-13\n---\n\n본문 첫 줄.\n",
+      "title": "따옴표 붙은 제목"
+    },
+    {
+      "body": "---\n\n여는 `---` 만 있고 닫는 줄이 없다. 이것은 머리말이 아니라 수평선이다.\n\n# 진짜 제목\n",
+      "existing": [],
+      "file": "no-frontmatter.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "links": [],
+      "name": "no-frontmatter.md",
+      "notePath": "no-frontmatter.md",
+      "resolved": [],
+      "sharePlan": {
+        "includes": [
+          "no-frontmatter.md"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "mdOnly"
+      },
+      "source": "---\n\n여는 `---` 만 있고 닫는 줄이 없다. 이것은 머리말이 아니라 수평선이다.\n\n# 진짜 제목\n",
+      "title": "진짜 제목"
+    },
+    {
+      "body": "\n# CRLF\n\n![](assets/a.png)\n",
+      "existing": [
+        "assets/a.png"
+      ],
+      "file": "crlf.md",
+      "followLinkedNotes": true,
+      "frontMatter": {
+        "created": null,
+        "tags": [
+          "줄바꿈"
+        ],
+        "title": "CRLF 노트"
+      },
+      "links": [
+        {
+          "destination": "assets/a.png",
+          "kind": "image"
+        }
+      ],
+      "name": "crlf.md",
+      "notePath": "crlf.md",
+      "resolved": [
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "assets/a.png"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "crlf.md",
+          "assets/a.png"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "zip"
+      },
+      "source": "---\ntitle: CRLF 노트\ntags: [줄바꿈]\n---\n\n# CRLF\n\n![](assets/a.png)\n",
+      "title": "CRLF 노트"
+    },
+    {
+      "body": "# 최상위에서 폴더 밖으로\n\n노트가 최상위에 있으면 `../` 는 곧바로 폴더 밖이다.\n\n![](../바깥.png)\n",
+      "existing": [],
+      "file": "escape-root.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "links": [
+        {
+          "destination": "../%EB%B0%94%EA%B9%A5.png",
+          "kind": "image"
+        }
+      ],
+      "name": "escape-root.md",
+      "notePath": "escape-root.md",
+      "resolved": [
+        {
+          "linkKind": "image",
+          "target": "outside",
+          "value": "../바깥.png"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "escape-root.md"
+        ],
+        "missing": [
+          "../%EB%B0%94%EA%B9%A5.png"
+        ],
+        "missingDecoded": [
+          "../바깥.png"
+        ],
+        "mode": "mdOnly"
+      },
+      "source": "# 최상위에서 폴더 밖으로\n\n노트가 최상위에 있으면 `../` 는 곧바로 폴더 밖이다.\n\n![](../바깥.png)\n",
+      "title": "최상위에서 폴더 밖으로"
+    }
+  ]
+}

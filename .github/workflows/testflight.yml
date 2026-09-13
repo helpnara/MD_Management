@@ -1,0 +1,282 @@
+name: TestFlight 배포
+
+# 맥 없이 아이폰에 앱을 올리는 경로다.
+# macOS 러너가 빌드 · 서명 · 업로드를 대신하고, 사용자는 TestFlight 앱으로 설치한다.
+#
+# **손으로만 돌린다 — 사용자가 "착수하자" 할 때만.** (CLAUDE.md §3)
+# 처음 한 번은 docs/06-ci.md 의 준비 절차를 마쳐야 한다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: "테스터에게 보여 줄 변경 사항"
+        required: false
+        default: "뼈대 빌드"
+      upload:
+        description: "끄면 아카이브 · 서명 · 검사까지만 하고 올리지 않는다"
+        type: boolean
+        required: false
+        default: true
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    name: 빌드 · 서명 · TestFlight 업로드
+    runs-on: macos-26
+    env:
+      SCHEME: Notebook
+      PROJECT: Notebook.xcodeproj
+    steps:
+      - uses: actions/checkout@v4
+
+      # 애플은 2026년부터 iOS 26 SDK(Xcode 26+) 로 빌드한 바이너리만 받는다.
+      - name: Xcode 26 이상 선택
+        run: |
+          set -uo pipefail
+          xcver() {
+            [ -f "$1/Contents/version.plist" ] || return 1
+            /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+              "$1/Contents/version.plist" 2>/dev/null
+          }
+          CUR_APP=$(xcode-select -p 2>/dev/null || true)
+          CUR_APP=${CUR_APP%/Contents/Developer}
+          CUR_V=$(xcver "$CUR_APP" || true)
+          NEED=1
+          case "${CUR_V%%.*}" in
+            ''|*[!0-9]*) ;;
+            *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;;
+          esac
+          if [ "$NEED" -eq 1 ]; then
+            BEST=""; BEST_K=0
+            for app in /Applications/Xcode*.app; do
+              v=$(xcver "$app" || true); [ -n "$v" ] || continue
+              k=$(echo "$v" | awk -F. '{printf "%d", ($1*10000)+($2*100)+$3}')
+              if [ "$k" -gt "$BEST_K" ]; then BEST_K=$k; BEST="$app"; fi
+            done
+            [ -n "$BEST" ] && sudo xcode-select -s "$BEST/Contents/Developer"
+          fi
+          xcodebuild -version
+          if [ "$(xcodebuild -version | head -1 | awk '{print $2}' | cut -d. -f1)" -lt 26 ]; then
+            echo "::error::Xcode 26 미만입니다. 업로드가 409 로 거부됩니다."
+            exit 1
+          fi
+
+      - name: XcodeGen 설치
+        run: brew install xcodegen
+
+      - name: Xcode 프로젝트 생성
+        run: xcodegen generate
+
+      # 깨진 로직이 아이폰까지 가면 안 된다. 20초짜리 관문이다.
+      - name: Core 테스트
+        working-directory: Packages/Core
+        run: swift test
+
+      - name: App Store Connect API 키 준비
+        env:
+          KEY: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::시크릿 APP_STORE_CONNECT_KEY_P8 이 비어 있습니다. docs/06-ci.md 를 보세요."
+            exit 1
+          fi
+          mkdir -p ~/private_keys
+          echo "$KEY" > ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+          chmod 600 ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+
+      # 서명이 어긋나면 원인이 로그 깊숙이 묻힌다. 실제로 적용된 값을 먼저 찍어 둔다.
+      - name: 서명 설정 확인
+        run: |
+          xcodebuild -project "$PROJECT" -scheme "$SCHEME" \
+            -configuration Release -showBuildSettings 2>/dev/null \
+            | grep -Ei 'CODE_SIGN_IDENTITY|CODE_SIGN_STYLE|DEVELOPMENT_TEAM|PROVISIONING_PROFILE|PRODUCT_BUNDLE_IDENTIFIER|CODE_SIGN_ENTITLEMENTS' \
+            || echo "(서명 관련 설정을 찾지 못했습니다)"
+
+      # 아카이브는 자동 서명 + 클라우드 서명으로 굽는다.
+      # 지난 앱에서 확인된 성립 조건 셋:
+      #  · API 키 액세스가 **Admin** 이어야 한다 (App Manager 로는 서명 자산을 못 만든다)
+      #  · 스킴의 archive 액션 구성이 **Release** 여야 한다
+      #  · 팀에 **기기가 최소 하나** 등록돼 있어야 한다
+      #
+      # 막다른 길 — 다시 시도하지 말 것:
+      #  · CODE_SIGN_IDENTITY 를 배포용으로 강제 → 자동 서명과 충돌로 거부
+      #  · CODE_SIGNING_ALLOWED=NO → entitlements 가 앱에 안 박힌다 (iCloud 가 통째로 빠진다)
+      #  · CODE_SIGN_IDENTITY=- (애드혹) → SDK 가 거부
+      - name: 아카이브
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Notebook.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            || {
+              echo "::error::아카이브 실패. 로그 위쪽의 error: 줄을 먼저 보세요."
+              echo "::error::maximum number of certificates → developer.apple.com 의 Certificates 에서 오래된 Apple Development 를 폐기하세요 (docs/06-ci.md)."
+              echo "::error::no devices from which to generate a provisioning profile → 팀에 기기가 하나도 없습니다."
+              exit 1
+            }
+
+      # entitlements 가 **아카이브 시점에** 박혔는지 본다.
+      # 여기서 없으면 아카이브 문제, 여기 있는데 IPA 에 없으면 내보내기 문제다.
+      - name: 아카이브 entitlement 확인
+        run: |
+          set -euo pipefail
+          APP=$(find build/Notebook.xcarchive/Products/Applications -maxdepth 1 -name '*.app' | head -1)
+          ENT=$(codesign -d --entitlements :- "$APP" 2>/dev/null || true)
+          echo "$ENT"
+          if ! printf '%s' "$ENT" | grep -q 'com.apple.developer.ubiquity-container-identifiers'; then
+            echo "::error::아카이브 단계에서 이미 iCloud 자격이 빠졌습니다. CODE_SIGN_ENTITLEMENTS 를 보세요."
+            exit 1
+          fi
+          echo "아카이브에 자격이 박혔습니다."
+
+      - name: 내보내기 설정 만들기
+        run: |
+          mkdir -p build
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>destination</key><string>export</string>
+            <!-- 이게 없으면(기본값 true) Xcode 가 빌드 번호를 App Store Connect 의
+                 마지막 번호 + 1 로 바꿔 버린다. 번호는 우리가 정한다 — 실행 번호. -->
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+
+      # 여기서 애플 서버에 배포용 인증서와 App Store 프로파일을 만든다.
+      # Cloud signing permission error 가 나면 코드가 아니라 **API 키 권한**이다 (Admin 필요).
+      - name: IPA 내보내기 (여기서 배포용 서명)
+        run: |
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath build/Notebook.xcarchive \
+            -exportPath build/export \
+            -exportOptionsPlist build/ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
+            || {
+              echo "::error::내보내기 실패. Cloud signing permission error 라면 API 키 액세스가 Admin 이 아닙니다."
+              exit 1
+            }
+          ls -la build/export
+
+      # **iCloud 자격이 빠지면 앱은 설치되는데 폴더만 조용히 안 보인다** —
+      # 이 앱에서 제일 위험한 실패다. 올리기 전에 잡는다.
+      - name: 서명 · entitlement · 버전 확인
+        run: |
+          set -euo pipefail
+          IPA=$(find build/export -name '*.ipa' | head -1)
+          [ -n "$IPA" ] || { echo "::error::IPA 를 찾지 못했습니다"; exit 1; }
+
+          rm -rf build/check && mkdir -p build/check
+          unzip -q "$IPA" -d build/check
+          APP=$(find build/check/Payload -maxdepth 1 -name '*.app' | head -1)
+
+          echo "── 서명 ──"
+          codesign -dv "$APP" 2>&1 | grep -Ei 'Authority|TeamIdentifier|Signature' || true
+
+          echo "── entitlements ──"
+          ENT=$(codesign -d --entitlements :- "$APP" 2>/dev/null || true)
+          echo "$ENT"
+
+          missing=0
+          for key in \
+            "com.apple.developer.icloud-container-identifiers" \
+            "com.apple.developer.ubiquity-container-identifiers" \
+            "com.apple.developer.icloud-services"
+          do
+            if ! printf '%s' "$ENT" | grep -q "$key"; then
+              echo "::error::entitlement 누락: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::서명은 됐지만 자격이 어긋났습니다. 업로드를 중단합니다."
+            exit 1
+          fi
+
+          echo "── 버전 ──"
+          SHORT=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")
+          BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")
+          echo "CFBundleShortVersionString=$SHORT CFBundleVersion=$BUILD"
+          if [ "$BUILD" != "${{ github.run_number }}" ]; then
+            echo "::error::빌드 번호가 실행 번호와 다릅니다 ($BUILD != ${{ github.run_number }})."
+            exit 1
+          fi
+          echo "APP_VERSION=$SHORT ($BUILD)" >> "$GITHUB_ENV"
+
+          echo "── 개인정보 명세 ──"
+          MANIFEST="$APP/PrivacyInfo.xcprivacy"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "::error::$MANIFEST 가 없습니다. 애플이 ITMS-91053 으로 돌려보냅니다."
+            exit 1
+          fi
+          plutil -lint "$MANIFEST"
+          plutil -p "$MANIFEST"
+
+      # 올리기 전에 애플 서버로 검증한다. ITMS-9xxxx 오류를 빌드 번호와 메일을
+      # 안 쓰고 고칠 수 있다.
+      - name: App Store 검증 (올리지 않음)
+        run: |
+          IPA=$(find build/export -name '*.ipa' | head -1)
+          set +e
+          xcrun altool --validate-app \
+            --type ios --file "$IPA" \
+            --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
+            --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
+            --output-format json 2>&1 | tee build/validate.json
+          STATUS=${PIPESTATUS[0]}
+          set -e
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::error::App Store 검증 실패. 위 JSON 의 product-errors 를 보세요."
+            exit 1
+          fi
+          echo "App Store 검증 통과"
+
+      # **아티팩트를 업로드보다 앞에** 둔다.
+      - name: IPA 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipa
+          path: build/export/
+          if-no-files-found: warn
+
+      - name: TestFlight 업로드
+        if: ${{ inputs.upload != false }}
+        run: |
+          IPA=$(find build/export -name '*.ipa' | head -1)
+          echo "업로드: $IPA"
+          xcrun altool --upload-app \
+            --type ios --file "$IPA" \
+            --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
+            --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+
+      - name: 안내
+        if: ${{ inputs.upload != false }}
+        run: |
+          echo "${APP_VERSION} 을 TestFlight 에 올렸습니다."
+          echo "애플이 처리하는 데 5~15분 걸리고, **첫 빌드는 베타 심사에 1~2일**이 듭니다."
+          echo "변경 사항: ${{ inputs.notes }}"

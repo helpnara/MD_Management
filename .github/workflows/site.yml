@@ -1,0 +1,44 @@
+name: 개인정보 처리방침 (GitHub Pages)
+
+# **방침 한 장만** 올린다. `/docs` 폴더를 통째로 올리면 설계 문서가 다 공개된다.
+# 처음 한 번: 저장소 Settings → Pages → Source 를 **GitHub Actions** 로.
+# 주소: https://helpnara.github.io/MD_Management/privacy/
+
+on:
+  push:
+    branches: [main, "claude/**"]
+    paths:
+      - docs/privacy.md
+      - Tools/site/**
+      - .github/workflows/site.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 페이지 만들기
+        run: python3 Tools/site/build.py _site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

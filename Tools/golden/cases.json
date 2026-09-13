@@ -1,0 +1,93 @@
+{
+  "_comment": [
+    "각 사례의 노트 위치와 '폴더에 실제로 있는 파일' 목록이다.",
+    "generate.py 가 이것으로 링크 해석과 공유 묶음(ShareBundle.plan)의 기댓값을 계산한다.",
+    "existing 에 없는 경로를 본문이 참조하면 missing 이 된다."
+  ],
+  "cases": [
+    {
+      "file": "basic.md",
+      "notePath": "회의/2026-09-13 회의.md",
+      "existing": []
+    },
+    {
+      "file": "images.md",
+      "notePath": "회의/사진이 둘인 노트.md",
+      "existing": [
+        "회의/assets/2026-09-13-1.jpg",
+        "회의/docs/견적.pdf"
+      ]
+    },
+    {
+      "file": "korean-encoded.md",
+      "notePath": "한글 이름 첨부.md",
+      "existing": [
+        "assets/내 사진.jpg"
+      ]
+    },
+    {
+      "file": "nfd.md",
+      "notePath": "nfd.md",
+      "existing": [
+        "assets/내 사진.jpg"
+      ]
+    },
+    {
+      "file": "escape.md",
+      "notePath": "아이디어/폴더 밖.md",
+      "existing": []
+    },
+    {
+      "file": "external.md",
+      "notePath": "external.md",
+      "existing": []
+    },
+    {
+      "file": "linked.md",
+      "notePath": "linked.md",
+      "existing": [
+        "아이디어/앱 구상.md",
+        "assets/그림.png"
+      ]
+    },
+    {
+      "file": "linked.md",
+      "name": "linked-nofollow",
+      "notePath": "linked.md",
+      "followLinkedNotes": false,
+      "existing": [
+        "아이디어/앱 구상.md",
+        "assets/그림.png"
+      ]
+    },
+    {
+      "file": "nested.md",
+      "notePath": "nested.md",
+      "existing": [
+        "assets/thumb.png"
+      ]
+    },
+    {
+      "file": "frontmatter-block.md",
+      "notePath": "frontmatter-block.md",
+      "existing": []
+    },
+    {
+      "file": "no-frontmatter.md",
+      "notePath": "no-frontmatter.md",
+      "existing": []
+    },
+    {
+      "file": "crlf.md",
+      "notePath": "crlf.md",
+      "existing": [
+        "assets/a.png"
+      ]
+    },
+    {
+      "file": "escape-root.md",
+      "notePath": "escape-root.md",
+      "existing": []
+    }
+  ]
+}

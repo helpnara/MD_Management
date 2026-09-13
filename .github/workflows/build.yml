@@ -1,0 +1,329 @@
+name: 앱 빌드 · 스크린샷
+
+# 이 저장소는 리눅스 원격 세션에서 개발되므로 거기서는 컴파일할 수 없다.
+# 이 워크플로가 그 역할을 대신한다: 푸시할 때마다 macOS 러너가 빌드하고,
+# 시뮬레이터 스크린샷을 screenshots/ 에 커밋해 다음 세션이 눈으로 확인한다.
+
+on:
+  push:
+    branches: ["claude/**", main]
+    paths-ignore:
+      - "screenshots/**"
+      - "docs/**"
+      - "**.md"
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: 빌드 · 스크린샷
+    runs-on: macos-26
+    permissions:
+      contents: write
+    env:
+      BUNDLE_ID: com.helpnara.markdown
+      SCHEME: Notebook
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 스크린샷을 되돌려 커밋해야 하므로 푸시 가능한 체크아웃
+          persist-credentials: true
+
+      # 러너 이미지에 Xcode 가 여러 개 깔려 있다. TestFlight 로 올라가는 것과 같은
+      # SDK 로 컴파일해야 여기서 통과한 코드가 배포에서도 통과한다.
+      - name: Xcode 26 이상 선택
+        run: |
+          set -uo pipefail
+
+          # 러너가 기본으로 선택해 둔 Xcode 에만 시뮬레이터 런타임이 갖춰져 있다.
+          # 그래서 **이미 26 이상이면 손대지 않는다.** 예전에 major 만 비교해
+          # 다른 26.x 로 바꿨다가 iOS 26.0 is not installed 로 막혔다.
+          xcver() {
+            [ -f "$1/Contents/version.plist" ] || return 1
+            /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+              "$1/Contents/version.plist" 2>/dev/null
+          }
+
+          CUR_APP=$(xcode-select -p 2>/dev/null || true)
+          CUR_APP=${CUR_APP%/Contents/Developer}
+          CUR_V=$(xcver "$CUR_APP" || true)
+          echo "현재 선택: ${CUR_APP:-(없음)} ${CUR_V:-(?)}"
+
+          NEED=1
+          case "${CUR_V%%.*}" in
+            ''|*[!0-9]*) ;;
+            *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;;
+          esac
+
+          if [ "$NEED" -eq 1 ]; then
+            BEST=""; BEST_K=0; BEST_V=""
+            for app in /Applications/Xcode*.app; do
+              v=$(xcver "$app" || true)
+              [ -n "$v" ] || continue
+              k=$(echo "$v" | awk -F. '{printf "%d", ($1*10000)+($2*100)+$3}')
+              echo "  $app → $v"
+              if [ "$k" -gt "$BEST_K" ]; then BEST_K=$k; BEST="$app"; BEST_V="$v"; fi
+            done
+            if [ -n "$BEST" ]; then
+              echo "전환: $BEST ($BEST_V)"
+              sudo xcode-select -s "$BEST/Contents/Developer"
+            fi
+          fi
+
+          xcodebuild -version
+          swift --version
+
+      - name: XcodeGen 설치
+        run: brew install xcodegen
+
+      - name: Xcode 프로젝트 생성
+        run: xcodegen generate
+
+      # 깨진 순수 로직이 시뮬레이터까지 가면 안 된다. 20초짜리 관문이다.
+      # (리눅스 러너의 core-test.yml 이 이미 한 번 봤지만, macOS 툴체인에서도
+      #  서는지는 여기서만 알 수 있다.)
+      - name: Core 테스트
+        working-directory: Packages/Core
+        run: swift test
+
+      - name: iPhone 시뮬레이터 고르기
+        id: sim
+        run: |
+          # 러너 이미지마다 있는 기기가 달라 이름을 박지 않는다.
+          # SE · mini 는 화면이 좁아 설계 기준과 어긋나므로 제외한다.
+          read -r UDID NAME <<< "$(xcrun simctl list devices available -j | python3 -c "
+          import json, re, sys
+          data = json.load(sys.stdin)['devices']
+          rank = {'': 3, ' Pro': 2, ' Plus': 1, ' Pro Max': 0}
+          best = None
+          for runtime, devices in data.items():
+              if 'iOS' not in runtime:
+                  continue
+              m = re.search(r'iOS-(\\d+)-(\\d+)', runtime)
+              version = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+              for d in devices:
+                  name = d.get('name', '')
+                  if not d.get('isAvailable') or not name.startswith('iPhone'):
+                      continue
+                  if 'SE' in name or 'mini' in name:
+                      continue
+                  n = re.match(r'iPhone (\\d+)(.*)\$', name)
+                  if not n:
+                      continue
+                  key = (version, int(n.group(1)), rank.get(n.group(2), 0))
+                  if best is None or key > best[0]:
+                      best = (key, d['udid'], name)
+          if best is None:
+              sys.exit('쓸 만한 iPhone 시뮬레이터를 찾지 못했습니다')
+          print(best[1], best[2])
+          ")"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "선택한 시뮬레이터: $NAME ($UDID)"
+
+      # **iPad 도 한 대 고른다.** 3단 분할이 실제로 펼쳐지는지는 그림으로만 안다
+      # (가정 A8). 큰 것이 좋다 — 늘어진 자리가 제일 잘 드러난다.
+      - name: iPad 시뮬레이터 고르기
+        id: ipad
+        run: |
+          read -r UDID NAME <<< "$(xcrun simctl list devices available -j | python3 -c "
+          import json, re, sys
+          data = json.load(sys.stdin)['devices']
+          best = None
+          for runtime, devices in data.items():
+              if 'iOS' not in runtime:
+                  continue
+              m = re.search(r'iOS-(\\d+)-(\\d+)', runtime)
+              version = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+              for d in devices:
+                  name = d.get('name', '')
+                  if not d.get('isAvailable') or not name.startswith('iPad'):
+                      continue
+                  if 'mini' in name:
+                      continue
+                  size = re.search(r'(\\d+)-inch', name)
+                  inch = int(size.group(1)) if size else 0
+                  key = (version, inch, 'Pro' in name, name)
+                  if best is None or key > best[0]:
+                      best = (key, d['udid'], name)
+          print(*(best[1], best[2]) if best else ('', ''))
+          ")"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "선택한 iPad: ${NAME:-없음} ($UDID)"
+
+      - name: 빌드
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Notebook.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: 시뮬레이터 스크린샷
+        run: |
+          UDID="${{ steps.sim.outputs.udid }}"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+          # 상태 바를 고정한다. 그러지 않으면 시계가 매 실행 달라져 스크린샷이
+          # 항상 변경됨으로 판정되고 커밋이 무의미하게 쌓인다.
+          status_bar() {
+            xcrun simctl status_bar "$1" override \
+              --time "9:41" \
+              --dataNetwork wifi --wifiMode active --wifiBars 3 \
+              --batteryState charged --batteryLevel 100
+          }
+          status_bar "$UDID"
+
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
+          echo "설치: $APP"
+          xcrun simctl install "$UDID" "$APP"
+
+          # **앱이 왜 안 뜨는지 먼저 듣는다.** 스크린샷 고리는 안 떴다 만 말해 주고
+          # 이유는 안 말한다. 한 번은 콘솔을 붙여 띄워 보고 출력을 그대로 남긴다.
+          # (macOS 에는 timeout 이 없어 perl 의 alarm 을 쓴다.)
+          echo "── 콘솔을 붙여 한 번 띄워 본다 ──"
+          perl -e 'alarm 25; exec @ARGV' \
+            xcrun simctl launch --console-pty "$UDID" "$BUNDLE_ID" -sampleFolder 2>&1 \
+            | head -60 || true
+          echo "── 여기까지 ──"
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+
+          mkdir -p screenshots
+          rm -f /tmp/shoot-failures
+
+          # 첫 장은 예열 뒤에 찍는다. 위 콘솔 탐침이 앱을 끈 직후의 첫 실행은
+          # 시뮬레이터가 앱을 앞으로 올리기 전에 찍혀 홈 화면이 남은 적이 있다.
+          xcrun simctl launch "$UDID" "$BUNDLE_ID" -sampleFolder >/dev/null 2>&1 || true
+          sleep 8
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+          sleep 2
+
+          # 못 찍은 것보다 **못 찍은 줄 모르는 것**이 훨씬 나쁘다.
+          # 그래서 두 가지를 확인하고 아니면 다시 찍는다.
+          shoot() {
+            local file="$1"; shift
+            local attempt pid size
+            for attempt in $(seq 1 "${SHOOT_ATTEMPTS:-3}"); do
+              xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+              pid=$(xcrun simctl launch "$UDID" "$BUNDLE_ID" "$@" | awk '{print $NF}')
+              sleep "${SHOOT_WAIT:-7}"
+              # (1) 앱이 살아 있나
+              if ! kill -0 "$pid" 2>/dev/null; then
+                echo "  앱이 떠 있지 않습니다 (pid $pid). 다시 ($attempt/${SHOOT_ATTEMPTS:-3})"
+                sleep 3
+                continue
+              fi
+              xcrun simctl io "$UDID" screenshot "screenshots/$file"
+              size=$(stat -f%z "screenshots/$file")
+              # (2) 홈 화면은 벽지 때문에 PNG 가 유난히 크다 (3MB 안팎).
+              if [ "$size" -ge 2000000 ]; then
+                echo "  홈 화면 같습니다 ($size 바이트). 다시 ($attempt/${SHOOT_ATTEMPTS:-3})"
+                sleep 5
+                continue
+              fi
+              # (3) 아직 안 그려진 화면은 단색이라 PNG 가 유난히 작다.
+              #     이 문턱값은 첫 초록 빌드의 실제 크기를 보고 조정한다.
+              if [ "$size" -ge "${SHOOT_MIN:-50000}" ]; then
+                echo "찍음: $file ($size 바이트) $*"
+                return 0
+              fi
+              echo "  빈 화면 같습니다 ($size 바이트). 다시 ($attempt/${SHOOT_ATTEMPTS:-3})"
+              sleep 3
+            done
+            echo "::error::$file — 여러 번 찍었지만 화면이 비어 있습니다"
+            echo "$file" >> /tmp/shoot-failures
+          }
+
+          # ── iPhone ──
+          shoot 01-list.png -sampleFolder
+          # **큰 글씨** (접근성). 이 한 장이 없으면 Dynamic Type 이 아무것도
+          # 안 바꾸고 있는 것을 못 잡는다 — 지난 앱에서 275곳을 나중에 고쳤다.
+          shoot 02-large-text.png -sampleFolder \
+            -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+
+          # ── 다크 모드 ──
+          xcrun simctl ui "$UDID" appearance dark
+          mkdir -p screenshots/dark
+          shoot dark/01-list.png -sampleFolder
+          xcrun simctl ui "$UDID" appearance light
+
+          # ── iPad (가정 A8 — 3단 분할이 정말 펼쳐지는가) ──
+          IPAD="${{ steps.ipad.outputs.udid }}"
+          if [ -n "$IPAD" ]; then
+            echo "── iPad: ${{ steps.ipad.outputs.name }} ──"
+            SHOOT_WAIT=12; SHOOT_ATTEMPTS=4
+            xcrun simctl boot "$IPAD" || true
+            xcrun simctl bootstatus "$IPAD" -b
+            status_bar "$IPAD"
+            xcrun simctl install "$IPAD" "$APP"
+            mkdir -p screenshots/ipad
+            UDID="$IPAD"
+            shoot ipad/01-split.png -sampleFolder
+            shoot ipad/02-large-text.png -sampleFolder \
+              -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+            UDID="${{ steps.sim.outputs.udid }}"
+          else
+            echo "::warning::iPad 시뮬레이터가 없어 iPad 스크린샷을 건너뜁니다"
+          fi
+
+          ls -la screenshots screenshots/dark screenshots/ipad 2>/dev/null || true
+
+          # 한 장이라도 못 찍었으면 막는다. 스크린샷은 원격 세션에서 앱이 실제로
+          # 도는지 보는 유일한 창구라, 못 찍은 채 초록이면 그게 제일 위험하다.
+          if [ -s /tmp/shoot-failures ]; then
+            echo "::error::못 찍은 화면 $(wc -l < /tmp/shoot-failures)장:"
+            cat /tmp/shoot-failures
+            echo "위의 '콘솔을 붙여 한 번 띄워 본다' 출력에 이유가 있습니다."
+            exit 1
+          fi
+          echo "전부 찍었습니다."
+
+      # **아티팩트를 커밋보다 앞에 둔다.** 커밋이 실패하면 결과물을 못 받는다.
+      - name: 스크린샷 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots/
+          if-no-files-found: warn
+
+      - name: 스크린샷을 브랜치에 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 새 스크린샷은 추적되지 않는 파일이라 git diff 로는 안 보인다.
+          git add -A screenshots
+          if git diff --cached --quiet; then
+            echo "스크린샷 변화 없음 — 커밋하지 않는다"
+            exit 0
+          fi
+          git commit -m "chore: 시뮬레이터 스크린샷 갱신 (${{ steps.sim.outputs.name }}) [skip ci]"
+
+          # 촬영은 몇 분 걸린다. 그동안 사람이 푸시하면 이 push 가 밀려서,
+          # **찍어 놓고도 못 올리는** 일이 벌어진다. 리베이스하고 다시 민다.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then
+              echo "올렸습니다 (시도 $attempt)"
+              exit 0
+            fi
+            echo "밀렸습니다. 원격을 당겨 리베이스하고 다시 시도합니다 ($attempt/3)"
+            git fetch origin ${{ github.ref_name }}
+            # 스크린샷은 러너가 새로 찍은 것이 항상 옳다. 충돌하면 우리 것을 쓴다.
+            git rebase -X ours origin/${{ github.ref_name }} || {
+              git rebase --abort || true
+              sleep $((attempt * 5))
+              continue
+            }
+            sleep $((attempt * 5))
+          done
+          echo "::error::스크린샷을 세 번 시도했지만 올리지 못했습니다."
+          exit 1

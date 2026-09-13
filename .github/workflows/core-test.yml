@@ -1,0 +1,71 @@
+name: Core 테스트 (리눅스)
+
+# 원격 세션(리눅스 컨테이너)에는 Swift 툴체인이 없고 download.swift.org 도 막혀 있다.
+# 그래서 이 워크플로가 **가장 빠른 심판**이다 — macOS 러너를 안 쓰므로 몇 분이면 끝난다.
+#
+# 두 단계로 나눈 이유:
+#   golden — 원격 세션에서도 돌릴 수 있는 것. 기댓값이 최신인지 본다
+#   swift  — 그 기댓값과 Core 의 결과가 같은지 본다 (가정 A7 도 여기서 확인된다)
+
+on:
+  push:
+    branches: ["claude/**", main]
+    paths:
+      - "Packages/Core/**"
+      - "Tools/golden/**"
+      - ".github/workflows/core-test.yml"
+  pull_request:
+    paths:
+      - "Packages/Core/**"
+      - "Tools/golden/**"
+  workflow_dispatch:
+
+concurrency:
+  group: core-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  golden:
+    name: 파이썬 기댓값이 최신인가
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 의존 설치
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --quiet --upgrade pip
+          .venv/bin/pip install --quiet -r Tools/golden/requirements.txt
+
+      - name: 기댓값을 다시 계산해 커밋된 것과 대조
+        run: |
+          .venv/bin/python Tools/golden/generate.py --check || {
+            echo "::error::Tools/golden/generate.py 를 돌리고 결과를 커밋하세요."
+            exit 1
+          }
+
+  swift:
+    name: swift test
+    needs: golden
+    runs-on: ubuntu-latest
+    # 우분투 러너에는 Swift 가 없다. 공식 이미지를 쓴다.
+    container: swift:6.1-noble
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 툴체인
+        run: swift --version
+
+      # **가정 A7** — swift-markdown 이 리눅스에서 서는가.
+      # 여기서 막히면 Core 에서 마크다운 파싱을 빼고 App 으로 옮겨야 한다.
+      - name: 빌드
+        working-directory: Packages/Core
+        run: swift build
+
+      - name: 테스트
+        working-directory: Packages/Core
+        run: swift test
