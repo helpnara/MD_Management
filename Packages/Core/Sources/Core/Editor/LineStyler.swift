@@ -87,35 +87,34 @@ public enum LineStyler {
         guard !paragraph.isEmpty else { return .plain }
 
         var markers: [StyleSpan] = []
-        let (block, contentStart) = blockPrefix(paragraph, markers: &markers)
-
-        let inlineStart = paragraph.index(paragraph.startIndex,
-                                          offsetBy: utf16Distance(in: paragraph, to: contentStart))
-        let inlineSpans = inlineScan(paragraph, from: inlineStart, to: paragraph.endIndex, markers: &markers)
+        // **오프셋이 아니라 `String.Index` 를 받는다.** UTF-16 오프셋으로 되돌리면
+        // 글자 가운데를 가리킬 수 있고, 되돌리는 코드가 곧 버그 자리가 된다.
+        let (block, contentIndex) = blockPrefix(paragraph, markers: &markers)
+        let inlineSpans = inlineScan(paragraph, from: contentIndex, to: paragraph.endIndex, markers: &markers)
 
         return ParagraphStyle(
             block: block,
-            contentStart: contentStart,
+            contentStart: utf16Offset(paragraph, contentIndex),
             inlineSpans: inlineSpans,
             markers: markers.sorted { $0.start < $1.start })
     }
 
     // MARK: - 블록 앞머리
 
-    private static func blockPrefix(_ text: String, markers: inout [StyleSpan]) -> (StyleToken?, Int) {
+    private static func blockPrefix(_ text: String, markers: inout [StyleSpan]) -> (StyleToken?, String.Index) {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
 
         // 수평선 — 앞머리를 떼지 않고 문단 전체가 마커다.
         if isThematicBreak(trimmed) {
             markers.append(span(text, text.startIndex, text.endIndex, .marker))
-            return (.thematicBreak, utf16Length(text))
+            return (.thematicBreak, text.endIndex)
         }
         // 코드 울타리 · 표 줄 — 원문 그대로 둔다.
         if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
-            return (.codeBlock, utf16Length(text))
+            return (.codeBlock, text.endIndex)
         }
         if trimmed.hasPrefix("|") {
-            return (.tableRow, utf16Length(text))
+            return (.tableRow, text.endIndex)
         }
 
         var cursor = text.startIndex
@@ -125,8 +124,8 @@ public enum LineStyler {
             cursor = text.index(after: cursor)
         }
         // 네 칸 이상 들여쓴 줄은 코드다.
-        if leading >= 4 { return (.codeBlock, utf16Length(text)) }
-        guard cursor < text.endIndex else { return (nil, utf16Offset(text, cursor)) }
+        if leading >= 4 { return (.codeBlock, text.endIndex) }
+        guard cursor < text.endIndex else { return (nil, cursor) }
 
         // 제목
         if text[cursor] == "#" {
@@ -141,7 +140,7 @@ public enum LineStyler {
                 var after = hashes
                 while after < text.endIndex, text[after] == " " { after = text.index(after: after) }
                 markers.append(span(text, cursor, after, .marker))
-                return (.heading(level: level), utf16Offset(text, after))
+                return (.heading(level: level), after)
             }
         }
 
@@ -153,7 +152,7 @@ public enum LineStyler {
                 if after < text.endIndex, text[after] == " " { after = text.index(after: after) }
             }
             markers.append(span(text, cursor, after, .marker))
-            return (.quote, utf16Offset(text, after))
+            return (.quote, after)
         }
 
         // 번호 목록
@@ -171,7 +170,7 @@ public enum LineStyler {
                     while after < text.endIndex, text[after] == " " { after = text.index(after: after) }
                     markers.append(span(text, cursor, after, .marker))
                     let content = consumeCheckbox(text, from: after, markers: &markers)
-                    return (.orderedItem, utf16Offset(text, content))
+                    return (.orderedItem, content)
                 }
             }
         }
@@ -184,11 +183,11 @@ public enum LineStyler {
                 while after < text.endIndex, text[after] == " " { after = text.index(after: after) }
                 markers.append(span(text, cursor, after, .marker))
                 let content = consumeCheckbox(text, from: after, markers: &markers)
-                return (.listItem, utf16Offset(text, content))
+                return (.listItem, content)
             }
         }
 
-        return (nil, utf16Offset(text, cursor))
+        return (nil, cursor)
     }
 
     /// `[ ]` · `[x]` 를 마커로 먹는다. 작업 목록 항목의 체크박스다.
@@ -432,13 +431,5 @@ public enum LineStyler {
 
     static func utf16Offset(_ text: String, _ index: String.Index) -> Int {
         index.utf16Offset(in: text)
-    }
-
-    static func utf16Length(_ text: String) -> Int { text.utf16.count }
-
-    /// UTF-16 오프셋을 문자 거리로. `String.Index` 를 다시 만들 때 쓴다.
-    private static func utf16Distance(in text: String, to utf16Offset: Int) -> Int {
-        guard let index = String.Index(utf16Offset: utf16Offset, in: text) else { return text.count }
-        return text.distance(from: text.startIndex, to: index)
     }
 }
