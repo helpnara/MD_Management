@@ -59,7 +59,7 @@
 | A6 | 옵시디언 볼트를 (b) 로 열어도 `.obsidian/` 이 목록을 어지럽히지 않는다 (숨김 폴더 제외) | 2주차 | |
 | A7 | `swift-markdown` 이 **CI 리눅스 러너**에서 빌드되고 테스트가 돈다 | `core-test.yml` 첫 실행 | ✅ **2026-09-13** — 빌드 14초 · 45개 테스트 |
 | A8 | 아이패드 시뮬레이터 스크린샷에서 3단 분할이 실제로 펼쳐진다 (가로 · Pro 13") | 1주차 CI | ✅ **2026-09-13** — `screenshots/ipad/01-split.png` |
-| A9 | 지난 앱(`Asset-management`)의 App Store Connect API 키 · 팀 ID 를 새 번들 ID 에 그대로 쓸 수 있다 | 1주차 첫 TestFlight | |
+| A9 | 지난 앱(`Asset-management`)의 App Store Connect API 키 · 팀 ID 를 새 번들 ID 에 그대로 쓸 수 있다 | 1주차 첫 TestFlight | ✅ **2026-09-13** — 빌드 1 업로드 성공 |
 | A10 | 마커를 0.01pt · 투명으로 숨겨도 한글 조합 · 선택 · 복사 · **VoiceOver** 가 정상이다 (L2) | 2주차 실기기 | |
 | A11 | TextKit 2 커스텀 레이아웃 프래그먼트가 `UITextView` 스크롤 안에서 이미지를 안정적으로 그린다 (L3) | 3주차 실기기 | |
 | A12 | `NSFileCoordinator … .forUploading` 이 임시 폴더를 zip 으로 묶어 주고, 공유 시트가 그 파일을 카톡 · 메일에 넘긴다 | 3주차 실기기 | |
