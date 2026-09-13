@@ -352,12 +352,19 @@ private struct NoteDetail: View {
                     .navigationTitle("")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Text(note.title)
-                                .font(.scaled(.headline))
-                                .foregroundStyle(Palette.ink)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
+                        // `topBarLeading` 에 두면 iOS 26 이 뒤로 버튼 옆 작은 캡슐로 묶어
+                        // `20…` 으로 눌러 버린다 (빌드 13 스크린샷). `principal` 은 가운데
+                        // 칸을 통째로 받으므로, 그 안에서 왼쪽에 붙이고 남은 폭을 다 쓴다.
+                        ToolbarItem(placement: .principal) {
+                            HStack(spacing: 0) {
+                                Text(note.title)
+                                    .font(.scaled(.headline))
+                                    .foregroundStyle(Palette.ink)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                Spacer(minLength: 0)
+                            }
+                            .frame(maxWidth: .infinity)
                         }
                         toolbarContent(for: note)
                     }
