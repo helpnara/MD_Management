@@ -63,6 +63,16 @@ targets:
 
         UILaunchScreen: {}
 
+        # **수출 규정 질문을 미리 답해 둔다.**
+        # 이 키가 없으면 App Store Connect 가 빌드를 올릴 때마다
+        # "앱이 구현하는 암호화 알고리즘의 유형이 무엇입니까?" 를 묻고,
+        # 답하기 전에는 빌드가 테스트 준비 완료로 안 넘어간다.
+        #
+        # false 인 근거: 이 앱은 **네트워크를 아예 쓰지 않는다** (설계서 §1).
+        # 서버도 계정도 없고 iCloud Drive 동기화는 앱이 아니라 iOS 가 한다.
+        # 앱 코드에 암호화 호출이 없다 — 화면의 선택지로는 "둘 다 아님" 이다.
+        ITSAppUsesNonExemptEncryption: false
+
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         # 아이패드는 네 방향 전부. 다 지원해야 멀티태스킹 · Stage Manager 에 들어간다.
