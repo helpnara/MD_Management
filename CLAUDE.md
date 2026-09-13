@@ -87,6 +87,11 @@
 
 ## 5. CI 워크플로 규칙
 
+**이 저장소는 public 이다** (2026-09-13 사용자 결정). 그래서 macOS 러너가 무료다 —
+빌드를 아끼려고 검사를 빼지 않는다. 대신 `docs/` 가 전부 공개되므로 **실제 지원
+메일 · 시크릿 · 개인 정보를 문서에 적지 않는다.**
+
+
 - `paths-ignore` 로 문서만 고친 푸시는 건너뛴다.
 - `concurrency` + `cancel-in-progress`.
 - 커밋하는 워크플로에는 `permissions: contents: write`.
