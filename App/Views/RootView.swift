@@ -33,6 +33,12 @@ struct RootView: View {
         .task(id: scenePhase) {
             if scenePhase == .active { await library.retryICloud() }
         }
+        // **앱이 뒤로 갈 때 반드시 쓴다.** `.task(id:)` 는 화면이 사라지면 함께
+        // 끊기므로 여기서는 쓰지 않는다 — 저장이 끊기면 그대로 자료가 사라진다.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase != .active else { return }
+            Task { await library.save() }
+        }
         // **배너는 아래에 둔다.** 위에 두면 내비게이션 바를 덮어 제목과 버튼이
         // 잘린다 (빌드 2 스크린샷). 아래는 덮을 것이 없다.
         .safeAreaInset(edge: .bottom, spacing: 0) { StatusBanner() }
@@ -238,21 +244,11 @@ private struct NoteDetail: View {
                 assets: library.assetProvider ?? EmptyAssetProvider(),
                 onOpen: handle)
         } else {
-            // 쓰기 — 1주차는 아직 라이브 편집기가 아니다. 원문을 그대로 보여 준다.
-            // 2주차에 ADR-0005 의 L1 → L2 로 갈아 끼운다.
-            ScrollView {
-                VStack(alignment: .leading, spacing: Metrics.blockSpacing) {
-                    Text(library.noteText.isEmpty ? "(빈 파일)" : library.noteText)
-                        .font(.scaledMono(.body))
-                        .foregroundStyle(Palette.ink)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    footer(for: note)
-                }
-                .padding(.horizontal, Metrics.gutter)
-                .padding(.vertical, Metrics.blockSpacing)
-            }
+            // 쓰기 — 라이브 편집기 L1 (ADR-0005). 원문은 그대로 두고 속성만 바뀐다.
+            MarkdownEditor(
+                noteID: note.id,
+                text: library.noteText,
+                onEdit: library.noteEdited)
         }
     }
 
@@ -273,8 +269,14 @@ private struct NoteDetail: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
+            // 저장 상태를 숨기지 않는다. 아무 표시가 없는 것이 가장 무섭다.
+            SaveIndicator()
+        }
+        ToolbarItem(placement: .topBarTrailing) {
             // 위 토글: 읽기(WKWebView 완전 렌더) ↔ 쓰기(원문). 쓰기가 기본이다.
             Button {
+                // 읽기로 넘기기 전에 쓴다 — 읽기 화면은 파일을 다시 렌더한다.
+                if !library.isReading { Task { await library.save() } }
                 library.isReading.toggle()
             } label: {
                 Label(library.isReading ? "쓰기" : "읽기",
@@ -284,35 +286,26 @@ private struct NoteDetail: View {
         }
     }
 
-    private func footer(for note: NoteSummary) -> some View {
-        VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
-            Divider()
-            HStack(spacing: Metrics.gutter) {
-                label("첨부", "\(library.attachmentCount)개")
-                label("크기", "\(note.size)바이트")
-                Spacer(minLength: 0)
-            }
-            if !library.missingAttachments.isEmpty {
-                Text("찾을 수 없는 링크 \(library.missingAttachments.count)개")
-                    .font(.scaled(.caption))
-                    .foregroundStyle(.orange)
-            }
-            if let error = library.lastError {
-                Text(error)
-                    .font(.scaled(.caption))
-                    .foregroundStyle(.red)
-            }
-        }
-    }
+}
 
-    private func label(_ name: String, _ value: String) -> some View {
-        HStack(spacing: 4) {
-            Text(name).foregroundStyle(Palette.inkFaint)
-            Text(value).foregroundStyle(Palette.ink)
+/// 저장됐나 · 저장할 것이 남았나. 글자 하나로 늘 보인다.
+private struct SaveIndicator: View {
+    @EnvironmentObject private var library: LibraryModel
+
+    var body: some View {
+        if library.saveFailed {
+            Label("저장 실패", systemImage: "exclamationmark.triangle.fill")
+                .labelStyle(.iconOnly)
+                .foregroundStyle(.red)
+        } else if library.isDirty {
+            Label("쓰는 중", systemImage: "pencil.circle")
+                .labelStyle(.iconOnly)
+                .foregroundStyle(Palette.inkFaint)
+        } else if library.lastSaved != nil {
+            Label("저장됨", systemImage: "checkmark.circle")
+                .labelStyle(.iconOnly)
+                .foregroundStyle(Palette.inkFaint)
         }
-        .font(.scaled(.caption))
-        .lineLimit(1)
-        .fixedSize()
     }
 }
 

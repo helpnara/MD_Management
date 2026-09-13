@@ -14,6 +14,14 @@ final class LibraryModel: ObservableObject {
     @Published private(set) var iCloudAvailable = false
     @Published private(set) var isLoading = false
     @Published private(set) var noteText = ""
+    /// 편집기가 들고 있는 지금 글. 아직 파일에 안 들어갔을 수 있다.
+    @Published private(set) var draft = ""
+    /// 저장할 것이 남았나. **저장이 실패해도 내리지 않는다** — 다음 기회에 다시 쓴다.
+    @Published private(set) var isDirty = false
+    @Published private(set) var lastSaved: Date?
+    /// 마지막 저장이 실패했나. 화면 위 표시가 이것만 본다 — 읽기 오류와 섞이면
+    /// 사용자가 무엇이 위험한지 못 가린다.
+    @Published private(set) var saveFailed = false
     /// 읽기 모드에 넘길 완전한 HTML 문서 (ADR-0004).
     @Published private(set) var pageHTML = ""
     @Published private(set) var attachmentCount = 0
@@ -39,6 +47,12 @@ final class LibraryModel: ObservableObject {
 
     let launch: LaunchOptions
     private var store: FolderStore?
+
+    /// **지금 글이 어느 파일의 것인가.** `selectedNote` 를 보지 않는 이유는,
+    /// 사용자가 노트를 바꾸면 그 값이 먼저 바뀌어 **이전 글이 새 파일에 덮일** 수
+    /// 있기 때문이다. 저장은 언제나 이 경로로 간다.
+    private var draftPath: String?
+    private var autosave: Task<Void, Never>?
 
     /// 웹뷰가 `yb://` 로 파일을 읽어 갈 곳.
     var assetProvider: AssetProvider? { store }
@@ -165,8 +179,50 @@ final class LibraryModel: ObservableObject {
         물러남: \(isFallenBackFromICloud ? "예" : "아니오")
         경로: \(rootPath)
         노트: \(notes.count)개 · 하위 폴더: \(folders.count)개
+        저장 안 된 글: \(isDirty ? "있음" : "없음")
+        마지막 저장: \(lastSaved.map { $0.formatted(date: .omitted, time: .standard) } ?? "없음")
         마지막 오류: \(lastError ?? "없음")
         """
+    }
+
+    // MARK: - 편집 · 자동 저장
+
+    /// 멈춘 뒤 얼마 만에 쓰나 (설계서 §7.3).
+    private static let autosaveDelay = Duration.seconds(2)
+
+    /// 편집기가 한 글자 바뀔 때마다 부른다.
+    func noteEdited(_ text: String) {
+        guard draftPath != nil, text != draft else { return }
+        draft = text
+        isDirty = true
+        autosave?.cancel()
+        autosave = Task { [weak self] in
+            try? await Task.sleep(for: Self.autosaveDelay)
+            guard !Task.isCancelled else { return }
+            await self?.save()
+        }
+    }
+
+    /// 지금 쓴다. 노트를 바꾸기 전 · 앱이 뒤로 갈 때 · 읽기로 넘길 때 부른다.
+    ///
+    /// **자료 유실이 가장 비싼 자리다.** 실패하면 오류를 올리고 `isDirty` 를
+    /// 그대로 둔다 — 다음 기회(2초 뒤 · 화면 전환 · 앱 종료 직전)에 다시 쓴다.
+    func save() async {
+        autosave?.cancel()
+        autosave = nil
+        guard isDirty, let store, let path = draftPath else { return }
+        do {
+            try await store.writeText(draft, to: path)
+            noteText = draft
+            isDirty = false
+            saveFailed = false
+            lastSaved = Date()
+            lastError = nil
+            await renderReading(path: path, text: draft)
+        } catch {
+            saveFailed = true
+            lastError = "저장하지 못했습니다: \(error.localizedDescription)"
+        }
     }
 
     func reloadFolders() async {
@@ -190,6 +246,10 @@ final class LibraryModel: ObservableObject {
     }
 
     func loadSelectedText() async {
+        // **읽기 전에 쓴다.** 노트를 바꾸는 길목이 여기다 — 남은 글을 먼저 파일에
+        // 넣지 않으면 그대로 사라진다.
+        await save()
+
         guard let store, let note = selectedNote else {
             clearNote()
             return
@@ -197,25 +257,30 @@ final class LibraryModel: ObservableObject {
         do {
             let text = try await store.readText(at: note.relativePath)
             noteText = text
-
-            // 두 단계다 (MarkdownHTML.referencedPaths 주석 참고): 파일이 있는지
-            // 아는 것은 actor 뿐인데 렌더는 순수 함수라 기다릴 수 없다.
-            let referenced = MarkdownHTML.referencedPaths(markdown: text, notePath: note.relativePath)
-            let existing = await store.existingPaths(among: referenced)
-
-            let rendered = MarkdownHTML.render(
-                markdown: text,
-                notePath: note.relativePath,
-                existing: existing)
-
-            pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML, css: Palette.cssTokens())
-            attachmentCount = existing.count
-            missingAttachments = rendered.missingAttachments
+            draft = text
+            draftPath = note.relativePath
+            isDirty = false
+            await renderReading(path: note.relativePath, text: text)
             lastError = nil
         } catch {
             clearNote()
             lastError = error.localizedDescription
         }
+    }
+
+    /// 읽기 모드에 넘길 HTML 을 다시 만든다.
+    ///
+    /// 두 단계다 (`MarkdownHTML.referencedPaths` 주석 참고): 파일이 있는지 아는
+    /// 것은 actor 뿐인데 렌더는 순수 함수라 기다릴 수 없다.
+    private func renderReading(path: String, text: String) async {
+        guard let store else { return }
+        let referenced = MarkdownHTML.referencedPaths(markdown: text, notePath: path)
+        let existing = await store.existingPaths(among: referenced)
+        let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing)
+
+        pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML, css: Palette.cssTokens())
+        attachmentCount = existing.count
+        missingAttachments = rendered.missingAttachments
     }
 
     /// 폴더 안의 다른 노트를 뷰어에서 탭했을 때.
@@ -231,6 +296,9 @@ final class LibraryModel: ObservableObject {
 
     private func clearNote() {
         noteText = ""
+        draft = ""
+        draftPath = nil
+        isDirty = false
         pageHTML = ""
         attachmentCount = 0
         missingAttachments = []
