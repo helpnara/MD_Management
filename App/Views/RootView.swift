@@ -42,8 +42,17 @@ struct RootView: View {
         // **배너는 아래에 둔다.** 위에 두면 내비게이션 바를 덮어 제목과 버튼이
         // 잘린다 (빌드 2 스크린샷). 아래는 덮을 것이 없다.
         .safeAreaInset(edge: .bottom, spacing: 0) { StatusBanner() }
-        .sheet(isPresented: $library.showsDiagnostics) {
-            DiagnosticsView().environmentObject(library)
+        // **시트는 하나로 모은다.** 한 뷰에 `.sheet` 를 여러 개 걸면 마지막
+        // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
+        .sheet(item: $library.sheet) { sheet in
+            switch sheet {
+            case .settings:
+                SettingsView().environmentObject(library)
+            case .diagnostics:
+                DiagnosticsView().environmentObject(library)
+            case .incoming(let file):
+                IncomingFileSheet(file: file).environmentObject(library)
+            }
         }
     }
 
@@ -64,7 +73,7 @@ private struct StatusBanner: View {
     var body: some View {
         if library.isFallenBackFromICloud {
             Button {
-                library.showsDiagnostics = true
+                library.sheet = .diagnostics
             } label: {
                 HStack(spacing: Metrics.rowSpacing) {
                     Image(systemName: "exclamationmark.icloud")
@@ -122,9 +131,9 @@ private struct FolderSidebar: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    library.showsDiagnostics = true
+                    library.sheet = .settings
                 } label: {
-                    Label("진단", systemImage: "stethoscope")
+                    Label("설정", systemImage: "gearshape")
                 }
             }
         }

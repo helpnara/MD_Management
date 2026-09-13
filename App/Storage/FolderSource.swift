@@ -190,9 +190,12 @@ struct LaunchOptions: Sendable {
     var showDiagnostics = false
     /// 첨부 시험 파일을 만들고 읽기 모드로 연다 — CI 가 **사진 셋이 다 그려지는지**
     /// 찍으려고 쓴다. 실기기로 내려보내기 전에 스크린샷 심판을 지난다.
+    var attachmentTest = false
+    /// 설정 화면을 열고 시작한다 — CI 가 그 화면을 찍으려고 쓴다.
     ///
     /// **선언 순서가 곧 초기화 인자 순서다.** 아래 `fromProcess` 와 맞춰 둔다.
-    var attachmentTest = false
+    /// 빌드 7 직전에 `attachmentTest` 를 넣으면서 이 순서가 어긋나 한 번 잡혔다.
+    var showSettings = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -202,7 +205,8 @@ struct LaunchOptions: Sendable {
             openFirstNote: arguments.contains("-openFirstNote") || arguments.contains("-readingMode"),
             readingMode: arguments.contains("-readingMode"),
             showDiagnostics: arguments.contains("-diagnostics"),
-            attachmentTest: arguments.contains("-attachmentTest")
+            attachmentTest: arguments.contains("-attachmentTest"),
+            showSettings: arguments.contains("-settings")
         )
     }
 }

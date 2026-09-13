@@ -97,6 +97,37 @@ targets:
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
 
+        # `파일` 앱에서 .md 를 눌러 이 앱으로 열 수 있게 한다.
+        #
+        # **iOS 에는 "이 확장자의 기본 앱" 설정이 없다.** 설정 → 앱 → 기본 앱 은
+        # 브라우저 · 메일 · 메시지 같은 것만 다루고 문서 종류는 없다. 앱이 스스로를
+        # 기본으로 만드는 API 도 없다. 할 수 있는 것은 **다룰 수 있다고 선언**하는
+        # 것뿐이고, 그러면 `파일` 앱의 공유 · 다음으로 열기 목록에 이 앱이 뜬다.
+        #
+        # `net.daringfireball.markdown` 은 애플이 정해 둔 것이 아니라 마크다운을
+        # 다루는 앱들이 함께 쓰는 이름이다. 그래서 **Imported**(남이 정한 것을
+        # 가져다 쓴다)이지 Exported(내가 정한다)가 아니다 — Exported 로 적으면
+        # 옵시디언 · 율리시스와 같은 이름을 두고 다투게 된다.
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: net.daringfireball.markdown
+            UTTypeDescription: 마크다운 문서
+            UTTypeConformsTo: [public.plain-text]
+            UTTypeTagSpecification:
+              public.filename-extension: [md, markdown, mdown, mkd, mkdn]
+              public.mime-type: [text/markdown, text/x-markdown]
+
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: 마크다운 문서
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSItemContentTypes: [net.daringfireball.markdown]
+          # `.txt` 도 편집한다 (설계서 §14-2). 다만 메모 · 텍스트 편집기들이 이미
+          # 있으므로 Alternate 다 — 남의 자리를 뺏지 않는다.
+          - CFBundleTypeName: 텍스트 문서
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.plain-text]
+
         # (a) 앱 iCloud Drive 컨테이너를 Files 앱에 보이게 한다.
         # CloudKit 레코드 타입을 쓰지 않으므로 스키마 배포가 없다 (ADR-0001 · 0002).
         NSUbiquitousContainers:

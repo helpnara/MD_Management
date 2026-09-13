@@ -74,6 +74,28 @@ public enum Paths {
         return String(p[p.startIndex..<slash])
     }
 
+    /// 절대 경로가 `root` **폴더 안**에 있으면 폴더 기준 상대경로를, 밖이면 `nil`.
+    ///
+    /// `파일` 앱이 건네주는 파일이 내 폴더의 것인지 가리는 데 쓴다. 안이면 그 노트를
+    /// 그냥 열면 되고, 밖이면 가져올지 물어야 한다.
+    ///
+    /// **글자 앞부분만 견주면 안 된다.** `/a/bc` 는 `/a/b` 안이 아닌데 앞부분은 같다.
+    /// 그래서 조각(`/` 로 자른 것) 단위로 견준다. 한글 이름이 iCloud 를 거치며 NFD 로
+    /// 올 수 있으므로 양쪽 다 NFC 로 맞춘 뒤에 본다 (A13).
+    public static func relative(of path: String, under root: String) -> String? {
+        let parts = segments(path)
+        let rootParts = segments(root)
+        guard parts.count > rootParts.count else { return nil }
+        guard Array(parts.prefix(rootParts.count)) == rootParts else { return nil }
+        return parts.dropFirst(rootParts.count).joined(separator: "/")
+    }
+
+    private static func segments(_ path: String) -> [String] {
+        normalized(path)
+            .split(separator: "/", omittingEmptySubsequences: true)
+            .map(String.init)
+    }
+
     /// `base` 폴더 기준으로 `relative` 를 풀어 폴더 기준 상대경로를 만든다.
     /// 폴더 밖으로 나가면 `nil`.
     public static func join(base: String, relative: String) -> String? {

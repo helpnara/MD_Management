@@ -10,12 +10,26 @@ import Core
 /// 2026-09-13 에 이것이 없어서 **A2 반증의 원인을 화면으로 못 봤다** — 앱은 멀쩡히
 /// 돌고 있었고 폴더만 조용히 기기 안으로 물러나 있었다.
 struct DiagnosticsView: View {
+    /// 설정 화면 **안에서 밀려 들어온** 것인가. 그러면 자기 `NavigationStack` 과
+    /// 닫기 버튼을 두지 않는다 — 스택을 겹치면 제목 줄이 두 개가 된다.
+    var isPushed = false
+
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.dismiss) private var dismiss
     @State private var copied = false
 
+    // 가지가 둘이라 `@ViewBuilder` 가 필요하다 — 두 가지의 타입이 다르다.
+    @ViewBuilder
     var body: some View {
-        NavigationStack {
+        if isPushed {
+            content
+        } else {
+            NavigationStack { content }
+        }
+    }
+
+    private var content: some View {
+        Group {
             List {
                 if library.isFallenBackFromICloud {
                     Section {
@@ -96,8 +110,10 @@ struct DiagnosticsView: View {
             .navigationTitle("진단")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("닫기") { dismiss() }
+                if !isPushed {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("닫기") { dismiss() }
+                    }
                 }
             }
         }

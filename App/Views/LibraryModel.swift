@@ -35,8 +35,24 @@ final class LibraryModel: ObservableObject {
     @Published var selectedNoteID: String?
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
     @Published var isReading = false
-    /// 진단 화면이 떠 있나.
-    @Published var showsDiagnostics = false
+    /// 지금 떠 있는 시트. **하나로 모아 둔다** — `.sheet` 를 한 뷰에 여러 개
+    /// 걸면 마지막 것만 뜬다 (SwiftUI 의 오랜 함정).
+    @Published var sheet: Sheet?
+
+    enum Sheet: Identifiable {
+        case settings
+        case diagnostics
+        /// `파일` 앱이 건넨, 내 폴더 **밖**의 파일. 가져올지 물어야 한다.
+        case incoming(IncomingFile)
+
+        var id: String {
+            switch self {
+            case .settings: return "settings"
+            case .diagnostics: return "diagnostics"
+            case .incoming(let file): return "incoming-\(file.id)"
+            }
+        }
+    }
     /// 지금 쓰는 폴더의 실제 경로. 진단에만 쓴다.
     @Published private(set) var rootPath = ""
 
@@ -53,6 +69,8 @@ final class LibraryModel: ObservableObject {
     /// 있기 때문이다. 저장은 언제나 이 경로로 간다.
     private var draftPath: String?
     private var autosave: Task<Void, Never>?
+    /// 폴더를 잡기 전에 `파일` 앱이 먼저 건넨 파일. 폴더가 서면 그때 연다.
+    private var pendingOpen: URL?
 
     /// 웹뷰가 `yb://` 로 파일을 읽어 갈 곳.
     var assetProvider: AssetProvider? { store }
@@ -60,7 +78,11 @@ final class LibraryModel: ObservableObject {
     init(launch: LaunchOptions = .fromProcess()) {
         self.launch = launch
         self.isReading = launch.readingMode
-        self.showsDiagnostics = launch.showDiagnostics
+        if launch.showDiagnostics {
+            self.sheet = .diagnostics
+        } else if launch.showSettings {
+            self.sheet = .settings
+        }
     }
 
     var isSample: Bool { kind == .sample }
@@ -114,6 +136,12 @@ final class LibraryModel: ObservableObject {
         selectedNoteID = nil
         await reloadFolders()
         await reloadNotes()
+
+        // 폴더가 서기 전에 `파일` 앱이 건넨 것이 있으면 이제 연다.
+        if let pending = pendingOpen {
+            pendingOpen = nil
+            await open(fileURL: pending)
+        }
     }
 
     /// 첨부가 제대로 뜨는지 **한 번 눌러 보는** 시험 (가정 A3 · A13).
@@ -141,7 +169,7 @@ final class LibraryModel: ObservableObject {
             await reloadNotes()
             selectedNoteID = "첨부 시험.md"
             isReading = true
-            showsDiagnostics = false
+            sheet = nil
             lastError = nil
         } catch {
             lastError = "시험 파일을 만들지 못했습니다: \(error.localizedDescription)"
@@ -167,6 +195,94 @@ final class LibraryModel: ObservableObject {
 
     ![](assets/%EC%8B%9C%ED%97%98%20%EC%82%AC%EC%A7%84.png)
     """
+
+    // MARK: - `파일` 앱에서 건너온 파일
+
+    /// 내 폴더 밖의 파일. 가져오기 전까지는 **읽기만** 한다.
+    struct IncomingFile: Identifiable {
+        let id = UUID()
+        let url: URL
+        let name: String
+        let text: String
+    }
+
+    /// `파일` 앱에서 `.md` 를 눌렀을 때 (`CFBundleDocumentTypes`).
+    ///
+    /// 두 갈래다. **내 폴더 안의 파일이면 그냥 그 노트를 연다** — 가장 흔한 길이고,
+    /// 사용자의 노트는 대개 이 폴더에 있다. 밖의 파일이면 가져올지 묻는다.
+    ///
+    /// **밖의 파일을 그 자리에서 고치게 하지 않는다.** 보안 범위 접근이 언제 끊길지
+    /// 모르는 파일에 자동 저장을 걸면 저장이 조용히 실패한다 — 이 앱에서 가장
+    /// 피하고 싶은 일이다 (ADR-0001).
+    func open(fileURL url: URL) async {
+        guard let store else {
+            // 폴더가 아직 안 섰다. `use(_:)` 끝에서 이어 받는다.
+            pendingOpen = url
+            return
+        }
+
+        // 보안 범위 — 내 폴더 밖의 파일은 이 문을 열어야 읽힌다.
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+
+        let path = url.standardizedFileURL.path
+        let root = store.root.standardizedFileURL.path
+
+        if let relative = Paths.relative(of: path, under: root) {
+            guard !Paths.isHidden(relative) else { return }
+            await save()
+            selectedFolder = Paths.directory(of: relative)
+            selectedNoteID = relative
+            isReading = false
+            lastError = nil
+            return
+        }
+
+        do {
+            // 파일 읽기는 주 액터 밖에서. 화면이 멈추지 않게 (설계서 §8).
+            let text = try await Task.detached {
+                try String(contentsOf: url, encoding: .utf8)
+            }.value
+            sheet = .incoming(IncomingFile(url: url,
+                                           name: Paths.normalized(url.lastPathComponent),
+                                           text: text))
+        } catch {
+            lastError = "파일을 읽지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 밖의 파일을 내 폴더로 **복사**해 열어 준다. 원본은 건드리지 않는다.
+    func importIncoming(_ file: IncomingFile) async {
+        guard let store else { return }
+        let name = uniqueName(for: file.name, in: selectedFolder, store: store)
+        let target = selectedFolder.isEmpty ? name : selectedFolder + "/" + name
+        do {
+            try await store.writeText(file.text, to: target)
+            sheet = nil
+            await reloadNotes()
+            selectedNoteID = target
+            isReading = false
+            lastError = nil
+        } catch {
+            lastError = "가져오지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 같은 이름이 있으면 `이름 2.md` · `이름 3.md` 로 비켜 간다.
+    /// **덮어쓰지 않는다** — 가져오기가 남의 노트를 지우면 안 된다.
+    private func uniqueName(for raw: String, in folder: String, store: FolderStore) -> String {
+        let safe = Paths.safeFileName(raw)
+        let base = Paths.baseName(safe)
+        let ext = Paths.fileExtension(safe)
+        let suffix = ext.isEmpty ? ".md" : "." + ext
+
+        for attempt in 1...99 {
+            let name = attempt == 1 ? base + suffix : "\(base) \(attempt)" + suffix
+            let path = folder.isEmpty ? name : folder + "/" + name
+            if !notes.contains(where: { $0.relativePath == path }) { return name }
+        }
+        return "\(base) \(Int(Date().timeIntervalSince1970))" + suffix
+    }
 
     /// 사용자가 복사해 붙일 수 있는 것. **글과 사진은 담지 않는다.**
     var diagnosticsText: String {
