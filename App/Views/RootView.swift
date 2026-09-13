@@ -5,6 +5,7 @@ import Core
 struct RootView: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @State private var columnVisibility = NavigationSplitViewVisibility.all
 
     var body: some View {
@@ -26,9 +27,17 @@ struct RootView: View {
             await library.reloadNotes()
         }
         .task(id: library.selectedNoteID) { await library.loadSelectedText() }
+        // 앱이 다시 앞으로 나올 때 iCloud 를 한 번 더 찾아본다. 설치 직후
+        // 첫 실행은 컨테이너가 아직 준비되지 않아 못 잡는 일이 있다 (A2).
+        .task(id: scenePhase) {
+            if scenePhase == .active { await library.retryICloud() }
+        }
         // **배너는 아래에 둔다.** 위에 두면 내비게이션 바를 덮어 제목과 버튼이
         // 잘린다 (빌드 2 스크린샷). 아래는 덮을 것이 없다.
-        .safeAreaInset(edge: .bottom, spacing: 0) { SampleBanner() }
+        .safeAreaInset(edge: .bottom, spacing: 0) { StatusBanner() }
+        .sheet(isPresented: $library.showsDiagnostics) {
+            DiagnosticsView().environmentObject(library)
+        }
     }
 
     /// 아이패드(regular)는 상세 칸이 비면 어색하니 첫 노트를 미리 고른다.
@@ -38,12 +47,36 @@ struct RootView: View {
     }
 }
 
-/// 둘러보기 중에는 배너가 늘 떠 있다 — 실제 자료와 섞이지 않게 (`LESSONS_LEARNED` §5).
-private struct SampleBanner: View {
+/// 화면 아래 띠. 지금 무엇이 이상한지 **늘 보이게** 한다.
+///
+/// - 둘러보기 중: 실제 자료와 섞이지 않게 (`LESSONS_LEARNED` §5)
+/// - iCloud 로 못 갔을 때: 조용히 기기 안 폴더를 쓰는 것을 숨기지 않는다 (A2)
+private struct StatusBanner: View {
     @EnvironmentObject private var library: LibraryModel
 
     var body: some View {
-        if library.isSample {
+        if library.isFallenBackFromICloud {
+            Button {
+                library.showsDiagnostics = true
+            } label: {
+                HStack(spacing: Metrics.rowSpacing) {
+                    Image(systemName: "exclamationmark.icloud")
+                    Text("iCloud 폴더를 쓰지 못하고 있습니다 · 눌러서 보기")
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                }
+                .font(.scaled(.footnote, weight: .semibold))
+                .foregroundStyle(Palette.ink)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, Metrics.gutter)
+                .padding(.vertical, Metrics.rowSpacing)
+                .background(Color.orange.opacity(0.18))
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Palette.rule).frame(height: 0.5)
+                }
+            }
+            .buttonStyle(.plain)
+        } else if library.isSample {
             // 한 낱말이 아니라 문장이다. 큰 글씨에서는 **줄을 바꿔야** 한다 —
             // `lineLimit(1)` 은 배지 · 짧은 라벨에만 쓴다.
             Text("둘러보기 자료입니다 · 실제 파일이 아닙니다")
@@ -79,6 +112,15 @@ private struct FolderSidebar: View {
         }
         .navigationTitle("폴더")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    library.showsDiagnostics = true
+                } label: {
+                    Label("진단", systemImage: "stethoscope")
+                }
+            }
+        }
     }
 
     /// `List` 의 선택은 옵셔널이라야 한다. 최상위는 빈 문자열로 둔다.

@@ -9,6 +9,9 @@ final class LibraryModel: ObservableObject {
     @Published private(set) var folders: [FolderSummary] = []
     @Published private(set) var notes: [NoteSummary] = []
     @Published private(set) var kind: FolderKind = .localDocuments
+    /// iCloud 컨테이너를 잡을 수 있었나. `false` 인데 `kind == .localDocuments` 면
+    /// **조용히 물러난 것**이다 — 진단 화면이 이것을 크게 보여 준다 (A2).
+    @Published private(set) var iCloudAvailable = false
     @Published private(set) var isLoading = false
     @Published private(set) var noteText = ""
     /// 읽기 모드에 넘길 완전한 HTML 문서 (ADR-0004).
@@ -24,6 +27,10 @@ final class LibraryModel: ObservableObject {
     @Published var selectedNoteID: String?
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
     @Published var isReading = false
+    /// 진단 화면이 떠 있나.
+    @Published var showsDiagnostics = false
+    /// 지금 쓰는 폴더의 실제 경로. 진단에만 쓴다.
+    @Published private(set) var rootPath = ""
 
     /// 아이패드(regular 폭)는 상세 칸이 비어 있으면 어색하므로 첫 노트를 미리 고른다.
     /// **아이폰(compact)은 고르지 않는다** — 고르면 앱이 목록이 아니라 노트로 열린다
@@ -39,6 +46,7 @@ final class LibraryModel: ObservableObject {
     init(launch: LaunchOptions = .fromProcess()) {
         self.launch = launch
         self.isReading = launch.readingMode
+        self.showsDiagnostics = launch.showDiagnostics
     }
 
     var isSample: Bool { kind == .sample }
@@ -50,18 +58,57 @@ final class LibraryModel: ObservableObject {
     var folderName: String {
         // 화면 상단 제목은 **폴더 이름**이다. 앱 이름을 쓰지 않는다 (설계서 §0).
         guard let root = store?.root else { return "기록" }
-        return Paths.baseName(root.lastPathComponent).isEmpty
-            ? "기록"
-            : Paths.normalized(root.lastPathComponent)
+        let name = Paths.normalized(root.lastPathComponent)
+        return name.isEmpty ? "기록" : name
     }
 
     func start() async {
         guard store == nil else { return }
-        let (url, kind) = FolderSource.current(launch: launch)
-        store = FolderStore(root: url, kind: kind)
-        self.kind = kind
+        await use(await FolderSource.current(launch: launch))
+    }
+
+    /// 기기 안 폴더로 물러나 있는가. 이 상태에서는 `Files` 앱에 폴더가 안 생기고
+    /// 다른 기기와도 안 맞춰진다.
+    var isFallenBackFromICloud: Bool {
+        kind == .localDocuments && !iCloudAvailable && !launch.localFolderOnly
+    }
+
+    /// 앱이 다시 앞으로 나올 때 · 진단 화면의 버튼에서 부른다.
+    ///
+    /// 설치 직후 첫 실행은 컨테이너가 아직 준비되지 않아 못 잡는 일이 있다.
+    /// 그때 잡히면 조용히 옮겨 탄다.
+    func retryICloud() async {
+        guard isFallenBackFromICloud else { return }
+        guard let cloud = await FolderSource.iCloudDocuments(attempts: 2) else { return }
+        await use(FolderChoice(url: cloud, kind: .iCloudContainer,
+                               iCloudAvailable: true, attempts: 2))
+    }
+
+    private func use(_ choice: FolderChoice) async {
+        await store?.close()
+        store = FolderStore(root: choice.url, kind: choice.kind)
+        kind = choice.kind
+        iCloudAvailable = choice.iCloudAvailable
+        rootPath = choice.url.path
+        selectedFolder = ""
+        selectedNoteID = nil
         await reloadFolders()
         await reloadNotes()
+    }
+
+    /// 사용자가 복사해 붙일 수 있는 것. **글과 사진은 담지 않는다.**
+    var diagnosticsText: String {
+        """
+        느린 여백 진단
+        판: \(Bundle.appVersion) (\(Bundle.appBuild))
+        번들: \(Bundle.main.bundleIdentifier ?? "-")
+        폴더 종류: \(kind.rawValue) (\(kind.label))
+        iCloud 잡음: \(iCloudAvailable ? "예" : "아니오")
+        물러남: \(isFallenBackFromICloud ? "예" : "아니오")
+        경로: \(rootPath)
+        노트: \(notes.count)개 · 하위 폴더: \(folders.count)개
+        마지막 오류: \(lastError ?? "없음")
+        """
     }
 
     func reloadFolders() async {
