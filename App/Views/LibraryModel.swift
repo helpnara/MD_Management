@@ -274,6 +274,61 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    // MARK: - 새 노트 · 이름 바꾸기 · 지우기
+
+    /// 지금 폴더에 새 노트를 만들고 연다.
+    func createNote() async {
+        guard let store else { return }
+        await save()
+        do {
+            let path = try await store.createNote(named: "새 노트", in: selectedFolder,
+                                                  text: "# 새 노트\n\n")
+            await reloadNotes()
+            selectedNoteID = path
+            isReading = false
+            lastError = nil
+        } catch {
+            lastError = "노트를 만들지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    func beginRename(_ note: NoteSummary) {
+        renameText = Paths.baseName(note.fileName)
+        renaming = note
+    }
+
+    func finishRename() async {
+        guard let store, let note = renaming else { return }
+        renaming = nil
+        let name = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        await save()
+        do {
+            let moved = try await store.rename(note.relativePath, to: name)
+            let wasSelected = selectedNoteID == note.id
+            await reloadNotes()
+            if wasSelected { selectedNoteID = moved }
+            lastError = nil
+        } catch {
+            lastError = "이름을 바꾸지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// `.trash/` 로 옮긴다. 확인은 화면이 받았다.
+    func finishTrash() async {
+        guard let store, let note = trashing else { return }
+        trashing = nil
+        await save()
+        do {
+            _ = try await store.trash(note.relativePath)
+            if selectedNoteID == note.id { selectedNoteID = nil }
+            await reloadNotes()
+            lastError = nil
+        } catch {
+            lastError = "지우지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
     /// 사용자가 복사해 붙일 수 있는 것. **글과 사진은 담지 않는다.**
     var diagnosticsText: String {
         """

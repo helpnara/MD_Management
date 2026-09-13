@@ -45,20 +45,7 @@ struct RootView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) { StatusBanner() }
         // **시트는 하나로 모은다.** 한 뷰에 `.sheet` 를 여러 개 걸면 마지막
         // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
-        .alert("이름 바꾸기", isPresented: renamePresented, presenting: library.renaming) { _ in
-            TextField("파일 이름", text: $library.renameText)
-            Button("바꾸기") { Task { await library.finishRename() } }
-            Button("취소", role: .cancel) { library.renaming = nil }
-        } message: { note in
-            Text("\(note.fileName) 의 새 이름입니다. 확장자는 안 적어도 됩니다.")
-        }
-        // **모든 삭제에 확인.** 지우지 않고 `.trash/` 로 옮긴다 (CLAUDE.md §1).
-        .alert("지울까요?", isPresented: trashPresented, presenting: library.trashing) { _ in
-            Button("지우기", role: .destructive) { Task { await library.finishTrash() } }
-            Button("취소", role: .cancel) { library.trashing = nil }
-        } message: { note in
-            Text("\(note.title) 을 폴더 안 .trash 로 옮깁니다. 파일 앱에서 되돌릴 수 있습니다.")
-        }
+        .modifier(NoteActionAlerts())
         .sheet(item: $library.sheet) { sheet in
             switch sheet {
             case .settings:
@@ -71,6 +58,27 @@ struct RootView: View {
         }
     }
 
+    /// 아이패드(regular)는 상세 칸이 비면 어색하니 첫 노트를 미리 고른다.
+    /// 아이폰은 목록으로 열려야 한다 — `-openFirstNote` 는 CI 가 상세를 찍을 때만.
+    private var prefersPreselectedNote: Bool {
+        horizontalSizeClass == .regular || library.launch.openFirstNote
+    }
+}
+
+/// 이름 바꾸기 · 지우기 확인창. **따로 뗀 이유:** 본체의 수식어 체인에 알림창
+/// 둘을 더 걸었더니 컴파일러가 타입 검사 시간을 넘겼다 (빌드 8 첫 시도).
+private struct NoteActionAlerts: ViewModifier {
+    @EnvironmentObject private var library: LibraryModel
+
+    func body(content: Content) -> some View {
+        content
+            .alert("이름 바꾸기", isPresented: renamePresented, presenting: library.renaming,
+                   actions: renameActions, message: renameMessage)
+            // **모든 삭제에 확인.** 지우지 않고 `.trash/` 로 옮긴다 (CLAUDE.md §1).
+            .alert("지울까요?", isPresented: trashPresented, presenting: library.trashing,
+                   actions: trashActions, message: trashMessage)
+    }
+
     private var renamePresented: Binding<Bool> {
         Binding(get: { library.renaming != nil }, set: { if !$0 { library.renaming = nil } })
     }
@@ -79,10 +87,25 @@ struct RootView: View {
         Binding(get: { library.trashing != nil }, set: { if !$0 { library.trashing = nil } })
     }
 
-    /// 아이패드(regular)는 상세 칸이 비면 어색하니 첫 노트를 미리 고른다.
-    /// 아이폰은 목록으로 열려야 한다 — `-openFirstNote` 는 CI 가 상세를 찍을 때만.
-    private var prefersPreselectedNote: Bool {
-        horizontalSizeClass == .regular || library.launch.openFirstNote
+    @ViewBuilder
+    private func renameActions(_ note: NoteSummary) -> some View {
+        TextField("파일 이름", text: $library.renameText)
+        Button("바꾸기") { Task { await library.finishRename() } }
+        Button("취소", role: .cancel) { library.renaming = nil }
+    }
+
+    private func renameMessage(_ note: NoteSummary) -> some View {
+        Text("\(note.fileName) 의 새 이름입니다. 확장자는 안 적어도 됩니다.")
+    }
+
+    @ViewBuilder
+    private func trashActions(_ note: NoteSummary) -> some View {
+        Button("지우기", role: .destructive) { Task { await library.finishTrash() } }
+        Button("취소", role: .cancel) { library.trashing = nil }
+    }
+
+    private func trashMessage(_ note: NoteSummary) -> some View {
+        Text("\(note.title) 을 폴더 안 .trash 로 옮깁니다. 파일 앱에서 되돌릴 수 있습니다.")
     }
 }
 
@@ -205,36 +228,9 @@ private struct NoteList: View {
     var body: some View {
         List(selection: $library.selectedNoteID) {
             ForEach(library.notes) { note in
-                VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
-                    HStack(spacing: Metrics.rowSpacing) {
-                        Text(note.title)
-                            .font(.scaled(.body, weight: .medium))
-                            .foregroundStyle(Palette.ink)
-                        if !note.isDownloaded {
-                            // iCloud 에 있지만 아직 안 내려온 파일 (설계서 §7.1)
-                            Image(systemName: "icloud.and.arrow.down")
-                                .foregroundStyle(Palette.inkFaint)
-                        }
-                    }
-                    Text(note.modifiedAt, format: .dateTime.year().month().day())
-                        .font(.scaled(.caption))
-                        .foregroundStyle(Palette.inkFaint)
-                }
-                .padding(.vertical, 2)
-                .tag(note.id)
-                .swipeActions(edge: .trailing) {
-                    Button(role: .destructive) {
-                        library.trashing = note
-                    } label: {
-                        Label("지우기", systemImage: "trash")
-                    }
-                    Button {
-                        library.beginRename(note)
-                    } label: {
-                        Label("이름", systemImage: "pencil.line")
-                    }
-                    .tint(Palette.accent)
-                }
+                row(for: note)
+                    .tag(note.id)
+                    .swipeActions(edge: .trailing) { swipeActions(for: note) }
             }
         }
         .toolbar {
@@ -257,6 +253,40 @@ private struct NoteList: View {
         }
         .navigationTitle(library.selectedFolder.isEmpty ? library.folderName : library.selectedFolder)
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private func swipeActions(for note: NoteSummary) -> some View {
+        Button(role: .destructive) {
+            library.trashing = note
+        } label: {
+            Label("지우기", systemImage: "trash")
+        }
+        Button {
+            library.beginRename(note)
+        } label: {
+            Label("이름", systemImage: "pencil.line")
+        }
+        .tint(Palette.accent)
+    }
+
+    private func row(for note: NoteSummary) -> some View {
+                VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
+                    HStack(spacing: Metrics.rowSpacing) {
+                        Text(note.title)
+                            .font(.scaled(.body, weight: .medium))
+                            .foregroundStyle(Palette.ink)
+                        if !note.isDownloaded {
+                            // iCloud 에 있지만 아직 안 내려온 파일 (설계서 §7.1)
+                            Image(systemName: "icloud.and.arrow.down")
+                                .foregroundStyle(Palette.inkFaint)
+                        }
+                    }
+                    Text(note.modifiedAt, format: .dateTime.year().month().day())
+                        .font(.scaled(.caption))
+                        .foregroundStyle(Palette.inkFaint)
+                }
+                .padding(.vertical, 2)
     }
 }
 
