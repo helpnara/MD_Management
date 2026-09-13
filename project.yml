@@ -1,9 +1,9 @@
 # XcodeGen 설정 — 맥 없이 .xcodeproj 를 만드는 유일한 길이다.
 # `.xcodeproj` 는 커밋하지 않는다 (.gitignore). CI 가 `xcodegen generate` 로 만든다.
 #
-# **앱 이름이 바뀌면 고칠 곳은 아래 두 줄뿐이다** (docs/roadmap.md §4):
-#   · CFBundleDisplayName
-#   · NSUbiquitousContainers → NSUbiquitousContainerName
+# **앱 이름은 아래 두 줄에만 있다** (docs/roadmap.md §4):
+#   · CFBundleDisplayName          — 홈 화면 · 스토어
+#   · NSUbiquitousContainerName    — Files 앱의 폴더 이름
 # 타깃 이름(Notebook)과 번들 ID 는 이름과 무관하게 고정한다.
 #
 # Info.plist 를 파일로 두지 않고 여기서 만든다 — `sources: App` 이 그 파일을
@@ -58,8 +58,8 @@ targets:
         CFBundleDevelopmentRegion: ko
         CFBundleLocalizations: [ko]
 
-        # 스토어 · 홈 화면에 보이는 이름. 앱 이름이 정해지면 여기만 고친다.
-        CFBundleDisplayName: 행간
+        # 스토어 · 홈 화면에 보이는 이름 (A1 확정 2026-09-13).
+        CFBundleDisplayName: 느린 여백
 
         UILaunchScreen: {}
 
@@ -86,5 +86,5 @@ targets:
           iCloud.com.helpnara.markdown:
             NSUbiquitousContainerIsDocumentScopePublic: true
             NSUbiquitousContainerSupportedFolderLevels: Any
-            # Files 앱에 보이는 폴더 이름. 앱 이름이 정해지면 여기도 고친다.
-            NSUbiquitousContainerName: 행간
+            # Files 앱에 보이는 폴더 이름.
+            NSUbiquitousContainerName: 느린 여백

@@ -20,12 +20,12 @@
 
 | 항목 | 값 | 비고 |
 |---|---|---|
-| 앱 이름(스토어) | **미정** — 잠정 `행간` | `여백` 은 상표 충돌 (A1). 후보와 확정 절차는 [roadmap §4](roadmap.md#4-앱-이름--미정-a1) |
+| 앱 이름(스토어) | **느린 여백** | 2026-09-13 확정. 단독 `여백` 은 상표 충돌이라 쓰지 않는다 ([roadmap §4](roadmap.md)) |
 | 번들 ID | `com.helpnara.markdown` | **이름과 무관하게 고정.** 등록 후 못 바꾸므로 일부러 이름을 안 넣었다. 접두사는 기존 팀 규칙(`com.helpnara`)을 따른다 |
 | Xcode 타깃 · 스킴 | `Notebook` | 사용자에게 안 보인다. 이름이 바뀌어도 안 바꾼다 |
 | 화면 상단 제목 | **사용자 폴더 이름** (예: `내 기록`) | 앱 이름과 분리. 폴더 이름이 곧 제목 `[L§1]` |
 | iCloud 컨테이너 | `iCloud.com.helpnara.markdown` | `Files` 앱에 보이는 폴더 이름은 `NSUbiquitousContainerName` (이름 바뀌면 여기도) |
-| 지원 메일 | ☐ 미정 | 첫 빌드 전 확정 (08-feedback 4번) |
+| 지원 메일 | ☐ 미정 | 스토어 제출 전 확정 (08-feedback 4번) |
 | 개인정보 처리방침 URL | `helpnara.github.io/MD_Management/privacy/` | `site.yml` 이 `docs/privacy.md` 한 장만 낸다 `[L§7]` |
 
 ---
@@ -339,7 +339,7 @@ MD_Management/
 - [x] ADR 7건 `docs/adr/`
 - [x] `Packages/Core` 생성 · `swift-markdown` 의존 (리눅스 빌드는 A7)
 - [x] `CLAUDE.md`: 원격 세션 제약 · 빌드 규율 · 기억해 둘 것
-- [ ] KIPRIS 재검색 (A1) — 사용자
+- [x] 앱 이름 확정 — `느린 여백` (2026-09-13)
 
 **첫 주**
 
