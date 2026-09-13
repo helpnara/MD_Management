@@ -348,9 +348,11 @@ final class LibraryModel: ObservableObject {
     func insertPhoto(_ original: Data) async {
         guard let store, let note = selectedNote else { return }
         // 디코딩 · 크기 줄이기 · 인코딩은 주 액터 밖에서.
-        guard let jpeg = await Task.detached(priority: .userInitiated) {
+        // (`guard` 조건 안에는 트레일링 클로저를 못 쓴다 — 빌드 11 첫 컴파일이 잡았다.)
+        let converted = await Task.detached(priority: .userInitiated) {
             ImageImport.jpeg(from: original)
-        }.value else {
+        }.value
+        guard let jpeg = converted else {
             lastError = "사진을 읽지 못했습니다"
             return
         }
