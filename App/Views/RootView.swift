@@ -324,7 +324,8 @@ private struct NoteList: View {
                                 .foregroundStyle(Palette.inkFaint)
                         }
                     }
-                    Text(note.modifiedAt, format: .dateTime.year().month().day())
+                    // 날짜만으로는 오늘 고친 여러 노트가 안 갈린다 — 시각까지 (50).
+                    Text(note.modifiedAt, format: .dateTime.year().month().day().hour().minute())
                         .font(.scaled(.caption))
                         .foregroundStyle(Palette.inkFaint)
                 }
