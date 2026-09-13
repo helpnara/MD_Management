@@ -224,6 +224,17 @@ actor FolderStore {
         return target
     }
 
+    /// 노트 옆 `assets/` 에 첨부를 넣는다. 같은 이름이 있으면 번호를 올린다.
+    /// 만든 파일의 **노트 기준 상대경로**(`assets/2026-09-13-1.jpg`)를 준다.
+    func writeAsset(_ data: Data, named name: String, besideNoteIn folder: String) throws -> String {
+        openScopeIfNeeded()
+        let assets = folder.isEmpty ? "assets" : folder + "/assets"
+        try createFolder(assets)
+        let path = uniqueRelativePath(name: name, in: assets)
+        try writeData(data, to: path)
+        return String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))
+    }
+
     /// 같은 이름이 있으면 `이름 2.md` · `이름 3.md`. 파일 시스템을 직접 본다 —
     /// 목록은 늦을 수 있다.
     private func uniqueRelativePath(name: String, in folder: String) -> String {

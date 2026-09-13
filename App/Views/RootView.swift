@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import Core
 
 /// 아이패드는 3단, 아이폰은 같은 뷰가 스택으로 접힌다 (ADR-0006).
@@ -335,6 +336,8 @@ private struct NoteDetail: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.openURL) private var openURL
     @State private var alert: String?
+    /// 사진첩에서 고른 것. 고르면 바로 읽어 넣고 비운다.
+    @State private var pickedPhoto: PhotosPickerItem?
 
     var body: some View {
         Group {
@@ -374,7 +377,9 @@ private struct NoteDetail: View {
             MarkdownEditor(
                 noteID: note.id,
                 text: library.noteText,
-                onEdit: library.noteEdited)
+                onEdit: library.noteEdited,
+                insertion: library.insertion,
+                onInserted: { library.insertion = nil })
         }
     }
 
@@ -397,6 +402,23 @@ private struct NoteDetail: View {
         ToolbarItem(placement: .topBarTrailing) {
             // 저장 상태를 숨기지 않는다. 아무 표시가 없는 것이 가장 무섭다.
             SaveIndicator()
+        }
+        if !library.isReading {
+            ToolbarItem(placement: .topBarTrailing) {
+                // 사진첩 → assets/ → 커서 자리에 링크 (설계서 §2-4). 카메라는 다음.
+                PhotosPicker(selection: $pickedPhoto, matching: .images) {
+                    Label("사진 넣기", systemImage: "photo")
+                }
+                .onChange(of: pickedPhoto) { _, item in
+                    guard let item else { return }
+                    pickedPhoto = nil
+                    Task {
+                        if let data = try? await item.loadTransferable(type: Data.self) {
+                            await library.insertPhoto(data)
+                        }
+                    }
+                }
+            }
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {

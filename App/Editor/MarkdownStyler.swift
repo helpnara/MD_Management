@@ -16,15 +16,28 @@ import Core
 enum MarkdownStyler {
 
     /// 고친 문단만 다시 칠한다. 전체 재칠은 파일을 열 때 한 번뿐이다 (S11).
-    static func restyle(_ storage: NSTextStorage, touching range: NSRange, with sheet: EditorStyleSheet) {
+    ///
+    /// `previousHeader` 는 지난번 머리말 길이. **머리말이 생기거나 없어지거나 길이가
+    /// 바뀌면 그 구간을 통째로 다시 칠한다.** `---` → `title:` → `---` 순으로 치면
+    /// 마지막 `---` 를 친 순간에야 머리말이 생기는데, 고친 문단만 칠하면 위의
+    /// `title:` 은 머리말 없던 시절 모습으로 남는다 (빌드 10 · 4번 "될 때도 안 될 때도").
+    /// 새 머리말 길이를 돌려준다 — 부른 쪽이 들고 있다가 다음에 넘긴다.
+    @discardableResult
+    static func restyle(_ storage: NSTextStorage, touching range: NSRange,
+                        with sheet: EditorStyleSheet, previousHeader: Int = 0) -> Int {
         let text = storage.string as NSString
-        guard text.length > 0 else { return }
+        guard text.length > 0 else { return 0 }
 
-        let touched = text.paragraphRange(for: clamp(range, to: text.length))
-        var location = touched.location
-        let limit = NSMaxRange(touched)
         // 머리말은 문서 첫머리라는 문맥이 있어야 안다. 한 번 재어 두고 문단마다 가린다.
         let header = FrontMatterParser.headerLength(of: storage.string)
+        var touched = text.paragraphRange(for: clamp(range, to: text.length))
+        if header != previousHeader {
+            let widest = min(max(header, previousHeader), text.length)
+            let headerRange = text.paragraphRange(for: NSRange(location: 0, length: widest))
+            touched = NSUnionRange(touched, headerRange)
+        }
+        var location = touched.location
+        let limit = NSMaxRange(touched)
 
         repeat {
             let paragraph = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
@@ -38,9 +51,11 @@ enum MarkdownStyler {
             if next <= location { break }
             location = next
         } while location < limit && location < text.length
+        return header
     }
 
-    static func restyleAll(_ storage: NSTextStorage, with sheet: EditorStyleSheet) {
+    @discardableResult
+    static func restyleAll(_ storage: NSTextStorage, with sheet: EditorStyleSheet) -> Int {
         restyle(storage, touching: NSRange(location: 0, length: storage.length), with: sheet)
     }
 

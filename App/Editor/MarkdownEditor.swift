@@ -17,6 +17,9 @@ struct MarkdownEditor: UIViewRepresentable {
     /// **`@MainActor` 를 붙여 둔다.** `LibraryModel` 이 주 액터라 그 메서드를
     /// 그냥 넘기면 격리가 벗겨져 Swift 6 가 막는다.
     let onEdit: @MainActor (String) -> Void
+    /// 커서 자리에 넣을 글 (사진 링크). 넣고 나면 `onInserted` 로 알린다.
+    var insertion: LibraryModel.Insertion? = nil
+    var onInserted: @MainActor () -> Void = {}
 
     func makeCoordinator() -> Coordinator { Coordinator(onEdit: onEdit) }
 
@@ -56,6 +59,7 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.onEdit = onEdit
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
+        if let insertion, coordinator.insert(insertion) { onInserted() }
     }
 
     @MainActor
@@ -67,6 +71,8 @@ struct MarkdownEditor: UIViewRepresentable {
         private var loadedNoteID: String?
         private var loadedText = ""
         private var isStyling = false
+        /// 지난번 머리말 길이. 바뀌면 그 구간을 통째로 다시 칠한다 (`MarkdownStyler.restyle`).
+        private var headerLength = 0
         /// 한글 조합 중에는 속성을 건드리지 않는다 — 조합이 끊겨 자음과 모음이
         /// 따로 찍힌다 (안정화 기준 S10).
         private var isComposing = false
@@ -102,6 +108,28 @@ struct MarkdownEditor: UIViewRepresentable {
             view.text = text
         }
 
+        private var lastInsertionID: UUID?
+
+        /// 커서 자리에 한 줄로 넣는다. 줄 가운데면 앞뒤에 줄바꿈을 붙여 제 줄을 갖게.
+        /// 같은 요청은 한 번만 넣는다 — `updateUIView` 는 여러 번 불린다.
+        func insert(_ insertion: LibraryModel.Insertion) -> Bool {
+            guard insertion.id != lastInsertionID, let view else { return false }
+            lastInsertionID = insertion.id
+
+            let text = view.textStorage.string as NSString
+            let range = view.selectedRange
+            let atLineStart = range.location == 0 || text.character(at: range.location - 1) == 0x0A
+            let atLineEnd = NSMaxRange(range) >= text.length
+                || text.character(at: NSMaxRange(range)) == 0x0A
+            let piece = (atLineStart ? "" : "\n") + insertion.text + (atLineEnd ? "" : "\n")
+
+            guard let target = textRange(view, range) else { return false }
+            view.replace(target, withText: piece)
+            view.selectedRange = NSRange(location: range.location + (piece as NSString).length, length: 0)
+            onEdit(view.text)
+            return true
+        }
+
         /// Dynamic Type 이 바뀌면 값 묶음을 새로 만들어 전체를 다시 칠한다.
         func refreshStyleIfNeeded(for traits: UITraitCollection) {
             guard traits.preferredContentSizeCategory != sizeCategory else { return }
@@ -109,7 +137,7 @@ struct MarkdownEditor: UIViewRepresentable {
             sheet = EditorStyleSheet()
             guard let storage = view?.textStorage, let sheet else { return }
             isStyling = true
-            MarkdownStyler.restyleAll(storage, with: sheet)
+            headerLength = MarkdownStyler.restyleAll(storage, with: sheet)
             isStyling = false
         }
 
@@ -134,7 +162,8 @@ struct MarkdownEditor: UIViewRepresentable {
                       !isComposing, !isStyling,
                       let sheet, let storage = view?.textStorage else { return }
                 isStyling = true
-                MarkdownStyler.restyle(storage, touching: edited, with: sheet)
+                headerLength = MarkdownStyler.restyle(storage, touching: edited, with: sheet,
+                                                      previousHeader: headerLength)
                 isStyling = false
             }
         }
@@ -194,8 +223,9 @@ struct MarkdownEditor: UIViewRepresentable {
             // 조합이 끝났다. 건너뛴 재칠을 여기서 갚는다.
             if wasComposing, !composing, let sheet {
                 isStyling = true
-                MarkdownStyler.restyle(textView.textStorage,
-                                       touching: textView.selectedRange, with: sheet)
+                headerLength = MarkdownStyler.restyle(textView.textStorage,
+                                                      touching: textView.selectedRange, with: sheet,
+                                                      previousHeader: headerLength)
                 isStyling = false
             }
             // **여기서 `loadedText` 를 갱신하지 않는다.** 갱신하면 "사용자가

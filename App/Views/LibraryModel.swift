@@ -41,6 +41,15 @@ final class LibraryModel: ObservableObject {
     /// 지울지 묻는 중인 노트. **모든 삭제에 확인** (CLAUDE.md §1).
     @Published var trashing: NoteSummary?
 
+    /// 편집기가 커서 자리에 넣어야 할 글. 사진을 고르면 여기 링크가 실린다.
+    /// `Identifiable` 인 이유: 같은 글을 두 번 넣어도 새 요청으로 보이게.
+    @Published var insertion: Insertion?
+
+    struct Insertion: Identifiable, Equatable {
+        let id = UUID()
+        let text: String
+    }
+
     /// 지금 떠 있는 시트. **하나로 모아 둔다** — `.sheet` 를 한 뷰에 여러 개
     /// 걸면 마지막 것만 뜬다 (SwiftUI 의 오랜 함정).
     @Published var sheet: Sheet?
@@ -329,6 +338,30 @@ final class LibraryModel: ObservableObject {
             lastError = nil
         } catch {
             lastError = "지우지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - 사진 넣기
+
+    /// 사진첩에서 고른 사진을 노트 옆 `assets/` 에 JPEG 로 넣고, 커서 자리에 넣을
+    /// `![](assets/….jpg)` 를 편집기에 건넨다 (설계서 §2-4).
+    func insertPhoto(_ original: Data) async {
+        guard let store, let note = selectedNote else { return }
+        // 디코딩 · 크기 줄이기 · 인코딩은 주 액터 밖에서.
+        guard let jpeg = await Task.detached(priority: .userInitiated) {
+            ImageImport.jpeg(from: original)
+        }.value else {
+            lastError = "사진을 읽지 못했습니다"
+            return
+        }
+        do {
+            let relative = try await store.writeAsset(
+                jpeg, named: ImageImport.fileName(),
+                besideNoteIn: Paths.directory(of: note.relativePath))
+            insertion = Insertion(text: "![](\(relative))")
+            lastError = nil
+        } catch {
+            lastError = "사진을 넣지 못했습니다: \(error.localizedDescription)"
         }
     }
 
