@@ -58,13 +58,20 @@ enum MarkdownStyler {
         }
         let style = LineStyler.style(paragraph: text.substring(with: line))
 
-        // 목록의 겹친 단계 — 마커 앞의 빈칸 수로 안다 (둘에 한 단계).
+        // 목록: 겹친 단계는 마커 앞의 빈칸 수로 (둘에 한 단계), 매달린 들여쓰기는
+        // **실제 마커 폭**으로. `- ` · `1. ` · `- [ ] ` 가 다 달라서 고정값이면 어긋난다
+        // (빌드 8 · 10번).
         var depth = 0
+        var markerWidth: CGFloat = 0
         if style.block == .listItem || style.block == .orderedItem,
            let marker = style.markers.first {
             depth = marker.start / 2
+            let prefix = text.substring(with: NSRange(location: line.location + marker.start,
+                                                      length: style.contentStart - marker.start))
+            markerWidth = (prefix as NSString).size(withAttributes: [.font: sheet.body]).width
         }
-        storage.setAttributes(sheet.base(for: style.block, depth: depth), range: paragraph)
+        storage.setAttributes(sheet.base(for: style.block, depth: depth, markerWidth: markerWidth),
+                              range: paragraph)
 
         for span in style.inlineSpans {
             let range = NSRange(location: line.location + span.start, length: span.length)

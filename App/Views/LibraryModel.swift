@@ -297,8 +297,11 @@ final class LibraryModel: ObservableObject {
         renaming = note
     }
 
-    func finishRename() async {
-        guard let store, let note = renaming else { return }
+    /// **대상을 인자로 받는다.** 확인 창의 버튼을 누르면 SwiftUI 가 창을 닫으며
+    /// `renaming` 을 먼저 `nil` 로 지우고, 이 일은 그 뒤에 돈다. 빌드 8 에서 그래서
+    /// 이름 바꾸기 · 지우기가 조용히 아무것도 안 했다 (4 · 6번).
+    func finishRename(_ note: NoteSummary) async {
+        guard let store else { return }
         renaming = nil
         let name = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
@@ -315,8 +318,8 @@ final class LibraryModel: ObservableObject {
     }
 
     /// `.trash/` 로 옮긴다. 확인은 화면이 받았다.
-    func finishTrash() async {
-        guard let store, let note = trashing else { return }
+    func finishTrash(_ note: NoteSummary) async {
+        guard let store else { return }
         trashing = nil
         await save()
         do {
@@ -326,6 +329,28 @@ final class LibraryModel: ObservableObject {
             lastError = nil
         } catch {
             lastError = "지우지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - 휴지통
+
+    /// `.trash/` 안의 노트. 설정 → 휴지통이 보여 준다.
+    @Published private(set) var trashed: [NoteSummary] = []
+
+    func reloadTrash() async {
+        guard let store else { return }
+        trashed = await store.trashedNotes()
+    }
+
+    func restore(_ note: NoteSummary) async {
+        guard let store else { return }
+        do {
+            _ = try await store.restore(note.relativePath)
+            await reloadTrash()
+            await reloadNotes()
+            lastError = nil
+        } catch {
+            lastError = "되돌리지 못했습니다: \(error.localizedDescription)"
         }
     }
 
@@ -385,6 +410,8 @@ final class LibraryModel: ObservableObject {
             lastError = "저장하지 못했습니다: \(error.localizedDescription)"
         }
     }
+
+    func clearError() { lastError = nil }
 
     func reloadFolders() async {
         guard let store else { return }

@@ -21,6 +21,25 @@ struct SettingsView: View {
                 filesSection
 
                 Section {
+                    NavigationLink {
+                        TrashView().environmentObject(library)
+                    } label: {
+                        Label {
+                            HStack {
+                                Text("휴지통")
+                                Spacer(minLength: Metrics.rowSpacing)
+                                Text("\(library.trashed.count)개")
+                                    .foregroundStyle(Palette.inkFaint)
+                            }
+                        } icon: {
+                            Image(systemName: "trash")
+                        }
+                    }
+                } footer: {
+                    Text("지운 노트는 폴더 안 `.trash` 로 옮겨집니다. `파일` 앱은 숨김 폴더를 보여 주지 않으므로 여기서 봅니다.")
+                }
+
+                Section {
                     // **시트를 갈아 끼우지 않고 밀어 넣는다.** 떠 있는 시트의
                     // item 을 바꾸면 SwiftUI 가 닫았다 여는 사이에 화면이 튄다.
                     NavigationLink {
@@ -34,6 +53,7 @@ struct SettingsView: View {
             }
             .navigationTitle("설정")
             .navigationBarTitleDisplayMode(.inline)
+            .task { await library.reloadTrash() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("닫기") { dismiss() }
@@ -143,5 +163,44 @@ struct IncomingFileSheet: View {
                 }
             }
         }
+    }
+}
+
+
+/// 휴지통 — `.trash/` 안의 노트. **되돌리기**만 있다. 영구 삭제는 나중에 타이핑
+/// 확인으로만 (설계서 §7.1). 가정 A14(`.trash/` 가 iCloud 에서 되는가)를 이 화면이 판정한다.
+struct TrashView: View {
+    @EnvironmentObject private var library: LibraryModel
+
+    var body: some View {
+        List {
+            ForEach(library.trashed) { note in
+                HStack(spacing: Metrics.rowSpacing) {
+                    VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
+                        Text(note.title)
+                            .font(.scaled(.body))
+                            .foregroundStyle(Palette.ink)
+                        Text(note.modifiedAt, format: .dateTime.year().month().day().hour().minute())
+                            .font(.scaled(.caption))
+                            .foregroundStyle(Palette.inkFaint)
+                    }
+                    Spacer(minLength: Metrics.rowSpacing)
+                    Button("되돌리기") {
+                        Task { await library.restore(note) }
+                    }
+                    .buttonStyle(.bordered)
+                    .font(.scaled(.callout))
+                }
+            }
+        }
+        .overlay {
+            if library.trashed.isEmpty {
+                ContentUnavailableView("휴지통이 비었습니다", systemImage: "trash",
+                                       description: Text("지운 노트가 여기에 모입니다."))
+            }
+        }
+        .navigationTitle("휴지통")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await library.reloadTrash() }
     }
 }

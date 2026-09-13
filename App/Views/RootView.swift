@@ -90,7 +90,7 @@ private struct NoteActionAlerts: ViewModifier {
     @ViewBuilder
     private func renameActions(_ note: NoteSummary) -> some View {
         TextField("파일 이름", text: $library.renameText)
-        Button("바꾸기") { Task { await library.finishRename() } }
+        Button("바꾸기") { Task { await library.finishRename(note) } }
         Button("취소", role: .cancel) { library.renaming = nil }
     }
 
@@ -100,7 +100,7 @@ private struct NoteActionAlerts: ViewModifier {
 
     @ViewBuilder
     private func trashActions(_ note: NoteSummary) -> some View {
-        Button("지우기", role: .destructive) { Task { await library.finishTrash() } }
+        Button("지우기", role: .destructive) { Task { await library.finishTrash(note) } }
         Button("취소", role: .cancel) { library.trashing = nil }
     }
 
@@ -117,7 +117,31 @@ private struct StatusBanner: View {
     @EnvironmentObject private var library: LibraryModel
 
     var body: some View {
-        if library.isFallenBackFromICloud {
+        if let error = library.lastError {
+            // **실패는 보여야 한다.** 빌드 7 에서 이 자리를 없앴더니 빌드 8 의
+            // 이름 바꾸기 · 지우기가 조용히 실패해도 아무도 몰랐다.
+            Button {
+                library.clearError()
+            } label: {
+                HStack(spacing: Metrics.rowSpacing) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                    Text(error)
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                    Image(systemName: "xmark")
+                }
+                .font(.scaled(.footnote, weight: .semibold))
+                .foregroundStyle(Palette.ink)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, Metrics.gutter)
+                .padding(.vertical, Metrics.rowSpacing)
+                .background(Color.red.opacity(0.16))
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Palette.rule).frame(height: 0.5)
+                }
+            }
+            .buttonStyle(.plain)
+        } else if library.isFallenBackFromICloud {
             Button {
                 library.sheet = .diagnostics
             } label: {

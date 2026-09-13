@@ -146,7 +146,44 @@ struct MarkdownEditor: UIViewRepresentable {
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
             isComposing = textView.markedTextRange != nil
+            // 조합 중의 줄바꿈은 건드리지 않는다 — 조합을 끊는다.
+            if text == "\n", !isComposing, continueList(in: textView, at: range) {
+                return false
+            }
             return true
+        }
+
+        /// **목록에서 줄바꿈** — 아이폰 메모처럼. 규칙은 Core 의 `ListEditing` 이 정한다.
+        /// 여기서는 그 결과를 넣고 커서를 옮기기만 한다. `replace(_:withText:)` 를
+        /// 쓰므로 되돌리기에도 한 번의 편집으로 남는다.
+        private func continueList(in textView: UITextView, at range: NSRange) -> Bool {
+            let text = textView.textStorage.string as NSString
+            let paragraph = text.paragraphRange(for: NSRange(location: range.location, length: 0))
+            var line = paragraph
+            if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
+
+            guard let action = ListEditing.returnPressed(in: text.substring(with: line)) else {
+                return false
+            }
+            switch action {
+            case .insert(let marker):
+                guard let target = textRange(textView, range) else { return false }
+                textView.replace(target, withText: marker)
+                textView.selectedRange = NSRange(location: range.location + (marker as NSString).length, length: 0)
+            case .replacePrefix(let length, let replacement):
+                let prefix = NSRange(location: line.location, length: min(length, line.length))
+                guard let target = textRange(textView, prefix) else { return false }
+                textView.replace(target, withText: replacement)
+                textView.selectedRange = NSRange(location: line.location + (replacement as NSString).length, length: 0)
+            }
+            onEdit(textView.text)
+            return true
+        }
+
+        private func textRange(_ textView: UITextView, _ range: NSRange) -> UITextRange? {
+            guard let start = textView.position(from: textView.beginningOfDocument, offset: range.location),
+                  let end = textView.position(from: start, offset: range.length) else { return nil }
+            return textView.textRange(from: start, to: end)
         }
 
         func textViewDidChange(_ textView: UITextView) {

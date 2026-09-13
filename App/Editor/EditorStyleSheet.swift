@@ -33,8 +33,6 @@ struct EditorStyleSheet {
     let paragraphSpacing: CGFloat
     /// 목록 줄이 시작하는 자리. **보통 문단보다 안쪽**이라야 목록으로 보인다 (빌드 7 · 4번).
     let listIndent: CGFloat
-    /// 접힌 둘째 줄이 마커가 아니라 **글**에 맞춰지도록 더 들어가는 폭.
-    let listHanging: CGFloat
     /// `  - 안쪽` 처럼 겹칠 때 한 단계마다.
     let nestStep: CGFloat
 
@@ -63,7 +61,6 @@ struct EditorStyleSheet {
         lineSpacing = spacing
         paragraphSpacing = after
         listIndent = Metrics.scaledLength(10)
-        listHanging = Metrics.scaledLength(20)
         nestStep = Metrics.scaledLength(16)
 
         func paragraph(_ build: (NSMutableParagraphStyle) -> Void) -> NSParagraphStyle {
@@ -99,8 +96,9 @@ struct EditorStyleSheet {
         }
     }
 
-    /// `depth` 는 목록이 겹친 단계 (`  - 안쪽` 이면 1).
-    func paragraphStyle(for block: StyleToken?, depth: Int = 0) -> NSParagraphStyle {
+    /// `depth` 는 목록이 겹친 단계 (`  - 안쪽` 이면 1), `markerWidth` 는 `- ` 같은
+    /// 마커의 실제 폭 — 접힌 둘째 줄이 그만큼 더 들어가 글에 맞춰진다.
+    func paragraphStyle(for block: StyleToken?, depth: Int = 0, markerWidth: CGFloat = 0) -> NSParagraphStyle {
         switch block {
         case .heading1, .heading2, .heading3, .heading4, .heading5, .heading6: return headingParagraph
         case .listItem, .orderedItem:
@@ -109,7 +107,7 @@ struct EditorStyleSheet {
             style.paragraphSpacing = paragraphSpacing
             let start = listIndent + nestStep * CGFloat(max(0, depth))
             style.firstLineHeadIndent = start
-            style.headIndent = start + listHanging
+            style.headIndent = start + markerWidth
             return style
         case .quote: return quoteParagraph
         case .codeBlock, .tableRow: return monoParagraph
@@ -118,11 +116,11 @@ struct EditorStyleSheet {
     }
 
     /// 문단 전체에 먼저 까는 것. 그 위에 강조 구간과 마커가 덮인다.
-    func base(for block: StyleToken?, depth: Int = 0) -> [NSAttributedString.Key: Any] {
+    func base(for block: StyleToken?, depth: Int = 0, markerWidth: CGFloat = 0) -> [NSAttributedString.Key: Any] {
         [
             .font: font(for: block),
             .foregroundColor: block == .quote ? quoteInk : ink,
-            .paragraphStyle: paragraphStyle(for: block, depth: depth),
+            .paragraphStyle: paragraphStyle(for: block, depth: depth, markerWidth: markerWidth),
         ]
     }
 

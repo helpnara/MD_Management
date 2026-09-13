@@ -43,7 +43,7 @@ actor FolderStore {
     ///
     /// **첫 줄 미리보기를 여기서 만들지 않는다.** 파일을 다 열면 300개에 3초를
     /// 못 맞추고, iCloud 미다운로드 파일은 아예 못 읽는다 (설계서 §7.5 · S1).
-    func notes(in relativeFolder: String = "") -> [NoteSummary] {
+    func notes(in relativeFolder: String = "", includingHidden: Bool = false) -> [NoteSummary] {
         openScopeIfNeeded()
         let folder = relativeFolder.isEmpty ? root : root.appendingPathComponent(relativeFolder)
 
@@ -54,7 +54,8 @@ actor FolderStore {
                 .isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey
             ]
             guard let entries = try? FileManager.default.contentsOfDirectory(
-                at: url, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles]
+                at: url, includingPropertiesForKeys: keys,
+                options: includingHidden ? [] : [.skipsHiddenFiles]
             ) else { return }
 
             for entry in entries {
@@ -202,6 +203,22 @@ actor FolderStore {
         let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
         try createFolder(".trash")
         let target = uniqueRelativePath(name: name, in: ".trash")
+        try move(from: root.appendingPathComponent(relativePath),
+                 to: root.appendingPathComponent(target))
+        return target
+    }
+
+    /// `.trash/` 안의 노트. `notes(in:)` 는 숨김 폴더를 건너뛰므로 따로 있다.
+    /// `파일` 앱은 숨김 폴더를 못 보여 주므로 **이 목록이 휴지통의 유일한 창**이다 (A14).
+    func trashedNotes() -> [NoteSummary] {
+        notes(in: ".trash", includingHidden: true)
+    }
+
+    /// 휴지통에서 최상위로 되돌린다. 같은 이름이 있으면 번호를 붙인다.
+    func restore(_ relativePath: String) throws -> String {
+        openScopeIfNeeded()
+        let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
+        let target = uniqueRelativePath(name: name, in: "")
         try move(from: root.appendingPathComponent(relativePath),
                  to: root.appendingPathComponent(target))
         return target
