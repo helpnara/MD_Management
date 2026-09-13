@@ -98,7 +98,10 @@ final class PathsTests: XCTestCase {
         XCTAssertEqual(Paths.safeFileName("  제목  "), "제목")
         XCTAssertEqual(Paths.safeFileName("끝에 점..."), "끝에 점")
         XCTAssertEqual(Paths.safeFileName(""), "제목 없음")
-        XCTAssertEqual(Paths.safeFileName("///"), "제목 없음", "전부 바뀌고 나면 빈 이름이 된다")
+        // `///` 는 `---` 가 된다 — 구분 기호만 남으면 이름이 아니다.
+        XCTAssertEqual(Paths.safeFileName("///"), "제목 없음")
+        XCTAssertEqual(Paths.safeFileName(" - _ . "), "제목 없음")
+        XCTAssertEqual(Paths.safeFileName("2026-09-13"), "2026-09-13", "숫자가 섞이면 멀쩡한 이름이다")
         XCTAssertEqual(Paths.safeFileName("여러   칸"), "여러 칸")
     }
 

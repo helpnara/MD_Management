@@ -153,6 +153,9 @@ public enum Paths {
         // 연속 공백을 하나로.
         while out.contains("  ") { out = out.replacingOccurrences(of: "  ", with: " ") }
         if out.isEmpty { return fallback }
+        // **구분 기호만 남았으면 이름이 아니다.** `///` 는 `---` 가 되는데,
+        // 그대로 두면 공유 파일이 `---.zip` 으로 나간다.
+        if out.allSatisfy({ $0 == "-" || $0 == "_" || $0 == " " || $0 == "." }) { return fallback }
         return truncate(out, maxUTF8Bytes: 200)
     }
 
