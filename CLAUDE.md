@@ -43,6 +43,11 @@
 | 시뮬레이터 스크린샷 | 화면 | CI macOS 러너 | 15분 |
 | 실기기 TestFlight | iCloud · 문서 피커 · 사진 권한 · 한글 조합 | 사람 | 30분 + 사람 |
 
+**여기서 열어볼 수 없는 주소가 있다.** 네트워크 정책이 막는다 — GitHub Pages
+(`helpnara.github.io`)도 그중 하나다 (2026-09-13 실측: `connect_rejected`).
+`site.yml` 이 초록이어도 **페이지가 실제로 보이는지는 사람이 봐야 한다.**
+워크플로 로그의 `Evaluated environment url` 이 우리가 아는 전부다.
+
 **규칙.**
 
 - 여기서 돌릴 수 있는 것(`python3 Tools/golden/generate.py --check`)을 **다 돌린 뒤에** 푸시한다.
