@@ -113,7 +113,7 @@ final class LibraryModel: ObservableObject {
     /// 3. 같은 파일을 퍼센트 인코딩으로 — 옵시디언이 쓰는 꼴
     func makeAttachmentTest() async {
         guard let store else { return }
-        guard let png = SampleFolder.placeholderPNG() else {
+        guard let png = SampleFolder.testPNG() else {
             lastError = "시험 그림을 만들지 못했습니다"
             return
         }
@@ -138,11 +138,8 @@ final class LibraryModel: ObservableObject {
     private static let attachmentTestNote = """
     # 첨부 시험
 
-    이 노트와 `assets` 의 사진 둘은 **진단 화면의 버튼**이 만든 것입니다.
-    확인이 끝나면 지우셔도 됩니다.
-
-    아래 **셋 다 사진이 보이면** 첨부가 제대로 도는 것입니다.
-    회색 상자에 경로가 뜨는 것이 있으면 그것이 어긋난 자리입니다.
+    **셋 다 그림이 보이면** 통과입니다. 점선 상자에 경로가 뜬 것이 어긋난 자리입니다.
+    확인이 끝나면 이 노트와 `assets` 의 사진을 지우셔도 됩니다.
 
     ## 1. 영문 이름
 

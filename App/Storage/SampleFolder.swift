@@ -35,9 +35,15 @@ enum SampleFolder {
         try? text.write(to: url, atomically: true, encoding: .utf8)
     }
 
-    /// 사진첩 없이 만든 그림. 첨부 시험(진단 화면)도 이것을 쓴다.
+    /// 사진첩 없이 만든 그림.
     static func placeholderPNG() -> Data? {
         renderPlaceholder().pngData()
+    }
+
+    /// 첨부 시험용 — **납작하게** 만든다. 셋이 한 화면에 들어와야
+    /// 어느 것이 안 보이는지 한눈에 갈린다 (진단 화면의 버튼 · CI 스크린샷).
+    static func testPNG() -> Data? {
+        renderPlaceholder(size: CGSize(width: 640, height: 150)).pngData()
     }
 
     /// 사진첩을 안 쓰고 그림 하나를 만든다 — CI 에서도 이미지 링크가 살아 있어야 한다.
@@ -45,19 +51,19 @@ enum SampleFolder {
         try? renderPlaceholder().pngData()?.write(to: url)
     }
 
-    private static func renderPlaceholder() -> UIImage {
-        let size = CGSize(width: 640, height: 360)
+    private static func renderPlaceholder(size: CGSize = CGSize(width: 640, height: 360)) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { context in
             UIColor.secondarySystemBackground.setFill()
             context.fill(CGRect(origin: .zero, size: size))
             UIColor.tertiaryLabel.setStroke()
+            // 크기가 달라져도 같은 모양이 나오게 비율로 그린다.
             let path = UIBezierPath()
-            path.lineWidth = 6
-            path.move(to: CGPoint(x: 80, y: 260))
-            path.addCurve(to: CGPoint(x: 560, y: 110),
-                          controlPoint1: CGPoint(x: 240, y: 40),
-                          controlPoint2: CGPoint(x: 380, y: 330))
+            path.lineWidth = max(4, size.height / 60)
+            path.move(to: CGPoint(x: size.width * 0.125, y: size.height * 0.72))
+            path.addCurve(to: CGPoint(x: size.width * 0.875, y: size.height * 0.30),
+                          controlPoint1: CGPoint(x: size.width * 0.375, y: size.height * 0.11),
+                          controlPoint2: CGPoint(x: size.width * 0.594, y: size.height * 0.92))
             path.stroke()
         }
         return image
