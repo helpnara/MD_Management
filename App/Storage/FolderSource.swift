@@ -196,6 +196,8 @@ struct LaunchOptions: Sendable {
     /// **선언 순서가 곧 초기화 인자 순서다.** 아래 `fromProcess` 와 맞춰 둔다.
     /// 빌드 7 직전에 `attachmentTest` 를 넣으면서 이 순서가 어긋나 한 번 잡혔다.
     var showSettings = false
+    /// 새 노트를 만들고 열고 시작한다 — CI 가 만들기 → 열기 흐름을 찍으려고 쓴다.
+    var newNote = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -206,7 +208,8 @@ struct LaunchOptions: Sendable {
             readingMode: arguments.contains("-readingMode"),
             showDiagnostics: arguments.contains("-diagnostics"),
             attachmentTest: arguments.contains("-attachmentTest"),
-            showSettings: arguments.contains("-settings")
+            showSettings: arguments.contains("-settings"),
+            newNote: arguments.contains("-newNote")
         )
     }
 }

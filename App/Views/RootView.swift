@@ -22,6 +22,7 @@ struct RootView: View {
             library.autoSelectsFirstNote = prefersPreselectedNote
             await library.start()
             if library.launch.attachmentTest { await library.makeAttachmentTest() }
+            if library.launch.newNote { await library.createNote() }
         }
         .task(id: library.selectedFolder) {
             library.autoSelectsFirstNote = prefersPreselectedNote
@@ -44,6 +45,20 @@ struct RootView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) { StatusBanner() }
         // **시트는 하나로 모은다.** 한 뷰에 `.sheet` 를 여러 개 걸면 마지막
         // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
+        .alert("이름 바꾸기", isPresented: renamePresented, presenting: library.renaming) { _ in
+            TextField("파일 이름", text: $library.renameText)
+            Button("바꾸기") { Task { await library.finishRename() } }
+            Button("취소", role: .cancel) { library.renaming = nil }
+        } message: { note in
+            Text("\(note.fileName) 의 새 이름입니다. 확장자는 안 적어도 됩니다.")
+        }
+        // **모든 삭제에 확인.** 지우지 않고 `.trash/` 로 옮긴다 (CLAUDE.md §1).
+        .alert("지울까요?", isPresented: trashPresented, presenting: library.trashing) { _ in
+            Button("지우기", role: .destructive) { Task { await library.finishTrash() } }
+            Button("취소", role: .cancel) { library.trashing = nil }
+        } message: { note in
+            Text("\(note.title) 을 폴더 안 .trash 로 옮깁니다. 파일 앱에서 되돌릴 수 있습니다.")
+        }
         .sheet(item: $library.sheet) { sheet in
             switch sheet {
             case .settings:
@@ -54,6 +69,14 @@ struct RootView: View {
                 IncomingFileSheet(file: file).environmentObject(library)
             }
         }
+    }
+
+    private var renamePresented: Binding<Bool> {
+        Binding(get: { library.renaming != nil }, set: { if !$0 { library.renaming = nil } })
+    }
+
+    private var trashPresented: Binding<Bool> {
+        Binding(get: { library.trashing != nil }, set: { if !$0 { library.trashing = nil } })
     }
 
     /// 아이패드(regular)는 상세 칸이 비면 어색하니 첫 노트를 미리 고른다.
@@ -199,6 +222,29 @@ private struct NoteList: View {
                 }
                 .padding(.vertical, 2)
                 .tag(note.id)
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        library.trashing = note
+                    } label: {
+                        Label("지우기", systemImage: "trash")
+                    }
+                    Button {
+                        library.beginRename(note)
+                    } label: {
+                        Label("이름", systemImage: "pencil.line")
+                    }
+                    .tint(Palette.accent)
+                }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    Task { await library.createNote() }
+                } label: {
+                    Label("새 노트", systemImage: "square.and.pencil")
+                }
+                .keyboardShortcut("n", modifiers: .command)
             }
         }
         .overlay {
@@ -225,7 +271,7 @@ private struct NoteDetail: View {
                 content(for: note)
                     .navigationTitle(note.title)
                     .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { toolbarContent }
+                    .toolbar { toolbarContent(for: note) }
             } else {
                 ContentUnavailableView("노트를 고르세요", systemImage: "doc.text.magnifyingglass")
             }
@@ -276,10 +322,26 @@ private struct NoteDetail: View {
     }
 
     @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
+    private func toolbarContent(for note: NoteSummary) -> some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             // 저장 상태를 숨기지 않는다. 아무 표시가 없는 것이 가장 무섭다.
             SaveIndicator()
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            Menu {
+                Button {
+                    library.beginRename(note)
+                } label: {
+                    Label("이름 바꾸기", systemImage: "pencil.line")
+                }
+                Button(role: .destructive) {
+                    library.trashing = note
+                } label: {
+                    Label("지우기", systemImage: "trash")
+                }
+            } label: {
+                Label("더 보기", systemImage: "ellipsis.circle")
+            }
         }
         ToolbarItem(placement: .topBarTrailing) {
             // 위 토글: 읽기(WKWebView 완전 렌더) ↔ 쓰기(원문). 쓰기가 기본이다.

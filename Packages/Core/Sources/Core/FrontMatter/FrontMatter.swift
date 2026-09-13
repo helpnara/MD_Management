@@ -62,6 +62,29 @@ public enum FrontMatterParser {
         return ParsedNote(frontMatter: parseYAML(yaml), body: body)
     }
 
+    /// 머리말이 차지하는 앞부분의 길이 (**UTF-16**) — 여는 `---` 부터 닫는 줄 끝까지.
+    /// 머리말이 없으면 0. 편집기가 이 구간을 통째로 흐리게 칠할 때 쓴다 (L1).
+    ///
+    /// 문단 하나만 보는 `LineStyler` 는 `title:` 줄이 머리말인지 모른다 — 문서 첫머리라는
+    /// 문맥이 필요하다. 그래서 여기서 길이만 재어 주고, 칠하는 쪽이 그 안의 문단을 가린다.
+    public static func headerLength(of text: String) -> Int {
+        var source = text
+        var bom = 0
+        if source.hasPrefix("\u{FEFF}") {
+            source.removeFirst()
+            bom = 1
+        }
+        let lines = source.components(separatedBy: "\n")
+        guard let first = lines.first, fence(first) == "---" else { return 0 }
+        for index in 1..<lines.count {
+            let mark = fence(lines[index])
+            if mark == "---" || mark == "..." {
+                return bom + lines[0...index].joined(separator: "\n").utf16.count
+            }
+        }
+        return 0
+    }
+
     /// 목록에 보여 줄 제목. 머리말 → 첫 `# 제목` → 파일명 순으로 고른다.
     public static func title(of text: String, fileName: String) -> String {
         let parsed = parse(text)

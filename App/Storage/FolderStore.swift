@@ -168,6 +168,83 @@ actor FolderStore {
             withIntermediateDirectories: true)
     }
 
+    // MARK: - 만들기 · 이름 바꾸기 · 지우기
+
+    /// 새 노트. 이름이 겹치면 실패하지 않고 `이름 2.md` 로 비켜 간다. 만든 경로를 준다.
+    func createNote(named name: String, in folder: String, text: String) throws -> String {
+        openScopeIfNeeded()
+        try createFolder(folder)
+        let path = uniqueRelativePath(name: name, in: folder)
+        try writeText(text, to: path)
+        return path
+    }
+
+    /// 파일 이름을 바꾼다. 확장자를 안 적으면 `.md` 를 붙인다. 새 경로를 준다.
+    /// **덮어쓰지 않는다** — 같은 이름이 있으면 번호를 붙인다.
+    func rename(_ relativePath: String, to newName: String) throws -> String {
+        openScopeIfNeeded()
+        let folder = Paths.directory(of: relativePath)
+        let current = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
+        let safe = Paths.safeFileName(newName)
+        let wanted = Paths.fileExtension(safe).isEmpty ? safe + ".md" : safe
+        guard wanted != current else { return relativePath }
+
+        let target = uniqueRelativePath(name: wanted, in: folder)
+        try move(from: root.appendingPathComponent(relativePath),
+                 to: root.appendingPathComponent(target))
+        return target
+    }
+
+    /// **지우지 않고 `.trash/` 로 옮긴다** (설계서 §7.1 · ADR-0001). `파일` 앱에서
+    /// 되돌릴 수 있다. 영구 삭제는 나중에 설정에서 타이핑 확인으로만 한다.
+    func trash(_ relativePath: String) throws -> String {
+        openScopeIfNeeded()
+        let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
+        try createFolder(".trash")
+        let target = uniqueRelativePath(name: name, in: ".trash")
+        try move(from: root.appendingPathComponent(relativePath),
+                 to: root.appendingPathComponent(target))
+        return target
+    }
+
+    /// 같은 이름이 있으면 `이름 2.md` · `이름 3.md`. 파일 시스템을 직접 본다 —
+    /// 목록은 늦을 수 있다.
+    private func uniqueRelativePath(name: String, in folder: String) -> String {
+        let safe = Paths.safeFileName(name)
+        let ext = Paths.fileExtension(safe)
+        let base = Paths.baseName(safe)
+        let suffix = ext.isEmpty ? ".md" : "." + ext
+        func path(_ file: String) -> String { folder.isEmpty ? file : folder + "/" + file }
+
+        for attempt in 1...999 {
+            let candidate = attempt == 1 ? base + suffix : "\(base) \(attempt)" + suffix
+            if !FileManager.default.fileExists(atPath: root.appendingPathComponent(path(candidate)).path) {
+                return path(candidate)
+            }
+        }
+        return path("\(base) \(Int(Date().timeIntervalSince1970))" + suffix)
+    }
+
+    /// 옮기기도 `NSFileCoordinator` 로. iCloud 가 옮긴 것을 알아야 다른 기기에 전해진다.
+    private func move(from source: URL, to target: URL) throws {
+        var thrown: Error?
+        var coordinationError: NSError?
+        let coordinator = NSFileCoordinator()
+        coordinator.coordinate(writingItemAt: source, options: .forMoving,
+                               writingItemAt: target, options: .forReplacing,
+                               error: &coordinationError) { from, to in
+            do {
+                try FileManager.default.createDirectory(
+                    at: to.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try FileManager.default.moveItem(at: from, to: to)
+                coordinator.item(at: from, didMoveTo: to)
+            } catch {
+                thrown = error
+            }
+        }
+        if let error = thrown ?? coordinationError { throw error }
+    }
+
     // MARK: - 속
 
     private func coordinateRead(_ url: URL, _ body: (URL) -> Void) {

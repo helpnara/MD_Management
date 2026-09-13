@@ -23,10 +23,16 @@ enum MarkdownStyler {
         let touched = text.paragraphRange(for: clamp(range, to: text.length))
         var location = touched.location
         let limit = NSMaxRange(touched)
+        // 머리말은 문서 첫머리라는 문맥이 있어야 안다. 한 번 재어 두고 문단마다 가린다.
+        let header = FrontMatterParser.headerLength(of: storage.string)
 
         repeat {
             let paragraph = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
-            style(paragraph: paragraph, in: text, storage: storage, sheet: sheet)
+            if paragraph.location < header {
+                storage.setAttributes(sheet.frontMatter(), range: paragraph)
+            } else {
+                style(paragraph: paragraph, in: text, storage: storage, sheet: sheet)
+            }
             let next = NSMaxRange(paragraph)
             // 문단이 앞으로 안 가면 멈춘다 — 무한 반복 막이.
             if next <= location { break }
@@ -52,7 +58,13 @@ enum MarkdownStyler {
         }
         let style = LineStyler.style(paragraph: text.substring(with: line))
 
-        storage.setAttributes(sheet.base(for: style.block), range: paragraph)
+        // 목록의 겹친 단계 — 마커 앞의 빈칸 수로 안다 (둘에 한 단계).
+        var depth = 0
+        if style.block == .listItem || style.block == .orderedItem,
+           let marker = style.markers.first {
+            depth = marker.start / 2
+        }
+        storage.setAttributes(sheet.base(for: style.block, depth: depth), range: paragraph)
 
         for span in style.inlineSpans {
             let range = NSRange(location: line.location + span.start, length: span.length)

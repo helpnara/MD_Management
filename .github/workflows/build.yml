@@ -308,6 +308,8 @@ jobs:
           # **설정 화면** — `파일` 앱에서 여는 방법을 적어 둔 곳. 문장이 길어
           # 큰 글씨에서 잘리기 쉬우므로 한 장 찍어 둔다.
           shoot 09-settings.png -sampleFolder -settings
+          # **새 노트** — 만들기 → 열기 흐름. 편집기에 `# 새 노트` 한 줄이 보여야 한다.
+          shoot 10-new-note.png -sampleFolder -newNote
           # **첨부 시험** — 사진 셋(영문 · 한글+공백 · 퍼센트 인코딩)이 다
           # 그려지는지. 실기기로 내려보내기 전에 지나는 칸이다 (A3 · A13).
           shoot 08-attachment-test.png -sampleFolder -attachmentTest
@@ -376,6 +378,7 @@ jobs:
             "screenshots/05-reading.png:0,0.15,1,0.75" \
             "screenshots/07-diagnostics.png:0,0.15,1,0.80" \
             "screenshots/09-settings.png:0,0.15,1,0.80" \
+            "screenshots/10-new-note.png:0,0.12,1,0.40" \
             "screenshots/dark/02-note.png:0,0.15,1,0.75" \
             "screenshots/ipad/01-split.png:0.56,0.06,1,0.90" \
             "screenshots/ipad/02-reading.png:0.56,0.06,1,0.90"

@@ -35,6 +35,12 @@ final class LibraryModel: ObservableObject {
     @Published var selectedNoteID: String?
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
     @Published var isReading = false
+    /// 이름을 바꾸는 중인 노트 · 새 이름. 화면의 알림창이 이것을 본다.
+    @Published var renaming: NoteSummary?
+    @Published var renameText = ""
+    /// 지울지 묻는 중인 노트. **모든 삭제에 확인** (CLAUDE.md §1).
+    @Published var trashing: NoteSummary?
+
     /// 지금 떠 있는 시트. **하나로 모아 둔다** — `.sheet` 를 한 뷰에 여러 개
     /// 걸면 마지막 것만 뜬다 (SwiftUI 의 오랜 함정).
     @Published var sheet: Sheet?
@@ -252,36 +258,20 @@ final class LibraryModel: ObservableObject {
     }
 
     /// 밖의 파일을 내 폴더로 **복사**해 열어 준다. 원본은 건드리지 않는다.
+    /// 같은 이름이 있으면 저장소가 `이름 2.md` 로 비켜 간다 — 남의 노트를 덮지 않는다.
     func importIncoming(_ file: IncomingFile) async {
         guard let store else { return }
-        let name = uniqueName(for: file.name, in: selectedFolder, store: store)
-        let target = selectedFolder.isEmpty ? name : selectedFolder + "/" + name
+        await save()
         do {
-            try await store.writeText(file.text, to: target)
+            let path = try await store.createNote(named: file.name, in: selectedFolder, text: file.text)
             sheet = nil
             await reloadNotes()
-            selectedNoteID = target
+            selectedNoteID = path
             isReading = false
             lastError = nil
         } catch {
             lastError = "가져오지 못했습니다: \(error.localizedDescription)"
         }
-    }
-
-    /// 같은 이름이 있으면 `이름 2.md` · `이름 3.md` 로 비켜 간다.
-    /// **덮어쓰지 않는다** — 가져오기가 남의 노트를 지우면 안 된다.
-    private func uniqueName(for raw: String, in folder: String, store: FolderStore) -> String {
-        let safe = Paths.safeFileName(raw)
-        let base = Paths.baseName(safe)
-        let ext = Paths.fileExtension(safe)
-        let suffix = ext.isEmpty ? ".md" : "." + ext
-
-        for attempt in 1...99 {
-            let name = attempt == 1 ? base + suffix : "\(base) \(attempt)" + suffix
-            let path = folder.isEmpty ? name : folder + "/" + name
-            if !notes.contains(where: { $0.relativePath == path }) { return name }
-        }
-        return "\(base) \(Int(Date().timeIntervalSince1970))" + suffix
     }
 
     /// 사용자가 복사해 붙일 수 있는 것. **글과 사진은 담지 않는다.**
