@@ -183,7 +183,15 @@ public enum MarkdownHTML {
     a { color: var(--yb-accent); text-decoration: underline; text-underline-offset: 0.15em; }
     ul, ol { margin: 0.9em 0; padding-left: 1.4em; }
     li { margin: 0.25em 0; }
-    li input[type="checkbox"] { margin-right: 0.35em; }
+    /* 빈 줄이 있는 목록은 항목마다 <p> 가 생긴다. 그대로 두면 항목 사이가
+       문단만큼 벌어진다 (빌드 4 스크린샷). */
+    li > p { margin: 0.3em 0; }
+    li > p:last-child { margin-bottom: 0; }
+    li input[type="checkbox"] { margin-right: 0.35em; vertical-align: baseline; }
+    /* 작업 목록 — 점을 없애고 체크박스와 글을 **한 줄에** 둔다.
+       빌드 4 에서 점 · 체크박스가 한 줄, 글이 다음 줄로 갈라졌다. */
+    li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.15em; }
+    li:has(> input[type="checkbox"]) > p { display: inline; }
     blockquote {
       margin: 1em 0;
       padding: 0.1em 0 0.1em 0.9em;

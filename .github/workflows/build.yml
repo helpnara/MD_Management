@@ -231,8 +231,11 @@ jobs:
                 continue
               fi
               # (3) 아직 안 그려진 화면은 단색이라 PNG 가 유난히 작다.
-              #     이 문턱값은 첫 초록 빌드의 실제 크기를 보고 조정한다.
-              if [ "$size" -ge "${SHOOT_MIN:-50000}" ]; then
+              #     **기기마다 다르다** — 화소 수가 다르기 때문이다. 빌드 4 에서
+              #     아이패드의 빈 읽기 화면이 119,762바이트로 50,000 문턱을 그냥
+              #     넘어갔다. 실제 값: 아이폰 목록 124KB · 아이패드 3단 307KB ·
+              #     아이패드 빈 화면 119KB. 그래서 아이패드는 250,000 을 쓴다.
+              if [ "$size" -ge "${SHOOT_MIN:-100000}" ]; then
                 echo "찍음: $file ($size 바이트) $*"
                 return 0
               fi
@@ -273,7 +276,7 @@ jobs:
           IPAD="${{ steps.ipad.outputs.udid }}"
           if [ -n "$IPAD" ]; then
             echo "── iPad: ${{ steps.ipad.outputs.name }} ──"
-            SHOOT_WAIT=12; SHOOT_ATTEMPTS=4
+            SHOOT_WAIT=12; SHOOT_ATTEMPTS=4; SHOOT_MIN=250000
             xcrun simctl boot "$IPAD" || true
             xcrun simctl bootstatus "$IPAD" -b
             status_bar "$IPAD"

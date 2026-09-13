@@ -186,11 +186,14 @@ private struct NoteDetail: View {
     private func content(for note: NoteSummary) -> some View {
         if library.isReading {
             // 읽기 — 표 · 코드 · 핀치 줌이 공짜다 (ADR-0004)
+            // **`ignoresSafeArea` 를 쓰지 않는다.** 바깥 `NavigationSplitView` 에
+            // 아래쪽 `safeAreaInset`(배너)이 걸려 있는데 안쪽에서 안전 영역을
+            // 무시하면, 아이패드에서 이 뷰가 칸 밖으로 넘쳐 화면 전체를 덮었다
+            // (빌드 4 스크린샷 — 사이드바 · 목록까지 사라졌다).
             NoteWebView(
                 html: library.pageHTML,
                 assets: library.assetProvider ?? EmptyAssetProvider(),
                 onOpen: handle)
-            .ignoresSafeArea(edges: .bottom)
         } else {
             // 쓰기 — 1주차는 아직 라이브 편집기가 아니다. 원문을 그대로 보여 준다.
             // 2주차에 ADR-0005 의 L1 → L2 로 갈아 끼운다.
