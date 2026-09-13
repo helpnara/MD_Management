@@ -88,6 +88,13 @@
       "file": "escape-root.md",
       "notePath": "escape-root.md",
       "existing": []
+    },
+    {
+      "file": "rich.md",
+      "notePath": "rich.md",
+      "existing": [
+        "assets/그림.png"
+      ]
     }
   ]
 }

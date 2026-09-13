@@ -40,10 +40,19 @@ MARKDOWN_EXTS = {"md", "markdown"}
 
 # ── 링크 뽑기 — markdown-it-py 로 (swift-markdown 과 다른 구현) ────────────────
 
+def make_parser() -> MarkdownIt:
+    """CommonMark + 표.
+
+    `swift-markdown` 은 cmark-gfm 이라 표를 기본으로 읽는다. linkify(맨 URL 을
+    링크로 바꾸는 것)는 양쪽 다 안 하므로 켜지 않는다.
+    """
+    return MarkdownIt("commonmark").enable(["table", "strikethrough"])
+
+
 def extract_links(text: str) -> list[dict]:
     """머리말을 뗀 본문에서 이미지와 링크를 나온 순서대로."""
     _, body = split_front_matter(text)
-    md = MarkdownIt("commonmark")
+    md = make_parser()
     found: list[dict] = []
 
     def walk(tokens):
@@ -191,6 +200,91 @@ def file_extension(path: str) -> str:
     return name[dot + 1:].lower() if dot > 0 else ""
 
 
+# ── 뷰어 HTML — 설계서 §7.3 · ADR-0004 를 보고 다시 구현 ────────────────────
+
+# `CharacterSet.urlPathAllowed` 와 같은 집합이다. Swift 의 encode(path:) 와 맞춰야 한다.
+PATH_SAFE = "/-._~!$&'()*+,;=:@"
+
+
+def asset_url(path: str) -> str:
+    return "yb://note/" + urllib.parse.quote(nfc(path), safe=PATH_SAFE)
+
+
+def html_facts(note_path: str, text: str, existing: set[str]) -> dict:
+    """뷰어가 내놓아야 하는 **구조**를 markdown-it 으로 따로 센다.
+
+    HTML 문자열을 통째로 견주지 않는 이유: 두 구현의 줄바꿈 · 속성 순서 같은
+    껍데기 차이가 진짜 차이를 덮는다. 세는 것은 뜻이 있는 것들뿐이다.
+    """
+    _, body = split_front_matter(text)
+    tokens = make_parser().parse(body)
+
+    headings: list[int] = []
+    list_items = 0
+    tables = 0
+    code_blocks = 0
+    for token in tokens:
+        if token.type == "heading_open":
+            headings.append(int(token.tag[1:]))
+        elif token.type == "list_item_open":
+            list_items += 1
+        elif token.type == "table_open":
+            tables += 1
+        elif token.type in ("fence", "code_block"):
+            code_blocks += 1
+
+    # 작업 목록(`- [ ]`)은 CommonMark 가 아니라 GFM 확장이다. markdown-it 의
+    # commonmark 프리셋은 안 읽으므로 줄로 직접 센다.
+    checked = unchecked = 0
+    for line in body.split("\n"):
+        stripped = line.lstrip()
+        for prefix in ("- ", "* ", "+ "):
+            if stripped.startswith(prefix):
+                rest = stripped[len(prefix):]
+                if rest.startswith("[ ] "):
+                    unchecked += 1
+                elif rest[:4].lower() == "[x] ":
+                    checked += 1
+                break
+
+    image_srcs: list[str] = []
+    missing: list[str] = []
+    seen: set[str] = set()
+
+    def miss(raw: str):
+        if raw not in seen:
+            seen.add(raw)
+            missing.append(raw)
+
+    for link in extract_links(text):
+        target = resolve(link["destination"], note_path)
+        kind, value = target["kind"], target["value"]
+        if link["kind"] == "image":
+            if kind == "empty":
+                continue
+            if kind == "relative" and value in existing:
+                image_srcs.append(asset_url(value))
+            else:
+                # 외부 이미지도 안 보인다 — CSP 가 네트워크를 막는다.
+                miss(link["destination"])
+        else:
+            if kind == "relative" and value not in existing:
+                miss(link["destination"])
+            elif kind == "outside":
+                miss(link["destination"])
+
+    return {
+        "headings": headings,
+        "listItems": list_items,
+        "checkboxes": {"checked": checked, "unchecked": unchecked},
+        "tables": tables,
+        "codeBlocks": code_blocks,
+        "imageSrcs": image_srcs,
+        "missing": missing,
+        "missingDecoded": [nfc(urllib.parse.unquote(m)) for m in missing],
+    }
+
+
 # ── 공유 묶음 — 설계서 §7.6 을 보고 다시 구현 ────────────────────────────────
 
 def share_plan(note_path: str, text: str, existing: set[str], follow: bool) -> dict:
@@ -272,6 +366,7 @@ def build() -> dict:
             "links": links,
             "resolved": [resolved_entry(link, note_path) for link in links],
             "sharePlan": share_plan(note_path, text, existing, follow),
+            "html": html_facts(note_path, text, existing),
         })
 
     return {

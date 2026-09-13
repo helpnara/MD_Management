@@ -32,6 +32,20 @@ final class GoldenTests: XCTestCase {
             let missing: [String]
             let missingDecoded: [String]
         }
+        struct Checkboxes: Decodable {
+            let checked: Int
+            let unchecked: Int
+        }
+        struct HTMLFacts: Decodable {
+            let headings: [Int]
+            let listItems: Int
+            let checkboxes: Checkboxes
+            let tables: Int
+            let codeBlocks: Int
+            let imageSrcs: [String]
+            let missing: [String]
+            let missingDecoded: [String]
+        }
         struct Case: Decodable {
             let name: String
             let file: String
@@ -45,6 +59,7 @@ final class GoldenTests: XCTestCase {
             let links: [Link]
             let resolved: [Resolved]
             let sharePlan: Plan
+            let html: HTMLFacts
         }
         let cases: [Case]
     }

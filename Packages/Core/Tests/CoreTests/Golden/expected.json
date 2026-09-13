@@ -8,6 +8,21 @@
       "file": "basic.md",
       "followLinkedNotes": true,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 1
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [],
+        "listItems": 2,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
+      },
       "links": [],
       "name": "basic.md",
       "notePath": "회의/2026-09-13 회의.md",
@@ -38,6 +53,27 @@
           "2026"
         ],
         "title": "사진이 둘인 노트"
+      },
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/%ED%9A%8C%EC%9D%98/assets/2026-09-13-1.jpg"
+        ],
+        "listItems": 0,
+        "missing": [
+          "assets/%EC%82%AC%EB%9D%BC%EC%A7%84.png"
+        ],
+        "missingDecoded": [
+          "assets/사라진.png"
+        ],
+        "tables": 0
       },
       "links": [
         {
@@ -97,6 +133,24 @@
       "file": "korean-encoded.md",
       "followLinkedNotes": true,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg",
+          "yb://note/assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg"
+        ],
+        "listItems": 0,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
+      },
       "links": [
         {
           "destination": "assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg",
@@ -141,6 +195,23 @@
       "file": "nfd.md",
       "followLinkedNotes": true,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg"
+        ],
+        "listItems": 0,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
+      },
       "links": [
         {
           "destination": "assets/%E1%84%82%E1%85%A2%20%E1%84%89%E1%85%A1%E1%84%8C%E1%85%B5%E1%86%AB.jpg",
@@ -174,6 +245,27 @@
       "file": "escape.md",
       "followLinkedNotes": true,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [],
+        "listItems": 0,
+        "missing": [
+          "../%EB%B9%84%EB%B0%80/%EC%97%B4%EC%87%A0.png",
+          "../../etc/passwd"
+        ],
+        "missingDecoded": [
+          "../비밀/열쇠.png",
+          "../../etc/passwd"
+        ],
+        "tables": 0
+      },
       "links": [
         {
           "destination": "../%EB%B9%84%EB%B0%80/%EC%97%B4%EC%87%A0.png",
@@ -221,6 +313,21 @@
       "file": "external.md",
       "followLinkedNotes": true,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [],
+        "listItems": 0,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
+      },
       "links": [
         {
           "destination": "https://example.com/a.png",
@@ -283,6 +390,23 @@
       "file": "linked.md",
       "followLinkedNotes": true,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/assets/%EA%B7%B8%EB%A6%BC.png"
+        ],
+        "listItems": 0,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
+      },
       "links": [
         {
           "destination": "%EC%95%84%EC%9D%B4%EB%94%94%EC%96%B4/%EC%95%B1%20%EA%B5%AC%EC%83%81.md",
@@ -329,6 +453,23 @@
       "file": "linked.md",
       "followLinkedNotes": false,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/assets/%EA%B7%B8%EB%A6%BC.png"
+        ],
+        "listItems": 0,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
+      },
       "links": [
         {
           "destination": "%EC%95%84%EC%9D%B4%EB%94%94%EC%96%B4/%EC%95%B1%20%EA%B5%AC%EC%83%81.md",
@@ -373,6 +514,23 @@
       "file": "nested.md",
       "followLinkedNotes": true,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/assets/thumb.png"
+        ],
+        "listItems": 0,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
+      },
       "links": [
         {
           "destination": "https://example.com",
@@ -422,6 +580,19 @@
         ],
         "title": "따옴표 붙은 제목"
       },
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [],
+        "imageSrcs": [],
+        "listItems": 0,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
+      },
       "links": [],
       "name": "frontmatter-block.md",
       "notePath": "frontmatter-block.md",
@@ -443,6 +614,21 @@
       "file": "no-frontmatter.md",
       "followLinkedNotes": true,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [],
+        "listItems": 0,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
+      },
       "links": [],
       "name": "no-frontmatter.md",
       "notePath": "no-frontmatter.md",
@@ -471,6 +657,23 @@
           "줄바꿈"
         ],
         "title": "CRLF 노트"
+      },
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/assets/a.png"
+        ],
+        "listItems": 0,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 0
       },
       "links": [
         {
@@ -505,6 +708,25 @@
       "file": "escape-root.md",
       "followLinkedNotes": true,
       "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "headings": [
+          1
+        ],
+        "imageSrcs": [],
+        "listItems": 0,
+        "missing": [
+          "../%EB%B0%94%EA%B9%A5.png"
+        ],
+        "missingDecoded": [
+          "../바깥.png"
+        ],
+        "tables": 0
+      },
       "links": [
         {
           "destination": "../%EB%B0%94%EA%B9%A5.png",
@@ -534,6 +756,67 @@
       },
       "source": "# 최상위에서 폴더 밖으로\n\n노트가 최상위에 있으면 `../` 는 곧바로 폴더 밖이다.\n\n![](../바깥.png)\n",
       "title": "최상위에서 폴더 밖으로"
+    },
+    {
+      "body": "\n# 표와 코드가 든 노트\n\n## 표\n\n| 하는 것 | 어디서 |\n|---|---|\n| 보기 · 고치기 | 파일을 열면 바로 |\n| 찾기 | 아래 검색 |\n\n## 할 일\n\n- [x] 끝낸 것\n- [ ] 안 한 것\n- [ ] 또 안 한 것\n- 체크박스가 아닌 항목\n\n## 코드\n\n```swift\nlet note = try store.readText(at: \"회의.md\")\n```\n\n들여쓰기 코드도 하나:\n\n    plain code\n\n> 인용문 한 줄.\n\n---\n\n*기울임* 과 **굵게** 와 `인라인 코드`.\n\n![그림](assets/그림.png)\n",
+      "existing": [
+        "assets/그림.png"
+      ],
+      "file": "rich.md",
+      "followLinkedNotes": true,
+      "frontMatter": {
+        "created": null,
+        "tags": [
+          "렌더"
+        ],
+        "title": "표와 코드가 든 노트"
+      },
+      "html": {
+        "checkboxes": {
+          "checked": 1,
+          "unchecked": 2
+        },
+        "codeBlocks": 2,
+        "headings": [
+          1,
+          2,
+          2,
+          2
+        ],
+        "imageSrcs": [
+          "yb://note/assets/%EA%B7%B8%EB%A6%BC.png"
+        ],
+        "listItems": 4,
+        "missing": [],
+        "missingDecoded": [],
+        "tables": 1
+      },
+      "links": [
+        {
+          "destination": "assets/%EA%B7%B8%EB%A6%BC.png",
+          "kind": "image"
+        }
+      ],
+      "name": "rich.md",
+      "notePath": "rich.md",
+      "resolved": [
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "assets/그림.png"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "rich.md",
+          "assets/그림.png"
+        ],
+        "missing": [],
+        "missingDecoded": [],
+        "mode": "zip"
+      },
+      "source": "---\ntitle: 표와 코드가 든 노트\ntags: [렌더]\n---\n\n# 표와 코드가 든 노트\n\n## 표\n\n| 하는 것 | 어디서 |\n|---|---|\n| 보기 · 고치기 | 파일을 열면 바로 |\n| 찾기 | 아래 검색 |\n\n## 할 일\n\n- [x] 끝낸 것\n- [ ] 안 한 것\n- [ ] 또 안 한 것\n- 체크박스가 아닌 항목\n\n## 코드\n\n```swift\nlet note = try store.readText(at: \"회의.md\")\n```\n\n들여쓰기 코드도 하나:\n\n    plain code\n\n> 인용문 한 줄.\n\n---\n\n*기울임* 과 **굵게** 와 `인라인 코드`.\n\n![그림](assets/그림.png)\n",
+      "title": "표와 코드가 든 노트"
     }
   ]
 }
