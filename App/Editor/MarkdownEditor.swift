@@ -21,20 +21,14 @@ struct MarkdownEditor: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(onEdit: onEdit) }
 
     func makeUIView(context: Context) -> UITextView {
-        let storage = MarkdownTextStorage()
-        storage.sheet = EditorStyleSheet()
-
-        // TextKit 2 — L3 의 이미지 · 체크박스 프래그먼트가 여기에 붙는다 (ADR-0005).
-        let content = NSTextContentStorage()
-        content.textStorage = storage
-        let layout = NSTextLayoutManager()
-        content.addTextLayoutManager(layout)
-        let container = NSTextContainer(size: CGSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
-        container.widthTracksTextView = true
-        layout.textContainer = container
-
-        let view = UITextView(frame: .zero, textContainer: container)
+        // **TextKit 2 를 손으로 조립하지 않는다.** 빌드 7 에서 NSTextContentStorage ·
+        // NSTextLayoutManager · 커스텀 NSTextStorage 를 직접 엮었다가 빈 화면이
+        // 떴다 — 오류 하나 없이. 여기서는 컴파일해 볼 수 없는 조립이다.
+        // 이 생성자가 같은 TextKit 2 를 만들어 주고, 칠하는 일은 대리자로 붙는다.
+        let view = UITextView(usingTextLayoutManager: true)
         view.delegate = context.coordinator
+        view.textStorage.delegate = context.coordinator
+
         view.backgroundColor = .systemBackground
         view.alwaysBounceVertical = true
         view.keyboardDismissMode = .interactive
@@ -42,16 +36,16 @@ struct MarkdownEditor: UIViewRepresentable {
         view.smartQuotesType = .no
         view.smartDashesType = .no
         view.smartInsertDeleteType = .no
+        // 빈 노트에 첫 글자를 칠 때 쓸 기본값. 없으면 12pt 로 찍힌다.
+        view.font = .preferredFont(forTextStyle: .body)
+        view.textColor = .label
+
         let gutter = Metrics.gutter
         view.textContainerInset = UIEdgeInsets(top: gutter, left: gutter,
                                                bottom: gutter * 3, right: gutter)
 
-        // **셋 다 붙들어 둔다.** TextKit 2 에서 `NSTextContainer.textLayoutManager` 와
-        // `NSTextLayoutManager.textContentManager` 는 약한 참조다. 여기서 놓으면
-        // 화면이 빈 채로 뜬다 — 아무 오류도 나지 않는다.
-        context.coordinator.storage = storage
-        context.coordinator.content = content
-        context.coordinator.layout = layout
+        context.coordinator.view = view
+        context.coordinator.sheet = EditorStyleSheet()
         return view
     }
 
@@ -60,55 +54,116 @@ struct MarkdownEditor: UIViewRepresentable {
         // 클로저는 화면이 다시 그려질 때마다 새로 온다. 묵은 것을 들고 있으면
         // 저장이 **이전 노트로** 간다.
         coordinator.onEdit = onEdit
-        coordinator.load(noteID: noteID, text: text)
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
+        coordinator.load(noteID: noteID, text: text)
     }
 
     @MainActor
-    final class Coordinator: NSObject, UITextViewDelegate {
+    final class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
         var onEdit: @MainActor (String) -> Void
-        var storage: MarkdownTextStorage?
-        var content: NSTextContentStorage?
-        var layout: NSTextLayoutManager?
+        weak var view: UITextView?
+        var sheet: EditorStyleSheet?
+
         private var loadedNoteID: String?
+        private var loadedText = ""
+        private var isStyling = false
+        /// 한글 조합 중에는 속성을 건드리지 않는다 — 조합이 끊겨 자음과 모음이
+        /// 따로 찍힌다 (안정화 기준 S10).
+        private var isComposing = false
         private var sizeCategory = UIApplication.shared.preferredContentSizeCategory
 
         init(onEdit: @escaping @MainActor (String) -> Void) {
             self.onEdit = onEdit
         }
 
+        /// 노트를 열 때 · 파일 글이 뒤늦게 올 때.
+        ///
+        /// **글은 화면보다 늦게 온다.** 노트를 고르면 화면이 먼저 그려지고 파일은
+        /// 그 뒤에 읽힌다. 그 사이 한 번은 빈 문자열로 그려지는데, 노트 이름만
+        /// 보고 건너뛰면 **편집기가 빈 채로 남는다** — 빌드 7 스크린샷에서 잡혔다.
         func load(noteID: String, text: String) {
-            guard loadedNoteID != noteID, let storage else { return }
-            loadedNoteID = noteID
-            storage.load(text)
+            guard let view else { return }
+
+            if noteID != loadedNoteID {
+                loadedNoteID = noteID
+                loadedText = text
+                view.text = text
+                return
+            }
+            // 편집기와 파일이 이미 같다 (방금 저장했다).
+            if view.text == text {
+                loadedText = text
+                return
+            }
+            // 글이 바뀌었다. **사용자가 손대지 않았을 때만** 갈아 끼운다 —
+            // 손댄 뒤라면 그것이 최신이고, 덮으면 자료가 사라진다.
+            guard view.text == loadedText else { return }
+            loadedText = text
+            view.text = text
         }
 
         /// Dynamic Type 이 바뀌면 값 묶음을 새로 만들어 전체를 다시 칠한다.
         func refreshStyleIfNeeded(for traits: UITraitCollection) {
-            guard traits.preferredContentSizeCategory != sizeCategory, let storage else { return }
+            guard traits.preferredContentSizeCategory != sizeCategory else { return }
             sizeCategory = traits.preferredContentSizeCategory
-            storage.restyleAll(sheet: EditorStyleSheet())
+            sheet = EditorStyleSheet()
+            guard let storage = view?.textStorage, let sheet else { return }
+            isStyling = true
+            MarkdownStyler.restyleAll(storage, with: sheet)
+            isStyling = false
+        }
+
+        // MARK: - NSTextStorageDelegate
+
+        /// **속성을 바꾸라고 애플이 정해 둔 자리다.** 여기서만 칠하면 되돌리기
+        /// 스택이 속성 변경까지 기록하지 않는다 — 밖에서 바꾸면 `⌘Z` 가 이상해진다.
+        ///
+        /// `nonisolated` 로 두고 주 액터를 가정한다. 이 대리자는 언제나 주
+        /// 스레드에서 불리고, 이렇게 적으면 UIKit 이 이 프로토콜에 `@MainActor` 를
+        /// 붙였든 안 붙였든 컴파일된다.
+        nonisolated func textStorage(_ storage: NSTextStorage,
+                                     didProcessEditing editedMask: NSTextStorage.EditActions,
+                                     range editedRange: NSRange,
+                                     changeInLength delta: Int) {
+            // 건너보내는 것은 값뿐이다. 저장소는 안에서 `view` 로 다시 집는다 —
+            // `NSTextStorage` 는 `Sendable` 이 아니라 그대로 넘기면 막힌다.
+            let mask = editedMask
+            let edited = editedRange
+            MainActor.assumeIsolated {
+                guard mask.contains(.editedCharacters),
+                      !isComposing, !isStyling,
+                      let sheet, let storage = view?.textStorage else { return }
+                isStyling = true
+                MarkdownStyler.restyle(storage, touching: edited, with: sheet)
+                isStyling = false
+            }
         }
 
         // MARK: - UITextViewDelegate
 
-        /// **한글 조합 중에는 속성을 건드리지 않는다** (S10).
-        ///
-        /// 조합 중 속성 갱신은 조합을 끊어 자음과 모음이 따로 찍힌다. 글자가
-        /// 바뀌기 **전에** 켜 두고, 조합이 끝난 뒤 그 문단만 갚아 칠한다.
-        /// 여기서 세운 것이 맞는지는 **실기기만 판정할 수 있다.**
+        /// 글자가 바뀌기 **전에** 조합 중인지 본다. 조합 중 속성 갱신은 조합을
+        /// 끊는다. 여기서 세운 것이 맞는지는 **실기기만 판정할 수 있다** (S10).
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
-            storage?.isComposing = textView.markedTextRange != nil
+            isComposing = textView.markedTextRange != nil
             return true
         }
 
         func textViewDidChange(_ textView: UITextView) {
             let composing = textView.markedTextRange != nil
-            storage?.isComposing = composing
-            if !composing {
-                storage?.restyleParagraph(containing: textView.selectedRange.location)
+            let wasComposing = isComposing
+            isComposing = composing
+
+            // 조합이 끝났다. 건너뛴 재칠을 여기서 갚는다.
+            if wasComposing, !composing, let sheet {
+                isStyling = true
+                MarkdownStyler.restyle(textView.textStorage,
+                                       touching: textView.selectedRange, with: sheet)
+                isStyling = false
             }
+            // **여기서 `loadedText` 를 갱신하지 않는다.** 갱신하면 "사용자가
+            // 손대지 않았나" 가 늘 참이 되어, 뒤늦게 온 파일 글이 방금 친 것을
+            // 덮는다. 파일과 편집기가 같아지는 것은 저장 뒤 `load` 가 판정한다.
             onEdit(textView.text)
         }
     }

@@ -1,0 +1,68 @@
+import UIKit
+import Core
+
+/// 마크다운 원문에 **속성만** 건다 (ADR-0005 L1).
+///
+/// 글자는 하나도 지우거나 바꿔 넣지 않는다. 보이는 모습의 차이는 전부 속성이다.
+/// 그래서 저장은 `textStorage.string` 을 그대로 쓰면 끝이고, 매핑 버그가 생길
+/// 자리가 없다.
+///
+/// **`NSTextStorage` 를 상속하지 않는다.** 빌드 7 에서 직접 조립한 TextKit 2
+/// 더미(`NSTextContentStorage` + `NSTextLayoutManager` + 커스텀 저장소)가 빈
+/// 화면을 냈다 — 오류 하나 없이. 여기서는 컴파일해 볼 수 없는 조립이라 위험이
+/// 크다. `UITextView(usingTextLayoutManager:)` 가 만들어 준 저장소에
+/// **대리자로 붙는 쪽**이 훨씬 단순하고, `didProcessEditing` 은 속성을 바꾸라고
+/// 애플이 정해 둔 바로 그 자리다.
+enum MarkdownStyler {
+
+    /// 고친 문단만 다시 칠한다. 전체 재칠은 파일을 열 때 한 번뿐이다 (S11).
+    static func restyle(_ storage: NSTextStorage, touching range: NSRange, with sheet: EditorStyleSheet) {
+        let text = storage.string as NSString
+        guard text.length > 0 else { return }
+
+        let touched = text.paragraphRange(for: clamp(range, to: text.length))
+        var location = touched.location
+        let limit = NSMaxRange(touched)
+
+        repeat {
+            let paragraph = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+            style(paragraph: paragraph, in: text, storage: storage, sheet: sheet)
+            let next = NSMaxRange(paragraph)
+            // 문단이 앞으로 안 가면 멈춘다 — 무한 반복 막이.
+            if next <= location { break }
+            location = next
+        } while location < limit && location < text.length
+    }
+
+    static func restyleAll(_ storage: NSTextStorage, with sheet: EditorStyleSheet) {
+        restyle(storage, touching: NSRange(location: 0, length: storage.length), with: sheet)
+    }
+
+    private static func clamp(_ range: NSRange, to length: Int) -> NSRange {
+        let location = max(0, min(range.location, max(0, length - 1)))
+        return NSRange(location: location, length: min(range.length, length - location))
+    }
+
+    private static func style(paragraph: NSRange, in text: NSString,
+                              storage: NSTextStorage, sheet: EditorStyleSheet) {
+        // `paragraphRange` 는 끝의 줄바꿈까지 준다. `LineStyler` 는 줄 하나만 본다.
+        var line = paragraph
+        if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A {
+            line.length -= 1
+        }
+        let style = LineStyler.style(paragraph: text.substring(with: line))
+
+        storage.setAttributes(sheet.base(for: style.block), range: paragraph)
+
+        for span in style.inlineSpans {
+            let range = NSRange(location: line.location + span.start, length: span.length)
+            guard NSMaxRange(range) <= NSMaxRange(line) else { continue }
+            sheet.apply(span.token, to: storage, range: range)
+        }
+        for mark in style.markers {
+            let range = NSRange(location: line.location + mark.start, length: mark.length)
+            guard NSMaxRange(range) <= NSMaxRange(line) else { continue }
+            sheet.dimMarker(in: storage, range: range)
+        }
+    }
+}

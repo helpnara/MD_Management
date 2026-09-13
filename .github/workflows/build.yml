@@ -359,6 +359,27 @@ jobs:
           echo "전부 찍었습니다."
 
       # **아티팩트를 커밋보다 앞에 둔다.** 커밋이 실패하면 결과물을 못 받는다.
+      # **화면은 떴는데 안이 비었는가.** 파일 크기로는 이것을 못 가린다 —
+      # 빌드 7 에서 빈 편집기가 114,161바이트를 내고 문턱(100,000)을 넘어갔다.
+      # 여기서는 내용 칸의 화소를 직접 세어 본다. 볼 곳이 화면마다 다르므로
+      # (아이패드는 오른쪽 칸이 본문이다) 비율로 적어 준다.
+      - name: 내용 칸이 정말 그려졌나 (화소)
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check pillow || {
+            echo "::warning::pillow 를 못 받았습니다 — 화소 검사를 건너뜁니다"
+            exit 0
+          }
+          python3 Tools/ci/not-blank.py \
+            "screenshots/01-list.png:0,0.12,1,0.75" \
+            "screenshots/02-note.png:0,0.15,1,0.75" \
+            "screenshots/03-large-text.png:0,0.15,1,0.75" \
+            "screenshots/05-reading.png:0,0.15,1,0.75" \
+            "screenshots/07-diagnostics.png:0,0.15,1,0.80" \
+            "screenshots/09-settings.png:0,0.15,1,0.80" \
+            "screenshots/dark/02-note.png:0,0.15,1,0.75" \
+            "screenshots/ipad/01-split.png:0.56,0.06,1,0.90" \
+            "screenshots/ipad/02-reading.png:0.56,0.06,1,0.90"
+
       - name: 스크린샷 보관
         if: always()
         uses: actions/upload-artifact@v4
