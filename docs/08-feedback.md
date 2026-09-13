@@ -91,3 +91,9 @@
 | # | 상태 | 제목 | 내용 |
 |---|---|---|---|
 | 33 | 🟢 | 빌드마다 수출 규정을 물었다 | `Info.plist` 에 `ITSAppUsesNonExemptEncryption` 이 없어서다. 지난 앱은 넣어 뒀는데 옮겨 오면서 빠뜨렸다. `false` 로 넣었다 — 이 앱은 네트워크를 안 쓰고 암호화 호출이 없다 (선택지로는 "둘 다 아님"). **빌드 1 은 손으로 답해야 한다**; 빌드 2부터 안 묻는다 |
+
+## TestFlight 빌드 2 실패 → 고침
+
+| # | 상태 | 제목 | 내용 |
+|---|---|---|---|
+| 34 | 🟢 | **빌드 번호가 앱에 안 닿았다** | `project.yml` 의 `info.properties` 에 `CFBundleVersion` 을 안 적어서 XcodeGen 이 `1` 을 **글자 그대로** 박았다. 워크플로가 넘긴 `CURRENT_PROJECT_VERSION` 이 무시된 것이다. `$(CURRENT_PROJECT_VERSION)` · `$(MARKETING_VERSION)` 을 참조하게 고쳤다. **빌드 1 은 실행 번호도 1 이라 우연히 통과했다** — 지난 앱은 이걸 36번째 실행까지 못 잡고 폰에 빌드 24 로 보였다 |
