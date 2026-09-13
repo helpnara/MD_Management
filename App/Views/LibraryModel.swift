@@ -20,6 +20,11 @@ final class LibraryModel: ObservableObject {
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
     @Published var isReading = false
 
+    /// 아이패드(regular 폭)는 상세 칸이 비어 있으면 어색하므로 첫 노트를 미리 고른다.
+    /// **아이폰(compact)은 고르지 않는다** — 고르면 앱이 목록이 아니라 노트로 열린다
+    /// (빌드 2 스크린샷에서 잡혔다). ADR-0006 의 "같은 자료를 넓은 화면으로".
+    var autoSelectsFirstNote = false
+
     let launch: LaunchOptions
     private var store: FolderStore?
 
@@ -60,7 +65,10 @@ final class LibraryModel: ObservableObject {
         isLoading = true
         let loaded = await store.notes(in: selectedFolder)
         notes = loaded
-        if selectedNoteID == nil || !loaded.contains(where: { $0.id == selectedNoteID }) {
+        if let current = selectedNoteID, !loaded.contains(where: { $0.id == current }) {
+            selectedNoteID = nil
+        }
+        if selectedNoteID == nil, autoSelectsFirstNote {
             selectedNoteID = loaded.first?.id
         }
         isLoading = false

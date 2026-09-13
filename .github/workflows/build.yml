@@ -244,16 +244,22 @@ jobs:
           }
 
           # ── iPhone ──
+          # **화면을 지정해 찍는다.** 앱을 켜기만 하면 한 장밖에 못 본다.
           shoot 01-list.png -sampleFolder
+          shoot 02-note.png -sampleFolder -openFirstNote
           # **큰 글씨** (접근성). 이 한 장이 없으면 Dynamic Type 이 아무것도
           # 안 바꾸고 있는 것을 못 잡는다 — 지난 앱에서 275곳을 나중에 고쳤다.
-          shoot 02-large-text.png -sampleFolder \
+          shoot 03-large-text.png -sampleFolder -openFirstNote \
+            -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+          # 큰 글씨 **목록** — 배너와 행이 같이 견디는지 (빌드 2 에서 배너가 잘렸다).
+          shoot 04-large-text-list.png -sampleFolder \
             -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
 
           # ── 다크 모드 ──
           xcrun simctl ui "$UDID" appearance dark
           mkdir -p screenshots/dark
           shoot dark/01-list.png -sampleFolder
+          shoot dark/02-note.png -sampleFolder -openFirstNote
           xcrun simctl ui "$UDID" appearance light
 
           # ── iPad (가정 A8 — 3단 분할이 정말 펼쳐지는가) ──

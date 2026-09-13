@@ -11,7 +11,9 @@ enum SampleFolder {
 
     static func make() -> URL {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("sample-folder", isDirectory: true)
+            // 폴더 이름이 곧 화면 상단 제목이다 (설계서 §0). `sample-folder` 가
+            // 제목으로 뜨던 것을 고쳤다 (빌드 2 스크린샷).
+            .appendingPathComponent("둘러보기", isDirectory: true)
         try? FileManager.default.removeItem(at: root)
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
 

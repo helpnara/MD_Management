@@ -4,6 +4,7 @@ import Core
 /// 아이패드는 3단, 아이폰은 같은 뷰가 스택으로 접힌다 (ADR-0006).
 struct RootView: View {
     @EnvironmentObject private var library: LibraryModel
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var columnVisibility = NavigationSplitViewVisibility.all
 
     var body: some View {
@@ -16,10 +17,24 @@ struct RootView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .tint(Palette.accent)
-        .task { await library.start() }
-        .task(id: library.selectedFolder) { await library.reloadNotes() }
+        .task {
+            library.autoSelectsFirstNote = prefersPreselectedNote
+            await library.start()
+        }
+        .task(id: library.selectedFolder) {
+            library.autoSelectsFirstNote = prefersPreselectedNote
+            await library.reloadNotes()
+        }
         .task(id: library.selectedNoteID) { await library.loadSelectedText() }
-        .safeAreaInset(edge: .top, spacing: 0) { SampleBanner() }
+        // **배너는 아래에 둔다.** 위에 두면 내비게이션 바를 덮어 제목과 버튼이
+        // 잘린다 (빌드 2 스크린샷). 아래는 덮을 것이 없다.
+        .safeAreaInset(edge: .bottom, spacing: 0) { SampleBanner() }
+    }
+
+    /// 아이패드(regular)는 상세 칸이 비면 어색하니 첫 노트를 미리 고른다.
+    /// 아이폰은 목록으로 열려야 한다 — `-openFirstNote` 는 CI 가 상세를 찍을 때만.
+    private var prefersPreselectedNote: Bool {
+        horizontalSizeClass == .regular || library.launch.openFirstNote
     }
 }
 
@@ -29,15 +44,17 @@ private struct SampleBanner: View {
 
     var body: some View {
         if library.isSample {
+            // 한 낱말이 아니라 문장이다. 큰 글씨에서는 **줄을 바꿔야** 한다 —
+            // `lineLimit(1)` 은 배지 · 짧은 라벨에만 쓴다.
             Text("둘러보기 자료입니다 · 실제 파일이 아닙니다")
                 .font(.scaled(.footnote, weight: .semibold))
                 .foregroundStyle(Palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
+                .padding(.horizontal, Metrics.gutter)
                 .padding(.vertical, Metrics.rowSpacing)
                 .background(Palette.paperRaised)
-                .overlay(alignment: .bottom) {
+                .overlay(alignment: .top) {
                     Rectangle().fill(Palette.rule).frame(height: 0.5)
                 }
         }

@@ -70,12 +70,16 @@ struct LaunchOptions: Sendable {
     var useSampleFolder = false
     var localFolderOnly = false
     var skipOnboarding = false
+    /// 아이폰에서도 첫 노트를 열고 시작한다 — **CI 가 상세 화면을 찍으려고** 쓴다.
+    /// 화면을 지정해 찍지 않으면 목록 한 장밖에 못 본다.
+    var openFirstNote = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
             useSampleFolder: arguments.contains("-sampleFolder"),
             localFolderOnly: arguments.contains("-localFolderOnly"),
-            skipOnboarding: arguments.contains("-skipOnboarding") || arguments.contains("-sampleFolder")
+            skipOnboarding: arguments.contains("-skipOnboarding") || arguments.contains("-sampleFolder"),
+            openFirstNote: arguments.contains("-openFirstNote")
         )
     }
 }
