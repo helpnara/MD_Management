@@ -818,5 +818,421 @@
       "source": "---\ntitle: 표와 코드가 든 노트\ntags: [렌더]\n---\n\n# 표와 코드가 든 노트\n\n## 표\n\n| 하는 것 | 어디서 |\n|---|---|\n| 보기 · 고치기 | 파일을 열면 바로 |\n| 찾기 | 아래 검색 |\n\n## 할 일\n\n- [x] 끝낸 것\n- [ ] 안 한 것\n- [ ] 또 안 한 것\n- 체크박스가 아닌 항목\n\n## 코드\n\n```swift\nlet note = try store.readText(at: \"회의.md\")\n```\n\n들여쓰기 코드도 하나:\n\n    plain code\n\n> 인용문 한 줄.\n\n---\n\n*기울임* 과 **굵게** 와 `인라인 코드`.\n\n![그림](assets/그림.png)\n",
       "title": "표와 코드가 든 노트"
     }
+  ],
+  "styleCases": [
+    {
+      "block": null,
+      "content": "",
+      "name": "빈 줄",
+      "spans": [],
+      "text": ""
+    },
+    {
+      "block": null,
+      "content": "그냥 한 줄이다.",
+      "name": "보통 문단",
+      "spans": [],
+      "text": "그냥 한 줄이다."
+    },
+    {
+      "block": null,
+      "content": "들여쓴 문단",
+      "name": "들여쓴 문단",
+      "spans": [],
+      "text": "  들여쓴 문단"
+    },
+    {
+      "block": "heading1",
+      "content": "제목",
+      "name": "제목 1",
+      "spans": [],
+      "text": "# 제목"
+    },
+    {
+      "block": "heading2",
+      "content": "**굵은** 제목",
+      "name": "제목 2 — 굵게 낀 것",
+      "spans": [
+        {
+          "text": "굵은",
+          "token": "strong"
+        }
+      ],
+      "text": "## **굵은** 제목"
+    },
+    {
+      "block": "heading6",
+      "content": "여섯",
+      "name": "제목 6",
+      "spans": [],
+      "text": "###### 여섯"
+    },
+    {
+      "block": null,
+      "content": "####### 일곱",
+      "name": "제목 아님 — 일곱 개",
+      "spans": [],
+      "text": "####### 일곱"
+    },
+    {
+      "block": null,
+      "content": "#제목",
+      "name": "제목 아님 — 빈칸 없음",
+      "spans": [],
+      "text": "#제목"
+    },
+    {
+      "block": "heading1",
+      "content": "",
+      "name": "제목만 있는 줄",
+      "spans": [],
+      "text": "#"
+    },
+    {
+      "block": "quote",
+      "content": "인용문이다",
+      "name": "인용",
+      "spans": [],
+      "text": "> 인용문이다"
+    },
+    {
+      "block": "quote",
+      "content": "",
+      "name": "빈 인용",
+      "spans": [],
+      "text": ">"
+    },
+    {
+      "block": "quote",
+      "content": "두 겹",
+      "name": "인용 두 겹",
+      "spans": [],
+      "text": "> > 두 겹"
+    },
+    {
+      "block": "listItem",
+      "content": "할 일",
+      "name": "글머리 목록",
+      "spans": [],
+      "text": "- 할 일"
+    },
+    {
+      "block": "listItem",
+      "content": "*기울인* 항목",
+      "name": "글머리 목록 — 기울임",
+      "spans": [
+        {
+          "text": "기울인",
+          "token": "emphasis"
+        }
+      ],
+      "text": "- *기울인* 항목"
+    },
+    {
+      "block": "listItem",
+      "content": "안쪽 항목",
+      "name": "들여쓴 글머리 목록",
+      "spans": [],
+      "text": "  - 안쪽 항목"
+    },
+    {
+      "block": "listItem",
+      "content": "우유 사기",
+      "name": "작업 목록 — 안 함",
+      "spans": [],
+      "text": "- [ ] 우유 사기"
+    },
+    {
+      "block": "listItem",
+      "content": "우유 샀다",
+      "name": "작업 목록 — 함",
+      "spans": [],
+      "text": "- [x] 우유 샀다"
+    },
+    {
+      "block": "orderedItem",
+      "content": "첫째",
+      "name": "번호 목록",
+      "spans": [],
+      "text": "1. 첫째"
+    },
+    {
+      "block": "orderedItem",
+      "content": "첫째",
+      "name": "번호 목록 — 괄호",
+      "spans": [],
+      "text": "1) 첫째"
+    },
+    {
+      "block": "thematicBreak",
+      "content": "",
+      "name": "수평선",
+      "spans": [],
+      "text": "---"
+    },
+    {
+      "block": "thematicBreak",
+      "content": "",
+      "name": "수평선 — 띄어 쓴 것",
+      "spans": [],
+      "text": "- - -"
+    },
+    {
+      "block": "codeBlock",
+      "content": "",
+      "name": "코드 울타리",
+      "spans": [],
+      "text": "```swift"
+    },
+    {
+      "block": "codeBlock",
+      "content": "",
+      "name": "들여쓴 코드",
+      "spans": [],
+      "text": "    let x = 1"
+    },
+    {
+      "block": "tableRow",
+      "content": "",
+      "name": "표 줄",
+      "spans": [],
+      "text": "| 이름 | 값 |"
+    },
+    {
+      "block": null,
+      "content": "**굵게** 강조한다",
+      "name": "굵게",
+      "spans": [
+        {
+          "text": "굵게",
+          "token": "strong"
+        }
+      ],
+      "text": "**굵게** 강조한다"
+    },
+    {
+      "block": null,
+      "content": "*기울임* 이다",
+      "name": "기울임 — 별표",
+      "spans": [
+        {
+          "text": "기울임",
+          "token": "emphasis"
+        }
+      ],
+      "text": "*기울임* 이다"
+    },
+    {
+      "block": null,
+      "content": "_기울임_ 이다",
+      "name": "기울임 — 밑줄",
+      "spans": [
+        {
+          "text": "기울임",
+          "token": "emphasis"
+        }
+      ],
+      "text": "_기울임_ 이다"
+    },
+    {
+      "block": null,
+      "content": "snake_case_name 은 그대로다",
+      "name": "밑줄은 낱말 안에서 강조가 아니다",
+      "spans": [],
+      "text": "snake_case_name 은 그대로다"
+    },
+    {
+      "block": null,
+      "content": "2 * 3 * 4 는 계산이다",
+      "name": "별표는 빈칸 뒤에서 강조가 아니다",
+      "spans": [],
+      "text": "2 * 3 * 4 는 계산이다"
+    },
+    {
+      "block": null,
+      "content": "**닫히지 않았다",
+      "name": "닫히지 않은 굵게",
+      "spans": [],
+      "text": "**닫히지 않았다"
+    },
+    {
+      "block": null,
+      "content": "~~취소선~~ 이다",
+      "name": "취소선",
+      "spans": [
+        {
+          "text": "취소선",
+          "token": "strikethrough"
+        }
+      ],
+      "text": "~~취소선~~ 이다"
+    },
+    {
+      "block": null,
+      "content": "***아주*** 강조",
+      "name": "굵고 기울임",
+      "spans": [
+        {
+          "text": "**아주**",
+          "token": "emphasis"
+        },
+        {
+          "text": "아주",
+          "token": "strong"
+        }
+      ],
+      "text": "***아주*** 강조"
+    },
+    {
+      "block": null,
+      "content": "`코드` 는 고정폭이다",
+      "name": "인라인 코드",
+      "spans": [
+        {
+          "text": "코드",
+          "token": "inlineCode"
+        }
+      ],
+      "text": "`코드` 는 고정폭이다"
+    },
+    {
+      "block": null,
+      "content": "`` a ` b `` 는 그렇다",
+      "name": "인라인 코드 — 백틱 두 겹",
+      "spans": [
+        {
+          "text": "a ` b",
+          "token": "inlineCode"
+        }
+      ],
+      "text": "`` a ` b `` 는 그렇다"
+    },
+    {
+      "block": null,
+      "content": "**굵고 `코드` 인 것**",
+      "name": "굵게 안의 코드",
+      "spans": [
+        {
+          "text": "굵고 `코드` 인 것",
+          "token": "strong"
+        },
+        {
+          "text": "코드",
+          "token": "inlineCode"
+        }
+      ],
+      "text": "**굵고 `코드` 인 것**"
+    },
+    {
+      "block": null,
+      "content": "[문서](docs/a.md) 를 본다",
+      "name": "링크",
+      "spans": [
+        {
+          "text": "문서",
+          "token": "link"
+        }
+      ],
+      "text": "[문서](docs/a.md) 를 본다"
+    },
+    {
+      "block": null,
+      "content": "[**굵은 글**](https://example.com) 링크",
+      "name": "링크 글자 안의 굵게",
+      "spans": [
+        {
+          "text": "**굵은 글**",
+          "token": "link"
+        },
+        {
+          "text": "굵은 글",
+          "token": "strong"
+        }
+      ],
+      "text": "[**굵은 글**](https://example.com) 링크"
+    },
+    {
+      "block": null,
+      "content": "![사진](assets/a.jpg)",
+      "name": "그림",
+      "spans": [
+        {
+          "text": "사진",
+          "token": "image"
+        }
+      ],
+      "text": "![사진](assets/a.jpg)"
+    },
+    {
+      "block": null,
+      "content": "\\*별표\\* 는 그대로다",
+      "name": "이스케이프",
+      "spans": [],
+      "text": "\\*별표\\* 는 그대로다"
+    },
+    {
+      "block": null,
+      "content": "🙂 **굵게** 다",
+      "name": "이모지 뒤 — UTF-16 자릿수",
+      "spans": [
+        {
+          "text": "굵게",
+          "token": "strong"
+        }
+      ],
+      "text": "🙂 **굵게** 다"
+    },
+    {
+      "block": null,
+      "content": "회의 [기록](회의/2026.md) 과 ![도표](assets/도표.png)",
+      "name": "한글 뒤 그림과 링크",
+      "spans": [
+        {
+          "text": "기록",
+          "token": "link"
+        },
+        {
+          "text": "도표",
+          "token": "image"
+        }
+      ],
+      "text": "회의 [기록](회의/2026.md) 과 ![도표](assets/도표.png)"
+    },
+    {
+      "block": "heading3",
+      "content": "[문서](docs/a.md) 읽기",
+      "name": "제목 안의 링크",
+      "spans": [
+        {
+          "text": "문서",
+          "token": "link"
+        }
+      ],
+      "text": "### [문서](docs/a.md) 읽기"
+    },
+    {
+      "block": "quote",
+      "content": "**중요한** 말",
+      "name": "인용 안의 굵게",
+      "spans": [
+        {
+          "text": "중요한",
+          "token": "strong"
+        }
+      ],
+      "text": "> **중요한** 말"
+    },
+    {
+      "block": "listItem",
+      "content": "[문서](docs/a.md) 읽기",
+      "name": "작업 목록 안의 링크",
+      "spans": [
+        {
+          "text": "문서",
+          "token": "link"
+        }
+      ],
+      "text": "- [x] [문서](docs/a.md) 읽기"
+    }
   ]
 }

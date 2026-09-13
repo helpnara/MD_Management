@@ -32,6 +32,7 @@ except ImportError:  # pragma: no cover
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "Tools" / "golden" / "fixtures"
 CASES = ROOT / "Tools" / "golden" / "cases.json"
+STYLE_CASES = ROOT / "Tools" / "golden" / "style-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -328,6 +329,118 @@ def share_plan(note_path: str, text: str, existing: set[str], follow: bool) -> d
     }
 
 
+# ── 라이브 편집기 — 한 줄의 모습 (ADR-0005 L1) ──────────────────────────────
+
+BLOCK_OF_TOKEN = {
+    "blockquote_open": "quote",
+    "bullet_list_open": "listItem",
+    "ordered_list_open": "orderedItem",
+    "fence": "codeBlock",
+    "code_block": "codeBlock",
+    "hr": "thematicBreak",
+    "paragraph_open": None,
+}
+
+SPAN_OF_OPEN = {
+    "strong_open": "strong",
+    "em_open": "emphasis",
+    "s_open": "strikethrough",
+    "link_open": "link",
+}
+SPAN_CLOSE = {"strong_close", "em_close", "s_close", "link_close"}
+
+
+def inline_spans(children) -> list[dict]:
+    """겹친 것까지 **여는 태그 순서로** 준다.
+
+    바깥 구간의 글자에는 안쪽 마커가 그대로 들어간다 — Swift 쪽 `StyleSpan` 이
+    원문을 잘라 주기 때문이다. 그래서 여닫는 토큰의 `markup` 을 도로 붙여 쌓는다.
+    """
+    out: list[dict] = []
+    stack: list[dict] = []
+
+    def emit(text: str) -> None:
+        for record in stack:
+            record["text"] += text
+
+    for token in children or []:
+        kind = token.type
+        if kind in SPAN_OF_OPEN:
+            opening = "[" if kind == "link_open" else token.markup
+            emit(opening)
+            record = {"token": SPAN_OF_OPEN[kind], "text": "",
+                      "_href": token.attrGet("href") or ""}
+            out.append(record)
+            stack.append(record)
+        elif kind in SPAN_CLOSE:
+            record = stack.pop()
+            emit("](" + record["_href"] + ")" if kind == "link_close" else token.markup)
+        elif kind == "code_inline":
+            emit(token.markup + token.content + token.markup)
+            out.append({"token": "inlineCode", "text": token.content})
+        elif kind == "image":
+            emit("![" + token.content + "](" + (token.attrGet("src") or "") + ")")
+            out.append({"token": "image", "text": token.content})
+        else:
+            emit(token.content)
+
+    return [{"token": record["token"], "text": record["text"]} for record in out]
+
+
+def strip_checkbox(content: str) -> str:
+    """`- [ ] 우유` 의 `[ ] ` 를 뗀다.
+
+    작업 목록은 GFM 확장이고 commonmark 프리셋은 안 읽는다 (`html_facts` 도 같은
+    이유로 줄을 직접 센다). 편집기는 체크박스를 마커로 먹으므로 여기서도 뗀다.
+    """
+    for mark in ("[ ]", "[x]", "[X]"):
+        if content.startswith(mark):
+            return content[len(mark):].lstrip(" ")
+    return content
+
+
+def style_facts(line: str) -> dict:
+    """한 줄의 블록 종류 · 마커 뗀 내용 · 강조 구간."""
+    # 표는 여러 줄이라 한 줄만으로는 markdown-it 이 표로 읽지 않는다. 편집기는 줄
+    # 단위라서 `|` 로 시작하면 표 줄로 보고 고정폭 원문 그대로 둔다 (ADR-0005).
+    if line.strip().startswith("|"):
+        return {"block": "tableRow", "content": "", "spans": []}
+
+    tokens = make_parser().parse(line)
+    if not tokens:
+        return {"block": None, "content": "", "spans": []}
+
+    first = tokens[0].type
+    if first == "heading_open":
+        block = "heading" + tokens[0].tag[1:]
+    elif first in BLOCK_OF_TOKEN:
+        block = BLOCK_OF_TOKEN[first]
+    else:
+        raise SystemExit(f"모르는 블록 토큰 {first!r} — {line!r}")
+
+    if block in ("codeBlock", "thematicBreak"):
+        return {"block": block, "content": "", "spans": []}
+
+    inline = next((t for t in tokens if t.type == "inline"), None)
+    if inline is None:
+        return {"block": block, "content": "", "spans": []}
+
+    content = inline.content
+    if block in ("listItem", "orderedItem"):
+        content = strip_checkbox(content)
+
+    return {"block": block, "content": content, "spans": inline_spans(inline.children)}
+
+
+def build_style_cases() -> list[dict]:
+    spec = json.loads(STYLE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        text = case["text"]
+        out.append({"name": case["name"], "text": text, **style_facts(text)})
+    return out
+
+
 # ── 만들기 ───────────────────────────────────────────────────────────────────
 
 def resolved_entry(link: dict, note_path: str) -> dict:
@@ -373,6 +486,7 @@ def build() -> dict:
         "_generator": "Tools/golden/generate.py (markdown-it-py + PyYAML)",
         "_warning": "손으로 고치지 마세요. generate.py 를 다시 돌리세요.",
         "cases": out_cases,
+        "styleCases": build_style_cases(),
     }
 
 
@@ -392,12 +506,16 @@ def main() -> int:
         if current != fresh:
             print("::error::기댓값이 어긋납니다. `python3 Tools/golden/generate.py` 를 돌리고 커밋하세요.")
             return 1
-        print(f"기댓값 {len(json.loads(current)['cases'])}건 — 커밋된 것과 같습니다.")
+        loaded = json.loads(current)
+        print(f"기댓값 {len(loaded['cases'])}건 · 줄 모양 {len(loaded['styleCases'])}건"
+              " — 커밋된 것과 같습니다.")
         return 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(fresh, encoding="utf-8")
-    print(f"{OUT.relative_to(ROOT)} — 사례 {len(json.loads(fresh)['cases'])}건")
+    loaded = json.loads(fresh)
+    print(f"{OUT.relative_to(ROOT)} — 사례 {len(loaded['cases'])}건"
+          f" · 줄 모양 {len(loaded['styleCases'])}건")
     return 0
 
 
