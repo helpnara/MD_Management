@@ -167,6 +167,34 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      # **iCloud 설정이 번들에 정말 박혔는지 본다.**
+      #
+      # `project.yml` 에 중첩 딕셔너리로 적어도 XcodeGen 이 그것을 Info.plist 에
+      # 제대로 쓰는지는 **빌드 결과를 봐야만** 안다. 이 칸이 없어서 실기기까지
+      # 내려갔다 (2026-09-13, 가정 A2 — `Files` 앱에 폴더가 안 보였다).
+      - name: iCloud 설정이 번들에 박혔는지
+        run: |
+          set -uo pipefail
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
+          echo "번들: $APP"
+          plutil -convert json -o - "$APP/Info.plist" | python3 -c "
+          import json, sys
+          plist = json.load(sys.stdin)
+          want = 'iCloud.com.helpnara.markdown'
+          containers = plist.get('NSUbiquitousContainers')
+          if not containers:
+              sys.exit('::error::NSUbiquitousContainers 가 번들에 없습니다 — XcodeGen 이 중첩 딕셔너리를 안 쓴 것입니다')
+          print(json.dumps(containers, ensure_ascii=False, indent=2))
+          entry = containers.get(want)
+          if entry is None:
+              sys.exit('::error::키가 ' + want + ' 가 아닙니다: ' + repr(list(containers)))
+          if entry.get('NSUbiquitousContainerIsDocumentScopePublic') is not True:
+              sys.exit('::error::NSUbiquitousContainerIsDocumentScopePublic 이 true 가 아닙니다 — Files 앱에 폴더가 안 보입니다')
+          if not entry.get('NSUbiquitousContainerName'):
+              sys.exit('::error::NSUbiquitousContainerName 이 비어 있습니다')
+          print('iCloud 설정 정상:', entry['NSUbiquitousContainerName'])
+          "
+
       - name: 시뮬레이터 스크린샷
         run: |
           UDID="${{ steps.sim.outputs.udid }}"
