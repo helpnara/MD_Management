@@ -182,9 +182,18 @@ private struct StatusBanner: View {
 
 private struct FolderSidebar: View {
     @EnvironmentObject private var library: LibraryModel
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    /// 목록의 선택은 `library.selectedFolder` 와 따로 둔다.
+    ///
+    /// 아이폰에서 뒤로 가 폴더 화면으로 오면 **이미 고른 폴더가 선택된 채**라서,
+    /// 다시 눌러도 값이 안 바뀌어 목록으로 넘어가지 않았다 (빌드 9). 그래서 이
+    /// 화면이 나타날 때 선택만 비운다 — 어느 줄을 눌러도 값이 바뀌어 넘어간다.
+    /// 그 비움이 `library` 까지 가면 목록이 지워지므로 여기 갈라 둔다.
+    @State private var selection: String? = ""
 
     var body: some View {
-        List(selection: folderSelection) {
+        List(selection: $selection) {
             Section {
                 row(name: library.folderName, path: "", count: library.notes.count, isRoot: true)
                 ForEach(library.folders) { folder in
@@ -198,6 +207,16 @@ private struct FolderSidebar: View {
         }
         .navigationTitle("폴더")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            selection = horizontalSizeClass == .compact ? nil : library.selectedFolder
+        }
+        .onChange(of: selection) { _, chosen in
+            guard let chosen, chosen != library.selectedFolder else { return }
+            library.selectedFolder = chosen
+        }
+        .onChange(of: library.selectedFolder) { _, folder in
+            if selection != nil { selection = folder }
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -207,13 +226,6 @@ private struct FolderSidebar: View {
                 }
             }
         }
-    }
-
-    /// `List` 의 선택은 옵셔널이라야 한다. 최상위는 빈 문자열로 둔다.
-    private var folderSelection: Binding<String?> {
-        Binding(
-            get: { library.selectedFolder },
-            set: { library.selectedFolder = $0 ?? "" })
     }
 
     private func row(name: String, path: String, count: Int, isRoot: Bool) -> some View {
