@@ -367,11 +367,13 @@ jobs:
       # (아이패드는 오른쪽 칸이 본문이다) 비율로 적어 준다.
       - name: 내용 칸이 정말 그려졌나 (화소)
         run: |
-          python3 -m pip install --quiet --disable-pip-version-check pillow || {
-            echo "::warning::pillow 를 못 받았습니다 — 화소 검사를 건너뜁니다"
-            exit 0
-          }
-          python3 Tools/ci/not-blank.py \
+          # **venv 로 깐다.** 러너의 파이썬은 PEP 668(externally-managed)로 시스템
+          # pip install 을 거부한다. 빌드 8~10 에서 이것이 거부되고 "못 받으면
+          # 건너뛴다" 분기로 조용히 초록이 됐다 — 화소 검사가 한 번도 안 돌았다.
+          # 못 깔면 이제 **빨간불**이다. 심판이 없는 초록은 초록이 아니다.
+          python3 -m venv .ci-venv
+          .ci-venv/bin/pip install --quiet --disable-pip-version-check pillow
+          .ci-venv/bin/python Tools/ci/not-blank.py \
             "screenshots/01-list.png:0,0.12,1,0.75" \
             "screenshots/02-note.png:0,0.15,1,0.75" \
             "screenshots/03-large-text.png:0,0.15,1,0.75" \
