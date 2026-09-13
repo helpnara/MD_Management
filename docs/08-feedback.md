@@ -132,7 +132,7 @@
 | # | 상태 | 제목 | 내용 |
 |---|---|---|---|
 | 3 | 🟢 | GitHub Pages 소스를 Actions 로 | 사용자 완료. `site.yml` 이 초록으로 배포했다 |
-| 40 | 🔵 | **방침 URL 을 사람이 열어 봐야 한다** | `https://helpnara.github.io/MD_Management/privacy/`. 원격 세션의 네트워크 정책이 `helpnara.github.io` 를 막는다(`connect_rejected`) — 워크플로가 초록이어도 여기서는 확인할 수 없다. `CLAUDE.md` §2 에 적었다 |
+| 40 | 🟢 | **방침 URL 을 사람이 열어 봐야 한다** | ✅ 2026-09-13 브라우저에서 열림 확인. 원격 세션의 네트워크 정책이 `helpnara.github.io` 를 막아(`connect_rejected`) 여기서는 못 연다 — `CLAUDE.md` §2 에 적었다 |
 | 41 | 🟢 | ASC 에 방침 URL 넣기 | 2026-09-13 완료 |
 
 ---
@@ -145,5 +145,4 @@
 | 5 | 사용자 | **저장소 공개 여부** — 지금 public 이라 `docs/` 설계 문서가 전부 공개된다. public 이면 macOS 러너 분이 무료다 |
 | 31 | 사용자 | 빌드 4 를 깔았을 때 `Files` 앱 폴더 이름이 `느린 여백` 으로 바뀌는가 |
 | 32 | 사용자 | App Store Connect 의 앱 이름을 `느린 여백` 으로 |
-| 40 | 사용자 | 방침 URL 이 브라우저에서 열리는가 (여기서는 못 연다) |
 | A2 | 둘 다 | 빌드 4 에서 `Files` 앱에 폴더가 생기는가 — 진단 화면이 이유를 말해 준다 |
