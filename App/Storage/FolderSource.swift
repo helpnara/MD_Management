@@ -7,6 +7,7 @@ import Core
 enum FolderSource {
 
     private static let bookmarkKey = "folder.bookmark"
+    private static let seededKey = "folder.seeded"
 
     // MARK: - (a) 앱 iCloud Drive 컨테이너
 
@@ -25,6 +26,7 @@ enum FolderSource {
             }
             let documents = container.appendingPathComponent("Documents", isDirectory: true)
             try? FileManager.default.createDirectory(at: documents, withIntermediateDirectories: true)
+            seedIfNeeded(documents)
             return documents
         }.value
     }
@@ -38,6 +40,68 @@ enum FolderSource {
         }
         return nil
     }
+
+    /// 갓 만든 iCloud 폴더가 비어 있으면 첫 노트를 하나 둔다.
+    ///
+    /// **왜 하나.** `Files` 앱이 **빈 폴더를 안 보여 준다** (2026-09-13 실기기 —
+    /// 앱은 컨테이너를 제대로 잡았는데 `Files` 에는 아무것도 없었다). 파일이
+    /// 하나 있으면 폴더가 나타난다. 덤으로 처음 연 사람에게 볼 것이 생긴다.
+    ///
+    /// **딱 한 번만 한다.** 사용자가 지우면 다시 만들지 않는다 — 이미 쓰던
+    /// 폴더(파일이 있는 폴더)에는 아무것도 안 넣는다. 만든 파일은 그냥 `.md` 라
+    /// 사용자가 고치거나 지우면 그만이다 (ADR-0001 을 어기지 않는다).
+    static func seedIfNeeded(_ documents: URL, defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: seededKey) else { return }
+        defaults.set(true, forKey: seededKey)
+
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: documents.path)) ?? []
+        guard names.allSatisfy({ $0.hasPrefix(".") }) else { return }  // 이미 쓰던 폴더
+
+        let note = documents.appendingPathComponent("첫 노트.md")
+        guard !FileManager.default.fileExists(atPath: note.path) else { return }
+        try? firstNote.write(to: note, atomically: true, encoding: .utf8)
+    }
+
+    /// `Files` 앱에 보이는 폴더 이름. `project.yml` 의 `NSUbiquitousContainerName`
+    /// 을 읽으므로 **이름이 사는 곳이 늘지 않는다** (docs/roadmap.md §4).
+    static var iCloudFolderName: String? {
+        guard let containers = Bundle.main.object(forInfoDictionaryKey: "NSUbiquitousContainers")
+                as? [String: Any] else { return nil }
+        for value in containers.values {
+            if let dictionary = value as? [String: Any],
+               let name = dictionary["NSUbiquitousContainerName"] as? String,
+               !name.isEmpty {
+                return name
+            }
+        }
+        return nil
+    }
+
+    // 곧은 따옴표를 문구 안에 쓰지 않는다 (CLAUDE.md §5).
+    private static let firstNote = """
+    # 첫 노트
+
+    이 폴더가 **느린 여백**이 쓰는 곳입니다. `파일` 앱의 iCloud Drive 에서도
+    같은 폴더가 보입니다 — 거기에 `.md` 파일을 넣으면 여기 목록에 뜹니다.
+
+    ## 해 볼 것
+
+    - [ ] 이 줄을 고쳐 보기
+    - [ ] 위 오른쪽 책 아이콘을 눌러 **읽기** 모드로 보기
+    - [ ] `파일` 앱에서 이 폴더에 `.md` 를 하나 더 넣어 보기
+
+    ## 사진 넣기
+
+    이 폴더 안에 `assets` 폴더를 만들고 사진을 넣은 뒤, 본문에 이렇게 씁니다:
+
+    ```
+    ![](assets/사진.jpg)
+    ```
+
+    이름에 **공백이 있으면 꺾쇠로 감쌉니다** — `![](<assets/내 사진.jpg>)`.
+
+    > 파일은 당신의 것입니다. 앱을 지워도 이 폴더는 그대로 남습니다.
+    """
 
     // MARK: - 그 밖의 폴더
 

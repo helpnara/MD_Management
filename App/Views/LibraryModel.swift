@@ -56,7 +56,13 @@ final class LibraryModel: ObservableObject {
     }
 
     var folderName: String {
-        // 화면 상단 제목은 **폴더 이름**이다. 앱 이름을 쓰지 않는다 (설계서 §0).
+        // 화면 상단 제목은 **폴더 이름**이다 (설계서 §0).
+        // (a) iCloud 컨테이너의 실제 폴더명은 `Documents` 라 제목으로 쓸 수 없다.
+        //     `Files` 앱에 보이는 이름과 같은 것을 쓴다 — Info.plist 에서 읽으므로
+        //     이름이 사는 곳이 늘지 않는다.
+        if kind == .iCloudContainer, let name = FolderSource.iCloudFolderName {
+            return name
+        }
         guard let root = store?.root else { return "기록" }
         let name = Paths.normalized(root.lastPathComponent)
         return name.isEmpty ? "기록" : name
