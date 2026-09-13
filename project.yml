@@ -48,6 +48,9 @@ targets:
         CODE_SIGN_ENTITLEMENTS: App/Notebook.entitlements
         # iPhone(1) · iPad(2) 유니버설 — 앱 하나, 화면 구성 두 벌 (ADR-0006)
         TARGETED_DEVICE_FAMILY: "1,2"
+        # 아이콘이 없으면 App Store 검증이 CFBundleIconName 누락으로 막는다.
+        # 에셋 카탈로그 컴파일러가 그 값을 Info.plist 에 넣어 준다.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_STRICT_CONCURRENCY: complete
     info:
       path: App/Info.plist

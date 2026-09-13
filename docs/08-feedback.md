@@ -13,7 +13,7 @@
 | # | 상태 | 제목 | 빌드 | 내용 |
 |---|---|---|---|---|
 | 1 | 🔵 | 앱 이름 확정 | — | `여백` 상표 충돌 (A1). 후보 행간 · 갈피 · 적바림 KIPRIS 재검색 대기. `docs/roadmap.md` §4 |
-| 2 | 🔵 | 저장소 시크릿 4개 등록 | — | `APPLE_TEAM_ID` · `APP_STORE_CONNECT_ISSUER_ID` · `APP_STORE_CONNECT_KEY_ID` · `APP_STORE_CONNECT_KEY_P8`. 지난 앱 것을 그대로 쓸 수 있는지가 A9 |
+| 2 | 🟢 | 저장소 시크릿 4개 등록 (2026-09-13 완료) | — | `APPLE_TEAM_ID` · `APP_STORE_CONNECT_ISSUER_ID` · `APP_STORE_CONNECT_KEY_ID` · `APP_STORE_CONNECT_KEY_P8`. 지난 앱 것을 그대로 쓸 수 있는지가 A9 |
 | 3 | 🔵 | GitHub Pages 를 Actions 소스로 | — | Settings → Pages → Source = GitHub Actions. 방침 URL 이 첫 빌드 전에 필요 |
 | 4 | 🔵 | 지원 메일 주소 확정 | — | 받을 수 있는 실주소. GitHub Pages 는 메일을 못 받는다 |
 | 5 | 🔵 | 저장소 공개 여부 | — | 현재 public — `docs/` 설계 문서가 전부 공개된다. public 이면 macOS 러너 분이 무료 |
@@ -26,7 +26,7 @@
 
 | # | 상태 | 제목 | 내용 |
 |---|---|---|---|
-| 6 | 🟡 | 앱 아이콘이 없다 | 에셋 카탈로그가 아직 없다. TestFlight 아카이브는 되지만 App Store 검증이 `CFBundleIconName` 누락을 문제 삼을 수 있다. 이름이 정해지면 아이콘과 같이 만든다 |
+| 6 | 🟢 | 앱 아이콘이 없다 | `Tools/icon/make-icon.py` 가 그린다 — 종이 바탕에 먹색 줄, 그리고 **줄 사이의 빈 자리**. 이름이 정해지면 다시 손본다 (잠정) |
 | 7 | 🟡 | 라이브 편집기가 아직 없다 | 1주차 화면은 원문을 고정폭으로 보여 주기만 한다. ADR-0005 의 L1 → L2 는 2주차 |
 | 8 | 🟡 | 뷰어(WKWebView)가 아직 없다 | `읽기` 토글 버튼은 있지만 아직 아무것도 안 한다. ADR-0004 는 1주차 후반 |
 | 9 | 🟡 | 검색 · 공유 화면이 없다 | Core 의 계산(`SearchQueryParser` · `ShareBundle.plan`)은 이미 있고 테스트도 돈다. 화면은 3주차 |
