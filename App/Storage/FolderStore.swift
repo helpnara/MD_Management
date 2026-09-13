@@ -226,11 +226,25 @@ actor FolderStore {
 
     /// 노트 옆 `assets/` 에 첨부를 넣는다. 같은 이름이 있으면 번호를 올린다.
     /// 만든 파일의 **노트 기준 상대경로**(`assets/2026-09-13-1.jpg`)를 준다.
-    func writeAsset(_ data: Data, named name: String, besideNoteIn folder: String) throws -> String {
+    ///
+    /// **빈칸으로 비켜 가지 않는다.** `이름 2.jpg` 는 마크다운 링크에서 `<>` 없이는
+    /// 깨진다 (빌드 11 · 9번). `stem` 과 `ext` 를 받아 `stem-1.jpg` · `stem-2.jpg` 로 센다.
+    func writeAsset(_ data: Data, stem: String, ext: String, besideNoteIn folder: String) throws -> String {
         openScopeIfNeeded()
         let assets = folder.isEmpty ? "assets" : folder + "/assets"
         try createFolder(assets)
-        let path = uniqueRelativePath(name: name, in: assets)
+
+        var path = ""
+        for sequence in 1...999 {
+            let candidate = assets + "/" + stem + "-\(sequence)." + ext
+            if !FileManager.default.fileExists(atPath: root.appendingPathComponent(candidate).path) {
+                path = candidate
+                break
+            }
+        }
+        if path.isEmpty {
+            path = assets + "/" + stem + "-\(Int(Date().timeIntervalSince1970))." + ext
+        }
         try writeData(data, to: path)
         return String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))
     }

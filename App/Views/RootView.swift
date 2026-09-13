@@ -338,6 +338,8 @@ private struct NoteDetail: View {
     @State private var alert: String?
     /// 사진첩에서 고른 것. 고르면 바로 읽어 넣고 비운다.
     @State private var pickedPhoto: PhotosPickerItem?
+    @State private var showsPhotoPicker = false
+    @State private var showsCamera = false
 
     var body: some View {
         Group {
@@ -351,6 +353,20 @@ private struct NoteDetail: View {
             }
         }
         .background(Palette.paper)
+        .photosPicker(isPresented: $showsPhotoPicker, selection: $pickedPhoto, matching: .images)
+        .onChange(of: pickedPhoto) { _, item in
+            guard let item else { return }
+            pickedPhoto = nil
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self) {
+                    await library.insertPhoto(data)
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showsCamera) {
+            CameraView { data in Task { await library.insertPhoto(data) } }
+                .ignoresSafeArea()
+        }
         .alert("찾을 수 없습니다", isPresented: Binding(
             get: { alert != nil },
             set: { if !$0 { alert = nil } })) {
@@ -405,18 +421,22 @@ private struct NoteDetail: View {
         }
         if !library.isReading {
             ToolbarItem(placement: .topBarTrailing) {
-                // 사진첩 → assets/ → 커서 자리에 링크 (설계서 §2-4). 카메라는 다음.
-                PhotosPicker(selection: $pickedPhoto, matching: .images) {
-                    Label("사진 넣기", systemImage: "photo")
-                }
-                .onChange(of: pickedPhoto) { _, item in
-                    guard let item else { return }
-                    pickedPhoto = nil
-                    Task {
-                        if let data = try? await item.loadTransferable(type: Data.self) {
-                            await library.insertPhoto(data)
+                // 사진첩 · 카메라 → assets/ → 커서 자리에 링크 (설계서 §2-4).
+                Menu {
+                    Button {
+                        showsPhotoPicker = true
+                    } label: {
+                        Label("사진첩에서", systemImage: "photo.on.rectangle")
+                    }
+                    if CameraView.isAvailable {
+                        Button {
+                            showsCamera = true
+                        } label: {
+                            Label("카메라로 찍기", systemImage: "camera")
                         }
                     }
+                } label: {
+                    Label("사진 넣기", systemImage: "photo")
                 }
             }
         }

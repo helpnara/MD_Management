@@ -358,9 +358,9 @@ final class LibraryModel: ObservableObject {
         }
         do {
             let relative = try await store.writeAsset(
-                jpeg, named: ImageImport.fileName(),
+                jpeg, stem: ImageImport.stem(), ext: "jpg",
                 besideNoteIn: Paths.directory(of: note.relativePath))
-            insertion = Insertion(text: "![](\(relative))")
+            insertion = Insertion(text: ImageImport.markdownImage(path: relative))
             lastError = nil
         } catch {
             lastError = "사진을 넣지 못했습니다: \(error.localizedDescription)"

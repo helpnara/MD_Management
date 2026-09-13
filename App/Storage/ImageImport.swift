@@ -27,11 +27,19 @@ enum ImageImport {
         return rendered.jpegData(compressionQuality: quality)
     }
 
-    /// `2026-09-13-1.jpg` 꼴. 공백이 없어 링크에 꺾쇠가 필요 없다.
-    static func fileName(for date: Date = Date(), sequence: Int = 1) -> String {
+    /// `2026-09-13` — 저장소가 뒤에 `-1.jpg` `-2.jpg` 를 붙인다. 공백이 없어 링크에
+    /// 꺾쇠가 필요 없다.
+    static func stem(for date: Date = Date()) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd"
-        return "\(formatter.string(from: date))-\(sequence).jpg"
+        return formatter.string(from: date)
+    }
+
+    /// 경로에 빈칸이 있으면 `<>` 로 감싼다 — CommonMark 는 빈칸 있는 주소를 링크로
+    /// 안 읽는다. 우리가 만든 이름에는 없지만, 사용자가 바꾼 이름에는 있을 수 있다.
+    static func markdownImage(path: String) -> String {
+        let needsBrackets = path.contains(" ")
+        return "![](" + (needsBrackets ? "<" + path + ">" : path) + ")"
     }
 }
