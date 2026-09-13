@@ -73,6 +73,13 @@ struct MarkdownEditor: UIViewRepresentable {
         private var isStyling = false
         /// 지난번 머리말 길이. 바뀌면 그 구간을 통째로 다시 칠한다 (`MarkdownStyler.restyle`).
         private var headerLength = 0
+        /// 지난번 커서 문단. 커서가 다른 문단으로 가면 **둘만** 다시 칠한다 (S11).
+        private var cursorParagraph = NSRange(location: 0, length: 0)
+
+        /// L2 를 켤까. VoiceOver 는 0.01pt 로 숨긴 마커를 그대로 읽으므로 L1 로 물러선다 (A10).
+        private var cursorHint: Int? {
+            UIAccessibility.isVoiceOverRunning ? nil : view?.selectedRange.location
+        }
         /// 한글 조합 중에는 속성을 건드리지 않는다 — 조합이 끊겨 자음과 모음이
         /// 따로 찍힌다 (안정화 기준 S10).
         private var isComposing = false
@@ -137,7 +144,7 @@ struct MarkdownEditor: UIViewRepresentable {
             sheet = EditorStyleSheet()
             guard let storage = view?.textStorage, let sheet else { return }
             isStyling = true
-            headerLength = MarkdownStyler.restyleAll(storage, with: sheet)
+            headerLength = MarkdownStyler.restyleAll(storage, with: sheet, cursor: cursorHint)
             isStyling = false
         }
 
@@ -162,8 +169,10 @@ struct MarkdownEditor: UIViewRepresentable {
                       !isComposing, !isStyling,
                       let sheet, let storage = view?.textStorage else { return }
                 isStyling = true
+                // 고치는 중인 문단에 커서가 있다 — 선택값은 아직 옛것일 수 있으므로 고친 자리를 쓴다.
+                let cursor = UIAccessibility.isVoiceOverRunning ? nil : edited.location
                 headerLength = MarkdownStyler.restyle(storage, touching: edited, with: sheet,
-                                                      previousHeader: headerLength)
+                                                      previousHeader: headerLength, cursor: cursor)
                 isStyling = false
             }
         }
@@ -215,6 +224,30 @@ struct MarkdownEditor: UIViewRepresentable {
             return textView.textRange(from: start, to: end)
         }
 
+        /// **커서가 다른 문단으로 갔다.** 떠난 문단은 마커를 숨기고, 온 문단은 드러낸다 (L2).
+        /// 조합 중에는 건드리지 않는다 — 조합이 끊긴다 (S10).
+        func textViewDidChangeSelection(_ textView: UITextView) {
+            guard !isStyling, !isComposing, textView.markedTextRange == nil, let sheet else { return }
+            let text = textView.textStorage.string as NSString
+            guard text.length > 0 else { return }
+            let location = min(textView.selectedRange.location, text.length)
+            let current = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+            guard current != cursorParagraph else { return }
+            let previous = cursorParagraph
+            cursorParagraph = current
+
+            isStyling = true
+            textView.textStorage.beginEditing()
+            if previous.length > 0, NSMaxRange(previous) <= text.length {
+                MarkdownStyler.restyle(textView.textStorage, touching: previous, with: sheet,
+                                       previousHeader: headerLength, cursor: cursorHint)
+            }
+            headerLength = MarkdownStyler.restyle(textView.textStorage, touching: current, with: sheet,
+                                                  previousHeader: headerLength, cursor: cursorHint)
+            textView.textStorage.endEditing()
+            isStyling = false
+        }
+
         func textViewDidChange(_ textView: UITextView) {
             let composing = textView.markedTextRange != nil
             let wasComposing = isComposing
@@ -225,7 +258,7 @@ struct MarkdownEditor: UIViewRepresentable {
                 isStyling = true
                 headerLength = MarkdownStyler.restyle(textView.textStorage,
                                                       touching: textView.selectedRange, with: sheet,
-                                                      previousHeader: headerLength)
+                                                      previousHeader: headerLength, cursor: cursorHint)
                 isStyling = false
             }
             // **여기서 `loadedText` 를 갱신하지 않는다.** 갱신하면 "사용자가

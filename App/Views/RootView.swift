@@ -345,9 +345,21 @@ private struct NoteDetail: View {
         Group {
             if let note = library.selectedNote {
                 content(for: note)
-                    .navigationTitle(note.title)
+                    // 제목은 **직접 그린다.** 기본 제목은 iOS 가 툴바 버튼 수에 따라
+                    // 가운데 · 왼쪽으로 옮겨 이름마다 자리가 달랐다 (49). 늘 왼쪽 ·
+                    // 한 줄 · 꼬리 `…` 로 통일한다.
+                    .navigationTitle("")
                     .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { toolbarContent(for: note) }
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Text(note.title)
+                                .font(.scaled(.headline))
+                                .foregroundStyle(Palette.ink)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                        toolbarContent(for: note)
+                    }
             } else {
                 ContentUnavailableView("노트를 고르세요", systemImage: "doc.text.magnifyingglass")
             }

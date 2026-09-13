@@ -22,9 +22,13 @@ enum MarkdownStyler {
     /// 마지막 `---` 를 친 순간에야 머리말이 생기는데, 고친 문단만 칠하면 위의
     /// `title:` 은 머리말 없던 시절 모습으로 남는다 (빌드 10 · 4번 "될 때도 안 될 때도").
     /// 새 머리말 길이를 돌려준다 — 부른 쪽이 들고 있다가 다음에 넘긴다.
+    ///
+    /// `cursor` 는 커서 자리 (UTF-16). 그 문단은 마커를 흐리게(L1), 나머지는 숨긴다(L2).
+    /// `nil` 이면 다 흐리게 — VoiceOver 가 켜졌을 때의 후퇴다 (A10).
     @discardableResult
     static func restyle(_ storage: NSTextStorage, touching range: NSRange,
-                        with sheet: EditorStyleSheet, previousHeader: Int = 0) -> Int {
+                        with sheet: EditorStyleSheet, previousHeader: Int = 0,
+                        cursor: Int? = nil) -> Int {
         let text = storage.string as NSString
         guard text.length > 0 else { return 0 }
 
@@ -44,7 +48,12 @@ enum MarkdownStyler {
             if paragraph.location < header {
                 storage.setAttributes(sheet.frontMatter(), range: paragraph)
             } else {
-                style(paragraph: paragraph, in: text, storage: storage, sheet: sheet)
+                // 커서가 이 문단에 있나. 문단 끝(줄바꿈 앞)까지, 마지막 문단은 글 끝까지.
+                let hasCursor = cursor.map { at in
+                    at >= paragraph.location
+                        && (at < NSMaxRange(paragraph) || NSMaxRange(paragraph) == text.length)
+                } ?? true
+                style(paragraph: paragraph, in: text, storage: storage, sheet: sheet, hasCursor: hasCursor)
             }
             let next = NSMaxRange(paragraph)
             // 문단이 앞으로 안 가면 멈춘다 — 무한 반복 막이.
@@ -55,8 +64,8 @@ enum MarkdownStyler {
     }
 
     @discardableResult
-    static func restyleAll(_ storage: NSTextStorage, with sheet: EditorStyleSheet) -> Int {
-        restyle(storage, touching: NSRange(location: 0, length: storage.length), with: sheet)
+    static func restyleAll(_ storage: NSTextStorage, with sheet: EditorStyleSheet, cursor: Int? = nil) -> Int {
+        restyle(storage, touching: NSRange(location: 0, length: storage.length), with: sheet, cursor: cursor)
     }
 
     private static func clamp(_ range: NSRange, to length: Int) -> NSRange {
@@ -65,7 +74,7 @@ enum MarkdownStyler {
     }
 
     private static func style(paragraph: NSRange, in text: NSString,
-                              storage: NSTextStorage, sheet: EditorStyleSheet) {
+                              storage: NSTextStorage, sheet: EditorStyleSheet, hasCursor: Bool) {
         // `paragraphRange` 는 끝의 줄바꿈까지 준다. `LineStyler` 는 줄 하나만 본다.
         var line = paragraph
         if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A {
@@ -93,10 +102,22 @@ enum MarkdownStyler {
             guard NSMaxRange(range) <= NSMaxRange(line) else { continue }
             sheet.apply(span.token, to: storage, range: range)
         }
+        // L2 — 커서가 없는 문단은 마커를 숨긴다. 다만:
+        //  · 목록 마커(`- ` `1. ` `[ ]`)와 수평선은 **안 숨긴다** — 번호가 사라지면 정보가
+        //    사라진다. 그 자리는 L3 가 기호로 바꾼다.
+        //  · 대체 글자 없는 그림(`![](…)`)이 있는 문단도 안 숨긴다 — 줄이 통째로 사라진다.
+        let isList = style.block == .listItem || style.block == .orderedItem
+        let keepsAll = hasCursor || style.block == .thematicBreak
+            || style.inlineSpans.contains { $0.token == .image && $0.length == 0 }
         for mark in style.markers {
             let range = NSRange(location: line.location + mark.start, length: mark.length)
             guard NSMaxRange(range) <= NSMaxRange(line) else { continue }
-            sheet.dimMarker(in: storage, range: range)
+            let isBlockMarker = mark.start < style.contentStart
+            if keepsAll || (isList && isBlockMarker) {
+                sheet.dimMarker(in: storage, range: range)
+            } else {
+                sheet.hideMarker(in: storage, range: range)
+            }
         }
     }
 }

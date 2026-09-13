@@ -151,9 +151,19 @@ struct EditorStyleSheet {
         }
     }
 
-    /// 마커를 흐리게. L2 는 여기만 바꾸면 숨겨진다.
+    /// 마커를 흐리게 — 커서가 있는 문단 (L1).
     func dimMarker(in text: NSMutableAttributedString, range: NSRange) {
         text.addAttribute(.foregroundColor, value: markerInk, range: range)
+    }
+
+    /// 마커를 숨긴다 — 커서가 없는 문단 (L2). **글자는 그대로 있다.** 0.01pt · 투명이라
+    /// 자리를 안 차지할 뿐이다. 선택 · 복사 · 저장은 원문이다 (ADR-0005).
+    func hideMarker(in text: NSMutableAttributedString, range: NSRange) {
+        text.addAttributes([
+            .font: UIFont.systemFont(ofSize: 0.01),
+            .foregroundColor: UIColor.clear,
+            .kern: 0,
+        ], range: range)
     }
 
     private func addTraits(_ traits: UIFontDescriptor.SymbolicTraits,

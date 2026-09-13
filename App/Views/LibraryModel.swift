@@ -439,6 +439,15 @@ final class LibraryModel: ObservableObject {
             saveFailed = false
             lastSaved = Date()
             lastError = nil
+            // 목록은 최근 수정순인데 저장한다고 다시 읽지는 않는다 — 그러면 고친 노트가
+            // 위로 안 올라온다 (48). 그 한 줄만 새 시각으로 바꿔 다시 정렬한다.
+            if let index = notes.firstIndex(where: { $0.relativePath == path }) {
+                let old = notes[index]
+                notes[index] = NoteSummary(relativePath: old.relativePath, title: old.title,
+                                           preview: old.preview, modifiedAt: Date(),
+                                           size: (draft as NSString).length, isDownloaded: old.isDownloaded)
+                notes.sort { $0.modifiedAt > $1.modifiedAt }
+            }
             await renderReading(path: path, text: draft)
         } catch {
             saveFailed = true
