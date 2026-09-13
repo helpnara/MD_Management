@@ -158,39 +158,76 @@ private struct NoteList: View {
 
 private struct NoteDetail: View {
     @EnvironmentObject private var library: LibraryModel
+    @Environment(\.openURL) private var openURL
+    @State private var alert: String?
 
     var body: some View {
         Group {
             if let note = library.selectedNote {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: Metrics.blockSpacing) {
-                        // 1주차: 아직 라이브 편집기가 아니다. 원문을 그대로 보여 준다.
-                        // 2주차에 ADR-0005 의 L1 → L2 로 갈아 끼운다.
-                        Text(library.noteText.isEmpty ? "(빈 파일)" : library.noteText)
-                            .font(.scaledMono(.body))
-                            .foregroundStyle(Palette.ink)
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        footer(for: note)
-                    }
-                    .padding(.horizontal, Metrics.gutter)
-                    .padding(.vertical, Metrics.blockSpacing)
-                }
-                .navigationTitle(note.title)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar { toolbarContent }
+                content(for: note)
+                    .navigationTitle(note.title)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { toolbarContent }
             } else {
                 ContentUnavailableView("노트를 고르세요", systemImage: "doc.text.magnifyingglass")
             }
         }
         .background(Palette.paper)
+        .alert("찾을 수 없습니다", isPresented: Binding(
+            get: { alert != nil },
+            set: { if !$0 { alert = nil } })) {
+            Button("확인", role: .cancel) { alert = nil }
+        } message: {
+            Text(alert ?? "")
+        }
+    }
+
+    @ViewBuilder
+    private func content(for note: NoteSummary) -> some View {
+        if library.isReading {
+            // 읽기 — 표 · 코드 · 핀치 줌이 공짜다 (ADR-0004)
+            NoteWebView(
+                html: library.pageHTML,
+                assets: library.assetProvider ?? EmptyAssetProvider(),
+                onOpen: handle)
+            .ignoresSafeArea(edges: .bottom)
+        } else {
+            // 쓰기 — 1주차는 아직 라이브 편집기가 아니다. 원문을 그대로 보여 준다.
+            // 2주차에 ADR-0005 의 L1 → L2 로 갈아 끼운다.
+            ScrollView {
+                VStack(alignment: .leading, spacing: Metrics.blockSpacing) {
+                    Text(library.noteText.isEmpty ? "(빈 파일)" : library.noteText)
+                        .font(.scaledMono(.body))
+                        .foregroundStyle(Palette.ink)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    footer(for: note)
+                }
+                .padding(.horizontal, Metrics.gutter)
+                .padding(.vertical, Metrics.blockSpacing)
+            }
+        }
+    }
+
+    private func handle(_ action: NoteLinkAction) {
+        switch action {
+        case .note(let path):
+            library.open(relativePath: path)
+        case .external(let url):
+            openURL(url)
+        case .attachment(let path):
+            // QuickLook 은 2주차. 지금은 무엇을 눌렀는지라도 알려 준다.
+            alert = "첨부 미리보기는 아직 없습니다.\n\(path)"
+        case .missing(let path):
+            alert = path
+        }
     }
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            // 위 토글: 읽기(WKWebView 완전 렌더) ↔ 쓰기(라이브). 쓰기가 기본이다.
+            // 위 토글: 읽기(WKWebView 완전 렌더) ↔ 쓰기(원문). 쓰기가 기본이다.
             Button {
                 library.isReading.toggle()
             } label: {
@@ -209,6 +246,11 @@ private struct NoteDetail: View {
                 label("크기", "\(note.size)바이트")
                 Spacer(minLength: 0)
             }
+            if !library.missingAttachments.isEmpty {
+                Text("찾을 수 없는 링크 \(library.missingAttachments.count)개")
+                    .font(.scaled(.caption))
+                    .foregroundStyle(.orange)
+            }
             if let error = library.lastError {
                 Text(error)
                     .font(.scaled(.caption))
@@ -226,4 +268,9 @@ private struct NoteDetail: View {
         .lineLimit(1)
         .fixedSize()
     }
+}
+
+/// 폴더가 아직 없을 때 쓰는 빈 제공자.
+private struct EmptyAssetProvider: AssetProvider {
+    func data(forRelativePath path: String) async -> Data? { nil }
 }

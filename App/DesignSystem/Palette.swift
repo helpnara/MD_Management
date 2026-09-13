@@ -25,9 +25,28 @@ enum Palette {
 
     // MARK: - 뷰어 CSS 로 넘기는 같은 토큰
 
-    /// `WKWebView` 의 `<style>` 맨 위에 넣는다. **`px` 를 적지 않는다** —
-    /// 글꼴은 `font: -apple-system-body` 가 Dynamic Type 을 저절로 따라간다.
-    static func cssVariables(dark: Bool) -> String {
+    /// `WKWebView` 의 `<style>` 맨 위에 넣는다.
+    ///
+    /// **두 벌을 다 낸다.** 라이트와 다크를 한 번에 넣어 두면 웹뷰가 시스템 설정을
+    /// 저절로 따라간다 — 모드가 바뀔 때마다 다시 렌더하지 않아도 된다.
+    ///
+    /// **`px` 를 적지 않는다** — 글꼴은 `font: -apple-system-body` 가 Dynamic Type 을
+    /// 저절로 따라간다 (설계서 §8).
+    static func cssTokens() -> String {
+        """
+        :root { color-scheme: light dark; }
+        :root {
+        \(variables(dark: false))
+        }
+        @media (prefers-color-scheme: dark) {
+          :root {
+        \(variables(dark: true))
+          }
+        }
+        """
+    }
+
+    private static func variables(dark: Bool) -> String {
         let traits = UITraitCollection(userInterfaceStyle: dark ? .dark : .light)
         func hex(_ color: UIColor) -> String {
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
@@ -36,14 +55,12 @@ enum Palette {
             return String(format: "#%02X%02X%02X", clamp(r), clamp(g), clamp(b))
         }
         return """
-        :root {
           --yb-paper: \(hex(.systemBackground));
           --yb-paper-raised: \(hex(.secondarySystemBackground));
           --yb-ink: \(hex(.label));
           --yb-ink-faint: \(hex(.secondaryLabel));
           --yb-accent: \(hex(.tintColor));
           --yb-rule: \(hex(.separator));
-        }
         """
     }
 }

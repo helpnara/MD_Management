@@ -148,3 +148,37 @@ actor FolderStore {
         return values?.ubiquitousItemDownloadingStatus == .current
     }
 }
+
+// MARK: - 뷰어에 파일 건네주기 (ADR-0004)
+
+extension FolderStore: AssetProvider {
+
+    /// 웹뷰의 `yb://note/<상대경로>` 요청을 받는다.
+    ///
+    /// **폴더 밖으로 나가는 경로는 거부한다.** 요청은 노트 본문에서 오고,
+    /// 노트는 남이 보낸 것일 수 있다 (설계서 §7.6.3).
+    func data(forRelativePath path: String) -> Data? {
+        guard Paths.join(base: "", relative: path) == Paths.normalized(path) else { return nil }
+        openScopeIfNeeded()
+
+        let url = root.appendingPathComponent(path)
+        var result: Data?
+        coordinateRead(url) { readURL in
+            result = try? Data(contentsOf: readURL)
+        }
+        return result
+    }
+
+    /// 후보 경로 가운데 실제로 있는 것만. 렌더러에 넘길 `exists` 를 만든다.
+    func existingPaths(among candidates: [String]) -> Set<String> {
+        openScopeIfNeeded()
+        var found: Set<String> = []
+        for candidate in candidates {
+            let url = root.appendingPathComponent(candidate)
+            if FileManager.default.fileExists(atPath: url.path) {
+                found.insert(candidate)
+            }
+        }
+        return found
+    }
+}

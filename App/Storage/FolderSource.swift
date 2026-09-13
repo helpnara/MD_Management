@@ -73,13 +73,17 @@ struct LaunchOptions: Sendable {
     /// 아이폰에서도 첫 노트를 열고 시작한다 — **CI 가 상세 화면을 찍으려고** 쓴다.
     /// 화면을 지정해 찍지 않으면 목록 한 장밖에 못 본다.
     var openFirstNote = false
+    /// 읽기 모드로 시작한다 — CI 가 뷰어(ADR-0004)를 찍으려고 쓴다.
+    /// 원격 세션에서 렌더 결과를 눈으로 보는 유일한 창구다.
+    var readingMode = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
             useSampleFolder: arguments.contains("-sampleFolder"),
             localFolderOnly: arguments.contains("-localFolderOnly"),
             skipOnboarding: arguments.contains("-skipOnboarding") || arguments.contains("-sampleFolder"),
-            openFirstNote: arguments.contains("-openFirstNote")
+            openFirstNote: arguments.contains("-openFirstNote") || arguments.contains("-readingMode"),
+            readingMode: arguments.contains("-readingMode")
         )
     }
 }

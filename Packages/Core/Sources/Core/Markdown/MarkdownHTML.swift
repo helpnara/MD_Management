@@ -43,14 +43,33 @@ public enum MarkdownHTML {
 
     // MARK: - 렌더
 
+    /// 본문이 참조하는 폴더 안 경로들. **렌더하기 전에** 이것으로 어느 파일이
+    /// 실제로 있는지 알아낸 뒤 `render(markdown:notePath:existing:)` 에 넘긴다.
+    ///
+    /// 왜 두 단계인가: 파일이 있는지 아는 것은 `actor FolderStore` 뿐인데,
+    /// 렌더는 순수 함수라 actor 를 기다릴 수 없다.
+    public static func referencedPaths(markdown: String, notePath: String) -> [String] {
+        let note = Paths.normalized(notePath)
+        var seen: Set<String> = []
+        var paths: [String] = []
+        for link in MarkdownLinks.extract(from: markdown) {
+            if case .relative(let path) = Paths.resolve(link: link.destination, fromNoteAt: note),
+               !seen.contains(path) {
+                seen.insert(path)
+                paths.append(path)
+            }
+        }
+        return paths
+    }
+
     /// - Parameters:
     ///   - markdown: 파일 전체 (머리말 포함)
     ///   - notePath: 폴더 기준 상대경로 — 상대 링크를 푸는 기준이다
-    ///   - exists: 폴더 기준 상대경로가 실제로 있는지
+    ///   - existing: 폴더 안에 실제로 있는 상대경로들 (`referencedPaths` → `FolderStore`)
     public static func render(
         markdown: String,
         notePath: String,
-        exists: (String) -> Bool
+        existing: Set<String>
     ) -> RenderedNote {
         let body = FrontMatterParser.parse(markdown).body
 
@@ -58,7 +77,7 @@ public enum MarkdownHTML {
         // 따옴표가 둥근 것으로 바뀌면 사용자가 쓴 글과 다르게 보인다.
         let document = Document(parsing: body, options: [.disableSmartOpts])
 
-        var rewriter = NoteRewriter(notePath: Paths.normalized(notePath), exists: exists)
+        var rewriter = NoteRewriter(notePath: Paths.normalized(notePath), existing: existing)
         let rewritten = rewriter.visit(document) ?? document
 
         return RenderedNote(
@@ -213,14 +232,15 @@ public enum MarkdownHTML {
 /// 라이브러리에 맡기고 우리는 뜻만 바꾼다.
 private struct NoteRewriter: MarkupRewriter {
     let notePath: String
-    let exists: (String) -> Bool
+    /// 폴더 안에 실제로 있는 상대경로들. 클로저가 아니라 값이라 저장해도 안전하다.
+    let existing: Set<String>
 
     private(set) var missing: [String] = []
     private var missingSeen: Set<String> = []
 
-    init(notePath: String, exists: @escaping (String) -> Bool) {
+    init(notePath: String, existing: Set<String>) {
         self.notePath = notePath
-        self.exists = exists
+        self.existing = existing
     }
 
     private mutating func record(_ rawLink: String) {
@@ -271,7 +291,7 @@ private struct NoteRewriter: MarkupRewriter {
             return InlineHTML(MarkdownHTML.missingBox(label: source))
 
         case .relative(let path):
-            guard exists(path) else {
+            guard existing.contains(path) else {
                 record(source)
                 return InlineHTML(MarkdownHTML.missingBox(label: path))
             }
@@ -296,7 +316,7 @@ private struct NoteRewriter: MarkupRewriter {
             break   // 그대로 둔다. 외부 URL 은 앱이 Safari 로 연다
 
         case .relative(let path):
-            if exists(path) {
+            if existing.contains(path) {
                 copy.destination = MarkdownHTML.assetURL(path)
             } else {
                 record(destination)

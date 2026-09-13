@@ -12,11 +12,10 @@ final class MarkdownHTMLTests: XCTestCase {
 
     func testStructureMatchesPython() throws {
         for item in try GoldenTests.loadGolden().cases {
-            let existing = Set(item.existing)
             let rendered = MarkdownHTML.render(
                 markdown: item.source,
                 notePath: item.notePath,
-                exists: { existing.contains($0) })
+                existing: Set(item.existing))
             let html = rendered.bodyHTML
             let expected = item.html
 
@@ -42,11 +41,10 @@ final class MarkdownHTMLTests: XCTestCase {
 
     func testImageSourcesMatchPython() throws {
         for item in try GoldenTests.loadGolden().cases {
-            let existing = Set(item.existing)
             let rendered = MarkdownHTML.render(
                 markdown: item.source,
                 notePath: item.notePath,
-                exists: { existing.contains($0) })
+                existing: Set(item.existing))
             XCTAssertEqual(imageSources(in: rendered.bodyHTML), item.html.imageSrcs,
                            "[\(item.name)] 이미지 주소")
         }
@@ -54,11 +52,10 @@ final class MarkdownHTMLTests: XCTestCase {
 
     func testMissingAttachmentsMatchPython() throws {
         for item in try GoldenTests.loadGolden().cases {
-            let existing = Set(item.existing)
             let rendered = MarkdownHTML.render(
                 markdown: item.source,
                 notePath: item.notePath,
-                exists: { existing.contains($0) })
+                existing: Set(item.existing))
             // 인코딩 차이를 걷어내고 견준다 (GoldenTests 의 같은 이유).
             let decoded = rendered.missingAttachments.map {
                 Paths.normalized($0.removingPercentEncoding ?? $0)
@@ -144,8 +141,16 @@ final class MarkdownHTMLTests: XCTestCase {
 
     // MARK: - 속
 
-    private func render(_ markdown: String) -> RenderedNote {
-        MarkdownHTML.render(markdown: markdown, notePath: "노트.md", exists: { _ in true })
+    private func render(_ markdown: String, existing: Set<String> = []) -> RenderedNote {
+        MarkdownHTML.render(markdown: markdown, notePath: "노트.md", existing: existing)
+    }
+
+    func testReferencedPathsListsFolderTargetsOnly() {
+        let paths = MarkdownHTML.referencedPaths(
+            markdown: "![](assets/a.png) [밖](https://x.com) [위](../b.md) ![또](assets/a.png)",
+            notePath: "노트.md")
+        XCTAssertEqual(paths, ["assets/a.png"],
+            "외부 URL 과 폴더 밖은 빼고, 같은 것은 한 번만")
     }
 
     private func count(of needle: String, in haystack: String) -> Int {

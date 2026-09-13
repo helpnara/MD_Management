@@ -254,12 +254,19 @@ jobs:
           # 큰 글씨 **목록** — 배너와 행이 같이 견디는지 (빌드 2 에서 배너가 잘렸다).
           shoot 04-large-text-list.png -sampleFolder \
             -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+          # **읽기 모드** (ADR-0004). 원격 세션에서 렌더 결과를 눈으로 보는
+          # 유일한 창구다 — 표 · 코드 · 사진이 제대로 나오는지.
+          shoot 05-reading.png -sampleFolder -readingMode
+          shoot 06-reading-large-text.png -sampleFolder -readingMode \
+            -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
 
           # ── 다크 모드 ──
           xcrun simctl ui "$UDID" appearance dark
           mkdir -p screenshots/dark
           shoot dark/01-list.png -sampleFolder
           shoot dark/02-note.png -sampleFolder -openFirstNote
+          # 웹뷰의 색 토큰이 앱과 같이 어두워지는지 (설계서 §8)
+          shoot dark/03-reading.png -sampleFolder -readingMode
           xcrun simctl ui "$UDID" appearance light
 
           # ── iPad (가정 A8 — 3단 분할이 정말 펼쳐지는가) ──
@@ -274,7 +281,8 @@ jobs:
             mkdir -p screenshots/ipad
             UDID="$IPAD"
             shoot ipad/01-split.png -sampleFolder
-            shoot ipad/02-large-text.png -sampleFolder \
+            shoot ipad/02-reading.png -sampleFolder -readingMode
+            shoot ipad/03-large-text.png -sampleFolder \
               -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
             UDID="${{ steps.sim.outputs.udid }}"
           else

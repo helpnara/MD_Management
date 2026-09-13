@@ -11,7 +11,12 @@ final class LibraryModel: ObservableObject {
     @Published private(set) var kind: FolderKind = .localDocuments
     @Published private(set) var isLoading = false
     @Published private(set) var noteText = ""
+    /// 읽기 모드에 넘길 완전한 HTML 문서 (ADR-0004).
+    @Published private(set) var pageHTML = ""
     @Published private(set) var attachmentCount = 0
+    /// 본문이 참조하는데 폴더에 없는 것 — 뷰어가 회색 상자로 보여 주고,
+    /// 공유 전에도 알린다 (설계서 §7.6-4).
+    @Published private(set) var missingAttachments: [String] = []
     @Published private(set) var lastError: String?
 
     /// 최상위는 빈 문자열.
@@ -28,8 +33,12 @@ final class LibraryModel: ObservableObject {
     let launch: LaunchOptions
     private var store: FolderStore?
 
+    /// 웹뷰가 `yb://` 로 파일을 읽어 갈 곳.
+    var assetProvider: AssetProvider? { store }
+
     init(launch: LaunchOptions = .fromProcess()) {
         self.launch = launch
+        self.isReading = launch.readingMode
     }
 
     var isSample: Bool { kind == .sample }
@@ -77,27 +86,48 @@ final class LibraryModel: ObservableObject {
 
     func loadSelectedText() async {
         guard let store, let note = selectedNote else {
-            noteText = ""
-            attachmentCount = 0
+            clearNote()
             return
         }
         do {
             let text = try await store.readText(at: note.relativePath)
             noteText = text
-            // Core 가 세어 준다. 공유(§7.6)와 첨부 표시(§7.3)가 같은 추출기를 쓴다.
-            attachmentCount = MarkdownLinks.extract(from: text)
-                .filter { link in
-                    if case .relative = Paths.resolve(link: link.destination, fromNoteAt: note.relativePath) {
-                        return true
-                    }
-                    return false
-                }
-                .count
+
+            // 두 단계다 (MarkdownHTML.referencedPaths 주석 참고): 파일이 있는지
+            // 아는 것은 actor 뿐인데 렌더는 순수 함수라 기다릴 수 없다.
+            let referenced = MarkdownHTML.referencedPaths(markdown: text, notePath: note.relativePath)
+            let existing = await store.existingPaths(among: referenced)
+
+            let rendered = MarkdownHTML.render(
+                markdown: text,
+                notePath: note.relativePath,
+                existing: existing)
+
+            pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML, css: Palette.cssTokens())
+            attachmentCount = existing.count
+            missingAttachments = rendered.missingAttachments
             lastError = nil
         } catch {
-            noteText = ""
-            attachmentCount = 0
+            clearNote()
             lastError = error.localizedDescription
         }
+    }
+
+    /// 폴더 안의 다른 노트를 뷰어에서 탭했을 때.
+    func open(relativePath: String) {
+        if let match = notes.first(where: { $0.relativePath == relativePath }) {
+            selectedNoteID = match.id
+            return
+        }
+        // 다른 폴더의 노트다 — 그 폴더로 옮겨 가서 고른다.
+        selectedFolder = Paths.directory(of: relativePath)
+        selectedNoteID = relativePath
+    }
+
+    private func clearNote() {
+        noteText = ""
+        pageHTML = ""
+        attachmentCount = 0
+        missingAttachments = []
     }
 }
