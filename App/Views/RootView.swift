@@ -21,6 +21,7 @@ struct RootView: View {
         .task {
             library.autoSelectsFirstNote = prefersPreselectedNote
             await library.start()
+            if library.launch.attachmentTest { await library.makeAttachmentTest() }
         }
         .task(id: library.selectedFolder) {
             library.autoSelectsFirstNote = prefersPreselectedNote

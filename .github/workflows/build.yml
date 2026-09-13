@@ -288,6 +288,9 @@ jobs:
           # **진단 화면** — 폴더가 어디인지 보여 주는 곳. 2026-09-13 에 이것이
           # 없어서 A2 반증의 원인을 화면으로 못 봤다.
           shoot 07-diagnostics.png -sampleFolder -diagnostics
+          # **첨부 시험** — 사진 셋(영문 · 한글+공백 · 퍼센트 인코딩)이 다
+          # 그려지는지. 실기기로 내려보내기 전에 지나는 칸이다 (A3 · A13).
+          shoot 08-attachment-test.png -sampleFolder -attachmentTest
           # **읽기 모드** (ADR-0004). 원격 세션에서 렌더 결과를 눈으로 보는
           # 유일한 창구다 — 표 · 코드 · 사진이 제대로 나오는지.
           shoot 05-reading.png -sampleFolder -readingMode

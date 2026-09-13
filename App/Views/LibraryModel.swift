@@ -102,6 +102,61 @@ final class LibraryModel: ObservableObject {
         await reloadNotes()
     }
 
+    /// 첨부가 제대로 뜨는지 **한 번 눌러 보는** 시험 (가정 A3 · A13).
+    ///
+    /// 손으로 하려면 사진을 `assets/` 에 넣고 다른 앱으로 `.md` 를 고쳐야 하는데,
+    /// 그 과정에서 실수가 나면 원인 찾기가 더 어려워진다. 앱이 직접 만든다.
+    ///
+    /// 세 가지를 **갈라서** 본다 — 어느 것만 안 보이는지가 곧 원인이다:
+    /// 1. 영문 이름 (`test.png`) — 폴더의 파일을 읽는가 (**A3**)
+    /// 2. 한글 · 공백 이름 — iCloud 를 거쳐도 이름이 안 깨지는가 (**A13**)
+    /// 3. 같은 파일을 퍼센트 인코딩으로 — 옵시디언이 쓰는 꼴
+    func makeAttachmentTest() async {
+        guard let store else { return }
+        guard let png = SampleFolder.placeholderPNG() else {
+            lastError = "시험 그림을 만들지 못했습니다"
+            return
+        }
+        do {
+            try await store.createFolder("assets")
+            try await store.writeData(png, to: "assets/test.png")
+            try await store.writeData(png, to: "assets/시험 사진.png")
+            try await store.writeText(Self.attachmentTestNote, to: "첨부 시험.md")
+
+            await reloadFolders()
+            await reloadNotes()
+            selectedNoteID = "첨부 시험.md"
+            isReading = true
+            showsDiagnostics = false
+            lastError = nil
+        } catch {
+            lastError = "시험 파일을 만들지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 곧은 따옴표를 문구 안에 쓰지 않는다 (CLAUDE.md §5).
+    private static let attachmentTestNote = """
+    # 첨부 시험
+
+    이 노트와 `assets` 의 사진 둘은 **진단 화면의 버튼**이 만든 것입니다.
+    확인이 끝나면 지우셔도 됩니다.
+
+    아래 **셋 다 사진이 보이면** 첨부가 제대로 도는 것입니다.
+    회색 상자에 경로가 뜨는 것이 있으면 그것이 어긋난 자리입니다.
+
+    ## 1. 영문 이름
+
+    ![](assets/test.png)
+
+    ## 2. 한글 · 공백 이름
+
+    ![](<assets/시험 사진.png>)
+
+    ## 3. 같은 사진을 퍼센트 인코딩으로
+
+    ![](assets/%EC%8B%9C%ED%97%98%20%EC%82%AC%EC%A7%84.png)
+    """
+
     /// 사용자가 복사해 붙일 수 있는 것. **글과 사진은 담지 않는다.**
     var diagnosticsText: String {
         """

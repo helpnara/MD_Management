@@ -35,8 +35,17 @@ enum SampleFolder {
         try? text.write(to: url, atomically: true, encoding: .utf8)
     }
 
+    /// 사진첩 없이 만든 그림. 첨부 시험(진단 화면)도 이것을 쓴다.
+    static func placeholderPNG() -> Data? {
+        renderPlaceholder().pngData()
+    }
+
     /// 사진첩을 안 쓰고 그림 하나를 만든다 — CI 에서도 이미지 링크가 살아 있어야 한다.
     private static func writePlaceholderImage(to url: URL) {
+        try? renderPlaceholder().pngData()?.write(to: url)
+    }
+
+    private static func renderPlaceholder() -> UIImage {
         let size = CGSize(width: 640, height: 360)
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { context in
@@ -51,7 +60,7 @@ enum SampleFolder {
                           controlPoint2: CGPoint(x: 380, y: 330))
             path.stroke()
         }
-        try? image.pngData()?.write(to: url)
+        return image
     }
 
     // 곧은 따옴표를 쓰지 않는다 — 지난 앱에서 빌드 시스템이 같은 자리에서 두 번 죽었다.

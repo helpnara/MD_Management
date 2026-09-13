@@ -134,6 +134,40 @@ actor FolderStore {
         if let error = thrown ?? coordinationError { throw error }
     }
 
+    /// 이미지 같은 이진 파일을 원자적으로 쓴다.
+    func writeData(_ data: Data, to relativePath: String) throws {
+        openScopeIfNeeded()
+        let target = root.appendingPathComponent(relativePath)
+        try createFolder(Paths.directory(of: relativePath))
+
+        var thrown: Error?
+        var coordinationError: NSError?
+        NSFileCoordinator().coordinate(writingItemAt: target, options: .forReplacing, error: &coordinationError) { url in
+            do {
+                let temporary = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(UUID().uuidString)
+                try data.write(to: temporary, options: .atomic)
+                if FileManager.default.fileExists(atPath: url.path) {
+                    _ = try FileManager.default.replaceItemAt(url, withItemAt: temporary)
+                } else {
+                    try FileManager.default.moveItem(at: temporary, to: url)
+                }
+            } catch {
+                thrown = error
+            }
+        }
+        if let error = thrown ?? coordinationError { throw error }
+    }
+
+    /// 하위 폴더를 만든다. 빈 문자열이면 아무것도 안 한다.
+    func createFolder(_ relativePath: String) throws {
+        guard !relativePath.isEmpty else { return }
+        openScopeIfNeeded()
+        try FileManager.default.createDirectory(
+            at: root.appendingPathComponent(relativePath),
+            withIntermediateDirectories: true)
+    }
+
     // MARK: - 속
 
     private func coordinateRead(_ url: URL, _ body: (URL) -> Void) {

@@ -71,6 +71,18 @@ struct DiagnosticsView: View {
 
                 Section {
                     Button {
+                        Task { await library.makeAttachmentTest() }
+                    } label: {
+                        Label("첨부 시험 파일 만들기", systemImage: "photo.badge.plus")
+                    }
+                } header: {
+                    Text("첨부 시험")
+                } footer: {
+                    Text("`첨부 시험.md` 와 `assets` 의 사진 둘을 만들고 **읽기 모드로 엽니다.** 사진 셋이 다 보이면 첨부가 제대로 도는 것입니다. 만든 파일은 언제든 지우셔도 됩니다.")
+                }
+
+                Section {
+                    Button {
                         UIPasteboard.general.string = library.diagnosticsText
                         copied = true
                     } label: {
