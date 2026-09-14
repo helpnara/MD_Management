@@ -65,3 +65,9 @@ struct ConflictSweep: Sendable {
     let pending: Int
 }
 
+/// 쓰려는데 디스크의 글이 우리가 아는 것과 달랐다 — 다른 기기가 고쳤다. 덮지 않았다.
+enum WriteConflict: Error, Sendable {
+    /// 지금 디스크에 있는 글.
+    case changedOnDisk(String)
+}
+

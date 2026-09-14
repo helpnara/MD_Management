@@ -229,14 +229,30 @@ actor FolderStore {
     }
 
     /// **원자적으로** 쓴다. 원본을 열어 놓고 덮어쓰지 않는다 (설계서 §7.1).
-    func writeText(_ text: String, to relativePath: String) throws {
+    ///
+    /// `expecting` 은 **우리가 마지막으로 읽었거나 쓴 글**이다. 조정 안에서 디스크의 글이 그것과
+    /// 다르면(다른 기기가 고쳤다) **쓰지 않고** `WriteConflict.changedOnDisk` 를 던진다 — 부른 쪽이
+    /// 충돌 사본을 만든다 (A15). 검사와 쓰기가 한 덩어리여야 그 사이에 들어온 글을 덮지 않는다.
+    ///
+    /// **조정 옵션은 UIDocument 와 같다.** 파일을 처음 만들 때만 `.forReplacing`, 있는 파일에
+    /// 덮어쓸 때는 `.forMerging`. `.forReplacing` 은 "이 자리를 새 항목으로 바꾼다" 는 뜻이라
+    /// iCloud 가 저장을 **새 파일**로 봤고, 두 기기가 같은 노트를 고치면 판본 대신 `A 2` 가
+    /// 생겼다 (빌드 20 · 21 의 1번 — 임시 파일 자리를 옮겨도 그대로였다).
+    func writeText(_ text: String, to relativePath: String, expecting previous: String? = nil) throws {
         openScopeIfNeeded()
         let target = root.appendingPathComponent(relativePath)
+        let exists = FileManager.default.fileExists(atPath: target.path)
         var thrown: Error?
 
         var coordinationError: NSError?
-        NSFileCoordinator().coordinate(writingItemAt: target, options: .forReplacing, error: &coordinationError) { url in
+        NSFileCoordinator().coordinate(writingItemAt: target, options: exists ? .forMerging : .forReplacing,
+                                       error: &coordinationError) { url in
             do {
+                if let previous, let data = try? Data(contentsOf: url),
+                   let onDisk = Self.decode(data)?.text, onDisk != previous, onDisk != text {
+                    thrown = WriteConflict.changedOnDisk(onDisk)
+                    return
+                }
                 let temporary = try Self.replacementScratch(for: url).appendingPathExtension("md")
                 try text.write(to: temporary, atomically: true, encoding: .utf8)
                 if FileManager.default.fileExists(atPath: url.path) {
@@ -274,9 +290,11 @@ actor FolderStore {
 
         var thrown: Error?
         var coordinationError: NSError?
-        NSFileCoordinator().coordinate(writingItemAt: target, options: .forReplacing, error: &coordinationError) { url in
+        let exists = FileManager.default.fileExists(atPath: target.path)
+        NSFileCoordinator().coordinate(writingItemAt: target, options: exists ? .forMerging : .forReplacing,
+                                       error: &coordinationError) { url in
             do {
-                // 글과 같은 까닭으로 같은 볼륨의 교체 전용 폴더에 (위 `replacementScratch`).
+                // 글과 같은 까닭으로 같은 볼륨의 교체 전용 폴더에 · 같은 조정 옵션으로 (위 `writeText`).
                 let temporary = try Self.replacementScratch(for: url)
                 try data.write(to: temporary, options: .atomic)
                 if FileManager.default.fileExists(atPath: url.path) {

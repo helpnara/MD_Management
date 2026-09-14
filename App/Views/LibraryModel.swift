@@ -686,11 +686,13 @@ final class LibraryModel: ObservableObject {
         let original = path
         var conflictPath: String?
         do {
-            // **덮어쓰기 전에 파일이 그대로인지 본다** (설계서 §7.2 · A15). 도장(시각 · 크기)이
-            // 다르면 내용을 읽어 견준다 — iCloud 가 시각만 건드린 경우를 걸러 헛돌지 않게.
+            // **덮어쓰기 전에 파일이 그대로인지 본다** (설계서 §7.2 · A15). 검사는 저장소가
+            // 조정 **안**에서 한다 — 검사와 쓰기 사이에 다른 기기의 글이 들어와도 덮지 않는다.
             // 정말 다른 글이면 **덮어쓰지 않고** `이름 (충돌 …).md` 로 나란히 쓰고 그쪽을 연다.
-            if let known = draftStamp, let now = await store.stamp(of: path), now != known,
-               let onDisk = try? await store.readText(at: path), onDisk != noteText {
+            do {
+                try await store.writeText(draft, to: path, expecting: noteText)
+                lastError = nil
+            } catch WriteConflict.changedOnDisk {
                 let name = path.split(separator: "/").last.map(String.init) ?? path
                 let conflict = try await store.createNote(
                     named: FolderStore.conflictName(for: name),
@@ -701,9 +703,6 @@ final class LibraryModel: ObservableObject {
                 let shown = conflict.split(separator: "/").last.map(String.init) ?? conflict
                 lastError = "다른 기기에서 고친 노트입니다. 내 글은 \(shown) 로 나란히 저장했습니다."
                 log("충돌: \(name) 이 디스크에서 바뀌어 내 글을 \(shown) 로 저장")
-            } else {
-                try await store.writeText(draft, to: path)
-                lastError = nil
             }
             draftStamp = await store.stamp(of: path)
             noteText = draft
