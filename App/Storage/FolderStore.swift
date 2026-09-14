@@ -224,6 +224,36 @@ actor FolderStore {
         return target
     }
 
+    /// 최상위에 하위 폴더를 만든다. 이름은 파일 이름과 같은 규칙으로 다듬고,
+    /// 같은 이름이 있으면 `이름 2` 로 비켜 간다. 만든 폴더의 상대경로를 준다.
+    func createSubfolder(named name: String) throws -> String {
+        openScopeIfNeeded()
+        let safe = Paths.safeFileName(name, fallback: "새 폴더")
+        var chosen = safe
+        for attempt in 2...999 {
+            if !FileManager.default.fileExists(atPath: root.appendingPathComponent(chosen).path) { break }
+            chosen = "\(safe) \(attempt)"
+        }
+        try createFolder(chosen)
+        return chosen
+    }
+
+    /// **되돌릴 수 없는 유일한 삭제.** `.trash/` 안의 것만 지운다 — 다른 경로가
+    /// 오면 아무것도 안 한다. 확인(타이핑)은 화면이 받았다 (설계서 §7.1).
+    func deleteTrashed(_ relativePath: String) throws {
+        guard relativePath.hasPrefix(".trash/") else { return }
+        openScopeIfNeeded()
+        try remove(root.appendingPathComponent(relativePath))
+    }
+
+    /// `.trash/` 를 통째로 지운다. 다음 지우기가 다시 만든다.
+    func emptyTrash() throws {
+        openScopeIfNeeded()
+        let trash = root.appendingPathComponent(".trash")
+        guard FileManager.default.fileExists(atPath: trash.path) else { return }
+        try remove(trash)
+    }
+
     /// 노트 옆 `assets/` 에 첨부를 넣는다. 같은 이름이 있으면 번호를 올린다.
     /// 만든 파일의 **노트 기준 상대경로**(`assets/2026-09-13-1.jpg`)를 준다.
     ///
@@ -280,6 +310,20 @@ actor FolderStore {
                     at: to.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try FileManager.default.moveItem(at: from, to: to)
                 coordinator.item(at: from, didMoveTo: to)
+            } catch {
+                thrown = error
+            }
+        }
+        if let error = thrown ?? coordinationError { throw error }
+    }
+
+    /// 영구 삭제도 `NSFileCoordinator` 로 — iCloud 가 지운 것을 알아야 다른 기기에서도 사라진다.
+    private func remove(_ url: URL) throws {
+        var thrown: Error?
+        var coordinationError: NSError?
+        NSFileCoordinator().coordinate(writingItemAt: url, options: .forDeleting, error: &coordinationError) { target in
+            do {
+                try FileManager.default.removeItem(at: target)
             } catch {
                 thrown = error
             }

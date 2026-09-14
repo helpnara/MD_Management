@@ -1,13 +1,14 @@
 import SwiftUI
 import Core
 
-/// 설정 — 지금은 **폴더**와 **`파일` 앱에서 열기** 둘이다.
+/// 설정 — **폴더** · **`파일` 앱에서 열기** · **휴지통** · 진단.
 ///
 /// 진단은 여기 안으로 들어왔다. 청진기 아이콘을 늘 보여 주는 것보다, 설정 안에
 /// 두고 필요할 때 찾아 들어가는 편이 맞다.
 struct SettingsView: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.dismiss) private var dismiss
+    @State private var showsTrash = false
 
     var body: some View {
         NavigationStack {
@@ -53,7 +54,14 @@ struct SettingsView: View {
             }
             .navigationTitle("설정")
             .navigationBarTitleDisplayMode(.inline)
-            .task { await library.reloadTrash() }
+            // CI 가 휴지통을 찍으려고 `-trash` 로 연다. 사람은 위의 링크로 들어간다.
+            .navigationDestination(isPresented: $showsTrash) {
+                TrashView().environmentObject(library)
+            }
+            .task {
+                await library.reloadTrash()
+                if library.launch.showTrash { showsTrash = true }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("닫기") { dismiss() }
@@ -167,29 +175,21 @@ struct IncomingFileSheet: View {
 }
 
 
-/// 휴지통 — `.trash/` 안의 노트. **되돌리기**만 있다. 영구 삭제는 나중에 타이핑
-/// 확인으로만 (설계서 §7.1). 가정 A14(`.trash/` 가 iCloud 에서 되는가)를 이 화면이 판정한다.
+/// 휴지통 — `.trash/` 안의 노트. **되돌리기**가 기본이고, 영구 삭제는 **타이핑
+/// 확인**(`지우기` 를 그대로 입력) 뒤에만 한다 (설계서 §7.1 · 51). 가정 A14(`.trash/`
+/// 가 iCloud 에서 되는가)를 이 화면이 판정한다.
 struct TrashView: View {
     @EnvironmentObject private var library: LibraryModel
 
     var body: some View {
         List {
-            ForEach(library.trashed) { note in
-                HStack(spacing: Metrics.rowSpacing) {
-                    VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
-                        Text(note.title)
-                            .font(.scaled(.body))
-                            .foregroundStyle(Palette.ink)
-                        Text(note.modifiedAt, format: .dateTime.year().month().day().hour().minute())
-                            .font(.scaled(.caption))
-                            .foregroundStyle(Palette.inkFaint)
-                    }
-                    Spacer(minLength: Metrics.rowSpacing)
-                    Button("되돌리기") {
-                        Task { await library.restore(note) }
-                    }
-                    .buttonStyle(.bordered)
-                    .font(.scaled(.callout))
+            Section {
+                ForEach(library.trashed) { note in
+                    row(note)
+                }
+            } footer: {
+                if !library.trashed.isEmpty {
+                    Text("줄을 왼쪽으로 밀면 **영구 삭제**할 수 있습니다. 영구 삭제는 되돌릴 수 없어 확인 문구를 입력해야 합니다.")
                 }
             }
         }
@@ -202,5 +202,76 @@ struct TrashView: View {
         .navigationTitle("휴지통")
         .navigationBarTitleDisplayMode(.inline)
         .task { await library.reloadTrash() }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("비우기", role: .destructive) {
+                    library.purgeText = ""
+                    library.purging = .all
+                }
+                .disabled(library.trashed.isEmpty)
+            }
+        }
+        .modifier(PurgeAlert())
+    }
+
+    private func row(_ note: NoteSummary) -> some View {
+        HStack(spacing: Metrics.rowSpacing) {
+            VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
+                Text(note.title)
+                    .font(.scaled(.body))
+                    .foregroundStyle(Palette.ink)
+                Text(note.modifiedAt, format: .dateTime.year().month().day().hour().minute())
+                    .font(.scaled(.caption))
+                    .foregroundStyle(Palette.inkFaint)
+            }
+            Spacer(minLength: Metrics.rowSpacing)
+            Button("되돌리기") {
+                Task { await library.restore(note) }
+            }
+            .buttonStyle(.bordered)
+            .font(.scaled(.callout))
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                library.purgeText = ""
+                library.purging = .one(note)
+            } label: {
+                Label("영구 삭제", systemImage: "trash.slash")
+            }
+        }
+    }
+}
+
+/// 영구 삭제 확인창. **되돌릴 수 없는 유일한 삭제**라 버튼 하나로 끝내지 않는다 —
+/// `지우기` 를 그대로 쳐야 지운다 (설계서 §7.1). 문구가 다르면 아무것도 안 하고
+/// 아래 띠로 알린다. 알림창 안의 버튼은 `.disabled` 가 믿음직하지 않아 검사는 모델이 한다.
+private struct PurgeAlert: ViewModifier {
+    @EnvironmentObject private var library: LibraryModel
+
+    func body(content: Content) -> some View {
+        content
+            .alert("영구 삭제", isPresented: presented, presenting: library.purging,
+                   actions: actions, message: message)
+    }
+
+    private var presented: Binding<Bool> {
+        Binding(get: { library.purging != nil }, set: { if !$0 { library.purging = nil } })
+    }
+
+    @ViewBuilder
+    private func actions(_ target: LibraryModel.Purge) -> some View {
+        TextField("확인 문구", text: $library.purgeText)
+        Button("영구 삭제", role: .destructive) { Task { await library.finishPurge(target) } }
+        Button("취소", role: .cancel) { library.purging = nil }
+    }
+
+    @ViewBuilder
+    private func message(_ target: LibraryModel.Purge) -> some View {
+        switch target {
+        case .all:
+            Text("휴지통의 노트 \(library.trashed.count)개를 완전히 지웁니다. 되돌릴 수 없습니다. 지우려면 \(LibraryModel.purgeConfirmation) 라고 입력하세요.")
+        case .one(let note):
+            Text("\(note.title) 을 완전히 지웁니다. 되돌릴 수 없습니다. 지우려면 \(LibraryModel.purgeConfirmation) 라고 입력하세요.")
+        }
     }
 }

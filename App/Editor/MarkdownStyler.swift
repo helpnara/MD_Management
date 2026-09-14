@@ -24,7 +24,7 @@ enum MarkdownStyler {
     /// 새 머리말 길이를 돌려준다 — 부른 쪽이 들고 있다가 다음에 넘긴다.
     ///
     /// `cursor` 는 커서 자리 (UTF-16). 그 문단은 마커를 흐리게(L1), 나머지는 숨긴다(L2).
-    /// `nil` 이면 다 흐리게 — VoiceOver 가 켜졌을 때의 후퇴다 (A10).
+    /// `nil` 이면 다 흐리게(L1) — 커서를 모를 때(전체 다시 칠하기)만.
     @discardableResult
     static func restyle(_ storage: NSTextStorage, touching range: NSRange,
                         with sheet: EditorStyleSheet, previousHeader: Int = 0,

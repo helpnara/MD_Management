@@ -76,10 +76,9 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 지난번 커서 문단. 커서가 다른 문단으로 가면 **둘만** 다시 칠한다 (S11).
         private var cursorParagraph = NSRange(location: 0, length: 0)
 
-        /// L2 를 켤까. VoiceOver 는 0.01pt 로 숨긴 마커를 그대로 읽으므로 L1 로 물러선다 (A10).
-        private var cursorHint: Int? {
-            UIAccessibility.isVoiceOverRunning ? nil : view?.selectedRange.location
-        }
+        /// 커서 자리. 그 문단만 마커를 흐리게(L1) 두고 나머지는 숨긴다(L2).
+        /// VoiceOver 후퇴는 두지 않는다 — 사용자 결정 (빌드 14 · 13번, A10).
+        private var cursorHint: Int? { view?.selectedRange.location }
         /// 한글 조합 중에는 속성을 건드리지 않는다 — 조합이 끊겨 자음과 모음이
         /// 따로 찍힌다 (안정화 기준 S10).
         private var isComposing = false
@@ -170,7 +169,7 @@ struct MarkdownEditor: UIViewRepresentable {
                       let sheet, let storage = view?.textStorage else { return }
                 isStyling = true
                 // 고치는 중인 문단에 커서가 있다 — 선택값은 아직 옛것일 수 있으므로 고친 자리를 쓴다.
-                let cursor = UIAccessibility.isVoiceOverRunning ? nil : edited.location
+                let cursor = edited.location
                 headerLength = MarkdownStyler.restyle(storage, touching: edited, with: sheet,
                                                       previousHeader: headerLength, cursor: cursor)
                 isStyling = false

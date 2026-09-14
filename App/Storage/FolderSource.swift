@@ -198,6 +198,8 @@ struct LaunchOptions: Sendable {
     var showSettings = false
     /// 새 노트를 만들고 열고 시작한다 — CI 가 만들기 → 열기 흐름을 찍으려고 쓴다.
     var newNote = false
+    /// 설정 → 휴지통까지 열고 시작한다 — CI 가 그 화면을 찍으려고 쓴다. `-settings` 와 같이 준다.
+    var showTrash = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -209,7 +211,8 @@ struct LaunchOptions: Sendable {
             showDiagnostics: arguments.contains("-diagnostics"),
             attachmentTest: arguments.contains("-attachmentTest"),
             showSettings: arguments.contains("-settings"),
-            newNote: arguments.contains("-newNote")
+            newNote: arguments.contains("-newNote"),
+            showTrash: arguments.contains("-trash")
         )
     }
 }

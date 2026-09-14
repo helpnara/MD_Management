@@ -41,6 +41,29 @@ final class LibraryModel: ObservableObject {
     /// 지울지 묻는 중인 노트. **모든 삭제에 확인** (CLAUDE.md §1).
     @Published var trashing: NoteSummary?
 
+    /// 새 폴더 이름을 묻는 중인가 · 그 이름. 폴더 화면의 알림창이 이것을 본다 (52).
+    @Published var creatingFolder = false
+    @Published var newFolderName = ""
+    /// 영구 삭제를 묻는 중인 대상 · 사용자가 친 확인 문구. **되돌릴 수 없는 유일한
+    /// 삭제**라 설계서 §7.1 대로 `지우기` 를 그대로 쳐야만 지운다 (51).
+    @Published var purging: Purge?
+    @Published var purgeText = ""
+
+    enum Purge: Identifiable {
+        case all
+        case one(NoteSummary)
+
+        var id: String {
+            switch self {
+            case .all: return "*"
+            case .one(let note): return note.id
+            }
+        }
+    }
+
+    /// 영구 삭제 확인 문구. 화면과 검사가 같은 값을 본다.
+    static let purgeConfirmation = "지우기"
+
     /// 편집기가 커서 자리에 넣어야 할 글. 사진을 고르면 여기 링크가 실린다.
     /// `Identifiable` 인 이유: 같은 글을 두 번 넣어도 새 요청으로 보이게.
     @Published var insertion: Insertion?
@@ -301,6 +324,24 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    /// 최상위에 하위 폴더를 만들고 그 폴더로 간다 (52).
+    func finishCreateFolder() async {
+        guard let store else { return }
+        creatingFolder = false
+        let name = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        newFolderName = ""
+        guard !name.isEmpty else { return }
+        await save()
+        do {
+            let path = try await store.createSubfolder(named: name)
+            await reloadFolders()
+            selectedFolder = path
+            lastError = nil
+        } catch {
+            lastError = "폴더를 만들지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
     func beginRename(_ note: NoteSummary) {
         renameText = Paths.baseName(note.fileName)
         renaming = note
@@ -386,6 +427,29 @@ final class LibraryModel: ObservableObject {
             lastError = nil
         } catch {
             lastError = "되돌리지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// **되돌릴 수 없는 유일한 삭제.** 확인 문구가 다르면 아무것도 안 하고 그 사실을 띄운다.
+    /// 대상을 인자로 받는 이유는 `finishRename` 과 같다 — 창이 닫히며 `purging` 이 먼저 비워진다.
+    func finishPurge(_ target: Purge) async {
+        guard let store else { return }
+        purging = nil
+        let typed = purgeText.trimmingCharacters(in: .whitespacesAndNewlines)
+        purgeText = ""
+        guard typed == Self.purgeConfirmation else {
+            lastError = "확인 문구가 다릅니다. \(Self.purgeConfirmation) 라고 그대로 입력해야 지웁니다."
+            return
+        }
+        do {
+            switch target {
+            case .all: try await store.emptyTrash()
+            case .one(let note): try await store.deleteTrashed(note.relativePath)
+            }
+            await reloadTrash()
+            lastError = nil
+        } catch {
+            lastError = "영구 삭제하지 못했습니다: \(error.localizedDescription)"
         }
     }
 

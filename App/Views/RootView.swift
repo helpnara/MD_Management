@@ -226,11 +226,27 @@ private struct FolderSidebar: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    library.newFolderName = ""
+                    library.creatingFolder = true
+                } label: {
+                    Label("새 폴더", systemImage: "folder.badge.plus")
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
                     library.sheet = .settings
                 } label: {
                     Label("설정", systemImage: "gearshape")
                 }
             }
+        }
+        // 새 폴더 (52). 최상위 바로 아래 한 단계만 — 폴더 안의 폴더는 아직 없다.
+        .alert("새 폴더", isPresented: $library.creatingFolder) {
+            TextField("폴더 이름", text: $library.newFolderName)
+            Button("만들기") { Task { await library.finishCreateFolder() } }
+            Button("취소", role: .cancel) { library.creatingFolder = false }
+        } message: {
+            Text("\(library.folderName) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.")
         }
     }
 

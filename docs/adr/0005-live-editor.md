@@ -38,8 +38,9 @@
 - **이미지 프래그먼트는 미리 디코딩해 캐시**(긴 변 화면 폭 2×). 스크롤 중 디코딩 금지.
 - **글꼴은 `UIFontMetrics` 로 스케일.** Dynamic Type 이 바뀌면 전체 재스타일 한 번.
 - 하드웨어 키보드 `⌘/` 로 "전체 원문 보기" 토글 — 디버깅 · 대량 편집용.
-- **접근성:** 0.01pt 로 숨긴 마커를 VoiceOver 가 그대로 읽는다. `accessibilityAttributedLabel`
-  로 가리거나, 안 되면 VoiceOver 실행 중에는 L1 로 내려간다. → A10
+- **접근성:** 0.01pt 로 숨긴 마커를 VoiceOver 가 그대로 읽는다. 빌드 13~14 에는 VoiceOver
+  실행 중 L1 로 내려가는 후퇴를 두었으나 **2026-09-14 사용자 결정으로 뺐다** (쓰지 않는
+  기능). 필요해지면 `accessibilityAttributedLabel` 로 가리는 쪽이 맞다. → A10
 
 ## L1 의 자 — `LineStyler` (2026-09-13)
 
