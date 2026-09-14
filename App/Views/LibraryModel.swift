@@ -535,7 +535,7 @@ final class LibraryModel: ObservableObject {
     /// 그 뒤로는 `제목 2` 자리를 지킨다 (`FolderStore.rename` 의 `keeping`).
     /// 편집기는 건드리지 않는다 — `editorSession` 이 그대로라 커서도 키보드도 그대로다.
     private func followTitle(of text: String, at path: String) async {
-        guard let store, let heading = FrontMatter.firstHeading(of: text) else { return }
+        guard let store, let heading = FrontMatterParser.firstHeading(of: text) else { return }
         let wanted = Paths.safeFileName(heading, fallback: "")
         let fileName = path.split(separator: "/").last.map(String.init) ?? path
         guard !wanted.isEmpty, wanted != Paths.baseName(fileName) else { return }
