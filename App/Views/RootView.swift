@@ -308,11 +308,13 @@ private struct FolderSidebar: View {
     /// 하위 폴더에도 노트처럼 지우기 · 이름 (사용자 요청, 빌드 17). 최상위는 없다.
     @ViewBuilder
     private func folderSwipeActions(for folder: FolderSummary) -> some View {
-        Button(role: .destructive) {
+        // 노트 줄과 같은 이유로 `role: .destructive` 를 안 쓴다 (위 `swipeActions` 주석).
+        Button {
             library.trashingFolder = folder
         } label: {
             Label("지우기", systemImage: "trash")
         }
+        .tint(.red)
         Button {
             library.beginRenameFolder(folder)
         } label: {
@@ -391,11 +393,16 @@ private struct NoteList: View {
 
     @ViewBuilder
     private func swipeActions(for note: NoteSummary) -> some View {
-        Button(role: .destructive) {
+        // **`role: .destructive` 를 쓰지 않는다.** 그 역할을 주면 SwiftUI 가 누르는 즉시
+        // **줄이 지워지는 시늉**을 한다 — 아래 노트가 위로 올라왔다가, 우리는 확인창만
+        // 띄우고 아무것도 안 지우므로 도로 내려온다. 그 깜빡임이 어색했다 (빌드 21 · 사용자).
+        // 빨간색은 손으로 준다 — 보이는 모습은 같고 지우는 시늉만 없앤다.
+        Button {
             library.trashing = note
         } label: {
             Label("지우기", systemImage: "trash")
         }
+        .tint(.red)
         Button {
             library.beginRename(note)
         } label: {
