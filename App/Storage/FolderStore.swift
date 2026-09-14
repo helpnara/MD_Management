@@ -11,6 +11,8 @@ import Core
 actor FolderStore {
 
     let root: URL
+    /// 파일마다 마지막으로 읽은 인코딩. **UTF-8 이 아닌 파일을 조용히 고쳐 쓰지 않으려고** 둔다.
+    private var encodings: [String: String.Encoding] = [:]
     let kind: FolderKind
 
     /// 보안 범위 폴더((b))는 쓰는 동안 접근을 열어 두어야 한다.
@@ -100,14 +102,54 @@ actor FolderStore {
 
     // MARK: - 읽기 · 쓰기
 
+    /// **UTF-8 이 먼저다.** UTF-8 로 안 읽히면 UTF-16(BOM 있을 때) · CP949(예전 한글 윈도)
+    /// 차례로 본다 — 예전 한글 파일을 열었다고 오류만 띄우고 마는 것보다 낫다.
+    /// 무엇으로 읽었는지 기억해 둔다 (`encoding(of:)`) — 부른 쪽이 그 사실을 알아야
+    /// **여는 것만으로 남의 파일을 UTF-8 로 바꿔 쓰는 일**(62)을 안 한다.
     func readText(at relativePath: String) throws -> String {
         openScopeIfNeeded()
         let url = root.appendingPathComponent(relativePath)
-        var result: Result<String, Error> = .failure(CocoaError(.fileNoSuchFile))
+        var result: Result<Data, Error> = .failure(CocoaError(.fileNoSuchFile))
         coordinateRead(url) { readURL in
-            result = Result { try String(contentsOf: readURL, encoding: .utf8) }
+            result = Result { try Data(contentsOf: readURL) }
         }
-        return try result.get()
+        let data = try result.get()
+        guard let decoded = Self.decode(data) else {
+            encodings[relativePath] = nil
+            throw CocoaError(.fileReadInapplicableStringEncoding)
+        }
+        encodings[relativePath] = decoded.encoding
+        return decoded.text
+    }
+
+    /// 마지막으로 읽었을 때 어떤 글자 인코딩이었나. UTF-8 이 아니면 예전 파일이다.
+    func encoding(of relativePath: String) -> String.Encoding? {
+        encodings[relativePath]
+    }
+
+    /// 한글 윈도의 확장 완성형. `Foundation` 에 이름이 없어 이렇게 만든다.
+    static let cp949 = String.Encoding(rawValue: CFStringConvertEncodingToNSStringEncoding(
+        CFStringEncoding(CFStringEncodings.dosKorean.rawValue)))
+
+    /// 바이트를 글자로. **UTF-8 은 엄격하게** 본다 — 틀리면 다음 후보로 넘어간다.
+    /// UTF-16 은 BOM 이 있을 때만 — 없으면 아무 바이트나 받아들여 쓰레기가 나온다.
+    static func decode(_ data: Data) -> (text: String, encoding: String.Encoding)? {
+        if let text = String(data: data, encoding: .utf8) { return (text, .utf8) }
+        let bom = Array(data.prefix(2))
+        if bom == [0xFF, 0xFE] || bom == [0xFE, 0xFF],
+           let text = String(data: data, encoding: .utf16) { return (text, .utf16) }
+        if let text = String(data: data, encoding: cp949) { return (text, cp949) }
+        return nil
+    }
+
+    /// 사람에게 보여 줄 인코딩 이름.
+    static func encodingName(_ encoding: String.Encoding) -> String {
+        switch encoding {
+        case .utf8: return "UTF-8"
+        case .utf16: return "UTF-16"
+        case cp949: return "CP949 (예전 한글 윈도)"
+        default: return "알 수 없음"
+        }
     }
 
     /// 파일의 **수정 시각과 크기** — 충돌 감지의 도장이다 (설계서 §7.2 · A15).
@@ -147,7 +189,8 @@ actor FolderStore {
         let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
         var made: [String] = []
         for (index, version) in versions.enumerated() {
-            if let text = try? String(contentsOf: version.url, encoding: .utf8), text != current {
+            if let data = try? Data(contentsOf: version.url), let text = Self.decode(data)?.text,
+               text != current {
                 let stamp = version.modificationDate ?? Date()
                 let title = Self.conflictName(for: name, at: stamp) + (index == 0 ? "" : " \(index + 1)")
                 made.append(try createNote(named: title, in: Paths.directory(of: relativePath), text: text))
@@ -181,6 +224,8 @@ actor FolderStore {
             }
         }
         if let error = thrown ?? coordinationError { throw error }
+        // 우리는 언제나 UTF-8 로 쓴다. 예전 인코딩이었더라도 이 순간 UTF-8 이 된다.
+        encodings[relativePath] = .utf8
     }
 
     /// 이미지 같은 이진 파일을 원자적으로 쓴다.

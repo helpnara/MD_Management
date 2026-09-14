@@ -759,9 +759,24 @@ final class LibraryModel: ObservableObject {
         }
         do {
             var text = try await store.readText(at: note.relativePath)
+            // **이 파일이 UTF-8 이었나.** 아니면 예전 인코딩으로 읽어 낸 것이고,
+            // 여는 것만으로 고쳐 쓰면 남의 파일을 바꾸는 셈이다 (62를 건너뛴다).
+            let encoding = await store.encoding(of: note.relativePath)
+            let isUTF8 = encoding == .utf8
+            if let encoding, !isUTF8 {
+                log("UTF-8 이 아닌 파일을 \(FolderStore.encodingName(encoding)) 로 읽음: \(note.relativePath)")
+            }
+            // **이미 깨진 글자가 든 파일.** 앱이 그렇게 만든 것이 아니라 파일에 그렇게
+            // 저장돼 있다 — 고쳐 쓰지 않고 알리기만 한다 (빌드 19 · 14번).
+            let broken = text.contains("\u{FFFD}")
+            if broken {
+                log("이미 깨진 글자가 든 파일: \(note.relativePath)")
+                lastError = "이 노트에는 이미 깨진 글자가 있습니다. 파일이 그렇게 저장돼 있어 앱이 되살릴 수 없습니다."
+            }
             // **첫 줄 제목과 파일명을 맞춘다 — 파일명이 이긴다** (62). 밖에서 만든 파일이
             // 여기로 들어오는 길목이다. 맞으면 아무것도 안 쓴다.
-            if alignsTitles, let fixed = FrontMatterParser.aligned(text, toFileName: note.fileName) {
+            if alignsTitles, isUTF8, !broken,
+               let fixed = FrontMatterParser.aligned(text, toFileName: note.fileName) {
                 try await store.writeText(fixed, to: note.relativePath)
                 text = fixed
                 log("제목을 파일명에 맞춤: \(note.relativePath)")
@@ -772,8 +787,12 @@ final class LibraryModel: ObservableObject {
             draftStamp = await store.stamp(of: note.relativePath)
             isDirty = false
             editorSession = UUID()
+            if !broken, isUTF8 { lastError = nil }
             await renderReading(path: note.relativePath, text: text)
-            lastError = nil
+        } catch CocoaError.fileReadInapplicableStringEncoding {
+            clearNote()
+            log("글자 인코딩을 못 알아본 파일: \(note.relativePath)")
+            lastError = "이 파일의 글자 인코딩을 알아보지 못했습니다. UTF-8 로 저장한 뒤 다시 열어 주세요."
         } catch {
             clearNote()
             lastError = error.localizedDescription
