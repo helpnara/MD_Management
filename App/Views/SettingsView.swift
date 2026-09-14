@@ -19,6 +19,15 @@ struct SettingsView: View {
                     row("노트", "\(library.notes.count)개")
                 }
 
+                Section {
+                    Toggle("첫 줄 제목을 파일명에 맞추기", isOn: $library.alignsTitles)
+                        .font(.scaled(.body))
+                } header: {
+                    Text("제목")
+                } footer: {
+                    Text("노트를 열 때 첫 줄 `# 제목` 이 파일명과 다르면 **파일명으로** 맞춥니다. 제목이 없으면 넣고, 다른 제목이면 `##` 로 한 단계 내립니다. 앱 안에서 제목을 고치면 파일명이 따라갑니다. 다른 앱과 같이 쓰는 폴더라면 끄세요 — 여는 것만으로 파일이 바뀝니다.")
+                }
+
                 filesSection
 
                 Section {

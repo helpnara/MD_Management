@@ -33,6 +33,11 @@ final class LibraryModel: ObservableObject {
     /// 최상위는 빈 문자열.
     @Published var selectedFolder = ""
     @Published var selectedNoteID: String?
+    /// 열 때 첫 줄 제목을 파일명에 맞출까 (62). **켜짐이 기본.** 다른 앱과 같이 쓰는 폴더라면
+    /// 끈다 — 여는 것만으로 파일이 고쳐지기 때문이다. `UserDefaults` 에 둔다.
+    @Published var alignsTitles: Bool = UserDefaults.standard.object(forKey: "title.align") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(alignsTitles, forKey: "title.align") }
+    }
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
     @Published var isReading = false
     /// 이름을 바꾸는 중인 노트 · 새 이름. 화면의 알림창이 이것을 본다.
@@ -753,7 +758,14 @@ final class LibraryModel: ObservableObject {
             return
         }
         do {
-            let text = try await store.readText(at: note.relativePath)
+            var text = try await store.readText(at: note.relativePath)
+            // **첫 줄 제목과 파일명을 맞춘다 — 파일명이 이긴다** (62). 밖에서 만든 파일이
+            // 여기로 들어오는 길목이다. 맞으면 아무것도 안 쓴다.
+            if alignsTitles, let fixed = FrontMatterParser.aligned(text, toFileName: note.fileName) {
+                try await store.writeText(fixed, to: note.relativePath)
+                text = fixed
+                log("제목을 파일명에 맞춤: \(note.relativePath)")
+            }
             noteText = text
             draft = text
             draftPath = note.relativePath

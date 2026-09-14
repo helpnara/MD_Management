@@ -119,6 +119,40 @@ public enum FrontMatterParser {
         return head + lines.joined(separator: "\n")
     }
 
+    /// **파일명에 맞춘 글** (62, 사용자 규칙). 밖에서 만든 파일을 열 때 첫 줄 제목과 파일명을
+    /// 맞춘다 — **파일명이 이긴다.**
+    ///
+    /// - 첫 줄이 `# 파일명` 이면 이미 맞다 → `nil` (아무것도 안 쓴다).
+    /// - 첫 줄에 `#` 제목이 없으면 `# 파일명` 과 빈 줄을 맨 위에 넣는다.
+    /// - 첫 줄이 다른 `# 제목` 이면 `# 파일명` 을 위에 넣고 본문의 `#` 제목들을 **모두 `##` 로**
+    ///   한 단계 내린다 (코드 블록 안은 건드리지 않는다). 머리말은 그대로다.
+    public static func aligned(_ text: String, toFileName fileName: String) -> String? {
+        let title = Paths.baseName(Paths.normalized(fileName))
+        guard !title.isEmpty else { return nil }
+        if firstHeading(of: text) == title { return nil }
+
+        let header = headerLength(of: text)
+        let utf16 = Array(text.utf16)
+        var head = String(decoding: utf16[0..<header], as: UTF16.self)
+        var rest = String(decoding: utf16[header...], as: UTF16.self)
+        if !head.isEmpty, rest.hasPrefix("\n") { head += "\n"; rest.removeFirst() }
+
+        if firstHeading(of: text) != nil {
+            // 다른 제목이 있다 — 그것을 비롯한 본문의 `#` 을 `##` 로.
+            var inFence = false
+            let demoted = rest.components(separatedBy: "\n").map { line -> String in
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") { inFence.toggle(); return line }
+                if inFence { return line }
+                if trimmed.hasPrefix("# ") { return "#" + line.drop { $0 == " " } }
+                return line
+            }
+            rest = demoted.joined(separator: "\n")
+        }
+        let body = rest.trimmingCharacters(in: .newlines)
+        return head + "# " + title + "\n\n" + body + (body.isEmpty ? "" : "\n")
+    }
+
     /// 목록에 보여 줄 제목. 머리말 → 첫 `# 제목` → 파일명 순으로 고른다.
     public static func title(of text: String, fileName: String) -> String {
         let parsed = parse(text)

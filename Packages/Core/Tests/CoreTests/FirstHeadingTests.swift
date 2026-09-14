@@ -24,6 +24,19 @@ final class FirstHeadingTests: XCTestCase {
         XCTAssertNil(FrontMatterParser.replacingFirstHeading(in: "", with: "새"))
     }
 
+    func testAlignsToFileName() {
+        XCTAssertNil(FrontMatterParser.aligned("# 여행\n\n본문\n", toFileName: "여행.md"), "이미 맞으면 안 쓴다")
+        XCTAssertEqual(FrontMatterParser.aligned("본문뿐\n", toFileName: "여행.md"), "# 여행\n\n본문뿐\n", "제목이 없으면 파일명을 넣는다")
+        XCTAssertEqual(FrontMatterParser.aligned("", toFileName: "빈 노트.md"), "# 빈 노트\n\n")
+        XCTAssertEqual(FrontMatterParser.aligned("# 옛 제목\n\n글\n\n# 둘째\n", toFileName: "새 이름.md"),
+                       "# 새 이름\n\n## 옛 제목\n\n글\n\n## 둘째\n", "다른 제목이면 파일명이 이기고 `#` 은 `##` 로")
+        XCTAssertEqual(FrontMatterParser.aligned("---\ntitle: 머리말\n---\n# 옛\n글\n", toFileName: "새.md"),
+                       "---\ntitle: 머리말\n---\n# 새\n\n## 옛\n글\n", "머리말은 그대로")
+        XCTAssertEqual(FrontMatterParser.aligned("# 옛\n```\n# 코드 안\n```\n", toFileName: "새.md"),
+                       "# 새\n\n## 옛\n```\n# 코드 안\n```\n", "코드 블록 안은 건드리지 않는다")
+        XCTAssertEqual(FrontMatterParser.aligned("## 부제목뿐\n", toFileName: "새.md"), "# 새\n\n## 부제목뿐\n", "`##` 은 제목이 아니므로 위에 넣기만")
+    }
+
     func testNotAHeading() {
         XCTAssertNil(FrontMatterParser.firstHeading(of: "그냥 글\n# 나중 제목"), "첫 줄이 제목이 아니면 없다")
         XCTAssertNil(FrontMatterParser.firstHeading(of: "## 둘째 단계"), "`##` 은 보지 않는다")
