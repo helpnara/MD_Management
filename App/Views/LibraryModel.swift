@@ -91,12 +91,15 @@ final class LibraryModel: ObservableObject {
         case diagnostics
         /// `파일` 앱이 건넨, 내 폴더 **밖**의 파일. 가져올지 물어야 한다.
         case incoming(IncomingFile)
+        /// 첨부 미리보기 (QuickLook). 폴더 안 파일의 절대 URL.
+        case preview(URL)
 
         var id: String {
             switch self {
             case .settings: return "settings"
             case .diagnostics: return "diagnostics"
             case .incoming(let file): return "incoming-\(file.id)"
+            case .preview(let url): return "preview-\(url.path)"
             }
         }
     }
@@ -481,25 +484,82 @@ final class LibraryModel: ObservableObject {
     /// 사진첩에서 고른 사진을 노트 옆 `assets/` 에 JPEG 로 넣고, 커서 자리에 넣을
     /// `![](assets/….jpg)` 를 편집기에 건넨다 (설계서 §2-4).
     func insertPhoto(_ original: Data) async {
-        guard let store, let note = selectedNote else { return }
-        // 디코딩 · 크기 줄이기 · 인코딩은 주 액터 밖에서.
-        // (`guard` 조건 안에는 트레일링 클로저를 못 쓴다 — 빌드 11 첫 컴파일이 잡았다.)
-        let converted = await Task.detached(priority: .userInitiated) {
-            ImageImport.jpeg(from: original)
-        }.value
-        guard let jpeg = converted else {
-            lastError = "사진을 읽지 못했습니다"
+        await insertPhotos([original])
+    }
+
+    /// 사진 여러 장을 **한 번에** — 각각 `assets/` 에 넣고 링크를 한 줄씩 모아 한 번의 넣기로 (77).
+    /// 하나라도 실패하면 나머지는 넣고 실패한 수를 알린다.
+    func insertPhotos(_ originals: [Data]) async {
+        guard let store, let note = selectedNote, !originals.isEmpty else { return }
+        let folder = Paths.directory(of: note.relativePath)
+        var lines: [String] = []
+        var failed = 0
+        for original in originals {
+            // 디코딩 · 크기 줄이기 · 인코딩은 주 액터 밖에서.
+            // (`guard` 조건 안에는 트레일링 클로저를 못 쓴다 — 빌드 11 첫 컴파일이 잡았다.)
+            let converted = await Task.detached(priority: .userInitiated) {
+                ImageImport.jpeg(from: original)
+            }.value
+            guard let jpeg = converted else { failed += 1; continue }
+            do {
+                let relative = try await store.writeAsset(jpeg, stem: ImageImport.stem(), ext: "jpg",
+                                                          besideNoteIn: folder)
+                lines.append(ImageImport.markdownImage(path: relative))
+            } catch {
+                failed += 1
+            }
+        }
+        if !lines.isEmpty { insertion = Insertion(text: lines.joined(separator: "\n")) }
+        lastError = failed == 0 ? nil : "사진 \(failed)장을 넣지 못했습니다"
+    }
+
+    /// 문서 첨부 — 사진과 같은 길로 (78). 고른 파일을 `assets/` 에 **복사**하고 커서 자리에
+    /// `[이름.pdf](<assets/이름-1.pdf>)` 를 넣는다. 원본은 건드리지 않는다. 여러 개면 한 줄씩.
+    func attachDocuments(_ urls: [URL]) async {
+        guard let store, let note = selectedNote, !urls.isEmpty else { return }
+        let folder = Paths.directory(of: note.relativePath)
+        var lines: [String] = []
+        var failed: [String] = []
+        for url in urls {
+            let name = Paths.normalized(url.lastPathComponent)
+            // 파일 읽기는 주 액터 밖에서. 보안 범위는 그 안에서 연다.
+            let loaded = await Task.detached(priority: .userInitiated) { () -> Data? in
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+                var data: Data?
+                var error: NSError?
+                NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { readURL in
+                    data = try? Data(contentsOf: readURL)
+                }
+                return data
+            }.value
+            guard let data = loaded else { failed.append(name); continue }
+            let ext = Paths.fileExtension(name).lowercased()
+            let stem = Paths.safeFileName(Paths.baseName(name), fallback: "문서")
+            do {
+                let relative = try await store.writeAsset(data, stem: stem, ext: ext.isEmpty ? "bin" : ext,
+                                                          besideNoteIn: folder)
+                lines.append(ImageImport.markdownLink(label: name, path: relative))
+            } catch {
+                failed.append(name)
+            }
+        }
+        if !lines.isEmpty {
+            insertion = Insertion(text: lines.joined(separator: "\n"))
+            log("문서 첨부 \(lines.count)개: \(note.relativePath)")
+        }
+        lastError = failed.isEmpty ? nil : "첨부하지 못했습니다: \(failed.joined(separator: ", "))"
+    }
+
+    /// 읽기 모드에서 첨부를 눌렀다 — QuickLook 으로 연다 (78). 파일이 없으면 말한다.
+    func previewAttachment(_ relativePath: String) async {
+        guard let store else { return }
+        guard await store.existingPaths(among: [relativePath]).contains(relativePath) else {
+            lastError = "첨부가 폴더에 없습니다: \(relativePath)"
             return
         }
-        do {
-            let relative = try await store.writeAsset(
-                jpeg, stem: ImageImport.stem(), ext: "jpg",
-                besideNoteIn: Paths.directory(of: note.relativePath))
-            insertion = Insertion(text: ImageImport.markdownImage(path: relative))
-            lastError = nil
-        } catch {
-            lastError = "사진을 넣지 못했습니다: \(error.localizedDescription)"
-        }
+        sheet = .preview(store.root.appendingPathComponent(relativePath))
     }
 
     // MARK: - 휴지통

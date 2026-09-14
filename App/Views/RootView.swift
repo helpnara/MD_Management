@@ -61,6 +61,8 @@ struct RootView: View {
                 DiagnosticsView().environmentObject(library)
             case .incoming(let file):
                 IncomingFileSheet(file: file).environmentObject(library)
+            case .preview(let url):
+                AttachmentPreview(url: url)
             }
         }
     }
@@ -441,10 +443,12 @@ private struct NoteDetail: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.openURL) private var openURL
     @State private var alert: String?
-    /// 사진첩에서 고른 것. 고르면 바로 읽어 넣고 비운다.
-    @State private var pickedPhoto: PhotosPickerItem?
+    /// 사진첩에서 고른 것들. 고르면 바로 읽어 **한 번에** 넣고 비운다 (77).
+    @State private var pickedPhotos: [PhotosPickerItem] = []
     @State private var showsPhotoPicker = false
     @State private var showsCamera = false
+    /// 문서 첨부 창 (78). 사진과 같은 길 — `assets/` 로 복사하고 링크를 넣는다.
+    @State private var showsDocumentPicker = false
 
     var body: some View {
         Group {
@@ -477,14 +481,26 @@ private struct NoteDetail: View {
             }
         }
         .background(Palette.paper)
-        .photosPicker(isPresented: $showsPhotoPicker, selection: $pickedPhoto, matching: .images)
-        .onChange(of: pickedPhoto) { _, item in
-            guard let item else { return }
-            pickedPhoto = nil
+        .photosPicker(isPresented: $showsPhotoPicker, selection: $pickedPhotos,
+                      maxSelectionCount: 20, matching: .images)
+        .onChange(of: pickedPhotos) { _, items in
+            guard !items.isEmpty else { return }
+            pickedPhotos = []
             Task {
-                if let data = try? await item.loadTransferable(type: Data.self) {
-                    await library.insertPhoto(data)
+                var datas: [Data] = []
+                for item in items {
+                    if let data = try? await item.loadTransferable(type: Data.self) { datas.append(data) }
                 }
+                await library.insertPhotos(datas)
+            }
+        }
+        .fileImporter(isPresented: $showsDocumentPicker, allowedContentTypes: [.item],
+                      allowsMultipleSelection: true) { result in
+            switch result {
+            case .success(let urls):
+                Task { await library.attachDocuments(urls) }
+            case .failure(let error):
+                library.lastError = "문서를 고르지 못했습니다: \(error.localizedDescription)"
             }
         }
         .fullScreenCover(isPresented: $showsCamera) {
@@ -530,8 +546,7 @@ private struct NoteDetail: View {
         case .external(let url):
             openURL(url)
         case .attachment(let path):
-            // QuickLook 은 2주차. 지금은 무엇을 눌렀는지라도 알려 준다.
-            alert = "첨부 미리보기는 아직 없습니다.\n\(path)"
+            Task { await library.previewAttachment(path) }
         case .missing(let path):
             // 빈 경로만 띄우면 오류처럼 보인다 — 무엇이 없는지 말한다 (빌드 20 · 10번).
             alert = "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다."
@@ -560,8 +575,14 @@ private struct NoteDetail: View {
                             Label("카메라로 찍기", systemImage: "camera")
                         }
                     }
+                    Divider()
+                    Button {
+                        showsDocumentPicker = true
+                    } label: {
+                        Label("문서 첨부", systemImage: "doc.badge.plus")
+                    }
                 } label: {
-                    Label("사진 넣기", systemImage: "photo")
+                    Label("넣기", systemImage: "photo")
                 }
             }
         }

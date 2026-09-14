@@ -42,4 +42,11 @@ enum ImageImport {
         let needsBrackets = path.contains(" ")
         return "![](" + (needsBrackets ? "<" + path + ">" : path) + ")"
     }
+
+    /// 문서 첨부의 링크 — `[이름.pdf](<assets/이름-1.pdf>)`. 사진과 같은 규칙으로 빈칸은 꺾쇠.
+    static func markdownLink(label: String, path: String) -> String {
+        let needsBrackets = path.contains(" ")
+        let safeLabel = label.replacingOccurrences(of: "]", with: " ")
+        return "[" + safeLabel + "](" + (needsBrackets ? "<" + path + ">" : path) + ")"
+    }
 }
