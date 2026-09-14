@@ -237,9 +237,7 @@ actor FolderStore {
         var coordinationError: NSError?
         NSFileCoordinator().coordinate(writingItemAt: target, options: .forReplacing, error: &coordinationError) { url in
             do {
-                let temporary = FileManager.default.temporaryDirectory
-                    .appendingPathComponent(UUID().uuidString)
-                    .appendingPathExtension("md")
+                let temporary = try Self.replacementScratch(for: url).appendingPathExtension("md")
                 try text.write(to: temporary, atomically: true, encoding: .utf8)
                 if FileManager.default.fileExists(atPath: url.path) {
                     _ = try FileManager.default.replaceItemAt(url, withItemAt: temporary)
@@ -255,6 +253,19 @@ actor FolderStore {
         encodings[relativePath] = .utf8
     }
 
+    /// 안전 저장용 임시 파일 자리. **원본과 같은 볼륨의 교체 전용 폴더**여야 한다.
+    ///
+    /// 빌드 20 까지는 앱의 `tmp` 에 썼다. 그러면 `replaceItemAt` 이 자리를 맞바꾸지 못하고
+    /// **새 파일을 만들어 옛 파일을 지우는** 쪽으로 물러나, iCloud 가 그 저장을 같은 파일의
+    /// 수정이 아니라 **새 파일**로 봤다. 그래서 두 기기가 같은 노트를 고치면 판본(`NSFileVersion`)
+    /// 이 아니라 `A 2` 가 생기고 한쪽이 다른 쪽을 덮었다 (빌드 20 · 1번, 두 기기 확인).
+    /// 애플이 `replaceItemAt` 과 짝지어 둔 자리가 `itemReplacementDirectory` 다.
+    private static func replacementScratch(for target: URL) throws -> URL {
+        let directory = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask,
+                                                    appropriateFor: target, create: true)
+        return directory.appendingPathComponent(UUID().uuidString)
+    }
+
     /// 이미지 같은 이진 파일을 원자적으로 쓴다.
     func writeData(_ data: Data, to relativePath: String) throws {
         openScopeIfNeeded()
@@ -265,8 +276,8 @@ actor FolderStore {
         var coordinationError: NSError?
         NSFileCoordinator().coordinate(writingItemAt: target, options: .forReplacing, error: &coordinationError) { url in
             do {
-                let temporary = FileManager.default.temporaryDirectory
-                    .appendingPathComponent(UUID().uuidString)
+                // 글과 같은 까닭으로 같은 볼륨의 교체 전용 폴더에 (위 `replacementScratch`).
+                let temporary = try Self.replacementScratch(for: url)
                 try data.write(to: temporary, options: .atomic)
                 if FileManager.default.fileExists(atPath: url.path) {
                     _ = try FileManager.default.replaceItemAt(url, withItemAt: temporary)
