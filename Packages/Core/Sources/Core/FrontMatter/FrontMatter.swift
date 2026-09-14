@@ -103,6 +103,22 @@ public enum FrontMatterParser {
         return nil
     }
 
+    /// **첫 줄 `# 제목` 의 제목을 바꾼 글** (54 의 반대 방향 — 파일명을 바꾸면 제목이 따라간다).
+    /// 첫 줄이 제목이 아니면 `nil` — 없는 제목을 만들어 넣지는 않는다. 머리말과 나머지는 그대로다.
+    public static func replacingFirstHeading(in text: String, with title: String) -> String? {
+        guard firstHeading(of: text) != nil else { return nil }
+        let header = headerLength(of: text)
+        let utf16 = Array(text.utf16)
+        var head = String(decoding: utf16[0..<header], as: UTF16.self)
+        var rest = String(decoding: utf16[header...], as: UTF16.self)
+        // 머리말 뒤 첫 줄바꿈까지가 머리말이다 (headerLength 는 닫는 울타리까지만 센다).
+        if !head.isEmpty, rest.hasPrefix("\n") { head += "\n"; rest.removeFirst() }
+        var lines = rest.components(separatedBy: "\n")
+        guard let index = lines.firstIndex(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }) else { return nil }
+        lines[index] = "# " + title
+        return head + lines.joined(separator: "\n")
+    }
+
     /// 목록에 보여 줄 제목. 머리말 → 첫 `# 제목` → 파일명 순으로 고른다.
     public static func title(of text: String, fileName: String) -> String {
         let parsed = parse(text)

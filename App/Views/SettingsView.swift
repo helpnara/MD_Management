@@ -54,9 +54,6 @@ struct SettingsView: View {
             }
             .navigationTitle("설정")
             .navigationBarTitleDisplayMode(.inline)
-            // **띠는 시트 안에도 있어야 한다.** 바깥 화면의 띠는 시트 뒤에 가려져
-            // 영구 삭제의 확인 문구 오류가 안 보였다 (빌드 15 · 6번).
-            .safeAreaInset(edge: .bottom, spacing: 0) { StatusBanner(errorsOnly: true) }
             // CI 가 휴지통을 찍으려고 `-trash` 로 연다. 사람은 위의 링크로 들어간다.
             .navigationDestination(isPresented: $showsTrash) {
                 TrashView().environmentObject(library)
@@ -71,6 +68,10 @@ struct SettingsView: View {
                 }
             }
         }
+        // **띠는 시트 안에도 있어야 한다.** 바깥 화면의 띠는 시트 뒤에 가려져 영구
+        // 삭제의 확인 문구 오류가 안 보였다 (빌드 15 · 6번). **스택에 건다** — 목록에
+        // 걸었더니 밀어 넣은 휴지통 화면에는 안 나왔다 (빌드 16 · 9번).
+        .safeAreaInset(edge: .bottom, spacing: 0) { StatusBanner(errorsOnly: true) }
     }
 
     /// **여기서 정직해야 한다.** 켜고 끄는 스위치를 만들 수 없다.

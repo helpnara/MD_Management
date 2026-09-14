@@ -106,7 +106,49 @@ private struct NoteActionAlerts: ViewModifier {
     }
 
     private func trashMessage(_ note: NoteSummary) -> some View {
-        Text("\(note.title) 을 폴더 안 .trash 로 옮깁니다. 파일 앱에서 되돌릴 수 있습니다.")
+        Text("\(note.title) 을 폴더 안 .trash 로 옮깁니다. 설정 → 휴지통에서 되돌릴 수 있습니다.")
+    }
+}
+
+/// 하위 폴더의 이름 바꾸기 · 지우기 확인창. 노트의 것과 같은 말투로 (사용자 요청).
+private struct FolderActionAlerts: ViewModifier {
+    @EnvironmentObject private var library: LibraryModel
+
+    func body(content: Content) -> some View {
+        content
+            .alert("폴더 이름 바꾸기", isPresented: renamePresented, presenting: library.renamingFolder,
+                   actions: renameActions, message: renameMessage)
+            .alert("폴더를 지울까요?", isPresented: trashPresented, presenting: library.trashingFolder,
+                   actions: trashActions, message: trashMessage)
+    }
+
+    private var renamePresented: Binding<Bool> {
+        Binding(get: { library.renamingFolder != nil }, set: { if !$0 { library.renamingFolder = nil } })
+    }
+
+    private var trashPresented: Binding<Bool> {
+        Binding(get: { library.trashingFolder != nil }, set: { if !$0 { library.trashingFolder = nil } })
+    }
+
+    @ViewBuilder
+    private func renameActions(_ folder: FolderSummary) -> some View {
+        TextField("폴더 이름", text: $library.folderRenameText)
+        Button("바꾸기") { Task { await library.finishRenameFolder(folder) } }
+        Button("취소", role: .cancel) { library.renamingFolder = nil }
+    }
+
+    private func renameMessage(_ folder: FolderSummary) -> some View {
+        Text("\(folder.name) 폴더의 새 이름입니다. 안의 노트는 그대로 따라갑니다.")
+    }
+
+    @ViewBuilder
+    private func trashActions(_ folder: FolderSummary) -> some View {
+        Button("지우기", role: .destructive) { Task { await library.finishTrashFolder(folder) } }
+        Button("취소", role: .cancel) { library.trashingFolder = nil }
+    }
+
+    private func trashMessage(_ folder: FolderSummary) -> some View {
+        Text("\(folder.name) 폴더와 안의 노트 \(folder.noteCount)개를 폴더 안 .trash 로 옮깁니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.")
     }
 }
 
@@ -204,6 +246,7 @@ private struct FolderSidebar: View {
                 row(name: library.folderName, path: "", count: library.notes.count, isRoot: true)
                 ForEach(library.folders) { folder in
                     row(name: folder.name, path: folder.relativePath, count: folder.noteCount, isRoot: false)
+                        .swipeActions(edge: .trailing) { folderSwipeActions(for: folder) }
                 }
             } footer: {
                 Label(library.kind.label, systemImage: icon(for: library.kind))
@@ -245,6 +288,7 @@ private struct FolderSidebar: View {
                 }
             }
         }
+        .modifier(FolderActionAlerts())
         // 새 폴더 (52). 최상위 바로 아래 한 단계만 — 폴더 안의 폴더는 아직 없다.
         .alert("새 폴더", isPresented: $library.creatingFolder) {
             TextField("폴더 이름", text: $library.newFolderName)
@@ -253,6 +297,22 @@ private struct FolderSidebar: View {
         } message: {
             Text("\(library.folderName) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.")
         }
+    }
+
+    /// 하위 폴더에도 노트처럼 지우기 · 이름 (사용자 요청, 빌드 17). 최상위는 없다.
+    @ViewBuilder
+    private func folderSwipeActions(for folder: FolderSummary) -> some View {
+        Button(role: .destructive) {
+            library.trashingFolder = folder
+        } label: {
+            Label("지우기", systemImage: "trash")
+        }
+        Button {
+            library.beginRenameFolder(folder)
+        } label: {
+            Label("이름", systemImage: "pencil.line")
+        }
+        .tint(Palette.accent)
     }
 
     private func row(name: String, path: String, count: Int, isRoot: Bool) -> some View {

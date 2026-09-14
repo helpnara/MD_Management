@@ -274,6 +274,65 @@ actor FolderStore {
         return chosen
     }
 
+    /// 하위 폴더 이름을 바꾼다. 같은 이름이 있으면 `이름 2`. 새 상대경로를 준다.
+    func renameFolder(_ relativePath: String, to newName: String) throws -> String {
+        openScopeIfNeeded()
+        let safe = Paths.safeFileName(newName, fallback: "새 폴더")
+        guard safe != relativePath else { return relativePath }
+        var chosen = safe
+        for attempt in 2...999 {
+            if chosen == relativePath { return relativePath }
+            if !FileManager.default.fileExists(atPath: root.appendingPathComponent(chosen).path) { break }
+            chosen = "\(safe) \(attempt)"
+        }
+        try move(from: root.appendingPathComponent(relativePath),
+                 to: root.appendingPathComponent(chosen))
+        return chosen
+    }
+
+    /// 하위 폴더를 **통째로 휴지통으로.** 안의 파일을 하나씩 `.trash/<원래 경로>` 로 옮기고
+    /// 빈 폴더를 지운다. 그래서 휴지통에는 노트 하나하나가 폴더 이름과 함께 보이고,
+    /// 되돌리면 폴더가 다시 생긴다. 숨김 파일은 옮기지 않는다 (폴더와 함께 사라진다).
+    /// 옮긴 파일 수를 준다.
+    func trashFolder(_ relativePath: String) throws -> Int {
+        openScopeIfNeeded()
+        guard !relativePath.isEmpty, !relativePath.hasPrefix(".") else { return 0 }
+        let folderURL = root.appendingPathComponent(relativePath)
+        var moved = 0
+        var pending = [relativePath]
+        while let folder = pending.popLast() {
+            let url = root.appendingPathComponent(folder)
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+            ) else { continue }
+            for entry in entries {
+                let name = Paths.normalized(entry.lastPathComponent)
+                let path = folder + "/" + name
+                if (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                    pending.append(path)
+                    continue
+                }
+                let trashFolder = ".trash/" + folder
+                try createFolder(trashFolder)
+                let target = uniqueRelativePath(name: name, in: trashFolder)
+                try move(from: entry, to: root.appendingPathComponent(target))
+                moved += 1
+            }
+        }
+        try remove(folderURL)
+        return moved
+    }
+
+    /// 파일명이 바뀌었을 때 **첫 줄 `# 제목` 을 파일명으로 맞춘다** (54 의 반대 방향).
+    /// 첫 줄이 제목이 아니면 아무것도 안 한다. 바꿨으면 `true`.
+    func retitle(_ relativePath: String, to title: String) throws -> Bool {
+        let text = try readText(at: relativePath)
+        guard let updated = FrontMatterParser.replacingFirstHeading(in: text, with: title),
+              updated != text else { return false }
+        try writeText(updated, to: relativePath)
+        return true
+    }
+
     /// **되돌릴 수 없는 유일한 삭제.** `.trash/` 안의 것만 지운다 — 다른 경로가
     /// 오면 아무것도 안 한다. 확인(타이핑)은 화면이 받았다 (설계서 §7.1).
     func deleteTrashed(_ relativePath: String) throws {

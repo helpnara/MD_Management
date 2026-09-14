@@ -41,6 +41,10 @@ final class LibraryModel: ObservableObject {
     /// 지울지 묻는 중인 노트. **모든 삭제에 확인** (CLAUDE.md §1).
     @Published var trashing: NoteSummary?
 
+    /// 이름을 바꾸는 중인 하위 폴더 · 지울지 묻는 중인 하위 폴더 (사용자 요청, 빌드 17).
+    @Published var renamingFolder: FolderSummary?
+    @Published var folderRenameText = ""
+    @Published var trashingFolder: FolderSummary?
     /// 새 폴더 이름을 묻는 중인가 · 그 이름. 폴더 화면의 알림창이 이것을 본다 (52).
     @Published var creatingFolder = false
     @Published var newFolderName = ""
@@ -349,6 +353,47 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    func beginRenameFolder(_ folder: FolderSummary) {
+        folderRenameText = folder.name
+        renamingFolder = folder
+    }
+
+    /// 하위 폴더 이름 바꾸기. 그 폴더를 보고 있었으면 새 이름으로 따라간다.
+    func finishRenameFolder(_ folder: FolderSummary) async {
+        guard let store else { return }
+        renamingFolder = nil
+        let name = folderRenameText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name != folder.name else { return }
+        await save()
+        do {
+            let moved = try await store.renameFolder(folder.relativePath, to: name)
+            let wasViewing = selectedFolder == folder.relativePath
+            if wasViewing { selectedNoteID = nil }
+            await reloadFolders()
+            if wasViewing { selectedFolder = moved }
+            lastError = nil
+        } catch {
+            lastError = "폴더 이름을 바꾸지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 하위 폴더를 통째로 휴지통으로. 확인은 화면이 받았다. 보고 있던 폴더면 최상위로 돌아간다.
+    func finishTrashFolder(_ folder: FolderSummary) async {
+        guard let store else { return }
+        trashingFolder = nil
+        await save()
+        do {
+            let wasViewing = selectedFolder == folder.relativePath
+            if wasViewing { selectedNoteID = nil }
+            _ = try await store.trashFolder(folder.relativePath)
+            await reloadFolders()
+            if wasViewing { selectedFolder = "" }
+            lastError = nil
+        } catch {
+            lastError = "폴더를 지우지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
     func beginRename(_ note: NoteSummary) {
         renameText = Paths.baseName(note.fileName)
         renaming = note
@@ -365,9 +410,14 @@ final class LibraryModel: ObservableObject {
         await save()
         do {
             let moved = try await store.rename(note.relativePath, to: name)
+            // **파일명을 바꾸면 첫 줄 제목이 따라간다** (54 의 반대 방향, 빌드 16 · 2번).
+            // 열려 있던 노트는 `save()` 로 먼저 비웠으므로 파일이 최신이다. 파일을 고치고
+            // 다시 읽는다 — 편집기는 새 글을 받는다 (이름 바꾸기 창에서 왔으니 커서는 잃어도 된다).
+            let newName = moved.split(separator: "/").last.map(String.init) ?? moved
+            _ = try await store.retitle(moved, to: Paths.baseName(newName))
             let wasSelected = selectedNoteID == note.id
-            await reloadNotes()
             if wasSelected { selectedNoteID = moved }
+            await reloadNotes()
             lastError = nil
         } catch {
             lastError = "이름을 바꾸지 못했습니다: \(error.localizedDescription)"
