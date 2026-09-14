@@ -526,14 +526,15 @@ private struct NoteDetail: View {
     private func handle(_ action: NoteLinkAction) {
         switch action {
         case .note(let path):
-            library.open(relativePath: path)
+            Task { await library.open(relativePath: path) }
         case .external(let url):
             openURL(url)
         case .attachment(let path):
             // QuickLook 은 2주차. 지금은 무엇을 눌렀는지라도 알려 준다.
             alert = "첨부 미리보기는 아직 없습니다.\n\(path)"
         case .missing(let path):
-            alert = path
+            // 빈 경로만 띄우면 오류처럼 보인다 — 무엇이 없는지 말한다 (빌드 20 · 10번).
+            alert = "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다."
         }
     }
 

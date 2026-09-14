@@ -896,13 +896,30 @@ final class LibraryModel: ObservableObject {
     }
 
     /// 폴더 안의 다른 노트를 뷰어에서 탭했을 때.
-    func open(relativePath: String) {
+    ///
+    /// **목록에 없다고 없는 파일은 아니다** — 목록이 늦었을 수 있다. 그래서 폴더를 다시 읽고
+    /// 고른다. 정말 없으면 그렇다고 말한다 (빌드 20 · 10 · 11번 — 링크로 열 때만 어긋났다).
+    func open(relativePath: String) async {
+        guard let store else { return }
         if let match = notes.first(where: { $0.relativePath == relativePath }) {
             selectedNoteID = match.id
             return
         }
-        // 다른 폴더의 노트다 — 그 폴더로 옮겨 가서 고른다.
-        selectedFolder = Paths.directory(of: relativePath)
+        guard await store.existingPaths(among: [relativePath]).contains(relativePath) else {
+            log("링크가 가리키는 노트가 없음: \(relativePath)")
+            lastError = "링크가 가리키는 노트가 폴더에 없습니다: \(relativePath)"
+            return
+        }
+        await save()
+        let folder = Paths.directory(of: relativePath)
+        if folder != selectedFolder {
+            // 다른 폴더의 노트다 — 그 폴더로 옮겨 간다. 목록은 `.task(id: selectedFolder)` 가 읽는다.
+            selectedNoteID = nil
+            selectedFolder = folder
+        } else {
+            // 같은 폴더인데 목록에 없다 — 목록이 늦은 것. 지금 다시 읽는다.
+            await reloadNotes()
+        }
         selectedNoteID = relativePath
     }
 
