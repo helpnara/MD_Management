@@ -173,6 +173,10 @@ MD_Management/
 - 자동 저장은 **2초 디바운스** + `.background` 진입 시 즉시. 내용이 안 바뀌었으면 쓰지 않는다.
   (1초는 iCloud 업로드를 매 타자마다 일으킨다.)
 - 쓰기는 임시 파일 → `replaceItemAt` (원자적). 절대 원본을 열어 놓고 덮어쓰지 않는다.
+  **임시 파일은 원본과 같은 볼륨의 `itemReplacementDirectory` 에.** 조정 옵션은 **파일을 만들 때만
+  `.forReplacing`, 있는 파일에는 `.forMerging`** — `.forReplacing` 은 iCloud 에 "새 파일" 이라고
+  말하는 것이라 두 기기가 갈라지면 판본 대신 `이름 2` 가 생긴다 (2026-09-15 빌드 20~22, 두 기기 실측).
+  디스크가 바뀌었나 검사는 조정 **안**에서 쓰기와 한 덩어리로 (`writeText(expecting:)`).
 - 되돌리기: `UITextView.undoManager`. 속성 변경은 undo 에 넣지 않는다.
 - 백업 `[L§5]`: 파일이 원본이라 별도 백업이 없다. 대신 **삭제는 폴더 안 `.trash/` 로
   이동**, 영구 삭제는 설정에서 타이핑 확인. → A14
