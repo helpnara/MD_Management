@@ -262,6 +262,11 @@ private struct FolderSidebar: View {
         }
         .navigationTitle("폴더")
         .navigationBarTitleDisplayMode(.inline)
+        // 노트 목록과 같이 당겨서 새로 고침 (사용자 요청). 지켜보기가 놓친 것도 여기서 잡는다.
+        .refreshable {
+            await library.reloadFolders()
+            await library.reloadNotes()
+        }
         .onAppear {
             defer { hasAppeared = true }
             guard hasAppeared, horizontalSizeClass == .compact, library.sheet == nil else { return }

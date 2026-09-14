@@ -542,6 +542,12 @@ final class LibraryModel: ObservableObject {
     private var folderStamp: FileStamp?
     /// 마지막으로 충돌 판본을 훑은 때. 너무 자주 훑지 않는다.
     private var lastConflictSweep = Date.distantPast
+    /// **최상위 폴더의 도장은 따로 본다.** 보고 있는 폴더만 보면, 다른 기기가 최상위에
+    /// 만든 폴더를 놓친다 — 폴더 화면이 안 바뀌던 까닭이다 (빌드 21 · 사용자).
+    private var rootStamp: FileStamp?
+    /// 마지막으로 폴더 목록을 통째로 다시 읽은 때. 하위 폴더 **안에** 노트가 생기면
+    /// 최상위 시각은 안 바뀌므로, 노트 수를 맞추려면 이따금 통째로 읽어야 한다.
+    private var lastFolderSweep = Date.distantPast
 
     /// 앱이 앞에 있는 동안 **몇 초마다 파일 도장을 본다.** iCloud 가 다른 기기의 변경을
     /// 내려놓으면 열린 노트는 (내가 치는 중이 아닐 때) 그 자리에서 새 글로 바뀌고, 폴더에
@@ -595,7 +601,7 @@ final class LibraryModel: ObservableObject {
                 }
             }
         }
-        // 폴더 — 무엇이 생기거나 없어졌나
+        // 보고 있는 폴더 — 노트가 생기거나 없어졌나
         let folderNow = await store.stamp(of: selectedFolder)
         if let known = folderStamp, let folderNow, folderNow != known {
             folderStamp = folderNow
@@ -604,6 +610,25 @@ final class LibraryModel: ObservableObject {
             await reloadNotes()
         } else if folderStamp == nil {
             folderStamp = folderNow
+        }
+
+        // 최상위 — 폴더가 생기거나 없어졌나. 보고 있는 폴더가 하위여도 이것은 본다.
+        if !selectedFolder.isEmpty {
+            let rootNow = await store.stamp(of: "")
+            if let known = rootStamp, let rootNow, rootNow != known {
+                rootStamp = rootNow
+                log("최상위가 바뀌어 폴더 목록을 다시 읽음")
+                await reloadFolders()
+            } else if rootStamp == nil {
+                rootStamp = rootNow
+            }
+        }
+
+        // 하위 폴더 **안**의 변화는 최상위 시각에 안 잡힌다 — 노트 수를 맞추려고
+        // 15초마다 폴더 목록을 통째로 읽는다. 값이 같으면 화면은 안 흔들린다.
+        if Date().timeIntervalSince(lastFolderSweep) > 15 {
+            lastFolderSweep = Date()
+            await reloadFolders()
         }
     }
 
@@ -733,9 +758,14 @@ final class LibraryModel: ObservableObject {
 
     func clearError() { lastError = nil }
 
+    /// **값이 같으면 갈아 끼우지 않는다.** 지켜보기가 이따금 부르는 길이라,
+    /// 같은 목록을 다시 넣으면 화면이 까닭 없이 다시 그려진다.
     func reloadFolders() async {
         guard let store else { return }
-        folders = await store.folders()
+        let loaded = await store.folders()
+        if loaded != folders { folders = loaded }
+        rootStamp = await store.stamp(of: "")
+        lastFolderSweep = Date()
     }
 
     func reloadNotes() async {
