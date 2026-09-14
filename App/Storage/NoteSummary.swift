@@ -50,3 +50,11 @@ enum FolderKind: String, Sendable {
         }
     }
 }
+
+/// 파일의 수정 시각과 크기. 편집을 시작할 때 기억해 두고 저장 직전에 견준다 —
+/// 둘 중 하나가 바뀌었으면 다른 기기가 고친 것일 수 있다 (설계서 §7.2 · A15).
+struct FileStamp: Equatable, Sendable {
+    let modifiedAt: Date
+    let size: Int
+}
+

@@ -196,33 +196,21 @@ struct MarkdownEditor: UIViewRepresentable {
 
         /// **되돌리기를 낱말 단위로** (53). UIKit 은 쉬지 않고 친 글을 한 묶음으로
         /// 되돌려 `가나다 라마` 가 한 번에 사라진다 (빌드 14 · 12번). 맥의 편집기처럼
-        /// 빈칸에서 끊고 싶은데 `breakUndoCoalescing` 이 UIKit 에는 없다. 그래서 빈칸을
-        /// **우리가 직접 넣고 되돌리기에 우리 이름으로 올린다** — 되돌리기 더미의 맨 위가
-        /// 타이핑이 아니게 되므로 다음 글자부터 새 묶음이 된다. ⌘Z 는 `낱말 → 빈칸 → 낱말`
-        /// 순으로 물러난다. 조합 중의 빈칸은 이 길로 오지 않아 S10 을 건드리지 않는다.
+        /// 빈칸에서 끊고 싶은데 `breakUndoCoalescing` 이 UIKit 에는 없다.
+        ///
+        /// 빈칸을 `replace(_:withText:)` 로 넣는다 — 타이핑(`insertText`)이 아닌 길이라
+        /// UIKit 이 **제 이름으로 따로** 되돌리기에 올리고, 다음 글자부터 새 묶음이 된다.
+        ///
+        /// **텍스트 저장소를 직접 고치지 않는다.** 빌드 17 은 `textStorage.replaceCharacters`
+        /// 로 넣고 되돌리기를 우리가 등록했는데, UIKit 은 제 손을 거치지 않은 변경을 보면
+        /// **그 전에 쌓아 둔 되돌리기를 버린다** — 낱말 하나와 빈칸까지만 물러나고 멈췄다
+        /// (빌드 17 · 11번). 편집기의 글은 언제나 UIKit 의 입력 경로로만 바꾼다.
         private func insertWordBreak(in textView: UITextView, at range: NSRange) -> Bool {
-            guard textView.undoManager != nil,
-                  NSMaxRange(range) <= (textView.textStorage.string as NSString).length else { return false }
-            let replaced = (textView.textStorage.string as NSString).substring(with: range)
-            replaceForUndo(textView, range: range, old: replaced, new: " ")
-            return true
-        }
-
-        /// 글을 바꾸고 그 반대를 되돌리기에 올린다. 되돌리기가 이 함수를 다시 부르면
-        /// 그 안에서 등록되는 것이 곧 다시 실행이다.
-        private func replaceForUndo(_ textView: UITextView, range: NSRange, old: String, new: String) {
-            textView.textStorage.replaceCharacters(in: range, with: new)
-            let newLength = (new as NSString).length
-            textView.selectedRange = NSRange(location: range.location + newLength, length: 0)
-            textView.undoManager?.registerUndo(withTarget: self) { coordinator in
-                MainActor.assumeIsolated {
-                    guard let view = coordinator.view else { return }
-                    coordinator.replaceForUndo(view, range: NSRange(location: range.location, length: newLength),
-                                               old: new, new: old)
-                }
-            }
-            textView.undoManager?.setActionName("빈칸")
+            guard let target = textRange(textView, range) else { return false }
+            textView.replace(target, withText: " ")
+            textView.selectedRange = NSRange(location: range.location + 1, length: 0)
             onEdit(textView.text)
+            return true
         }
 
         /// **목록에서 줄바꿈** — 아이폰 메모처럼. 규칙은 Core 의 `ListEditing` 이 정한다.

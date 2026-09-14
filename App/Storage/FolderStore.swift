@@ -110,6 +110,20 @@ actor FolderStore {
         return try result.get()
     }
 
+    /// 파일의 **수정 시각과 크기** — 충돌 감지의 도장이다 (설계서 §7.2 · A15).
+    /// 없는 파일이면 `nil`.
+    func stamp(of relativePath: String) -> FileStamp? {
+        openScopeIfNeeded()
+        let url = root.appendingPathComponent(relativePath)
+        var stamp: FileStamp?
+        coordinateRead(url) { readURL in
+            guard let values = try? readURL.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
+                  let date = values.contentModificationDate else { return }
+            stamp = FileStamp(modifiedAt: date, size: values.fileSize ?? 0)
+        }
+        return stamp
+    }
+
     /// **원자적으로** 쓴다. 원본을 열어 놓고 덮어쓰지 않는다 (설계서 §7.1).
     func writeText(_ text: String, to relativePath: String) throws {
         openScopeIfNeeded()
@@ -257,7 +271,22 @@ actor FolderStore {
         let target = uniqueRelativePath(name: name, in: folder)
         try move(from: root.appendingPathComponent(relativePath),
                  to: root.appendingPathComponent(target))
+        restoreAttachments(of: target)
         return target
+    }
+
+    /// 되돌린 노트가 가리키는 첨부가 휴지통에 같은 자리로 있으면 **같이 되돌린다** (56).
+    /// 폴더째 지웠다가 노트만 되돌릴 때 사진이 휴지통에 남던 것. 원래 자리에 이미
+    /// 파일이 있으면 건드리지 않는다. 실패해도 노트 되돌리기는 이미 끝났으므로 조용히 넘어간다.
+    private func restoreAttachments(of notePath: String) {
+        guard let text = try? readText(at: notePath) else { return }
+        for path in MarkdownHTML.referencedPaths(markdown: text, notePath: notePath) {
+            let trashed = root.appendingPathComponent(".trash/" + path)
+            let home = root.appendingPathComponent(path)
+            guard FileManager.default.fileExists(atPath: trashed.path),
+                  !FileManager.default.fileExists(atPath: home.path) else { continue }
+            try? move(from: trashed, to: home)
+        }
     }
 
     /// 최상위에 하위 폴더를 만든다. 이름은 파일 이름과 같은 규칙으로 다듬고,

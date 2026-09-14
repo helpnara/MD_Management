@@ -110,14 +110,14 @@ final class LibraryModel: ObservableObject {
     /// 사용자가 노트를 바꾸면 그 값이 먼저 바뀌어 **이전 글이 새 파일에 덮일** 수
     /// 있기 때문이다. 저장은 언제나 이 경로로 간다.
     private var draftPath: String?
+    /// 글을 읽었을 때 · 마지막으로 썼을 때의 파일 도장. 저장 직전에 견준다 (A15).
+    private var draftStamp: FileStamp?
     private var autosave: Task<Void, Never>?
     /// **편집기의 정체성.** 파일을 실제로 읽어 편집기에 새 글을 넣을 때만 바뀐다.
     /// 경로를 정체성으로 쓰면 제목 따라 이름이 바뀔 때(54) 편집기가 글을 갈아 끼우며
     /// 커서와 키보드를 잃는다. 이름이 바뀌어도 글은 같다 — 정체성도 같다.
     @Published private(set) var editorSession = UUID()
-    /// 제목을 따라 방금 이름을 바꾼 경로. `selectedNoteID` 가 바뀌면 다시 읽으러 오는데,
-    /// 이 경로면 **읽지 않는다** — 글은 이미 편집기에 있고 파일도 같다.
-    private var justRenamedPath: String?
+
     /// 폴더를 잡기 전에 `파일` 앱이 먼저 건넨 파일. 폴더가 서면 그때 연다.
     private var pendingOpen: URL?
 
@@ -532,6 +532,14 @@ final class LibraryModel: ObservableObject {
 
     // MARK: - 편집 · 자동 저장
 
+    /// 충돌 사본 이름의 시각. 파일 이름이라 `:` 를 못 쓴다 — `14.02`.
+    private static let conflictClock: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH.mm"
+        return formatter
+    }()
+
     /// 멈춘 뒤 얼마 만에 쓰나 (설계서 §7.3).
     private static let autosaveDelay = Duration.seconds(2)
 
@@ -555,14 +563,37 @@ final class LibraryModel: ObservableObject {
     func save() async {
         autosave?.cancel()
         autosave = nil
-        guard isDirty, let store, let path = draftPath else { return }
+        guard isDirty, let store, var path = draftPath else { return }
+        let original = path
+        var conflictPath: String?
         do {
-            try await store.writeText(draft, to: path)
+            // **덮어쓰기 전에 파일이 그대로인지 본다** (설계서 §7.2 · A15). 도장(시각 · 크기)이
+            // 다르면 내용을 읽어 견준다 — iCloud 가 시각만 건드린 경우를 걸러 헛돌지 않게.
+            // 정말 다른 글이면 **덮어쓰지 않고** `이름 (충돌 …).md` 로 나란히 쓰고 그쪽을 연다.
+            if let known = draftStamp, let now = await store.stamp(of: path), now != known,
+               let onDisk = try? await store.readText(at: path), onDisk != noteText {
+                let name = path.split(separator: "/").last.map(String.init) ?? path
+                let conflict = try await store.createNote(
+                    named: "\(Paths.baseName(name)) (충돌 \(Self.conflictClock.string(from: Date())))",
+                    in: Paths.directory(of: path), text: draft)
+                draftPath = conflict
+                path = conflict
+                conflictPath = conflict
+                lastError = "다른 기기에서 고친 노트입니다. 내 글은 \(conflict.split(separator: "/").last.map(String.init) ?? conflict) 로 나란히 저장했습니다."
+            } else {
+                try await store.writeText(draft, to: path)
+                lastError = nil
+            }
+            draftStamp = await store.stamp(of: path)
             noteText = draft
             isDirty = false
             saveFailed = false
             lastSaved = Date()
-            lastError = nil
+            if let conflictPath {
+                // 더러움을 내린 **뒤에** 목록을 읽는다 — 안 그러면 다시 읽기가 저장을 또 부른다.
+                if selectedNoteID == original { selectedNoteID = conflictPath }
+                await reloadNotes()
+            }
             // 목록은 최근 수정순인데 저장한다고 다시 읽지는 않는다 — 그러면 고친 노트가
             // 위로 안 올라온다 (48). 그 한 줄만 새 시각으로 바꿔 다시 정렬한다.
             if let index = notes.firstIndex(where: { $0.relativePath == path }) {
@@ -592,7 +623,10 @@ final class LibraryModel: ObservableObject {
         do {
             let moved = try await store.rename(path, to: wanted)
             guard moved != path else { return }
-            if draftPath == path { draftPath = moved }
+            if draftPath == path {
+                draftPath = moved
+                draftStamp = await store.stamp(of: moved)
+            }
             if let index = notes.firstIndex(where: { $0.relativePath == path }) {
                 let old = notes[index]
                 let newName = moved.split(separator: "/").last.map(String.init) ?? moved
@@ -600,10 +634,7 @@ final class LibraryModel: ObservableObject {
                                            preview: old.preview, modifiedAt: old.modifiedAt,
                                            size: old.size, isDownloaded: old.isDownloaded)
             }
-            if selectedNoteID == path {
-                justRenamedPath = moved
-                selectedNoteID = moved
-            }
+            if selectedNoteID == path { selectedNoteID = moved }
         } catch {
             lastError = "제목대로 이름을 바꾸지 못했습니다: \(error.localizedDescription)"
         }
@@ -632,13 +663,6 @@ final class LibraryModel: ObservableObject {
     }
 
     func loadSelectedText() async {
-        // 제목을 따라 이름만 바뀐 것이다. 글은 편집기에 그대로 있고 파일도 같다 —
-        // 다시 읽으면 그 사이 친 글자를 덮는다 (54).
-        if let renamed = justRenamedPath, renamed == selectedNoteID {
-            justRenamedPath = nil
-            return
-        }
-        justRenamedPath = nil
         // **읽기 전에 쓴다.** 노트를 바꾸는 길목이 여기다 — 남은 글을 먼저 파일에
         // 넣지 않으면 그대로 사라진다.
         await save()
@@ -647,11 +671,20 @@ final class LibraryModel: ObservableObject {
             clearNote()
             return
         }
+        // **이미 들고 있는 그 파일이고 디스크도 그대로면 다시 읽지 않는다.** 제목을 따라
+        // 이름만 바뀐 뒤(54) · 충돌 사본으로 옮겨 간 뒤 · 같은 노트를 다시 고른 뒤가 여기다.
+        // 다시 읽으면 편집기가 글을 갈아 끼우며 커서를 잃는다. 디스크가 바뀌었으면
+        // (다른 기기) 읽는다 — 당겨서 새로 고침이 그 길이다.
+        if note.relativePath == draftPath, let stamp = draftStamp,
+           await store.stamp(of: note.relativePath) == stamp {
+            return
+        }
         do {
             let text = try await store.readText(at: note.relativePath)
             noteText = text
             draft = text
             draftPath = note.relativePath
+            draftStamp = await store.stamp(of: note.relativePath)
             isDirty = false
             editorSession = UUID()
             await renderReading(path: note.relativePath, text: text)
@@ -692,6 +725,7 @@ final class LibraryModel: ObservableObject {
         noteText = ""
         draft = ""
         draftPath = nil
+        draftStamp = nil
         editorSession = UUID()
         isDirty = false
         pageHTML = ""
