@@ -110,9 +110,18 @@ enum FolderSource {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
 
-    /// 저장해 둔 (b) 임의 폴더 북마크를 푼다. 낡았으면 `nil` — 다시 고르게 한다.
-    static func bookmarkedFolder(defaults: UserDefaults = .standard) -> URL? {
-        guard let data = defaults.data(forKey: bookmarkKey) else { return nil }
+    /// 저장해 둔 (b) 임의 폴더 북마크의 상태.
+    enum Bookmark: Sendable {
+        /// 고른 폴더가 없다 — (a) 로 간다.
+        case none
+        /// 있었는데 **낡았다** (폴더가 옮겨졌거나 지워졌거나 권한이 끊겼다). 지웠다 — 다시 고르게 한다.
+        case stale
+        case folder(URL)
+    }
+
+    /// 저장해 둔 (b) 임의 폴더 북마크를 푼다. 낡았으면 지우고 `.stale` — **조용히 넘어가지 않는다.**
+    static func bookmarkedFolder(defaults: UserDefaults = .standard) -> Bookmark {
+        guard let data = defaults.data(forKey: bookmarkKey) else { return .none }
         var isStale = false
         guard let url = try? URL(resolvingBookmarkData: data,
                                  options: [],
@@ -120,9 +129,9 @@ enum FolderSource {
                                  bookmarkDataIsStale: &isStale),
               !isStale else {
             defaults.removeObject(forKey: bookmarkKey)
-            return nil
+            return .stale
         }
-        return url
+        return .folder(url)
     }
 
     static func remember(_ url: URL, defaults: UserDefaults = .standard) throws {
@@ -149,21 +158,50 @@ enum FolderSource {
     ) async -> FolderChoice {
         if launch.useSampleFolder {
             let url = await MainActor.run { SampleFolder.make() }
-            return FolderChoice(url: url, kind: .sample, iCloudAvailable: false, attempts: 0)
+            // CI 가 **고른 폴더 상태의 설정 화면**을 찍으려고 쓴다 — 폴더 고르기 창은 시뮬레이터
+            // 스크립트로 못 누른다. 임시 폴더를 (b) 인 척 쓴다. 보안 범위 열기는 실패해도
+            // 그냥 지나가므로(일반 폴더) 화면만 다르고 동작은 같다.
+            let kind: FolderKind = launch.pretendChosenFolder ? .userChosen : .sample
+            return FolderChoice(url: url, kind: kind, iCloudAvailable: false, attempts: 0)
         }
-        if let chosen = bookmarkedFolder(defaults: defaults) {
+        var staleBookmark = false
+        switch bookmarkedFolder(defaults: defaults) {
+        case .folder(let chosen):
             return FolderChoice(url: chosen, kind: .userChosen, iCloudAvailable: false, attempts: 0)
+        case .stale:
+            staleBookmark = true
+        case .none:
+            break
         }
         if launch.localFolderOnly {
             return FolderChoice(url: localDocuments(), kind: .localDocuments,
-                                iCloudAvailable: false, attempts: 0)
+                                iCloudAvailable: false, attempts: 0, staleBookmark: staleBookmark)
         }
         if let cloud = await iCloudDocuments(attempts: attempts) {
-            return FolderChoice(url: cloud, kind: .iCloudContainer, iCloudAvailable: true, attempts: attempts)
+            return FolderChoice(url: cloud, kind: .iCloudContainer, iCloudAvailable: true,
+                                attempts: attempts, staleBookmark: staleBookmark)
         }
         // **조용히 물러나지 않는다.** 진단 화면이 이것을 보여 준다.
         return FolderChoice(url: localDocuments(), kind: .localDocuments,
-                            iCloudAvailable: false, attempts: attempts)
+                            iCloudAvailable: false, attempts: attempts, staleBookmark: staleBookmark)
+    }
+
+    /// 사용자가 문서 선택 창에서 고른 폴더를 (b) 로 기억한다. 북마크는 **보안 범위를 연 채**
+    /// 만들어야 한다 — 그래서 여기서 열고 닫는다. 기억한 뒤 **북마크를 다시 풀어** 돌려준다:
+    /// 앱을 켤 때 쓰는 것과 같은 URL 이어야 첫 사용과 다음 사용이 같은 길을 간다.
+    static func adopt(_ picked: URL, defaults: UserDefaults = .standard) throws -> URL {
+        let scoped = picked.startAccessingSecurityScopedResource()
+        defer { if scoped { picked.stopAccessingSecurityScopedResource() } }
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: picked.path, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            throw CocoaError(.fileReadUnknown)
+        }
+        try remember(picked, defaults: defaults)
+        guard case .folder(let url) = bookmarkedFolder(defaults: defaults) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return url
     }
 }
 
@@ -175,6 +213,8 @@ struct FolderChoice: Sendable {
     /// **물러난 것**이다 (A2 가 안 되는 상태).
     let iCloudAvailable: Bool
     let attempts: Int
+    /// 고른 폴더(b)의 북마크가 낡아 버리고 (a) 로 왔다. 화면이 알려야 한다.
+    var staleBookmark: Bool = false
 }
 
 /// 실행 인자. CI 스크린샷이 화면을 지정해 찍을 때 쓴다.
@@ -200,6 +240,8 @@ struct LaunchOptions: Sendable {
     var newNote = false
     /// 설정 → 휴지통까지 열고 시작한다 — CI 가 그 화면을 찍으려고 쓴다. `-settings` 와 같이 준다.
     var showTrash = false
+    /// 견본 폴더를 **고른 폴더(b)인 척** 연다 — CI 가 그 상태의 설정 화면을 찍으려고 쓴다.
+    var pretendChosenFolder = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -212,7 +254,8 @@ struct LaunchOptions: Sendable {
             attachmentTest: arguments.contains("-attachmentTest"),
             showSettings: arguments.contains("-settings"),
             newNote: arguments.contains("-newNote"),
-            showTrash: arguments.contains("-trash")
+            showTrash: arguments.contains("-trash"),
+            pretendChosenFolder: arguments.contains("-chosenFolder")
         )
     }
 }

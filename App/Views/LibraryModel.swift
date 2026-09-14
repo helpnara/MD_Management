@@ -160,7 +160,39 @@ final class LibraryModel: ObservableObject {
 
     func start() async {
         guard store == nil else { return }
+        let choice = await FolderSource.current(launch: launch)
+        if choice.staleBookmark {
+            // **조용히 넘어가지 않는다.** 폴더가 옮겨졌거나 지워졌거나 권한이 끊긴 것이다.
+            log("고른 폴더를 더는 열 수 없어 \(choice.kind.label) 폴더로 돌아옴")
+            lastError = "고른 폴더를 더는 열 수 없어 \(choice.kind.label) 폴더로 돌아왔습니다. 설정 → 폴더에서 다시 고를 수 있습니다."
+        }
+        await use(choice)
+    }
+
+    // MARK: - (b) 폴더 고르기 (ADR-0002)
+
+    /// 문서 선택 창에서 고른 폴더로 **옮겨 탄다.** 지금 글을 먼저 저장하고, 북마크를 기억한 뒤
+    /// 그 폴더를 연다. 옵시디언 볼트처럼 이미 있는 폴더가 여기로 들어온다.
+    func chooseFolder(_ picked: URL) async {
+        await save()
+        do {
+            let url = try FolderSource.adopt(picked)
+            log("폴더를 고름: \(url.lastPathComponent)")
+            await use(FolderChoice(url: url, kind: .userChosen, iCloudAvailable: iCloudAvailable, attempts: 0))
+            lastError = nil
+            sheet = nil
+        } catch {
+            lastError = "그 폴더를 열지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 고른 폴더를 잊고 (a) iCloud 폴더로 **돌아간다.** 고른 폴더의 파일은 그대로 남는다.
+    func returnToDefaultFolder() async {
+        await save()
+        FolderSource.forget()
+        log("고른 폴더를 잊고 기본 폴더로 돌아감")
         await use(await FolderSource.current(launch: launch))
+        lastError = nil
     }
 
     /// 기기 안 폴더로 물러나 있는가. 이 상태에서는 `Files` 앱에 폴더가 안 생기고

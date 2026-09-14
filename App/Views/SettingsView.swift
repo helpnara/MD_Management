@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import Core
 
 /// 설정 — **폴더** · **`파일` 앱에서 열기** · **휴지통** · 진단.
@@ -9,14 +10,35 @@ struct SettingsView: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.dismiss) private var dismiss
     @State private var showsTrash = false
+    /// 폴더 고르기 창 (b). `fileImporter` 는 시트 위에 문서 선택 창을 띄운다.
+    @State private var pickingFolder = false
 
     var body: some View {
         NavigationStack {
             List {
-                Section("폴더") {
+                Section {
                     row("쓰는 곳", library.kind.label)
                     row("폴더 이름", library.folderName)
                     row("노트", "\(library.notes.count)개")
+                    // (b) 임의 폴더 — 옵시디언 볼트 · iCloud Drive 의 다른 폴더 (ADR-0002).
+                    Button {
+                        pickingFolder = true
+                    } label: {
+                        Label("다른 폴더 고르기", systemImage: "folder.badge.gearshape")
+                    }
+                    if library.kind == .userChosen {
+                        Button(role: .destructive) {
+                            Task { await library.returnToDefaultFolder() }
+                        } label: {
+                            Label("기본 iCloud 폴더로 돌아가기", systemImage: "icloud")
+                        }
+                    }
+                } header: {
+                    Text("폴더")
+                } footer: {
+                    Text(library.kind == .userChosen
+                         ? "고른 폴더를 쓰고 있습니다. 앱을 지워도 그 폴더는 그대로 남습니다. 돌아가기를 눌러도 파일은 지워지지 않습니다 — 앱이 보는 곳만 바뀝니다."
+                         : "옵시디언 볼트처럼 **이미 있는 폴더**를 열 수 있습니다. 숨김 폴더(`.obsidian` 등)는 목록에 보이지 않습니다. 고른 폴더는 다른 앱과 같이 쓰는 곳이므로, 위 **제목** 스위치를 끄는 편이 안전합니다.")
                 }
 
                 Section {
@@ -74,6 +96,14 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("닫기") { dismiss() }
+                }
+            }
+            .fileImporter(isPresented: $pickingFolder, allowedContentTypes: [.folder]) { result in
+                switch result {
+                case .success(let url):
+                    Task { await library.chooseFolder(url) }
+                case .failure(let error):
+                    library.lastError = "폴더를 고르지 못했습니다: \(error.localizedDescription)"
                 }
             }
         }
