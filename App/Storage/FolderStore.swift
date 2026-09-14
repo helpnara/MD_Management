@@ -223,7 +223,8 @@ actor FolderStore {
     func createNote(named name: String, in folder: String, text: String) throws -> String {
         openScopeIfNeeded()
         try createFolder(folder)
-        let path = uniqueRelativePath(name: name, in: folder)
+        let safe = Paths.safeFileName(name)
+        let path = uniqueRelativePath(name: Paths.isNoteFile(safe) ? safe : safe + ".md", in: folder)
         try writeText(text, to: path)
         return path
     }
@@ -262,11 +263,37 @@ actor FolderStore {
         let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
         let folder = Paths.directory(of: relativePath)
         let trashFolder = folder.isEmpty ? ".trash" : ".trash/" + folder
+        // 옮기기 전에 읽어야 한다 — 이 노트만 쓰는 첨부를 같이 보낸다 (60).
+        let attachments = exclusiveAttachments(of: relativePath)
         try createFolder(trashFolder)
         let target = uniqueRelativePath(name: name, in: trashFolder)
         try move(from: root.appendingPathComponent(relativePath),
                  to: root.appendingPathComponent(target))
+        for attachment in attachments {
+            let home = ".trash/" + Paths.directory(of: attachment)
+            let file = attachment.split(separator: "/").last.map(String.init) ?? attachment
+            try? createFolder(home)
+            try? move(from: root.appendingPathComponent(attachment),
+                      to: root.appendingPathComponent(uniqueRelativePath(name: file, in: home)))
+        }
         return target
+    }
+
+    /// 이 노트가 가리키는 첨부 가운데 **같은 폴더의 다른 노트는 안 쓰는 것** (60).
+    /// 노트로 가는 링크(`docs/a.md`)는 첨부가 아니다 — 지우면 남의 노트가 사라진다.
+    /// 다른 폴더의 노트가 쓰는지는 보지 않는다 — `assets/` 는 폴더마다 따로 두는 약속이다.
+    private func exclusiveAttachments(of notePath: String) -> [String] {
+        guard let text = try? readText(at: notePath) else { return [] }
+        let mine = MarkdownHTML.referencedPaths(markdown: text, notePath: notePath).filter {
+            !Paths.isNoteFile($0) && FileManager.default.fileExists(atPath: root.appendingPathComponent($0).path)
+        }
+        guard !mine.isEmpty else { return [] }
+        var used: Set<String> = []
+        for other in notes(in: Paths.directory(of: notePath)) where other.relativePath != notePath {
+            guard let otherText = try? readText(at: other.relativePath) else { continue }
+            used.formUnion(MarkdownHTML.referencedPaths(markdown: otherText, notePath: other.relativePath))
+        }
+        return mine.filter { !used.contains($0) }
     }
 
     /// `.trash/` 안의 노트 — 하위 폴더까지. `notes(in:)` 는 숨김 폴더를 건너뛰므로 따로 있다.
@@ -439,11 +466,18 @@ actor FolderStore {
 
     /// 같은 이름이 있으면 `이름 2.md` · `이름 3.md`. 파일 시스템을 직접 본다 —
     /// 목록은 늦을 수 있다.
+    ///
+    /// **확장자를 지어내지 않는다.** 예전에는 확장자가 없으면 `.md` 를 붙였는데, `이름 (충돌
+    /// 2026-09-14 14.02)` 의 `.02)` 를 확장자로 보고 `.md` 를 안 붙여 **충돌 사본이 목록에서
+    /// 안 보였다** (빌드 18 · 10번). 노트 확장자는 노트를 만드는 쪽(`createNote` · `rename`)이
+    /// 책임진다. 여기는 이름 그대로 번호만 붙인다 — 그래야 `사진.jpg` 도 `사진 2.jpg` 가 된다.
     private func uniqueRelativePath(name: String, in folder: String, keeping own: String? = nil) -> String {
         let safe = Paths.safeFileName(name)
+        // 번호는 마지막 점 앞에 — 단, 노트 확장자나 짧은 확장자일 때만. `14.02)` 는 확장자가 아니다.
         let ext = Paths.fileExtension(safe)
-        let base = Paths.baseName(safe)
-        let suffix = ext.isEmpty ? ".md" : "." + ext
+        let splits = !ext.isEmpty && ext.count <= 5 && ext.allSatisfy { $0.isLetter || $0.isNumber }
+        let base = splits ? Paths.baseName(safe) : safe
+        let suffix = splits ? "." + ext : ""
         func path(_ file: String) -> String { folder.isEmpty ? file : folder + "/" + file }
 
         for attempt in 1...999 {
