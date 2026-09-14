@@ -107,6 +107,13 @@ final class LibraryModel: ObservableObject {
     /// 있기 때문이다. 저장은 언제나 이 경로로 간다.
     private var draftPath: String?
     private var autosave: Task<Void, Never>?
+    /// **편집기의 정체성.** 파일을 실제로 읽어 편집기에 새 글을 넣을 때만 바뀐다.
+    /// 경로를 정체성으로 쓰면 제목 따라 이름이 바뀔 때(54) 편집기가 글을 갈아 끼우며
+    /// 커서와 키보드를 잃는다. 이름이 바뀌어도 글은 같다 — 정체성도 같다.
+    @Published private(set) var editorSession = UUID()
+    /// 제목을 따라 방금 이름을 바꾼 경로. `selectedNoteID` 가 바뀌면 다시 읽으러 오는데,
+    /// 이 경로면 **읽지 않는다** — 글은 이미 편집기에 있고 파일도 같다.
+    private var justRenamedPath: String?
     /// 폴더를 잡기 전에 `파일` 앱이 먼저 건넨 파일. 폴더가 서면 그때 연다.
     private var pendingOpen: URL?
 
@@ -418,11 +425,14 @@ final class LibraryModel: ObservableObject {
         trashed = await store.trashedNotes()
     }
 
+    /// 원래 폴더로 되돌린다. 폴더 수와 목록을 함께 새로 읽는다 — 보고 있는 폴더가
+    /// 아니면 목록에는 안 보이는 것이 맞다. 행이 폴더 이름을 보여 준다 (빌드 15 · 9번).
     func restore(_ note: NoteSummary) async {
         guard let store else { return }
         do {
             _ = try await store.restore(note.relativePath)
             await reloadTrash()
+            await reloadFolders()
             await reloadNotes()
             lastError = nil
         } catch {
@@ -513,9 +523,39 @@ final class LibraryModel: ObservableObject {
                 notes.sort { $0.modifiedAt > $1.modifiedAt }
             }
             await renderReading(path: path, text: draft)
+            await followTitle(of: draft, at: path)
         } catch {
             saveFailed = true
             lastError = "저장하지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// **첫 줄 `# 제목` 을 파일명이 따라간다** (54, 사용자 요청). 저장이 성공한 뒤에만.
+    /// 제목이 없거나 이미 같으면 아무것도 안 한다. 이름이 겹치면 `제목 2.md` 가 되고,
+    /// 그 뒤로는 `제목 2` 자리를 지킨다 (`FolderStore.rename` 의 `keeping`).
+    /// 편집기는 건드리지 않는다 — `editorSession` 이 그대로라 커서도 키보드도 그대로다.
+    private func followTitle(of text: String, at path: String) async {
+        guard let store, let heading = FrontMatter.firstHeading(of: text) else { return }
+        let wanted = Paths.safeFileName(heading, fallback: "")
+        let fileName = path.split(separator: "/").last.map(String.init) ?? path
+        guard !wanted.isEmpty, wanted != Paths.baseName(fileName) else { return }
+        do {
+            let moved = try await store.rename(path, to: wanted)
+            guard moved != path else { return }
+            if draftPath == path { draftPath = moved }
+            if let index = notes.firstIndex(where: { $0.relativePath == path }) {
+                let old = notes[index]
+                let newName = moved.split(separator: "/").last.map(String.init) ?? moved
+                notes[index] = NoteSummary(relativePath: moved, title: Paths.baseName(newName),
+                                           preview: old.preview, modifiedAt: old.modifiedAt,
+                                           size: old.size, isDownloaded: old.isDownloaded)
+            }
+            if selectedNoteID == path {
+                justRenamedPath = moved
+                selectedNoteID = moved
+            }
+        } catch {
+            lastError = "제목대로 이름을 바꾸지 못했습니다: \(error.localizedDescription)"
         }
     }
 
@@ -542,6 +582,13 @@ final class LibraryModel: ObservableObject {
     }
 
     func loadSelectedText() async {
+        // 제목을 따라 이름만 바뀐 것이다. 글은 편집기에 그대로 있고 파일도 같다 —
+        // 다시 읽으면 그 사이 친 글자를 덮는다 (54).
+        if let renamed = justRenamedPath, renamed == selectedNoteID {
+            justRenamedPath = nil
+            return
+        }
+        justRenamedPath = nil
         // **읽기 전에 쓴다.** 노트를 바꾸는 길목이 여기다 — 남은 글을 먼저 파일에
         // 넣지 않으면 그대로 사라진다.
         await save()
@@ -556,6 +603,7 @@ final class LibraryModel: ObservableObject {
             draft = text
             draftPath = note.relativePath
             isDirty = false
+            editorSession = UUID()
             await renderReading(path: note.relativePath, text: text)
             lastError = nil
         } catch {
@@ -594,6 +642,7 @@ final class LibraryModel: ObservableObject {
         noteText = ""
         draft = ""
         draftPath = nil
+        editorSession = UUID()
         isDirty = false
         pageHTML = ""
         attachmentCount = 0

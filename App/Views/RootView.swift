@@ -114,8 +114,10 @@ private struct NoteActionAlerts: ViewModifier {
 ///
 /// - 둘러보기 중: 실제 자료와 섞이지 않게 (`LESSONS_LEARNED` §5)
 /// - iCloud 로 못 갔을 때: 조용히 기기 안 폴더를 쓰는 것을 숨기지 않는다 (A2)
-private struct StatusBanner: View {
+struct StatusBanner: View {
     @EnvironmentObject private var library: LibraryModel
+    /// 시트 안에서는 **오류만** 보여 준다 — iCloud · 둘러보기 안내는 바깥 화면의 몫이다.
+    var errorsOnly = false
 
     var body: some View {
         if let error = library.lastError {
@@ -142,7 +144,7 @@ private struct StatusBanner: View {
                 }
             }
             .buttonStyle(.plain)
-        } else if library.isFallenBackFromICloud {
+        } else if library.isFallenBackFromICloud, !errorsOnly {
             Button {
                 library.sheet = .diagnostics
             } label: {
@@ -163,7 +165,7 @@ private struct StatusBanner: View {
                 }
             }
             .buttonStyle(.plain)
-        } else if library.isSample {
+        } else if library.isSample, !errorsOnly {
             // 한 낱말이 아니라 문장이다. 큰 글씨에서는 **줄을 바꿔야** 한다 —
             // `lineLimit(1)` 은 배지 · 짧은 라벨에만 쓴다.
             Text("둘러보기 자료입니다 · 실제 파일이 아닙니다")
@@ -220,8 +222,11 @@ private struct FolderSidebar: View {
             guard let chosen, chosen != library.selectedFolder else { return }
             library.selectedFolder = chosen
         }
+        // 새 폴더를 만들면 `library.selectedFolder` 가 먼저 바뀐다. 그때 이 화면의
+        // 선택도 따라가야 목록으로 **넘어간다** (빌드 15 · 2번 — `nil` 이면 안 따라가
+        // 폴더만 생기고 화면은 그대로였다).
         .onChange(of: library.selectedFolder) { _, folder in
-            if selection != nil { selection = folder }
+            selection = folder
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -300,6 +305,11 @@ private struct NoteList: View {
                 }
                 .keyboardShortcut("n", modifiers: .command)
             }
+        }
+        // 당겨서 새로 고침 — iCloud 로 다른 기기에서 온 변화 · 휴지통에서 되돌린 것.
+        .refreshable {
+            await library.reloadFolders()
+            await library.reloadNotes()
         }
         .overlay {
             if library.notes.isEmpty && !library.isLoading {
@@ -427,7 +437,7 @@ private struct NoteDetail: View {
         } else {
             // 쓰기 — 라이브 편집기 L1 (ADR-0005). 원문은 그대로 두고 속성만 바뀐다.
             MarkdownEditor(
-                noteID: note.id,
+                noteID: library.editorSession.uuidString,
                 text: library.noteText,
                 onEdit: library.noteEdited,
                 insertion: library.insertion,

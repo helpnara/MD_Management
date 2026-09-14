@@ -187,38 +187,74 @@ actor FolderStore {
         let folder = Paths.directory(of: relativePath)
         let current = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
         let safe = Paths.safeFileName(newName)
-        let wanted = Paths.fileExtension(safe).isEmpty ? safe + ".md" : safe
+        // **점이 든 이름을 확장자로 오해하지 않는다.** `2026.09.13 회의` 를 그대로 두면
+        // `.md` 가 안 붙어 목록에서 사라진다 — 노트 확장자가 아니면 `.md` 를 붙인다.
+        let wanted = Paths.isNoteFile(safe) ? safe : safe + ".md"
         guard wanted != current else { return relativePath }
 
-        let target = uniqueRelativePath(name: wanted, in: folder)
+        // **자기 자신은 비켜 갈 상대가 아니다.** `여행 2.md` 의 제목이 `여행` 인데
+        // `여행.md` 가 이미 있으면, 자기 자리인 `여행 2.md` 를 그대로 쓴다 — 아니면
+        // 저장할 때마다 `여행 3` · `여행 4` 로 밀려난다 (54).
+        let target = uniqueRelativePath(name: wanted, in: folder, keeping: relativePath)
+        guard target != relativePath else { return relativePath }
         try move(from: root.appendingPathComponent(relativePath),
                  to: root.appendingPathComponent(target))
         return target
     }
 
-    /// **지우지 않고 `.trash/` 로 옮긴다** (설계서 §7.1 · ADR-0001). `파일` 앱에서
-    /// 되돌릴 수 있다. 영구 삭제는 나중에 설정에서 타이핑 확인으로만 한다.
+    /// **지우지 않고 `.trash/` 로 옮긴다** (설계서 §7.1 · ADR-0001). 영구 삭제는
+    /// 설정 → 휴지통에서 타이핑 확인으로만 한다.
+    ///
+    /// **원래 자리를 경로로 기억한다.** `여행/A.md` 는 `.trash/여행/A.md` 로 간다.
+    /// 그래야 다른 폴더의 같은 이름 `A.md` 와 섞이지 않고, 되돌리면 원래 폴더로
+    /// 돌아간다 (빌드 15 · 5번 — 예전에는 `A 2.md` 로 이름이 바뀌어 최상위로 갔다).
+    /// DB 없이 파일 구조만으로 기억하므로 ADR-0001 을 지킨다.
     func trash(_ relativePath: String) throws -> String {
         openScopeIfNeeded()
         let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
-        try createFolder(".trash")
-        let target = uniqueRelativePath(name: name, in: ".trash")
+        let folder = Paths.directory(of: relativePath)
+        let trashFolder = folder.isEmpty ? ".trash" : ".trash/" + folder
+        try createFolder(trashFolder)
+        let target = uniqueRelativePath(name: name, in: trashFolder)
         try move(from: root.appendingPathComponent(relativePath),
                  to: root.appendingPathComponent(target))
         return target
     }
 
-    /// `.trash/` 안의 노트. `notes(in:)` 는 숨김 폴더를 건너뛰므로 따로 있다.
+    /// `.trash/` 안의 노트 — 하위 폴더까지. `notes(in:)` 는 숨김 폴더를 건너뛰므로 따로 있다.
     /// `파일` 앱은 숨김 폴더를 못 보여 주므로 **이 목록이 휴지통의 유일한 창**이다 (A14).
     func trashedNotes() -> [NoteSummary] {
-        notes(in: ".trash", includingHidden: true)
+        openScopeIfNeeded()
+        var result: [NoteSummary] = []
+        var pending = [".trash"]
+        while let folder = pending.popLast() {
+            result += notes(in: folder, includingHidden: true)
+            let url = root.appendingPathComponent(folder)
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: []
+            ) else { continue }
+            for entry in entries {
+                guard (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { continue }
+                pending.append(folder + "/" + Paths.normalized(entry.lastPathComponent))
+            }
+        }
+        return result.sorted { $0.modifiedAt > $1.modifiedAt }
     }
 
-    /// 휴지통에서 최상위로 되돌린다. 같은 이름이 있으면 번호를 붙인다.
+    /// 휴지통 안 경로의 **원래 자리**. `.trash/여행/A.md` → `여행/A.md`.
+    static func originalPath(ofTrashed relativePath: String) -> String {
+        relativePath.hasPrefix(".trash/") ? String(relativePath.dropFirst(".trash/".count)) : relativePath
+    }
+
+    /// 휴지통에서 **원래 폴더로** 되돌린다. 폴더가 없어졌으면 다시 만든다.
+    /// 같은 이름이 있으면 번호를 붙인다. 되돌린 경로를 준다.
     func restore(_ relativePath: String) throws -> String {
         openScopeIfNeeded()
-        let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
-        let target = uniqueRelativePath(name: name, in: "")
+        let original = Self.originalPath(ofTrashed: relativePath)
+        let name = original.split(separator: "/").last.map(String.init) ?? original
+        let folder = Paths.directory(of: original)
+        try createFolder(folder)
+        let target = uniqueRelativePath(name: name, in: folder)
         try move(from: root.appendingPathComponent(relativePath),
                  to: root.appendingPathComponent(target))
         return target
@@ -281,7 +317,7 @@ actor FolderStore {
 
     /// 같은 이름이 있으면 `이름 2.md` · `이름 3.md`. 파일 시스템을 직접 본다 —
     /// 목록은 늦을 수 있다.
-    private func uniqueRelativePath(name: String, in folder: String) -> String {
+    private func uniqueRelativePath(name: String, in folder: String, keeping own: String? = nil) -> String {
         let safe = Paths.safeFileName(name)
         let ext = Paths.fileExtension(safe)
         let base = Paths.baseName(safe)
@@ -290,6 +326,7 @@ actor FolderStore {
 
         for attempt in 1...999 {
             let candidate = attempt == 1 ? base + suffix : "\(base) \(attempt)" + suffix
+            if path(candidate) == own { return path(candidate) }
             if !FileManager.default.fileExists(atPath: root.appendingPathComponent(path(candidate)).path) {
                 return path(candidate)
             }

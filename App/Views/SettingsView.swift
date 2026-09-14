@@ -54,6 +54,9 @@ struct SettingsView: View {
             }
             .navigationTitle("설정")
             .navigationBarTitleDisplayMode(.inline)
+            // **띠는 시트 안에도 있어야 한다.** 바깥 화면의 띠는 시트 뒤에 가려져
+            // 영구 삭제의 확인 문구 오류가 안 보였다 (빌드 15 · 6번).
+            .safeAreaInset(edge: .bottom, spacing: 0) { StatusBanner(errorsOnly: true) }
             // CI 가 휴지통을 찍으려고 `-trash` 로 연다. 사람은 위의 링크로 들어간다.
             .navigationDestination(isPresented: $showsTrash) {
                 TrashView().environmentObject(library)
@@ -189,7 +192,7 @@ struct TrashView: View {
                 }
             } footer: {
                 if !library.trashed.isEmpty {
-                    Text("줄을 왼쪽으로 밀면 **영구 삭제**할 수 있습니다. 영구 삭제는 되돌릴 수 없어 확인 문구를 입력해야 합니다.")
+                    Text("**되돌리기**는 원래 있던 폴더로 돌려놓습니다. 줄을 왼쪽으로 밀면 **영구 삭제**할 수 있습니다. 영구 삭제는 되돌릴 수 없어 확인 문구를 입력해야 합니다.")
                 }
             }
         }
@@ -223,6 +226,11 @@ struct TrashView: View {
                 Text(note.modifiedAt, format: .dateTime.year().month().day().hour().minute())
                     .font(.scaled(.caption))
                     .foregroundStyle(Palette.inkFaint)
+                // 어디서 왔는지. 다른 폴더의 같은 이름과 여기서 갈린다 (빌드 15 · 5번).
+                Label(originFolder(of: note).isEmpty ? library.folderName : originFolder(of: note),
+                      systemImage: "folder")
+                    .font(.scaled(.caption))
+                    .foregroundStyle(Palette.inkFaint)
             }
             Spacer(minLength: Metrics.rowSpacing)
             Button("되돌리기") {
@@ -239,6 +247,13 @@ struct TrashView: View {
                 Label("영구 삭제", systemImage: "trash.slash")
             }
         }
+    }
+}
+
+extension TrashView {
+    /// `.trash/여행/A.md` → `여행`. 최상위면 빈 문자열.
+    fileprivate func originFolder(of note: NoteSummary) -> String {
+        Paths.directory(of: FolderStore.originalPath(ofTrashed: note.relativePath))
     }
 }
 

@@ -85,6 +85,24 @@ public enum FrontMatterParser {
         return 0
     }
 
+    /// **파일명이 따라갈 제목** (54). 머리말을 뗀 본문의 **첫 줄**(빈 줄은 건너뛴다)이
+    /// `# 제목` 이면 그 제목, 아니면 `nil`. `##` 이하나 본문 중간의 제목은 보지 않는다 —
+    /// 첫 줄의 `#` 만 파일명과 같다는 것이 사용자의 관찰이었다.
+    public static func firstHeading(of text: String) -> String? {
+        let body = parse(text).body
+        for line in body.components(separatedBy: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty { continue }
+            guard trimmed.hasPrefix("# ") else { return nil }
+            var heading = trimmed.dropFirst(2).trimmingCharacters(in: .whitespaces)
+            // 닫는 `#` 은 CommonMark 가 제목에서 뺀다 (`# 제목 #`).
+            while heading.hasSuffix("#") { heading.removeLast() }
+            heading = heading.trimmingCharacters(in: .whitespaces)
+            return heading.isEmpty ? nil : heading
+        }
+        return nil
+    }
+
     /// 목록에 보여 줄 제목. 머리말 → 첫 `# 제목` → 파일명 순으로 고른다.
     public static func title(of text: String, fileName: String) -> String {
         let parsed = parse(text)
