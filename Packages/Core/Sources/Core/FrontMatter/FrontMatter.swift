@@ -129,7 +129,12 @@ public enum FrontMatterParser {
     public static func aligned(_ text: String, toFileName fileName: String) -> String? {
         let title = Paths.baseName(Paths.normalized(fileName))
         guard !title.isEmpty else { return nil }
-        if firstHeading(of: text) == title { return nil }
+        let heading = firstHeading(of: text)
+        if heading == title { return nil }
+        // **`A 2.md` 안의 `# A` 는 다른 제목이 아니라 번호 붙은 사본이다.** 이름이 겹쳐
+        // 앱이 `이름 2` 로 비켜 갔거나 iCloud 가 그렇게 바꿔 둔 것 — 그대로 둔다.
+        // 고쳐 쓰면 `# A 2` 아래 `## A` 가 생겨 사본마다 군더더기가 남는다 (빌드 20 · 1번).
+        if let heading, isNumberedCopy(title, of: heading) { return nil }
 
         let header = headerLength(of: text)
         let utf16 = Array(text.utf16)
@@ -151,6 +156,13 @@ public enum FrontMatterParser {
         }
         let body = rest.trimmingCharacters(in: .newlines)
         return head + "# " + title + "\n\n" + body + (body.isEmpty ? "" : "\n")
+    }
+
+    /// `A 2` 는 `A` 의 번호 붙은 사본인가. 빈칸 하나와 숫자만 더 붙었을 때.
+    static func isNumberedCopy(_ name: String, of base: String) -> Bool {
+        guard name.hasPrefix(base + " ") else { return false }
+        let tail = name.dropFirst(base.count + 1)
+        return !tail.isEmpty && tail.allSatisfy(\.isNumber)
     }
 
     /// 목록에 보여 줄 제목. 머리말 → 첫 `# 제목` → 파일명 순으로 고른다.

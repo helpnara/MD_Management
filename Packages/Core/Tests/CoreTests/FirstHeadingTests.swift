@@ -37,6 +37,14 @@ final class FirstHeadingTests: XCTestCase {
         XCTAssertEqual(FrontMatterParser.aligned("## 부제목뿐\n", toFileName: "새.md"), "# 새\n\n## 부제목뿐\n", "`##` 은 제목이 아니므로 위에 넣기만")
     }
 
+    func testLeavesNumberedCopiesAlone() {
+        XCTAssertNil(FrontMatterParser.aligned("# A\n\n본문\n", toFileName: "A 2.md"), "`A 2` 안의 `# A` 는 번호 붙은 사본")
+        XCTAssertNil(FrontMatterParser.aligned("# 새 노트\n\n", toFileName: "새 노트 12.md"))
+        XCTAssertNotNil(FrontMatterParser.aligned("# A\n", toFileName: "A 2b.md"), "숫자만이어야 사본이다")
+        XCTAssertNotNil(FrontMatterParser.aligned("# A\n", toFileName: "A2.md"), "빈칸이 없으면 다른 이름이다")
+        XCTAssertNotNil(FrontMatterParser.aligned("# B\n", toFileName: "A 2.md"), "밑동이 다르면 사본이 아니다")
+    }
+
     func testNotAHeading() {
         XCTAssertNil(FrontMatterParser.firstHeading(of: "그냥 글\n# 나중 제목"), "첫 줄이 제목이 아니면 없다")
         XCTAssertNil(FrontMatterParser.firstHeading(of: "## 둘째 단계"), "`##` 은 보지 않는다")
