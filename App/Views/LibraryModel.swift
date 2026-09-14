@@ -605,9 +605,15 @@ final class LibraryModel: ObservableObject {
         let folderNow = await store.stamp(of: selectedFolder)
         if let known = folderStamp, let folderNow, folderNow != known {
             folderStamp = folderNow
-            log("폴더가 바뀌어 목록을 다시 읽음: \(selectedFolder.isEmpty ? "최상위" : selectedFolder)")
+            // **무엇이 왔고 갔는지 적는다.** iCloud 는 같은 이름이 만나면 판본 대신 `A 2` 로
+            // 이름을 바꾸기도 한다 — 그때 최근 일에 이 줄이 없으면 무슨 일인지 알 길이 없다 (빌드 20 · 1번).
+            let before = Set(notes.map(\.relativePath))
             await reloadFolders()
             await reloadNotes()
+            let after = Set(notes.map(\.relativePath))
+            for path in after.subtracting(before).sorted() { log("다른 기기에서 온 새 노트: \(path)") }
+            for path in before.subtracting(after).sorted() { log("다른 기기에서 사라진 노트: \(path)") }
+            if after == before { log("폴더가 바뀌어 목록을 다시 읽음: \(selectedFolder.isEmpty ? "최상위" : selectedFolder)") }
         } else if folderStamp == nil {
             folderStamp = folderNow
         }
