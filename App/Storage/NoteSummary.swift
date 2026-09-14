@@ -58,3 +58,10 @@ struct FileStamp: Equatable, Sendable {
     let size: Int
 }
 
+/// iCloud 충돌 판본을 한 번 훑은 결과. `pending` 이 남았으면 아직 못 읽은 판본이 있다 —
+/// **그 판본은 그대로 살아 있다.** 다음 기회에 다시 훑는다 (빌드 21 · 4번).
+struct ConflictSweep: Sendable {
+    let made: [String]
+    let pending: Int
+}
+

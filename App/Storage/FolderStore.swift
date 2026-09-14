@@ -179,26 +179,53 @@ actor FolderStore {
     /// 따로 고치면 iCloud 는 하나를 남기고 다른 하나를 `NSFileVersion` 으로 숨겨 둔다 —
     /// 사용자는 그것을 볼 길이 없다. 숨은 판본마다 `이름 (충돌 …).md` 로 나란히 꺼내 놓고
     /// 판본을 정리한다. 만든 사본의 경로들을 준다. 없으면 빈 배열.
-    func surfaceConflictVersions(of relativePath: String) throws -> [String] {
+    func surfaceConflictVersions(of relativePath: String) throws -> ConflictSweep {
         openScopeIfNeeded()
         let url = root.appendingPathComponent(relativePath)
         guard let versions = NSFileVersion.unresolvedConflictVersionsOfItem(at: url), !versions.isEmpty else {
-            return []
+            return ConflictSweep(made: [], pending: 0)
         }
         let current = try? readText(at: relativePath)
         let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
         var made: [String] = []
+        var pending = 0
+
         for (index, version) in versions.enumerated() {
-            if let data = try? Data(contentsOf: version.url), let text = Self.decode(data)?.text,
-               text != current {
+            // **읽지 못한 판본은 절대 해결로 표시하지 않는다.** 여기가 빌드 20 의 유실 자리였다
+            // (빌드 20 · 4번): 비행기 모드를 풀면 다른 기기의 판본은 아직 **안 내려와 있다.**
+            // 그때 `Data(contentsOf:)` 가 실패했는데도 `isResolved = true` 를 찍어 **그 글을
+            // 버렸고**, 남은 내 판본이 이겨 다른 기기까지 덮었다. 이제 못 읽으면 그대로 두고
+            // 다음 기회에 다시 본다 — 판본은 iCloud 가 들고 있다.
+            guard let text = versionText(version) else {
+                pending += 1
+                continue
+            }
+            if text != current {
                 let stamp = version.modificationDate ?? Date()
                 let title = Self.conflictName(for: name, at: stamp) + (index == 0 ? "" : " \(index + 1)")
-                made.append(try createNote(named: title, in: Paths.directory(of: relativePath), text: text))
+                // 사본을 못 쓰면 역시 판본을 남긴다 — 글을 먼저 안전한 곳에 둔 뒤에만 지운다.
+                guard let path = try? createNote(named: title, in: Paths.directory(of: relativePath), text: text) else {
+                    pending += 1
+                    continue
+                }
+                made.append(path)
             }
             version.isResolved = true
         }
-        try? NSFileVersion.removeOtherVersionsOfItem(at: url)
-        return made
+        // 모두 갈무리했을 때만 묵은 판본을 정리한다.
+        if pending == 0 { try? NSFileVersion.removeOtherVersionsOfItem(at: url) }
+        return ConflictSweep(made: made, pending: pending)
+    }
+
+    /// 충돌 판본의 글. **먼저 내려받고 조정해서 읽는다** — iCloud 의 판본은 파일이
+    /// 아직 기기에 없을 수 있다. 못 읽으면 `nil` 이고, 부른 쪽은 그 판본을 건드리지 않는다.
+    private func versionText(_ version: NSFileVersion) -> String? {
+        try? FileManager.default.startDownloadingUbiquitousItem(at: version.url)
+        var text: String?
+        coordinateRead(version.url) { url in
+            if let data = try? Data(contentsOf: url) { text = Self.decode(data)?.text }
+        }
+        return text
     }
 
     /// **원자적으로** 쓴다. 원본을 열어 놓고 덮어쓰지 않는다 (설계서 §7.1).

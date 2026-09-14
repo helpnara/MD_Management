@@ -540,6 +540,8 @@ final class LibraryModel: ObservableObject {
 
     private var watcher: Task<Void, Never>?
     private var folderStamp: FileStamp?
+    /// 마지막으로 충돌 판본을 훑은 때. 너무 자주 훑지 않는다.
+    private var lastConflictSweep = Date.distantPast
 
     /// 앱이 앞에 있는 동안 **몇 초마다 파일 도장을 본다.** iCloud 가 다른 기기의 변경을
     /// 내려놓으면 열린 노트는 (내가 치는 중이 아닐 때) 그 자리에서 새 글로 바뀌고, 폴더에
@@ -576,10 +578,22 @@ final class LibraryModel: ObservableObject {
                 await renderReading(path: path, text: text)
             }
         }
-        if let path = draftPath, let made = try? await store.surfaceConflictVersions(of: path), !made.isEmpty {
-            log("iCloud 충돌 판본 \(made.count)개를 사본으로 꺼냄: \(path)")
-            lastError = "iCloud 가 다른 기기의 글을 따로 두었습니다. \(made.count)개를 (충돌 …) 사본으로 꺼냈습니다."
-            await reloadNotes()
+        // **충돌 판본 훑기는 자주 하지 않는다.** 아직 안 내려온 판본을 읽으려면 iCloud 를
+        // 기다려야 해서 파일 담당이 그동안 묶인다. 파일이 바뀌었을 때와 30초마다만 본다.
+        if let path = draftPath, Date().timeIntervalSince(lastConflictSweep) > 30 {
+            lastConflictSweep = Date()
+            if let sweep = try? await store.surfaceConflictVersions(of: path) {
+                if !sweep.made.isEmpty {
+                    log("iCloud 충돌 판본 \(sweep.made.count)개를 사본으로 꺼냄: \(path)")
+                    lastError = "iCloud 가 다른 기기의 글을 따로 두었습니다. \(sweep.made.count)개를 (충돌 …) 사본으로 꺼냈습니다."
+                    await reloadNotes()
+                }
+                if sweep.pending > 0 {
+                    // 아직 안 내려온 판본이다. **버리지 않았다** — 곧 다시 본다.
+                    log("아직 안 내려온 충돌 판본 \(sweep.pending)개 — 그대로 두고 다시 봅니다: \(path)")
+                    lastConflictSweep = Date().addingTimeInterval(-25)
+                }
+            }
         }
         // 폴더 — 무엇이 생기거나 없어졌나
         let folderNow = await store.stamp(of: selectedFolder)
