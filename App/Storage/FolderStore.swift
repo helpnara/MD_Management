@@ -80,6 +80,27 @@ actor FolderStore {
         return result.sorted { $0.modifiedAt > $1.modifiedAt }
     }
 
+    /// 폴더 **전체**의 노트 — 하위 폴더까지, 숨김은 빼고. 색인이 쓴다 (ADR-0003).
+    func allNotes() -> [NoteSummary] {
+        openScopeIfNeeded()
+        var result: [NoteSummary] = []
+        var pending = [""]
+        while let folder = pending.popLast() {
+            result += notes(in: folder)
+            let url = folder.isEmpty ? root : root.appendingPathComponent(folder)
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+            ) else { continue }
+            for entry in entries {
+                let name = Paths.normalized(entry.lastPathComponent)
+                guard !name.hasPrefix("."), name != "assets",
+                      (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { continue }
+                pending.append(folder.isEmpty ? name : folder + "/" + name)
+            }
+        }
+        return result
+    }
+
     /// 하위 폴더 목록 (사이드바용). 숨김 폴더는 뺀다 — 옵시디언 볼트의 `.obsidian/` (A6).
     func folders() -> [FolderSummary] {
         openScopeIfNeeded()

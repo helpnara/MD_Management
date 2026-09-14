@@ -24,6 +24,7 @@ struct RootView: View {
             await library.start()
             if library.launch.attachmentTest { await library.makeAttachmentTest() }
             if library.launch.newNote { await library.createNote() }
+            if let term = library.launch.searchTerm { library.searchText = term }
         }
         .task(id: library.selectedFolder) {
             library.autoSelectsFirstNote = prefersPreselectedNote
@@ -362,14 +363,58 @@ private struct FolderSidebar: View {
 
 private struct NoteList: View {
     @EnvironmentObject private var library: LibraryModel
+    @State private var searchPresented = false
 
     var body: some View {
         List(selection: $library.selectedNoteID) {
-            ForEach(library.notes) { note in
-                row(for: note)
-                    .tag(note.id)
-                    .swipeActions(edge: .trailing) { swipeActions(for: note) }
+            if library.searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                ForEach(library.notes) { note in
+                    row(for: note)
+                        .tag(note.id)
+                        .swipeActions(edge: .trailing) { swipeActions(for: note) }
+                }
+            } else {
+                // 검색 결과 — 파일명 일치가 앞, 본문 일치가 뒤 (설계서 §6-E). 폴더 전체를 본다.
+                ForEach(library.searchResults) { hit in
+                    Button {
+                        Task { await library.open(relativePath: hit.relativePath) }
+                    } label: {
+                        VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
+                            HStack(spacing: Metrics.rowSpacing) {
+                                Text(hit.title)
+                                    .font(.scaled(.body, weight: .medium))
+                                    .foregroundStyle(Palette.ink)
+                                if hit.byTitle {
+                                    Image(systemName: "textformat")
+                                        .foregroundStyle(Palette.inkFaint)
+                                }
+                            }
+                            if !hit.line.isEmpty {
+                                Text(hit.line)
+                                    .font(.scaled(.callout))
+                                    .foregroundStyle(Palette.inkFaint)
+                                    .lineLimit(2)
+                            }
+                            let folder = Paths.directory(of: hit.relativePath)
+                            if !folder.isEmpty {
+                                Label(folder, systemImage: "folder")
+                                    .font(.scaled(.caption))
+                                    .foregroundStyle(Palette.inkFaint)
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
             }
+        }
+        // 검색 (ADR-0003). 150ms 디바운스는 모델이 한다. `⌘F` 로 칸을 연다 (S9).
+        .searchable(text: $library.searchText, isPresented: $searchPresented,
+                    placement: .navigationBarDrawer(displayMode: .automatic),
+                    prompt: "제목 · 본문 · tag: · path:")
+        .background {
+            Button("찾기") { searchPresented = true }
+                .keyboardShortcut("f", modifiers: .command)
+                .hidden()
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -387,7 +432,11 @@ private struct NoteList: View {
             await library.reloadNotes()
         }
         .overlay {
-            if library.notes.isEmpty && !library.isLoading {
+            if !library.searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                if library.searchResults.isEmpty && !library.isSearching {
+                    ContentUnavailableView.search(text: library.searchText)
+                }
+            } else if library.notes.isEmpty && !library.isLoading {
                 ContentUnavailableView(
                     "노트가 없습니다",
                     systemImage: "doc.text",
@@ -429,6 +478,13 @@ private struct NoteList: View {
                             Image(systemName: "icloud.and.arrow.down")
                                 .foregroundStyle(Palette.inkFaint)
                         }
+                    }
+                    // 첫 줄 미리보기 — **색인에서만** (설계서 §7.5). 색인 전이면 없다.
+                    if !note.preview.isEmpty {
+                        Text(note.preview)
+                            .font(.scaled(.callout))
+                            .foregroundStyle(Palette.inkFaint)
+                            .lineLimit(1)
                     }
                     // 날짜만으로는 오늘 고친 여러 노트가 안 갈린다 — 시각까지 (50).
                     Text(note.modifiedAt, format: .dateTime.year().month().day().hour().minute())

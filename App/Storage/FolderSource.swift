@@ -242,6 +242,8 @@ struct LaunchOptions: Sendable {
     var showTrash = false
     /// 견본 폴더를 **고른 폴더(b)인 척** 연다 — CI 가 그 상태의 설정 화면을 찍으려고 쓴다.
     var pretendChosenFolder = false
+    /// 검색 칸에 이 말을 넣고 시작한다 — CI 가 검색 결과를 찍으려고 쓴다 (`-search 회의`).
+    var searchTerm: String?
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -255,7 +257,10 @@ struct LaunchOptions: Sendable {
             showSettings: arguments.contains("-settings"),
             newNote: arguments.contains("-newNote"),
             showTrash: arguments.contains("-trash"),
-            pretendChosenFolder: arguments.contains("-chosenFolder")
+            pretendChosenFolder: arguments.contains("-chosenFolder"),
+            searchTerm: arguments.firstIndex(of: "-search").flatMap { index in
+                index + 1 < arguments.count ? arguments[index + 1] : nil
+            }
         )
     }
 }

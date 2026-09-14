@@ -113,6 +113,8 @@ final class LibraryModel: ObservableObject {
 
     let launch: LaunchOptions
     private var store: FolderStore?
+    /// 검색 색인 — 폴더마다 하나. 캐시다 (ADR-0003).
+    private var index: SearchIndex?
 
     /// **지금 글이 어느 파일의 것인가.** `selectedNote` 를 보지 않는 이유는,
     /// 사용자가 노트를 바꾸면 그 값이 먼저 바뀌어 **이전 글이 새 파일에 덮일** 수
@@ -218,6 +220,10 @@ final class LibraryModel: ObservableObject {
     private func use(_ choice: FolderChoice) async {
         await store?.close()
         store = FolderStore(root: choice.url, kind: choice.kind)
+        index = SearchIndex(for: choice.url)
+        searchText = ""
+        searchResults = []
+        indexStatus = IndexStatus()
         kind = choice.kind
         iCloudAvailable = choice.iCloudAvailable
         rootPath = choice.url.path
@@ -611,6 +617,74 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    // MARK: - 검색 (ADR-0003 · 설계서 §7.5)
+
+    /// 검색 칸의 글. 150ms 디바운스로 `searchResults` 가 따라온다.
+    @Published var searchText = "" {
+        didSet { scheduleSearch() }
+    }
+    @Published private(set) var searchResults: [SearchHit] = []
+    @Published private(set) var isSearching = false
+    @Published private(set) var indexStatus = IndexStatus()
+    /// 목록의 첫 줄 미리보기 — **색인에서만** (설계서 §7.5). 색인 전이면 빈칸.
+    private var previews: [String: String] = [:]
+    private var searchTask: Task<Void, Never>?
+    private var indexTask: Task<Void, Never>?
+
+    private static func withPreviews(_ notes: [NoteSummary], from previews: [String: String]) -> [NoteSummary] {
+        notes.map { note in
+            let line = previews[note.relativePath] ?? ""
+            guard line != note.preview else { return note }
+            return NoteSummary(relativePath: note.relativePath, title: note.title, preview: line,
+                               modifiedAt: note.modifiedAt, size: note.size, isDownloaded: note.isDownloaded)
+        }
+    }
+
+    private func scheduleSearch() {
+        searchTask?.cancel()
+        let text = searchText.trimmingCharacters(in: .whitespaces)
+        guard !text.isEmpty else { searchResults = []; isSearching = false; return }
+        isSearching = true
+        searchTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(150))
+            guard !Task.isCancelled, let self, let index = self.index else { return }
+            let hits = await index.search(text)
+            guard !Task.isCancelled else { return }
+            self.searchResults = hits
+            self.isSearching = false
+        }
+    }
+
+    /// 목록이 바뀔 때마다 **바뀐 파일만** 다시 색인한다. 겹치면 앞 것을 접는다.
+    /// 첫 색인은 뒤에서 돈다 — 목록은 기다리지 않는다 (S1).
+    private func scheduleIndexRefresh() {
+        indexTask?.cancel()
+        indexTask = Task { [weak self] in
+            guard let self, let index = self.index, let store = self.store else { return }
+            // 색인은 폴더 **전체**를 안다 — 하위 폴더까지. 목록은 보고 있는 폴더뿐이다.
+            let all = await store.allNotes()
+            guard !Task.isCancelled else { return }
+            let changed = await index.refresh(all) { path in try await store.readText(at: path) }
+            guard !Task.isCancelled else { return }
+            self.indexStatus = await index.status
+            if changed > 0 || self.previews.isEmpty {
+                self.previews = await index.firstLines()
+                self.notes = Self.withPreviews(self.notes, from: self.previews)
+                if changed > 0 { self.log("색인 갱신: \(changed)개 (\(self.indexStatus.noteCount)개 · \(String(format: "%.2f", self.indexStatus.lastRefreshSeconds))초)") }
+            }
+            if !self.searchText.isEmpty { self.scheduleSearch() }
+        }
+    }
+
+    /// 설정 · 진단의 **색인 다시 만들기** — 통째로 지우고 처음부터 (ADR-0003).
+    func rebuildIndex() async {
+        guard let index else { return }
+        await index.reset()
+        previews = [:]
+        log("색인을 지우고 다시 만듦")
+        scheduleIndexRefresh()
+    }
+
     // MARK: - 최근 일 (진단)
 
     /// 무슨 일이 있었는지 — 충돌 · 저장 실패 · 다른 기기 변경. 진단 화면이 보여 준다.
@@ -741,6 +815,7 @@ final class LibraryModel: ObservableObject {
         물러남: \(isFallenBackFromICloud ? "예" : "아니오")
         경로: \(rootPath)
         노트: \(notes.count)개 · 하위 폴더: \(folders.count)개
+        색인: \(indexStatus.noteCount)개 · trigram \(indexStatus.trigramAvailable ? "있음" : "없음(LIKE 만)") · \(indexStatus.fileBytes / 1024)KB · 마지막 갱신 \(String(format: "%.2f", indexStatus.lastRefreshSeconds))초
         저장 안 된 글: \(isDirty ? "있음" : "없음")
         마지막 저장: \(lastSaved.map { $0.formatted(date: .omitted, time: .standard) } ?? "없음")
         마지막 오류: \(lastError ?? "없음")
@@ -817,6 +892,7 @@ final class LibraryModel: ObservableObject {
             }
             await renderReading(path: path, text: draft)
             await followTitle(of: draft, at: path)
+            scheduleIndexRefresh()
         } catch {
             saveFailed = true
             lastError = "저장하지 못했습니다: \(error.localizedDescription)"
@@ -870,7 +946,8 @@ final class LibraryModel: ObservableObject {
         isLoading = true
         folderStamp = await store.stamp(of: selectedFolder)
         let loaded = await store.notes(in: selectedFolder)
-        notes = loaded
+        notes = Self.withPreviews(loaded, from: previews)
+        scheduleIndexRefresh()
         if let current = selectedNoteID, !loaded.contains(where: { $0.id == current }) {
             selectedNoteID = nil
         }
