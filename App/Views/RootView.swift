@@ -33,7 +33,13 @@ struct RootView: View {
         // 앱이 다시 앞으로 나올 때 iCloud 를 한 번 더 찾아본다. 설치 직후
         // 첫 실행은 컨테이너가 아직 준비되지 않아 못 잡는 일이 있다 (A2).
         .task(id: scenePhase) {
-            if scenePhase == .active { await library.retryICloud() }
+            if scenePhase == .active {
+                await library.retryICloud()
+                // 앞에 있는 동안만 다른 기기의 변경을 지켜본다. 뒤로 가면 멈춘다.
+                library.startWatching()
+            } else {
+                library.stopWatching()
+            }
         }
         // **앱이 뒤로 갈 때 반드시 쓴다.** `.task(id:)` 는 화면이 사라지면 함께
         // 끊기므로 여기서는 쓰지 않는다 — 저장이 끊기면 그대로 자료가 사라진다.

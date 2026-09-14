@@ -83,6 +83,20 @@ struct DiagnosticsView: View {
                     }
                 }
 
+                if !library.events.isEmpty {
+                    Section {
+                        ForEach(Array(library.events.prefix(20).enumerated()), id: \.offset) { _, event in
+                            Text(event)
+                                .font(.scaledMono(.caption))
+                                .foregroundStyle(Palette.ink)
+                        }
+                    } header: {
+                        Text("최근 일")
+                    } footer: {
+                        Text("충돌 · 저장 실패 · 다른 기기의 변경이 여기 쌓입니다. 빨간 띠가 떴는데 이유를 모르겠으면 이것을 복사해 보내 주세요.")
+                    }
+                }
+
                 Section {
                     Button {
                         Task { await library.makeAttachmentTest() }

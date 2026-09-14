@@ -480,7 +480,8 @@ final class LibraryModel: ObservableObject {
     func restore(_ note: NoteSummary) async {
         guard let store else { return }
         do {
-            _ = try await store.restore(note.relativePath)
+            let restored = try await store.restore(note.relativePath)
+            log("되돌림: \(restored)")
             await reloadTrash()
             await reloadFolders()
             await reloadNotes()
@@ -513,6 +514,80 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    // MARK: - 최근 일 (진단)
+
+    /// 무슨 일이 있었는지 — 충돌 · 저장 실패 · 다른 기기 변경. 진단 화면이 보여 준다.
+    /// 빨간 띠가 떴는데 원인을 모를 때 이것을 본다 (빌드 18 · 10번). 글은 담지 않는다.
+    @Published private(set) var events: [String] = []
+
+    private static let eventClock: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
+
+    func log(_ message: String) {
+        events.insert("\(Self.eventClock.string(from: Date())) \(message)", at: 0)
+        if events.count > 40 { events.removeLast(events.count - 40) }
+    }
+
+    // MARK: - 다른 기기의 변경 지켜보기
+
+    private var watcher: Task<Void, Never>?
+    private var folderStamp: FileStamp?
+
+    /// 앱이 앞에 있는 동안 **몇 초마다 파일 도장을 본다.** iCloud 가 다른 기기의 변경을
+    /// 내려놓으면 열린 노트는 (내가 치는 중이 아닐 때) 그 자리에서 새 글로 바뀌고, 폴더에
+    /// 무엇이 생기거나 없어지면 목록이 새로 읽힌다 (빌드 18 · 10번 — 당겨야만 보였다).
+    /// 내가 치는 중이면 손대지 않는다 — 그때는 저장이 충돌을 가린다 (A15).
+    /// iCloud 가 스스로 만든 충돌 판본도 여기서 끌어낸다.
+    func startWatching() {
+        watcher?.cancel()
+        watcher = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.checkForExternalChanges()
+                try? await Task.sleep(for: .seconds(3))
+            }
+        }
+    }
+
+    func stopWatching() {
+        watcher?.cancel()
+        watcher = nil
+    }
+
+    func checkForExternalChanges() async {
+        guard let store else { return }
+        // 열린 노트
+        // 치는 중(`isDirty`)이면 손대지 않는다 — 저장이 견주고 필요하면 충돌 사본을 만든다.
+        if !isDirty, let path = draftPath, let known = draftStamp,
+           let now = await store.stamp(of: path), now != known,
+           let text = try? await store.readText(at: path) {
+            draftStamp = now
+            if text != noteText {
+                noteText = text
+                draft = text
+                log("다른 기기의 변경을 불러옴: \(path)")
+                await renderReading(path: path, text: text)
+            }
+        }
+        if let path = draftPath, let made = try? await store.surfaceConflictVersions(of: path), !made.isEmpty {
+            log("iCloud 충돌 판본 \(made.count)개를 사본으로 꺼냄: \(path)")
+            lastError = "iCloud 가 다른 기기의 글을 따로 두었습니다. \(made.count)개를 (충돌 …) 사본으로 꺼냈습니다."
+            await reloadNotes()
+        }
+        // 폴더 — 무엇이 생기거나 없어졌나
+        let folderNow = await store.stamp(of: selectedFolder)
+        if let known = folderStamp, let folderNow, folderNow != known {
+            folderStamp = folderNow
+            log("폴더가 바뀌어 목록을 다시 읽음: \(selectedFolder.isEmpty ? "최상위" : selectedFolder)")
+            await reloadFolders()
+            await reloadNotes()
+        } else if folderStamp == nil {
+            folderStamp = folderNow
+        }
+    }
+
     /// 사용자가 복사해 붙일 수 있는 것. **글과 사진은 담지 않는다.**
     var diagnosticsText: String {
         """
@@ -527,18 +602,12 @@ final class LibraryModel: ObservableObject {
         저장 안 된 글: \(isDirty ? "있음" : "없음")
         마지막 저장: \(lastSaved.map { $0.formatted(date: .omitted, time: .standard) } ?? "없음")
         마지막 오류: \(lastError ?? "없음")
+        최근 일:
+        \(events.prefix(20).joined(separator: "\n"))
         """
     }
 
     // MARK: - 편집 · 자동 저장
-
-    /// 충돌 사본 이름의 시각. 파일 이름이라 `:` 를 못 쓴다 — `14.02`.
-    private static let conflictClock: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd HH.mm"
-        return formatter
-    }()
 
     /// 멈춘 뒤 얼마 만에 쓰나 (설계서 §7.3).
     private static let autosaveDelay = Duration.seconds(2)
@@ -574,12 +643,14 @@ final class LibraryModel: ObservableObject {
                let onDisk = try? await store.readText(at: path), onDisk != noteText {
                 let name = path.split(separator: "/").last.map(String.init) ?? path
                 let conflict = try await store.createNote(
-                    named: "\(Paths.baseName(name)) (충돌 \(Self.conflictClock.string(from: Date())))",
+                    named: FolderStore.conflictName(for: name),
                     in: Paths.directory(of: path), text: draft)
                 draftPath = conflict
                 path = conflict
                 conflictPath = conflict
-                lastError = "다른 기기에서 고친 노트입니다. 내 글은 \(conflict.split(separator: "/").last.map(String.init) ?? conflict) 로 나란히 저장했습니다."
+                let shown = conflict.split(separator: "/").last.map(String.init) ?? conflict
+                lastError = "다른 기기에서 고친 노트입니다. 내 글은 \(shown) 로 나란히 저장했습니다."
+                log("충돌: \(name) 이 디스크에서 바뀌어 내 글을 \(shown) 로 저장")
             } else {
                 try await store.writeText(draft, to: path)
                 lastError = nil
@@ -608,6 +679,7 @@ final class LibraryModel: ObservableObject {
         } catch {
             saveFailed = true
             lastError = "저장하지 못했습니다: \(error.localizedDescription)"
+            log("저장 실패: \(path) — \(error.localizedDescription)")
         }
     }
 
@@ -650,6 +722,7 @@ final class LibraryModel: ObservableObject {
     func reloadNotes() async {
         guard let store else { return }
         isLoading = true
+        folderStamp = await store.stamp(of: selectedFolder)
         let loaded = await store.notes(in: selectedFolder)
         notes = loaded
         if let current = selectedNoteID, !loaded.contains(where: { $0.id == current }) {

@@ -114,7 +114,8 @@ actor FolderStore {
     /// 없는 파일이면 `nil`.
     func stamp(of relativePath: String) -> FileStamp? {
         openScopeIfNeeded()
-        let url = root.appendingPathComponent(relativePath)
+        // 빈 경로는 최상위 폴더 자체 — 폴더의 시각은 안에 무엇이 생기거나 없어질 때 바뀐다.
+        let url = relativePath.isEmpty ? root : root.appendingPathComponent(relativePath)
         var stamp: FileStamp?
         coordinateRead(url) { readURL in
             guard let values = try? readURL.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
@@ -122,6 +123,39 @@ actor FolderStore {
             stamp = FileStamp(modifiedAt: date, size: values.fileSize ?? 0)
         }
         return stamp
+    }
+
+    /// 충돌 사본의 이름. 파일 이름이라 `:` 를 못 쓴다 — `이름 (충돌 2026-09-14 14.02)`.
+    static func conflictName(for fileName: String, at date: Date = Date()) -> String {
+        let clock = DateFormatter()
+        clock.locale = Locale(identifier: "en_US_POSIX")
+        clock.dateFormat = "yyyy-MM-dd HH.mm"
+        return "\(Paths.baseName(fileName)) (충돌 \(clock.string(from: date)))"
+    }
+
+    /// **iCloud 가 스스로 만든 충돌 판본**을 끌어낸다 (설계서 §7.2). 두 기기가 같은 파일을
+    /// 따로 고치면 iCloud 는 하나를 남기고 다른 하나를 `NSFileVersion` 으로 숨겨 둔다 —
+    /// 사용자는 그것을 볼 길이 없다. 숨은 판본마다 `이름 (충돌 …).md` 로 나란히 꺼내 놓고
+    /// 판본을 정리한다. 만든 사본의 경로들을 준다. 없으면 빈 배열.
+    func surfaceConflictVersions(of relativePath: String) throws -> [String] {
+        openScopeIfNeeded()
+        let url = root.appendingPathComponent(relativePath)
+        guard let versions = NSFileVersion.unresolvedConflictVersionsOfItem(at: url), !versions.isEmpty else {
+            return []
+        }
+        let current = try? readText(at: relativePath)
+        let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
+        var made: [String] = []
+        for (index, version) in versions.enumerated() {
+            if let text = try? String(contentsOf: version.url, encoding: .utf8), text != current {
+                let stamp = version.modificationDate ?? Date()
+                let title = Self.conflictName(for: name, at: stamp) + (index == 0 ? "" : " \(index + 1)")
+                made.append(try createNote(named: title, in: Paths.directory(of: relativePath), text: text))
+            }
+            version.isResolved = true
+        }
+        try? NSFileVersion.removeOtherVersionsOfItem(at: url)
+        return made
     }
 
     /// **원자적으로** 쓴다. 원본을 열어 놓고 덮어쓰지 않는다 (설계서 §7.1).
