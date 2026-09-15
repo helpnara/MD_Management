@@ -578,8 +578,22 @@ private struct NoteDetail: View {
     }
 
     @ViewBuilder
+    @ViewBuilder
     private func content(for note: NoteSummary) -> some View {
-        if library.isReading {
+        if library.noteIsDownloading {
+            // **화면이 가만히 있으면 이상하다** (사용자). iCloud 가 이름을 먼저 주고 내용을
+            // 나중에 줄 때, 그 사이를 이 표시가 채운다. 다 오면 저절로 열린다 (86).
+            VStack(spacing: Metrics.gutter) {
+                ProgressView()
+                Text("iCloud 에서 받는 중입니다")
+                    .font(.scaled(.callout))
+                    .foregroundStyle(Palette.inkFaint)
+                Text(note.title)
+                    .font(.scaled(.caption))
+                    .foregroundStyle(Palette.inkFaint)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if library.isReading {
             // 읽기 — 표 · 코드 · 핀치 줌이 공짜다 (ADR-0004)
             // **`ignoresSafeArea` 를 쓰지 않는다.** 바깥 `NavigationSplitView` 에
             // 아래쪽 `safeAreaInset`(배너)이 걸려 있는데 안쪽에서 안전 영역을

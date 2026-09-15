@@ -22,6 +22,9 @@ final class LibraryModel: ObservableObject {
     /// 마지막 저장이 실패했나. 화면 위 표시가 이것만 본다 — 읽기 오류와 섞이면
     /// 사용자가 무엇이 위험한지 못 가린다.
     @Published private(set) var saveFailed = false
+    /// 이 노트를 **iCloud 에서 받는 중인가.** 화면이 가만히 있으면 이상하므로 내용 자리에
+    /// 도는 표시를 띄운다 (86 · 사용자). 다 오면 지켜보기가 다시 열어 준다.
+    @Published private(set) var noteIsDownloading = false
     /// 읽기 모드에 넘길 완전한 HTML 문서 (ADR-0004).
     @Published private(set) var pageHTML = ""
     @Published private(set) var attachmentCount = 0
@@ -748,6 +751,11 @@ final class LibraryModel: ObservableObject {
 
     func checkForExternalChanges() async {
         guard let store else { return }
+        // 받는 중이던 노트는 다 왔는지 다시 본다 (86). 3초마다라 곧 열린다.
+        if noteIsDownloading, selectedNoteID != nil {
+            await loadSelectedText()
+            if noteIsDownloading { return }
+        }
         // 고른 폴더(b)가 **옮겨졌거나 휴지통에 갔거나 사라졌나.** 앱이 든 URL 은 처음 열 때의
         // 것이라 그것만 봐서는 모른다 (빌드 25 · 7 · 8번 — 다시 켜야만 알아챘다). 6초마다 북마크를
         // **다시 풀어 지금 실제 경로**를 본다: 휴지통 · 없음이면 기본 폴더로 돌아오며 알리고,
@@ -1064,12 +1072,15 @@ final class LibraryModel: ObservableObject {
             draftStamp = await store.stamp(of: note.relativePath)
             isDirty = false
             editorSession = UUID()
+            noteIsDownloading = false
             if !broken, isUTF8 { lastError = nil }
             await renderReading(path: note.relativePath, text: text)
         } catch ReadError.notDownloaded {
             // 아직 내려받는 중이다. **아무것도 쓰지 않는다** — 다 오면 지켜보기가 다시 부른다 (86).
+            // 띠 대신 **내용 자리에 도는 표시**를 띄운다 — 띠는 잠깐 떴다 사라져 못 보고 지나친다.
+            clearNote()
+            noteIsDownloading = true
             log("아직 내려받는 중: \(note.relativePath)")
-            lastError = "이 노트를 iCloud 에서 받는 중입니다. 잠시 뒤 다시 열립니다."
         } catch CocoaError.fileReadInapplicableStringEncoding {
             clearNote()
             log("글자 인코딩을 못 알아본 파일: \(note.relativePath)")
@@ -1124,6 +1135,7 @@ final class LibraryModel: ObservableObject {
     }
 
     private func clearNote() {
+        noteIsDownloading = false
         noteText = ""
         draft = ""
         draftPath = nil
