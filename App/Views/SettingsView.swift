@@ -9,7 +9,8 @@ import Core
 struct SettingsView: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// 바깥 화면이 compact 인가 (아이폰). 시트 자신의 size class 는 아이패드에서도 compact 라 못 쓴다.
+    @Environment(\.rootIsCompact) private var rootIsCompact
     @State private var showsTrash = false
     /// 폴더 고르기 창 (b). `fileImporter` 는 시트 위에 문서 선택 창을 띄운다.
     @State private var pickingFolder = false
@@ -111,10 +112,11 @@ struct SettingsView: View {
         // **띠는 시트 안에도 있어야 한다.** 바깥 화면의 띠는 시트 뒤에 가려져 영구
         // 삭제의 확인 문구 오류가 안 보였다 (빌드 15 · 6번). **스택에 건다** — 목록에
         // 걸었더니 밀어 넣은 휴지통 화면에는 안 나왔다 (빌드 16 · 9번).
-        // **아이폰(compact)에서만.** 아이패드는 시트가 화면을 다 가리지 않아 바깥 띠가
-        // 보이므로 안에 또 두면 둘이 된다 (빌드 19 · 5번, 76).
+        // **바깥 화면이 compact(아이폰)일 때만.** 아이패드는 시트가 화면을 다 가리지 않아
+        // 바깥 띠가 보이므로 안에 또 두면 둘이 된다 (빌드 19 · 5번, 76). 시트 **자신의**
+        // size class 는 아이패드에서도 compact 라 그것으로 가르면 또 둘이 된다 (빌드 24 · 13번, 81).
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if horizontalSizeClass == .compact { StatusBanner(errorsOnly: true) }
+            if rootIsCompact { StatusBanner(errorsOnly: true) }
         }
     }
 

@@ -55,7 +55,10 @@ struct RootView: View {
         // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
         .modifier(NoteActionAlerts())
         .sheet(item: $library.sheet) { sheet in
-            switch sheet {
+            // **시트에 바깥 화면의 폭을 알려 준다.** 아이패드의 시트는 자기 폭이 compact 라
+            // 자기 size class 만 보면 아이폰인 줄 안다 — 그래서 띠가 둘이 됐다 (빌드 24 · 13번).
+            Group {
+                switch sheet {
             case .settings:
                 SettingsView().environmentObject(library)
             case .diagnostics:
@@ -65,6 +68,8 @@ struct RootView: View {
             case .preview(let url):
                 AttachmentPreview(url: url)
             }
+            }
+            .environment(\.rootIsCompact, horizontalSizeClass == .compact)
         }
     }
 
@@ -699,3 +704,17 @@ private struct SaveIndicator: View {
 private struct EmptyAssetProvider: AssetProvider {
     func data(forRelativePath path: String) async -> Data? { nil }
 }
+
+/// 바깥(루트) 화면이 compact 인가 — 시트가 바깥 띠를 가리는지 알려면 **시트 자신의** size class
+/// 가 아니라 이것을 봐야 한다. 아이패드의 시트는 자기 폭이 compact 라 헷갈린다 (빌드 24 · 13번).
+private struct RootIsCompactKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var rootIsCompact: Bool {
+        get { self[RootIsCompactKey.self] }
+        set { self[RootIsCompactKey.self] = newValue }
+    }
+}
+
