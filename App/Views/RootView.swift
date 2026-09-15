@@ -485,8 +485,11 @@ private struct NoteList: View {
                             .font(.scaled(.body, weight: .medium))
                             .foregroundStyle(Palette.ink)
                         if !note.isDownloaded {
-                            // iCloud 에 있지만 아직 안 내려온 파일 (설계서 §7.1)
-                            Image(systemName: "icloud.and.arrow.down")
+                            // iCloud 에 있지만 아직 안 내려온 파일 (설계서 §7.1).
+                            // **글자를 함께 둔다** — 아이콘만으로는 눈에 안 띈다. 아이폰은 상세가
+                            // 밀려 올라온 뒤에야 도는 표시가 보이므로, 목록에 선 채로 알아야 한다 (90).
+                            Label("받는 중", systemImage: "icloud.and.arrow.down")
+                                .font(.scaled(.caption))
                                 .foregroundStyle(Palette.inkFaint)
                         }
                     }
