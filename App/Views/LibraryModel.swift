@@ -219,6 +219,7 @@ final class LibraryModel: ObservableObject {
 
     private func use(_ choice: FolderChoice) async {
         await store?.close()
+        await index?.close()
         store = FolderStore(root: choice.url, kind: choice.kind)
         index = SearchIndex(for: choice.url)
         searchText = ""

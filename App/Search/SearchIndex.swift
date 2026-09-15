@@ -45,8 +45,11 @@ actor SearchIndex {
         fileURL = folder.appendingPathComponent("\(String(stem.suffix(120)))-v\(Self.version).sqlite")
     }
 
-    deinit {
+    /// 손을 뗀다. 폴더를 바꿀 때 모델이 부른다 — 액터의 `deinit` 은 `OpaquePointer` 를
+    /// 못 만지므로(Sendable 이 아니다) 닫기는 **명시적으로** 한다.
+    func close() {
         if let db { sqlite3_close(db) }
+        db = nil
     }
 
     // MARK: - 열기
