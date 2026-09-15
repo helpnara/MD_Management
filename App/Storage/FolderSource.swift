@@ -142,8 +142,14 @@ enum FolderSource {
     }
 
     /// `.Trash` 안인가 — iCloud Drive · 기기 안 둘 다 그 이름을 쓴다.
+    /// **지금 실제 경로**로 본다 — 참조형 URL 은 항목을 따라가므로 경로에 `.Trash` 가 안 보인다.
     static func isInTrash(_ url: URL) -> Bool {
-        url.pathComponents.contains { $0 == ".Trash" || $0 == ".Trash-1000" }
+        livePath(of: url).split(separator: "/").contains { $0 == ".Trash" || $0.hasPrefix(".Trash-") }
+    }
+
+    /// URL 이 **지금** 가리키는 실제 경로. 참조형(file id)이면 옮겨진 뒤의 경로가 나온다.
+    static func livePath(of url: URL) -> String {
+        ((url as NSURL).filePathURL ?? url).standardizedFileURL.resolvingSymlinksInPath().path
     }
 
     static func remember(_ url: URL, defaults: UserDefaults = .standard) throws {

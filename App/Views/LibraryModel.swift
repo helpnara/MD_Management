@@ -221,6 +221,8 @@ final class LibraryModel: ObservableObject {
         await store?.close()
         await index?.close()
         store = FolderStore(root: choice.url, kind: choice.kind)
+        chosenFolderPath = choice.kind == .userChosen ? FolderSource.livePath(of: choice.url) : ""
+        lastChosenFolderCheck = Date()
         index = SearchIndex(for: choice.url)
         searchText = ""
         searchResults = []
@@ -709,6 +711,9 @@ final class LibraryModel: ObservableObject {
     private var folderStamp: FileStamp?
     /// 마지막으로 충돌 판본을 훑은 때. 너무 자주 훑지 않는다.
     private var lastConflictSweep = Date.distantPast
+    /// 고른 폴더(b)의 **지금 실제 경로** — 열 때 적어 두고 6초마다 북마크를 다시 풀어 견준다.
+    private var chosenFolderPath = ""
+    private var lastChosenFolderCheck = Date.distantPast
     /// **최상위 폴더의 도장은 따로 본다.** 보고 있는 폴더만 보면, 다른 기기가 최상위에
     /// 만든 폴더를 놓친다 — 폴더 화면이 안 바뀌던 까닭이다 (빌드 21 · 사용자).
     private var rootStamp: FileStamp?
@@ -738,17 +743,14 @@ final class LibraryModel: ObservableObject {
 
     func checkForExternalChanges() async {
         guard let store else { return }
-        // 고른 폴더(b)가 **옮겨졌거나 휴지통에 갔거나 사라졌나.** 북마크를 다시 풀어 본다:
-        // 옮겨졌으면 따라가고, 휴지통 · 없음이면 기본 폴더로 돌아오며 알린다 (빌드 24 · 8번).
-        if kind == .userChosen, await store.stamp(of: "") == nil || FolderSource.isInTrash(store.root) {
+        // 고른 폴더(b)가 **옮겨졌거나 휴지통에 갔거나 사라졌나.** 앱이 든 URL 은 처음 열 때의
+        // 것이라 그것만 봐서는 모른다 (빌드 25 · 7 · 8번 — 다시 켜야만 알아챘다). 6초마다 북마크를
+        // **다시 풀어 지금 실제 경로**를 본다: 휴지통 · 없음이면 기본 폴더로 돌아오며 알리고,
+        // 경로가 달라졌으면 옮겨진 것이니 따라가며 최근 일에 적는다.
+        if kind == .userChosen, Date().timeIntervalSince(lastChosenFolderCheck) > 6 {
+            lastChosenFolderCheck = Date()
+            let known = chosenFolderPath
             switch FolderSource.bookmarkedFolder() {
-            case .folder(let moved) where moved.standardizedFileURL != store.root.standardizedFileURL:
-                log("고른 폴더가 옮겨져 따라감: \(moved.lastPathComponent)")
-                await save()
-                await use(FolderChoice(url: moved, kind: .userChosen, iCloudAvailable: iCloudAvailable, attempts: 0))
-                return
-            case .folder:
-                break
             case .stale, .none:
                 log("고른 폴더가 휴지통에 가거나 사라져 기본 폴더로 돌아옴")
                 lastError = "고른 폴더가 휴지통에 가거나 사라져 기본 iCloud 폴더로 돌아왔습니다. 설정 → 폴더에서 다시 고를 수 있습니다."
@@ -756,6 +758,14 @@ final class LibraryModel: ObservableObject {
                 FolderSource.forget()
                 await use(await FolderSource.current(launch: launch))
                 return
+            case .folder(let resolved):
+                let now = FolderSource.livePath(of: resolved)
+                if now != known {
+                    log("고른 폴더가 옮겨져 따라감: \(resolved.lastPathComponent)")
+                    await save()
+                    await use(FolderChoice(url: resolved, kind: .userChosen, iCloudAvailable: iCloudAvailable, attempts: 0))
+                    return
+                }
             }
         }
         // 열린 노트
