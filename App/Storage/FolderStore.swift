@@ -178,10 +178,17 @@ actor FolderStore {
     func stamp(of relativePath: String) -> FileStamp? {
         openScopeIfNeeded()
         // 빈 경로는 최상위 폴더 자체 — 폴더의 시각은 안에 무엇이 생기거나 없어질 때 바뀐다.
-        let url = relativePath.isEmpty ? root : root.appendingPathComponent(relativePath)
+        //
+        // **URL 을 매번 새로 만든다.** `URL` 은 자원 값을 **그 객체에 캐시한다.** 예전에는 최상위일 때
+        // 저장해 둔 `root` 를 그대로 넘겨, 폴더가 바뀌어도 늘 옛 시각이 돌아왔다 — 아이패드를 켜 둔 채
+        // 두면 다른 기기의 삭제가 반영되지 않았다 (빌드 25 · 사용자). 당겨서 새로 고침과 재시작만
+        // 되던 까닭이다. 경로 문자열로 새 URL 을 만들면 캐시가 따라오지 않는다.
+        let path = relativePath.isEmpty ? root.path : root.appendingPathComponent(relativePath).path
         var stamp: FileStamp?
-        coordinateRead(url) { readURL in
-            guard let values = try? readURL.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
+        coordinateRead(URL(fileURLWithPath: path)) { readURL in
+            var fresh = URL(fileURLWithPath: readURL.path)
+            fresh.removeAllCachedResourceValues()
+            guard let values = try? fresh.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]),
                   let date = values.contentModificationDate else { return }
             stamp = FileStamp(modifiedAt: date, size: values.fileSize ?? 0)
         }

@@ -634,6 +634,11 @@ final class LibraryModel: ObservableObject {
     private var searchTask: Task<Void, Never>?
     private var indexTask: Task<Void, Never>?
 
+    /// 목록이 같은가 — 경로 · 시각 · 크기로 본다. 같은 값이면 화면을 안 건드린다.
+    private static func fingerprint(_ notes: [NoteSummary]) -> [String] {
+        notes.map { "\($0.relativePath)|\(Int($0.modifiedAt.timeIntervalSince1970))|\($0.size)" }.sorted()
+    }
+
     private static func withPreviews(_ notes: [NoteSummary], from previews: [String: String]) -> [NoteSummary] {
         notes.map { note in
             let line = previews[note.relativePath] ?? ""
@@ -829,9 +834,21 @@ final class LibraryModel: ObservableObject {
 
         // 하위 폴더 **안**의 변화는 최상위 시각에 안 잡힌다 — 노트 수를 맞추려고
         // 15초마다 폴더 목록을 통째로 읽는다. 값이 같으면 화면은 안 흔들린다.
+        //
+        // **목록도 같이 견준다.** 폴더 시각에만 기대면, 그 시각이 어떤 이유로든 안 바뀔 때
+        // 다른 기기의 삭제 · 추가를 놓친다 (빌드 25 · 사용자 — 아이패드를 켜 둔 채 두면
+        // 아이폰에서 지운 것이 안 사라졌다). 목록을 실제로 읽어 다르면 그때만 반영한다.
         if Date().timeIntervalSince(lastFolderSweep) > 15 {
             lastFolderSweep = Date()
             await reloadFolders()
+            if !isDirty {
+                let fresh = await store.notes(in: selectedFolder)
+                if Self.fingerprint(fresh) != Self.fingerprint(notes) {
+                    log("목록이 달라져 다시 읽음: \(selectedFolder.isEmpty ? "최상위" : selectedFolder)")
+                    folderStamp = await store.stamp(of: selectedFolder)
+                    await reloadNotes()
+                }
+            }
         }
     }
 
