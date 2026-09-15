@@ -738,6 +738,26 @@ final class LibraryModel: ObservableObject {
 
     func checkForExternalChanges() async {
         guard let store else { return }
+        // 고른 폴더(b)가 **옮겨졌거나 휴지통에 갔거나 사라졌나.** 북마크를 다시 풀어 본다:
+        // 옮겨졌으면 따라가고, 휴지통 · 없음이면 기본 폴더로 돌아오며 알린다 (빌드 24 · 8번).
+        if kind == .userChosen, await store.stamp(of: "") == nil || FolderSource.isInTrash(store.root) {
+            switch FolderSource.bookmarkedFolder() {
+            case .folder(let moved) where moved.standardizedFileURL != store.root.standardizedFileURL:
+                log("고른 폴더가 옮겨져 따라감: \(moved.lastPathComponent)")
+                await save()
+                await use(FolderChoice(url: moved, kind: .userChosen, iCloudAvailable: iCloudAvailable, attempts: 0))
+                return
+            case .folder:
+                break
+            case .stale, .none:
+                log("고른 폴더가 휴지통에 가거나 사라져 기본 폴더로 돌아옴")
+                lastError = "고른 폴더가 휴지통에 가거나 사라져 기본 iCloud 폴더로 돌아왔습니다. 설정 → 폴더에서 다시 고를 수 있습니다."
+                await save()
+                FolderSource.forget()
+                await use(await FolderSource.current(launch: launch))
+                return
+            }
+        }
         // 열린 노트
         // 치는 중(`isDirty`)이면 손대지 않는다 — 저장이 견주고 필요하면 충돌 사본을 만든다.
         if !isDirty, let path = draftPath, let known = draftStamp,

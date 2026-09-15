@@ -209,7 +209,8 @@ actor SearchIndex {
         for row in query(sql, binds) {
             let path = row[0], title = row[1], body = row[2]
             let byTitle = terms.contains { title.lowercased().contains($0) }
-            let line = Self.matchingLine(in: body, terms: terms) ?? Self.firstBodyLine(of: FrontMatterParser.parse(body).body)
+            let line = Self.matchingLine(in: body, terms: terms, skipping: title)
+                ?? Self.firstBodyLine(of: FrontMatterParser.parse(body).body)
             hits.append(SearchHit(relativePath: path, title: title, line: line, byTitle: byTitle))
         }
         return hits.sorted { a, b in
@@ -221,12 +222,15 @@ actor SearchIndex {
     // MARK: - 줄 고르기 (순수)
 
     /// 낱말 하나라도 든 **첫 줄**. 머리말 · 빈 줄 · 제목 표시는 건너뛴다.
-    static func matchingLine(in text: String, terms: [String]) -> String? {
+    /// `skipping` 은 제목 — 제목이 맞은 노트에서 제목 줄을 되풀이하지 않는다 (80).
+    static func matchingLine(in text: String, terms: [String], skipping title: String = "") -> String? {
         let body = FrontMatterParser.parse(text).body
         for line in body.components(separatedBy: "\n") {
+            let cleaned = tidy(line)
+            if cleaned.isEmpty || cleaned == title { continue }
             let lowered = line.lowercased()
             if terms.contains(where: { lowered.contains($0) }) {
-                return tidy(line)
+                return cleaned
             }
         }
         return nil

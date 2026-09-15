@@ -57,20 +57,20 @@ struct NoteWebView: UIViewRepresentable {
             self.onOpen = onOpen
         }
 
-        func webView(
-            _ webView: WKWebView,
-            decidePolicyFor navigationAction: WKNavigationAction,
-            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
-        ) {
+        /// **`async` 판으로 쓴다.** 클로저를 받는 판은 Xcode 26.6 의 WebKit 에서 클로저 타입이
+        /// `@MainActor @Sendable` 로 바뀌어, 우리 메서드가 "거의 맞지만 다른" 것으로 취급돼
+        /// **호출되지 않았다** (컴파일 경고 하나뿐이었다). 그러면 링크를 가로채지 못해 웹뷰가
+        /// `.md` 원문을 문자 집합 없이 열어 한글이 깨지고, 없는 파일은 빈 화면이 됐다
+        /// (빌드 24 · 11 · 12번, 빌드 20 · 10 · 11번도 같은 원인). `async` 판은 서명이 하나뿐이다.
+        func webView(_ webView: WKWebView,
+                     decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
             // 첫 로드(loadHTMLString)는 그대로 통과시킨다.
             guard navigationAction.navigationType == .linkActivated,
                   let url = navigationAction.request.url else {
-                decisionHandler(.allow)
-                return
+                return .allow
             }
-
-            decisionHandler(.cancel)
             onOpen(NoteLinkAction(url: url))
+            return .cancel
         }
     }
 }

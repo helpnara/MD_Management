@@ -131,7 +131,19 @@ enum FolderSource {
             defaults.removeObject(forKey: bookmarkKey)
             return .stale
         }
+        // **휴지통에 들어갔거나 사라진 폴더는 낡은 것으로 본다.** `파일` 앱의 삭제는 폴더를
+        // `최근 삭제된 항목`(.Trash)으로 옮기는 것이라 북마크가 그대로 따라간다 — 그 안을
+        // 조용히 쓰면 안 된다 (빌드 24 · 8번).
+        guard FileManager.default.fileExists(atPath: url.path), !Self.isInTrash(url) else {
+            defaults.removeObject(forKey: bookmarkKey)
+            return .stale
+        }
         return .folder(url)
+    }
+
+    /// `.Trash` 안인가 — iCloud Drive · 기기 안 둘 다 그 이름을 쓴다.
+    static func isInTrash(_ url: URL) -> Bool {
+        url.pathComponents.contains { $0 == ".Trash" || $0 == ".Trash-1000" }
     }
 
     static func remember(_ url: URL, defaults: UserDefaults = .standard) throws {
