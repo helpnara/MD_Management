@@ -130,6 +130,14 @@ actor FolderStore {
     func readText(at relativePath: String) throws -> String {
         openScopeIfNeeded()
         let url = root.appendingPathComponent(relativePath)
+        // **다 안 내려온 파일은 읽지 않는다.** iCloud 는 이름을 먼저 주고 내용을 나중에 준다.
+        // 그때 읽으면 **잘린 글**이 오고, 제목 맞추기(62)가 그것을 도로 써서 원본을 잘라 버렸다 —
+        // iCloud 는 온전한 판과 갈라졌다고 보아 충돌을 냈다 (사용자: 원본이 잘리고 사본에 원래 글).
+        // 내려받기를 시켜 두고 물러난다. 다 오면 지켜보기가 다시 부른다.
+        guard isCurrent(url) else {
+            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            throw ReadError.notDownloaded
+        }
         var result: Result<Data, Error> = .failure(CocoaError(.fileNoSuchFile))
         coordinateRead(url) { readURL in
             result = Result { try Data(contentsOf: readURL) }
@@ -141,6 +149,17 @@ actor FolderStore {
         }
         encodings[relativePath] = decoded.encoding
         return decoded.text
+    }
+
+    /// 이 파일이 **지금 내려와 있고 최신인가.** 기기 안 파일은 늘 참이다.
+    /// URL 은 자원 값을 캐시하므로 **새로 만들어** 본다 (85 와 같은 까닭).
+    func isCurrent(_ url: URL) -> Bool {
+        var fresh = URL(fileURLWithPath: url.path)
+        fresh.removeAllCachedResourceValues()
+        let values = try? fresh.resourceValues(forKeys: [.isUbiquitousItemKey,
+                                                         .ubiquitousItemDownloadingStatusKey])
+        guard values?.isUbiquitousItem == true else { return true }
+        return values?.ubiquitousItemDownloadingStatus == .current
     }
 
     /// 마지막으로 읽었을 때 어떤 글자 인코딩이었나. UTF-8 이 아니면 예전 파일이다.
@@ -276,10 +295,17 @@ actor FolderStore {
         NSFileCoordinator().coordinate(writingItemAt: target, options: exists ? .forMerging : .forReplacing,
                                        error: &coordinationError) { url in
             do {
-                if let previous, let data = try? Data(contentsOf: url),
-                   let onDisk = Self.decode(data)?.text, onDisk != previous, onDisk != text {
-                    thrown = WriteConflict.changedOnDisk(onDisk)
-                    return
+                if let previous {
+                    // **확인할 수 없으면 덮지 않는다.** 다 안 내려온 파일을 덮으면 남의 글이 사라진다.
+                    guard self.isCurrent(url) else {
+                        thrown = ReadError.notDownloaded
+                        return
+                    }
+                    if let data = try? Data(contentsOf: url), let onDisk = Self.decode(data)?.text,
+                       onDisk != previous, onDisk != text {
+                        thrown = WriteConflict.changedOnDisk(onDisk)
+                        return
+                    }
                 }
                 let temporary = try Self.replacementScratch(for: url).appendingPathExtension("md")
                 try text.write(to: temporary, atomically: true, encoding: .utf8)

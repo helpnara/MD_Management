@@ -941,6 +941,11 @@ final class LibraryModel: ObservableObject {
             await renderReading(path: path, text: draft)
             await followTitle(of: draft, at: path)
             scheduleIndexRefresh()
+        } catch ReadError.notDownloaded {
+            // 디스크를 확인할 수 없어 **덮지 않았다.** `isDirty` 를 그대로 둬 다음 기회에 다시 쓴다 (86).
+            saveFailed = true
+            lastError = "iCloud 에서 받는 중이라 아직 저장하지 않았습니다. 잠시 뒤 다시 저장합니다."
+            log("내려받는 중이라 저장을 미룸: \(path)")
         } catch {
             saveFailed = true
             lastError = "저장하지 못했습니다: \(error.localizedDescription)"
@@ -1061,6 +1066,10 @@ final class LibraryModel: ObservableObject {
             editorSession = UUID()
             if !broken, isUTF8 { lastError = nil }
             await renderReading(path: note.relativePath, text: text)
+        } catch ReadError.notDownloaded {
+            // 아직 내려받는 중이다. **아무것도 쓰지 않는다** — 다 오면 지켜보기가 다시 부른다 (86).
+            log("아직 내려받는 중: \(note.relativePath)")
+            lastError = "이 노트를 iCloud 에서 받는 중입니다. 잠시 뒤 다시 열립니다."
         } catch CocoaError.fileReadInapplicableStringEncoding {
             clearNote()
             log("글자 인코딩을 못 알아본 파일: \(note.relativePath)")

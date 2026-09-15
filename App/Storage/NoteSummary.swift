@@ -71,3 +71,9 @@ enum WriteConflict: Error, Sendable {
     case changedOnDisk(String)
 }
 
+/// 파일을 아직 읽을 수 없다 — iCloud 가 이름만 주고 내용은 아직 안 준 상태.
+/// **잘린 글을 읽거나 쓰지 않으려고** 여기서 물러난다 (86).
+enum ReadError: Error {
+    case notDownloaded
+}
+
