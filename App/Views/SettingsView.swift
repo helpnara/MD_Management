@@ -104,7 +104,7 @@ struct SettingsView: View {
                 case .success(let url):
                     Task { await library.chooseFolder(url) }
                 case .failure(let error):
-                    library.lastError = "폴더를 고르지 못했습니다: \(error.localizedDescription)"
+                    library.report("폴더를 고르지 못했습니다: \(error.localizedDescription)")
                 }
             }
         }

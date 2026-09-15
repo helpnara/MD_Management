@@ -66,7 +66,8 @@ actor SearchIndex {
             sqlite3_close(handle)
             db = nil
             try? FileManager.default.removeItem(at: fileURL)
-            guard sqlite3_open(fileURL.path, &handle) == SQLITE_OK, let reopened = handle else {
+            var reopened: OpaquePointer?
+            guard sqlite3_open(fileURL.path, &reopened) == SQLITE_OK, let reopened else {
                 throw IndexError.cannotOpen(fileURL.lastPathComponent)
             }
             db = reopened
@@ -194,7 +195,8 @@ actor SearchIndex {
         }
         if let prefix = q.pathPrefix {
             conditions.append("rel_path LIKE ? ESCAPE '\\'")
-            binds.append(SearchQueryParser.likePattern(for: prefix).dropFirst() + "")
+            // `%prefix%` 에서 앞 `%` 만 뗀다 — 경로는 **앞부터** 맞아야 한다.
+            binds.append(String(SearchQueryParser.likePattern(for: prefix).dropFirst()))
         }
         guard !conditions.isEmpty else { return [] }
 

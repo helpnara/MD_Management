@@ -556,7 +556,7 @@ private struct NoteDetail: View {
             case .success(let urls):
                 Task { await library.attachDocuments(urls) }
             case .failure(let error):
-                library.lastError = "문서를 고르지 못했습니다: \(error.localizedDescription)"
+                library.report("문서를 고르지 못했습니다: \(error.localizedDescription)")
             }
         }
         .fullScreenCover(isPresented: $showsCamera) {

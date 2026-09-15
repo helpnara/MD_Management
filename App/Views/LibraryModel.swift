@@ -931,6 +931,12 @@ final class LibraryModel: ObservableObject {
 
     func clearError() { lastError = nil }
 
+    /// 화면이 오류를 올리는 문. `lastError` 의 setter 는 모델 안에만 있다.
+    func report(_ message: String) {
+        lastError = message
+        log("오류: \(message)")
+    }
+
     /// **값이 같으면 갈아 끼우지 않는다.** 지켜보기가 이따금 부르는 길이라,
     /// 같은 목록을 다시 넣으면 화면이 까닭 없이 다시 그려진다.
     func reloadFolders() async {
