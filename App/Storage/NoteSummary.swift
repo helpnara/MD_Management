@@ -77,3 +77,15 @@ enum ReadError: Error {
     case notDownloaded
 }
 
+/// 공유할 파일 하나와 그 딸림 정보 (설계서 §7.6).
+struct SharePackage: Sendable {
+    /// 공유 시트에 넘길 파일 — `.md` 하나이거나 `.zip` 하나.
+    let url: URL
+    /// 끝나면 지울 임시 폴더.
+    let directory: URL
+    let isZip: Bool
+    /// 본문이 가리키는데 폴더에 없던 것 — **조용히 빠뜨리지 않고 알린다.**
+    let missing: [String]
+    let bytes: Int
+}
+

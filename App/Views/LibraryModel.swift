@@ -36,6 +36,21 @@ final class LibraryModel: ObservableObject {
     /// 최상위는 빈 문자열.
     @Published var selectedFolder = ""
     @Published var selectedNoteID: String?
+    /// 공유할 때 **링크된 노트도 한 단계 넣을까** (설계서 §7.6-5). 켜짐이 기본.
+    @Published var sharesLinkedNotes: Bool = UserDefaults.standard.object(forKey: "share.linked") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(sharesLinkedNotes, forKey: "share.linked") }
+    }
+    /// 없는 첨부가 있어 **물어보는 중**인 공유. 확인하면 그대로 보낸다.
+    @Published var sharePrompt: SharePrompt?
+
+    struct SharePrompt: Identifiable {
+        let id = UUID()
+        let package: SharePackage
+    }
+
+    /// 공유가 끝나면 지울 임시 폴더.
+    private var shareDirectory: URL?
+
     /// 열 때 첫 줄 제목을 파일명에 맞출까 (62). **켜짐이 기본.** 다른 앱과 같이 쓰는 폴더라면
     /// 끈다 — 여는 것만으로 파일이 고쳐지기 때문이다. `UserDefaults` 에 둔다.
     @Published var alignsTitles: Bool = UserDefaults.standard.object(forKey: "title.align") as? Bool ?? true {
@@ -96,6 +111,8 @@ final class LibraryModel: ObservableObject {
         case incoming(IncomingFile)
         /// 첨부 미리보기 (QuickLook). 폴더 안 파일의 절대 URL.
         case preview(URL)
+        /// 공유 시트 — 임시 폴더에 만든 `.md` 하나 또는 `.zip` 하나 (설계서 §7.6).
+        case share(URL)
 
         var id: String {
             switch self {
@@ -103,6 +120,7 @@ final class LibraryModel: ObservableObject {
             case .diagnostics: return "diagnostics"
             case .incoming(let file): return "incoming-\(file.id)"
             case .preview(let url): return "preview-\(url.path)"
+            case .share(let url): return "share-\(url.path)"
             }
         }
     }
@@ -562,6 +580,52 @@ final class LibraryModel: ObservableObject {
             log("문서 첨부 \(lines.count)개: \(note.relativePath)")
         }
         lastError = failed.isEmpty ? nil : "첨부하지 못했습니다: \(failed.joined(separator: ", "))"
+    }
+
+    // MARK: - 공유 (설계서 §7.6)
+
+    /// 노트 하나를 공유한다. 첨부가 없으면 `.md` 하나, 있으면 `.zip` 하나.
+    /// **없는 첨부가 있으면 먼저 알린다** — 조용히 빠뜨리지 않는다.
+    func share(_ note: NoteSummary) async {
+        guard let store else { return }
+        await save()
+        do {
+            let package = try await store.prepareShare(of: note.relativePath,
+                                                       followLinkedNotes: sharesLinkedNotes)
+            if package.missing.isEmpty {
+                present(package)
+            } else {
+                sharePrompt = SharePrompt(package: package)
+            }
+        } catch ReadError.notDownloaded {
+            lastError = "iCloud 에서 받는 중입니다. 다 받은 뒤에 공유할 수 있습니다."
+        } catch {
+            lastError = "공유할 파일을 만들지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 없는 첨부를 알린 뒤 그래도 보낸다.
+    func shareAnyway(_ package: SharePackage) {
+        sharePrompt = nil
+        present(package)
+    }
+
+    /// 물어본 공유를 접는다 — 임시 폴더도 지운다.
+    func cancelShare(_ package: SharePackage) {
+        sharePrompt = nil
+        FolderStore.cleanUpShare(package.directory)
+    }
+
+    private func present(_ package: SharePackage) {
+        shareDirectory = package.directory
+        log("공유: \(package.url.lastPathComponent) (\(package.bytes / 1024)KB\(package.isZip ? " · zip" : ""))")
+        sheet = .share(package.url)
+    }
+
+    /// 공유 시트가 닫혔다 — 임시 폴더를 지운다.
+    func shareSheetClosed() {
+        if let directory = shareDirectory { FolderStore.cleanUpShare(directory) }
+        shareDirectory = nil
     }
 
     /// 읽기 모드에서 첨부를 눌렀다 — QuickLook 으로 연다 (78). 파일이 없으면 말한다.

@@ -67,6 +67,10 @@ struct RootView: View {
                 IncomingFileSheet(file: file).environmentObject(library)
             case .preview(let url):
                 AttachmentPreview(url: url)
+            case .share(let url):
+                ActivityView(url: url) { library.sheet = nil }
+                    .ignoresSafeArea()
+                    .onDisappear { library.shareSheetClosed() }
             }
             }
             .environment(\.rootIsCompact, horizontalSizeClass == .compact)
@@ -568,6 +572,17 @@ private struct NoteDetail: View {
             CameraView { data in Task { await library.insertPhoto(data) } }
                 .ignoresSafeArea()
         }
+        // **조용히 빠뜨리지 않는다** (설계서 §7.6-4). 무엇이 없는지 보여 주고 고르게 한다.
+        .alert("찾을 수 없는 첨부가 있습니다", isPresented: Binding(
+            get: { library.sharePrompt != nil },
+            set: { if !$0 { library.sharePrompt = nil } }),
+            presenting: library.sharePrompt) { prompt in
+            Button("그래도 보내기") { library.shareAnyway(prompt.package) }
+            Button("취소", role: .cancel) { library.cancelShare(prompt.package) }
+        } message: { prompt in
+            Text("\(prompt.package.missing.count)개를 찾을 수 없어 빼고 보냅니다.\n\n"
+                 + prompt.package.missing.prefix(5).joined(separator: "\n"))
+        }
         .alert("찾을 수 없습니다", isPresented: Binding(
             get: { alert != nil },
             set: { if !$0 { alert = nil } })) {
@@ -667,6 +682,11 @@ private struct NoteDetail: View {
                     library.beginRename(note)
                 } label: {
                     Label("이름 바꾸기", systemImage: "pencil.line")
+                }
+                Button {
+                    Task { await library.share(note) }
+                } label: {
+                    Label("공유", systemImage: "square.and.arrow.up")
                 }
                 Button(role: .destructive) {
                     library.trashing = note

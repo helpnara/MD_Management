@@ -52,6 +52,15 @@ struct SettingsView: View {
                     Text("노트를 열 때 첫 줄 `# 제목` 이 파일명과 다르면 **파일명으로** 맞춥니다. 제목이 없으면 넣고, 다른 제목이면 `##` 로 한 단계 내립니다. 앱 안에서 제목을 고치면 파일명이 따라갑니다. 다른 앱과 같이 쓰는 폴더라면 끄세요 — 여는 것만으로 파일이 바뀝니다.")
                 }
 
+                Section {
+                    Toggle("공유할 때 링크된 노트도 넣기", isOn: $library.sharesLinkedNotes)
+                        .font(.scaled(.body))
+                } header: {
+                    Text("공유")
+                } footer: {
+                    Text("첨부가 없으면 `.md` 하나, 있으면 `.zip` 하나로 보냅니다. 이 스위치를 켜면 본문이 링크한 다른 노트도 **한 단계만** 함께 넣습니다.")
+                }
+
                 filesSection
 
                 Section {

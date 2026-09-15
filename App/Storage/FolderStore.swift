@@ -679,6 +679,79 @@ actor FolderStore {
         if let error = thrown ?? coordinationError { throw error }
     }
 
+    // MARK: - 공유 (설계서 §7.6)
+
+    /// 공유할 파일 하나를 임시 폴더에 만든다. 첨부가 없으면 `.md`, 있으면 `.zip`.
+    ///
+    /// **원본을 그대로 넘기지 않고 임시 폴더로 복사한다.** 고른 폴더(b)의 파일은 보안 범위
+    /// 안에 있어 받는 앱이 못 열 수 있고, 공유 도중 원본이 바뀌면 곤란하다.
+    /// zip 은 `NSFileCoordinator … .forUploading` 이 만든다 — 그 URL 은 **블록 안에서만**
+    /// 유효하므로 안에서 옮긴다. zip 최상위에 폴더 이름이 들어가므로 그 이름을 노트 제목으로 둔다.
+    func prepareShare(of notePath: String, followLinkedNotes: Bool) throws -> SharePackage {
+        openScopeIfNeeded()
+        let text = try readText(at: notePath)
+        let plan = ShareBundle.plan(notePath: notePath, noteText: text,
+                                    followLinkedNotes: followLinkedNotes) { candidate in
+            FileManager.default.fileExists(atPath: root.appendingPathComponent(candidate).path)
+        }
+
+        let fileName = notePath.split(separator: "/").last.map(String.init) ?? notePath
+        let title = Paths.safeFileName(Paths.baseName(fileName), fallback: "노트")
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("share-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        var bytes = 0
+        func copy(_ relative: String, to target: URL) throws {
+            let source = root.appendingPathComponent(relative)
+            // 다 안 내려온 파일을 복사하면 **잘린 것을 보낸다** (86 과 같은 뿌리).
+            guard isCurrent(source) else {
+                try? FileManager.default.startDownloadingUbiquitousItem(at: source)
+                throw ReadError.notDownloaded
+            }
+            try FileManager.default.createDirectory(at: target.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
+            try FileManager.default.copyItem(at: source, to: target)
+            bytes += (try? FileManager.default.attributesOfItem(atPath: target.path)[.size] as? Int) ?? 0
+        }
+
+        if plan.mode == .mdOnly {
+            let file = directory.appendingPathComponent(title + ".md")
+            try copy(notePath, to: file)
+            return SharePackage(url: file, directory: directory, isZip: false,
+                                missing: plan.missing, bytes: bytes)
+        }
+
+        // 노트와 첨부를 **원래 상대경로 그대로** 담는다 — 받는 쪽에서 풀면 링크가 산다.
+        let stage = directory.appendingPathComponent(title, isDirectory: true)
+        try FileManager.default.createDirectory(at: stage, withIntermediateDirectories: true)
+        for relative in plan.includes {
+            try copy(relative, to: stage.appendingPathComponent(relative))
+        }
+
+        let zip = directory.appendingPathComponent(title + ".zip")
+        var thrown: Error?
+        var coordinationError: NSError?
+        NSFileCoordinator().coordinate(readingItemAt: stage, options: [.forUploading],
+                                       error: &coordinationError) { packed in
+            do {
+                try FileManager.default.copyItem(at: packed, to: zip)
+            } catch {
+                thrown = error
+            }
+        }
+        if let error = thrown ?? coordinationError { throw error }
+        try? FileManager.default.removeItem(at: stage)
+        let zipBytes = (try? FileManager.default.attributesOfItem(atPath: zip.path)[.size] as? Int) ?? bytes
+        return SharePackage(url: zip, directory: directory, isZip: true,
+                            missing: plan.missing, bytes: zipBytes)
+    }
+
+    /// 공유가 끝나면 임시 폴더를 지운다.
+    nonisolated static func cleanUpShare(_ directory: URL) {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
     // MARK: - 속
 
     private func coordinateRead(_ url: URL, _ body: (URL) -> Void) {
