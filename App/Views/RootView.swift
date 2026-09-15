@@ -593,7 +593,6 @@ private struct NoteDetail: View {
     }
 
     @ViewBuilder
-    @ViewBuilder
     private func content(for note: NoteSummary) -> some View {
         if library.noteIsDownloading {
             // **화면이 가만히 있으면 이상하다** (사용자). iCloud 가 이름을 먼저 주고 내용을
