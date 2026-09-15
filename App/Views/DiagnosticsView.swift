@@ -142,6 +142,18 @@ struct DiagnosticsView: View {
 
                 Section {
                     Button {
+                        Task { await library.makeBigNote() }
+                    } label: {
+                        Label("큰 노트 만들기 (300줄)", systemImage: "doc.text.magnifyingglass")
+                    }
+                } header: {
+                    Text("큰 노트 시험")
+                } footer: {
+                    Text("`큰 노트 시험.md` 를 300줄 · 20KB 안팎으로 만들고 **편집기로 엽니다.** 커서를 위아래로 훑어 지연이나 튐이 없으면 통과입니다. 만든 파일은 언제든 지우셔도 됩니다.")
+                }
+
+                Section {
+                    Button {
                         UIPasteboard.general.string = library.diagnosticsText
                         copied = true
                     } label: {

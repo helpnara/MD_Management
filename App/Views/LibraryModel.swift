@@ -313,6 +313,59 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    /// **큰 노트를 만든다** — 300줄 · 20KB (안정화 기준 S11).
+    ///
+    /// S11 은 큰 파일에서 커서를 옮길 때 지연 · 튐이 없는가를 묻는다. 그 자료를 손으로
+    /// 만들려면 다른 앱에서 300줄을 붙여 넣어야 하는데, 아이폰에서는 그것부터 일이다.
+    /// 앱이 만든다 — 첨부 시험(A3 · A13)과 같은 뜻이다.
+    ///
+    /// **한 줄이 다 같은 줄이면 안 된다.** 제목 · 목록 · 인용 · 코드 · 강조가 섞여야
+    /// 문단마다 다시 칠하는 길(`MarkdownStyler.restyle`)이 실제로 밟힌다.
+    func makeBigNote() async {
+        guard let store else { return }
+        // 보고 있는 폴더에 만든다 — 최상위에 만들면 하위 폴더를 보던 사람에게는 안 보인다.
+        // 이름이 겹치면 `큰 노트 시험 2` 로 비켜 간다 (`createNote`).
+        let text = Self.bigNote()
+        do {
+            let path = try await store.createNote(named: "큰 노트 시험", in: selectedFolder, text: text)
+            await reloadNotes()
+            selectedNoteID = path
+            isReading = false
+            sheet = nil
+            lastError = nil
+            log("큰 노트 시험 만듦 — \(text.components(separatedBy: "\n").count)줄 · "
+                + "\(Self.readableBytes(text.utf8.count)) · \(path)")
+        } catch {
+            lastError = "큰 노트를 만들지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 300줄 · 20KB 안팎. 곧은 따옴표를 문구 안에 쓰지 않는다 (CLAUDE.md §5).
+    static func bigNote() -> String {
+        var lines = ["# 큰 노트 시험", "",
+                     "**300줄 · 20KB 안팎입니다.** 커서를 위아래로 훑어 지연이나 튐이 있는지 봅니다 (S11).",
+                     "확인이 끝나면 지우셔도 됩니다.", ""]
+        // 한 덩이가 12줄. 서른 덩이면 395줄 · 20.2KB 다 (파이썬으로 미리 재 뒀다).
+        for block in 1...30 {
+            lines.append("## \(block)번째 마디")
+            lines.append("")
+            lines.append("이 문단은 길이를 채우려고 있습니다. **굵게** 와 *기울임* 과 `코드` 가 한 줄에 섞여 있어, "
+                         + "커서가 이 줄에 오고 갈 때마다 마커를 숨기고 드러내는 길이 실제로 밟힙니다.")
+            lines.append("")
+            lines.append("긴 글에서 커서를 옮길 때 앱이 다시 칠하는 것은 **문단 셋뿐**입니다 — 고친 문단 · "
+                         + "커서가 떠난 문단 · 커서가 온 문단. 이 노트가 그것을 실제로 재는 자리입니다.")
+            lines.append("")
+            lines.append("- 첫째 항목 \(block)")
+            lines.append("  - 겹친 항목 \(block)")
+            lines.append("1. 번호 항목 \(block)")
+            lines.append("> 인용 줄 \(block) — 세로선이 붙는 자리입니다.")
+            lines.append("")
+            lines.append("[제 자신으로 가는 링크](<큰 노트 시험.md>) 와 ~취소선~ 도 한 줄에 둡니다.")
+            lines.append("")
+        }
+        return lines.joined(separator: "\n") + "\n"
+    }
+
     /// 곧은 따옴표를 문구 안에 쓰지 않는다 (CLAUDE.md §5).
     private static let attachmentTestNote = """
     # 첨부 시험
