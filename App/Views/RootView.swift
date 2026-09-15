@@ -46,7 +46,9 @@ struct RootView: View {
         // 끊기므로 여기서는 쓰지 않는다 — 저장이 끊기면 그대로 자료가 사라진다.
         .onChange(of: scenePhase) { _, phase in
             guard phase != .active else { return }
-            Task { await library.save() }
+            // 뒤로 갈 때는 제목도 확정한다 — 제목 줄에 커서를 둔 채 나갈 수 있다 (89).
+            library.cursorOnTitleLine = false
+            Task { await library.save(settlingTitle: true) }
         }
         // **배너는 아래에 둔다.** 위에 두면 내비게이션 바를 덮어 제목과 버튼이
         // 잘린다 (빌드 2 스크린샷). 아래는 덮을 것이 없다.
@@ -624,7 +626,8 @@ private struct NoteDetail: View {
                 text: library.noteText,
                 onEdit: library.noteEdited,
                 insertion: library.insertion,
-                onInserted: { library.insertion = nil })
+                onInserted: { library.insertion = nil },
+                onTitleLineChanged: { library.cursorOnTitleLine = $0 })
         }
     }
 

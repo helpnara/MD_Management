@@ -36,6 +36,16 @@ final class LibraryModel: ObservableObject {
     /// 최상위는 빈 문자열.
     @Published var selectedFolder = ""
     @Published var selectedNoteID: String?
+    /// 커서가 **제목 줄**에 있나 (89). 그 줄에 있는 동안에는 파일명을 바꾸지 않는다 —
+    /// 치는 중간마다 바꾸면 `제` · `제주` · `제주 일` 로 파일이 계속 옮겨지고,
+    /// iCloud 가 그 하나하나를 퍼뜨려 충돌을 부른다. **떠날 때 한 번** 바꾼다.
+    @Published var cursorOnTitleLine = false {
+        didSet {
+            guard oldValue, !cursorOnTitleLine else { return }
+            Task { [weak self] in await self?.save(settlingTitle: true) }
+        }
+    }
+
     /// 공유할 때 **링크된 노트도 한 단계 넣을까** (설계서 §7.6-5). 켜짐이 기본.
     @Published var sharesLinkedNotes: Bool = UserDefaults.standard.object(forKey: "share.linked") as? Bool ?? true {
         didSet { UserDefaults.standard.set(sharesLinkedNotes, forKey: "share.linked") }
@@ -966,7 +976,9 @@ final class LibraryModel: ObservableObject {
     ///
     /// **자료 유실이 가장 비싼 자리다.** 실패하면 오류를 올리고 `isDirty` 를
     /// 그대로 둔다 — 다음 기회(2초 뒤 · 화면 전환 · 앱 종료 직전)에 다시 쓴다.
-    func save() async {
+    /// `settlingTitle` 은 **제목 줄을 떠났다**는 뜻 — 그때만 파일명을 맞춘다 (89).
+    /// 화면을 닫거나 노트를 바꾸는 길도 그렇게 부른다.
+    func save(settlingTitle: Bool = false) async {
         autosave?.cancel()
         autosave = nil
         guard isDirty, let store, var path = draftPath else { return }
@@ -1011,7 +1023,10 @@ final class LibraryModel: ObservableObject {
                 notes.sort { $0.modifiedAt > $1.modifiedAt }
             }
             await renderReading(path: path, text: draft)
-            await followTitle(of: draft, at: path)
+            // **제목 줄에 커서가 있는 동안에는 이름을 안 바꾼다** (89).
+            if settlingTitle || !cursorOnTitleLine {
+                await followTitle(of: draft, at: path)
+            }
             scheduleIndexRefresh()
         } catch ReadError.notDownloaded {
             // 디스크를 확인할 수 없어 **덮지 않았다.** `isDirty` 를 그대로 둬 다음 기회에 다시 쓴다 (86).
@@ -1090,6 +1105,8 @@ final class LibraryModel: ObservableObject {
     }
 
     func loadSelectedText() async {
+        // 노트를 떠난다 — 제목 줄에 커서가 있었어도 여기서 확정한다 (89).
+        cursorOnTitleLine = false
         // **읽기 전에 쓴다.** 노트를 바꾸는 길목이 여기다 — 남은 글을 먼저 파일에
         // 넣지 않으면 그대로 사라진다.
         await save()

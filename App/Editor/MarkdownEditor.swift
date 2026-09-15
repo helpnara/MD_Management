@@ -20,8 +20,11 @@ struct MarkdownEditor: UIViewRepresentable {
     /// 커서 자리에 넣을 글 (사진 링크). 넣고 나면 `onInserted` 로 알린다.
     var insertion: LibraryModel.Insertion? = nil
     var onInserted: @MainActor () -> Void = {}
+    /// 커서가 **제목 줄(머리말 뒤 첫 줄)** 에 있나. 바뀔 때만 알린다 — 그 줄을 떠나야
+    /// 파일명을 바꾼다 (89). 치는 중간마다 바꾸면 iCloud 가 그 하나하나를 퍼뜨려 충돌을 부른다.
+    var onTitleLineChanged: @MainActor (Bool) -> Void = { _ in }
 
-    func makeCoordinator() -> Coordinator { Coordinator(onEdit: onEdit) }
+    func makeCoordinator() -> Coordinator { Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged) }
 
     func makeUIView(context: Context) -> UITextView {
         // **TextKit 2 를 손으로 조립하지 않는다.** 빌드 7 에서 NSTextContentStorage ·
@@ -57,6 +60,7 @@ struct MarkdownEditor: UIViewRepresentable {
         // 클로저는 화면이 다시 그려질 때마다 새로 온다. 묵은 것을 들고 있으면
         // 저장이 **이전 노트로** 간다.
         coordinator.onEdit = onEdit
+        coordinator.onTitleLine = onTitleLineChanged
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
@@ -65,6 +69,9 @@ struct MarkdownEditor: UIViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
         var onEdit: @MainActor (String) -> Void
+        var onTitleLine: @MainActor (Bool) -> Void
+        /// 마지막으로 알린 값. 바뀔 때만 알린다.
+        private var wasOnTitleLine = false
         weak var view: UITextView?
         var sheet: EditorStyleSheet?
 
@@ -84,8 +91,25 @@ struct MarkdownEditor: UIViewRepresentable {
         private var isComposing = false
         private var sizeCategory = UIApplication.shared.preferredContentSizeCategory
 
-        init(onEdit: @escaping @MainActor (String) -> Void) {
+        init(onEdit: @escaping @MainActor (String) -> Void,
+             onTitleLine: @escaping @MainActor (Bool) -> Void) {
             self.onEdit = onEdit
+            self.onTitleLine = onTitleLine
+        }
+
+        /// 커서가 제목 줄에 있나 — 머리말 뒤 **첫 문단**이 제목 줄이다.
+        /// 바뀌었을 때만 바깥에 알린다 (89).
+        func reportTitleLine(_ textView: UITextView) {
+            let text = textView.textStorage.string as NSString
+            let start = min(headerLength, max(0, text.length))
+            let titleLine = text.length > 0
+                ? text.paragraphRange(for: NSRange(location: min(start, text.length - 1), length: 0))
+                : NSRange(location: 0, length: 0)
+            let cursor = min(textView.selectedRange.location, text.length)
+            let onLine = cursor >= titleLine.location && cursor <= NSMaxRange(titleLine)
+            guard onLine != wasOnTitleLine else { return }
+            wasOnTitleLine = onLine
+            onTitleLine(onLine)
         }
 
         /// 노트를 열 때 · 파일 글이 뒤늦게 올 때.
@@ -249,6 +273,7 @@ struct MarkdownEditor: UIViewRepresentable {
         /// **커서가 다른 문단으로 갔다.** 떠난 문단은 마커를 숨기고, 온 문단은 드러낸다 (L2).
         /// 조합 중에는 건드리지 않는다 — 조합이 끊긴다 (S10).
         func textViewDidChangeSelection(_ textView: UITextView) {
+            reportTitleLine(textView)
             guard !isStyling, !isComposing, textView.markedTextRange == nil, let sheet else { return }
             let text = textView.textStorage.string as NSString
             guard text.length > 0 else { return }
