@@ -30,11 +30,22 @@ final class FirstHeadingTests: XCTestCase {
         XCTAssertEqual(FrontMatterParser.aligned("", toFileName: "빈 노트.md"), "# 빈 노트\n\n")
         XCTAssertEqual(FrontMatterParser.aligned("# 옛 제목\n\n글\n\n# 둘째\n", toFileName: "새 이름.md"),
                        "# 새 이름\n\n## 옛 제목\n\n글\n\n## 둘째\n", "다른 제목이면 파일명이 이기고 `#` 은 `##` 로")
-        XCTAssertEqual(FrontMatterParser.aligned("---\ntitle: 머리말\n---\n# 옛\n글\n", toFileName: "새.md"),
-                       "---\ntitle: 머리말\n---\n# 새\n\n## 옛\n글\n", "머리말은 그대로")
+        XCTAssertNil(FrontMatterParser.aligned("---\ntitle: 머리말\n---\n# 옛\n글\n", toFileName: "새.md"),
+                     "머리말이 있으면 다른 앱의 파일이다 — 손대지 않는다 (빌드 29 · 5번)")
         XCTAssertEqual(FrontMatterParser.aligned("# 옛\n```\n# 코드 안\n```\n", toFileName: "새.md"),
                        "# 새\n\n## 옛\n```\n# 코드 안\n```\n", "코드 블록 안은 건드리지 않는다")
         XCTAssertEqual(FrontMatterParser.aligned("## 부제목뿐\n", toFileName: "새.md"), "# 새\n\n## 부제목뿐\n", "`##` 은 제목이 아니므로 위에 넣기만")
+    }
+
+    /// 제목 앞에 다른 글이 있으면 손대지 않는다 (빌드 29 · 5번, 사용자).
+    func testLeavesHeadingsBelowOtherTextAlone() {
+        XCTAssertNil(FrontMatterParser.aligned("머리 글\n\n# 옛 제목\n글\n", toFileName: "새.md"),
+                     "제목 앞에 글이 있다 — 올려도 내려도 남의 구조가 바뀐다")
+        XCTAssertNil(FrontMatterParser.aligned("> 인용\n\n# 옛\n", toFileName: "새.md"))
+        XCTAssertEqual(FrontMatterParser.aligned("머리 글\n\n## 작은 제목\n", toFileName: "새.md"),
+                       "# 새\n\n머리 글\n\n## 작은 제목\n", "`#` 제목이 아예 없으면 예전대로 넣는다")
+        XCTAssertEqual(FrontMatterParser.aligned("글\n```\n# 코드 안\n```\n", toFileName: "새.md"),
+                       "# 새\n\n글\n```\n# 코드 안\n```\n", "코드 안의 `#` 은 제목으로 세지 않는다")
     }
 
     func testLeavesNumberedCopiesAlone() {

@@ -2,6 +2,26 @@ import SwiftUI
 import UIKit
 import Core
 
+/// 하드웨어 키보드의 **탭 · 시프트 탭**을 받으려고 둔 껍데기 (빌드 29 · 1번).
+///
+/// `UITextView` 는 탭을 제 입력으로 쓰지 않고 다음 칸으로 넘긴다.
+/// `wantsPriorityOverSystemBehavior` 로 우리가 먼저 받는다.
+final class MarkdownTextView: UITextView {
+    /// `true` 면 들여쓰기, `false` 면 내어쓰기.
+    var onTab: (@MainActor (Bool) -> Void)?
+
+    override var keyCommands: [UIKeyCommand]? {
+        let deeper = UIKeyCommand(input: "\t", modifierFlags: [], action: #selector(indentPressed))
+        let shallower = UIKeyCommand(input: "\t", modifierFlags: .shift, action: #selector(outdentPressed))
+        deeper.wantsPriorityOverSystemBehavior = true
+        shallower.wantsPriorityOverSystemBehavior = true
+        return [deeper, shallower]
+    }
+
+    @objc private func indentPressed() { onTab?(true) }
+    @objc private func outdentPressed() { onTab?(false) }
+}
+
 /// 라이브 편집기 (ADR-0005 L1).
 ///
 /// `UITextView`(TextKit 2) 하나 안에서 원문은 그대로 두고 **속성만** 바꾼다.
@@ -31,7 +51,7 @@ struct MarkdownEditor: UIViewRepresentable {
         // NSTextLayoutManager · 커스텀 NSTextStorage 를 직접 엮었다가 빈 화면이
         // 떴다 — 오류 하나 없이. 여기서는 컴파일해 볼 수 없는 조립이다.
         // 이 생성자가 같은 TextKit 2 를 만들어 주고, 칠하는 일은 대리자로 붙는다.
-        let view = UITextView(usingTextLayoutManager: true)
+        let view = MarkdownTextView(usingTextLayoutManager: true)
         view.delegate = context.coordinator
         view.textStorage.delegate = context.coordinator
 
@@ -52,6 +72,9 @@ struct MarkdownEditor: UIViewRepresentable {
 
         context.coordinator.view = view
         context.coordinator.sheet = EditorStyleSheet()
+        view.onTab = { [weak coordinator = context.coordinator] deeper in
+            coordinator?.shiftIndent(deeper)
+        }
         return view
     }
 
@@ -264,6 +287,49 @@ struct MarkdownEditor: UIViewRepresentable {
             return true
         }
 
+        /// **탭 · 시프트 탭으로 들여쓰기** (빌드 29 · 1번). 규칙은 Core 의 `ListEditing` 이
+        /// 정하고 여기서는 고른 줄들을 바꿔 넣기만 한다. `replace(_:withText:)` 를 쓰므로
+        /// 되돌리기에 한 번의 편집으로 남는다 (53 과 같은 까닭).
+        func shiftIndent(_ deeper: Bool) {
+            guard let view else { return }
+            let text = view.textStorage.string as NSString
+            let selection = view.selectedRange
+            guard text.length > 0 else { return }
+
+            // 글 끝에 선 커서까지 안전하게 (다른 곳과 같은 죔쇠).
+            let start = min(selection.location, text.length - 1)
+            let clamped = NSRange(location: start, length: min(selection.length, text.length - start))
+            var block = text.paragraphRange(for: clamped)
+            if block.length > 0, text.character(at: NSMaxRange(block) - 1) == 0x0A { block.length -= 1 }
+            let before = text.substring(with: block)
+
+            guard let shifted = deeper ? ListEditing.indent(before) : ListEditing.outdent(before) else {
+                // 목록이 아니다 — 탭은 빈칸 둘로, 시프트 탭은 아무 일도 없다.
+                if deeper { insertPlainIndent(in: view, at: selection) }
+                return
+            }
+            guard let target = textRange(view, block) else { return }
+            view.replace(target, withText: shifted.text)
+            if selection.length == 0 {
+                let moved = max(block.location, selection.location + shifted.firstLineDelta)
+                view.selectedRange = NSRange(location: moved, length: 0)
+            } else {
+                view.selectedRange = NSRange(location: block.location,
+                                             length: (shifted.text as NSString).length)
+            }
+            onEdit(view.text)
+        }
+
+        /// 목록이 아닌 줄에서 탭 — 커서 자리에 빈칸 둘. 네 칸이 되면 코드가 되므로
+        /// 마크다운에서 안전한 한 단계다.
+        private func insertPlainIndent(in textView: UITextView, at range: NSRange) {
+            guard let target = textRange(textView, range) else { return }
+            textView.replace(target, withText: ListEditing.step)
+            let step = (ListEditing.step as NSString).length
+            textView.selectedRange = NSRange(location: range.location + step, length: 0)
+            onEdit(textView.text)
+        }
+
         private func textRange(_ textView: UITextView, _ range: NSRange) -> UITextRange? {
             guard let start = textView.position(from: textView.beginningOfDocument, offset: range.location),
                   let end = textView.position(from: start, offset: range.length) else { return nil }
@@ -292,6 +358,39 @@ struct MarkdownEditor: UIViewRepresentable {
             headerLength = MarkdownStyler.restyle(textView.textStorage, touching: current, with: sheet,
                                                   previousHeader: headerLength, cursor: cursorHint)
             textView.textStorage.endEditing()
+            isStyling = false
+        }
+
+        /// **편집이 끝났다** — 키보드가 내려갔거나 다른 곳으로 초점이 갔다 (빌드 29 · 2번).
+        ///
+        /// **커서가 마지막 줄에 있으면 떠날 자리가 없다.** 그 줄은 마커가 드러난 채
+        /// 남고(L1), 그 줄이 제목 줄이면 파일명도 안 맞춰졌다. 커서가 사라지는 이
+        /// 자리에서 둘 다 갚는다 — 커서가 없는 것처럼 다시 칠하고, 제목을 확정한다.
+        func textViewDidEndEditing(_ textView: UITextView) {
+            restyleCursorLine(textView, showsMarkers: false)
+            guard wasOnTitleLine else { return }
+            wasOnTitleLine = false
+            onTitleLine(false)
+        }
+
+        /// 다시 커서가 왔다 — 그 줄의 마커를 도로 드러낸다.
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            restyleCursorLine(textView, showsMarkers: true)
+            reportTitleLine(textView)
+        }
+
+        /// 커서가 있는 **한 문단만** 다시 칠한다 (S11 — 전체 재칠은 열 때 한 번뿐).
+        /// `showsMarkers` 가 거짓이면 커서가 없는 것처럼 칠해 마커를 숨긴다.
+        private func restyleCursorLine(_ textView: UITextView, showsMarkers: Bool) {
+            guard !isStyling, !isComposing, textView.markedTextRange == nil, let sheet else { return }
+            let text = textView.textStorage.string as NSString
+            guard text.length > 0 else { return }
+            let location = min(textView.selectedRange.location, text.length)
+            let line = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+            isStyling = true
+            headerLength = MarkdownStyler.restyle(textView.textStorage, touching: line, with: sheet,
+                                                  previousHeader: headerLength,
+                                                  cursor: showsMarkers ? location : MarkdownStyler.noCursor)
             isStyling = false
         }
 

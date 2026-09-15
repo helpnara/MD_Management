@@ -33,6 +33,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / "Tools" / "golden" / "fixtures"
 CASES = ROOT / "Tools" / "golden" / "cases.json"
 STYLE_CASES = ROOT / "Tools" / "golden" / "style-cases.json"
+INDENT_CASES = ROOT / "Tools" / "golden" / "indent-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -46,8 +47,13 @@ def make_parser() -> MarkdownIt:
 
     `swift-markdown` 은 cmark-gfm 이라 표를 기본으로 읽는다. linkify(맨 URL 을
     링크로 바꾸는 것)는 양쪽 다 안 하므로 켜지 않는다.
+
+    `strikethrough_single_tilde` — cmark-gfm 은 `~하나~` 도 취소선으로 읽는데
+    markdown-it 의 기본값은 `~~둘~~` 만 읽는다. 앱의 읽기 모드가 cmark-gfm 이므로
+    심판도 그쪽에 맞춘다 (빌드 29 · 3번).
     """
-    return MarkdownIt("commonmark").enable(["table", "strikethrough"])
+    return MarkdownIt("commonmark", {"strikethrough_single_tilde": True}).enable(
+        ["table", "strikethrough"])
 
 
 def extract_links(text: str) -> list[dict]:
@@ -441,6 +447,82 @@ def build_style_cases() -> list[dict]:
     return out
 
 
+# ── 탭 들여쓰기 — 설계서 §7.3 의 규칙을 파이썬으로 다시 (빌드 29 · 1번) ─────────
+
+INDENT_STEP = "  "
+
+
+def is_list_item(line: str) -> bool:
+    """앞 빈칸을 뗀 뒤 `- ` · `* ` · `+ ` · `1. ` · `1) ` 로 시작하나.
+
+    markdown-it 에 묻지 않는 이유: 한 줄만 주면 네 칸 이상 들여쓴 줄을 코드로 읽는데,
+    겹친 목록은 두 단계만 내려가도 그보다 깊어진다.
+    """
+    rest = line.lstrip(" \t")
+    if rest[:2] in ("- ", "* ", "+ "):
+        return True
+    digits = ""
+    for ch in rest:
+        if ch.isdigit():
+            digits += ch
+        else:
+            break
+    if not digits or len(digits) > 9:
+        return False
+    return rest[len(digits):len(digits) + 2] in (". ", ") ")
+
+
+def indent_block(block: str):
+    """탭 — 목록 줄이 하나라도 있으면 빈 줄을 뺀 모든 줄 앞에 빈칸 둘."""
+    lines = block.split("\n")
+    if not any(is_list_item(line) for line in lines):
+        return None
+    first_delta = 0
+    out = []
+    for index, line in enumerate(lines):
+        if not line.strip():
+            out.append(line)
+            continue
+        if index == 0:
+            first_delta = len(INDENT_STEP.encode("utf-16-le")) // 2
+        out.append(INDENT_STEP + line)
+    return {"text": "\n".join(out), "firstLineDelta": first_delta}
+
+
+def outdent_block(block: str):
+    """시프트 탭 — 줄마다 앞의 탭 하나 또는 빈칸 둘까지."""
+    changed = False
+    first_delta = 0
+    out = []
+    for index, line in enumerate(block.split("\n")):
+        removed = 0
+        if line.startswith("\t"):
+            line = line[1:]
+            removed = 1
+        else:
+            while removed < len(INDENT_STEP) and line.startswith(" "):
+                line = line[1:]
+                removed += 1
+        if removed:
+            changed = True
+            if index == 0:
+                first_delta = -removed
+        out.append(line)
+    if not changed:
+        return None
+    return {"text": "\n".join(out), "firstLineDelta": first_delta}
+
+
+def build_indent_cases() -> list[dict]:
+    spec = json.loads(INDENT_CASES.read_text(encoding="utf-8"))
+    return [{
+        "name": case["name"],
+        "text": case["text"],
+        "indented": indent_block(case["text"]),
+        "outdented": outdent_block(case["text"]),
+    } for case in spec["cases"]]
+
+
 # ── 만들기 ───────────────────────────────────────────────────────────────────
 
 def resolved_entry(link: dict, note_path: str) -> dict:
@@ -487,6 +569,7 @@ def build() -> dict:
         "_warning": "손으로 고치지 마세요. generate.py 를 다시 돌리세요.",
         "cases": out_cases,
         "styleCases": build_style_cases(),
+        "indentCases": build_indent_cases(),
     }
 
 
@@ -508,14 +591,15 @@ def main() -> int:
             return 1
         loaded = json.loads(current)
         print(f"기댓값 {len(loaded['cases'])}건 · 줄 모양 {len(loaded['styleCases'])}건"
-              " — 커밋된 것과 같습니다.")
+              f" · 들여쓰기 {len(loaded['indentCases'])}건 — 커밋된 것과 같습니다.")
         return 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(fresh, encoding="utf-8")
     loaded = json.loads(fresh)
     print(f"{OUT.relative_to(ROOT)} — 사례 {len(loaded['cases'])}건"
-          f" · 줄 모양 {len(loaded['styleCases'])}건")
+          f" · 줄 모양 {len(loaded['styleCases'])}건"
+          f" · 들여쓰기 {len(loaded['indentCases'])}건")
     return 0
 
 

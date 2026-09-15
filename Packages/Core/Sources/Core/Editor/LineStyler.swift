@@ -342,7 +342,7 @@ public enum LineStyler {
         return (spans, finish)
     }
 
-    /// `**굵게**` · `*기울임*` · `~~취소~~` · `***굵고 기울임***`.
+    /// `**굵게**` · `*기울임*` · `~취소~` · `~~취소~~` · `***굵고 기울임***`.
     private static func scanEmphasis(_ text: String, at start: String.Index, to end: String.Index,
                                      markers: inout [StyleSpan]) -> (spans: [StyleSpan], next: String.Index)? {
         let character = text[start]
@@ -359,6 +359,9 @@ public enum LineStyler {
             run += 1
             open = text.index(after: open)
         }
+        // **물결표 셋 이상은 글자 그대로다** (cmark-gfm · GitHub). 한 글자씩 물러나면
+        // 안쪽 `~~` 가 잘못 짝지어지므로 그 뭉치를 통째로 건너뛴다.
+        if character == "~", run >= 3 { return ([], open) }
         // 여는 마커 뒤가 공백이면 강조가 아니다. `2 * 3 * 4` 가 기울지 않는 이유다.
         guard open < end, !text[open].isWhitespace else { return nil }
 
@@ -367,6 +370,9 @@ public enum LineStyler {
         let width: Int
         let token: StyleToken
         switch (character, run) {
+        // 물결표는 **하나든 둘이든** 취소선이다 — cmark-gfm 이 그렇게 읽고, 읽기 모드가
+        // 그것으로 그린다 (`swift-markdown`). 셋 이상은 글자 그대로다.
+        case ("~", 1): width = 1; token = .strikethrough
         case ("~", 2): width = 2; token = .strikethrough
         case ("~", _): return nil
         case (_, 1): width = 1; token = .emphasis

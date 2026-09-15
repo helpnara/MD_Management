@@ -819,6 +819,122 @@
       "title": "표와 코드가 든 노트"
     }
   ],
+  "indentCases": [
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  - 첫째"
+      },
+      "name": "목록-한줄",
+      "outdented": null,
+      "text": "- 첫째"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "    - 둘째"
+      },
+      "name": "목록-이미들여쓴줄",
+      "outdented": {
+        "firstLineDelta": -2,
+        "text": "- 둘째"
+      },
+      "text": "  - 둘째"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  1. 하나"
+      },
+      "name": "목록-번호",
+      "outdented": null,
+      "text": "1. 하나"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  3) 셋"
+      },
+      "name": "목록-괄호번호",
+      "outdented": null,
+      "text": "3) 셋"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  - [ ] 할 일"
+      },
+      "name": "목록-체크박스",
+      "outdented": null,
+      "text": "- [ ] 할 일"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  - 첫째\n  - 둘째\n  - 셋째"
+      },
+      "name": "목록-여러줄",
+      "outdented": null,
+      "text": "- 첫째\n- 둘째\n- 셋째"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  - 첫째\n\n  - 둘째"
+      },
+      "name": "목록-빈줄섞임",
+      "outdented": null,
+      "text": "- 첫째\n\n- 둘째"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  \t- 탭으로 들여쓴 줄"
+      },
+      "name": "목록-탭들여쓰기",
+      "outdented": {
+        "firstLineDelta": -1,
+        "text": "- 탭으로 들여쓴 줄"
+      },
+      "text": "\t- 탭으로 들여쓴 줄"
+    },
+    {
+      "indented": null,
+      "name": "목록아님-글",
+      "outdented": null,
+      "text": "그냥 글이다"
+    },
+    {
+      "indented": null,
+      "name": "목록아님-들여쓴글",
+      "outdented": {
+        "firstLineDelta": -2,
+        "text": "  들여쓴 글"
+      },
+      "text": "    들여쓴 글"
+    },
+    {
+      "indented": null,
+      "name": "목록아님-제목",
+      "outdented": null,
+      "text": "# 제목"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  머리 글\n  - 항목"
+      },
+      "name": "섞임-글과목록",
+      "outdented": null,
+      "text": "머리 글\n- 항목"
+    },
+    {
+      "indented": null,
+      "name": "목록아님-빼기만",
+      "outdented": null,
+      "text": "-빈칸없음"
+    }
+  ],
   "styleCases": [
     {
       "block": null,
@@ -1269,6 +1385,49 @@
         }
       ],
       "text": "![](<assets/내 사진(1).jpg>)"
+    },
+    {
+      "block": null,
+      "content": "~000~ 만 취소",
+      "name": "취소선-홑물결표",
+      "spans": [
+        {
+          "text": "000",
+          "token": "strikethrough"
+        }
+      ],
+      "text": "~000~ 만 취소"
+    },
+    {
+      "block": null,
+      "content": "~~000~~ 만 취소",
+      "name": "취소선-겹물결표",
+      "spans": [
+        {
+          "text": "000",
+          "token": "strikethrough"
+        }
+      ],
+      "text": "~~000~~ 만 취소"
+    },
+    {
+      "block": null,
+      "content": "물~결~표",
+      "name": "취소선-낱말안",
+      "spans": [
+        {
+          "text": "결",
+          "token": "strikethrough"
+        }
+      ],
+      "text": "물~결~표"
+    },
+    {
+      "block": null,
+      "content": "a~~~b~~~c",
+      "name": "취소선-셋이상",
+      "spans": [],
+      "text": "a~~~b~~~c"
     }
   ]
 }

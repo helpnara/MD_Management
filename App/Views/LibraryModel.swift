@@ -154,6 +154,10 @@ final class LibraryModel: ObservableObject {
     /// 글을 읽었을 때 · 마지막으로 썼을 때의 파일 도장. 저장 직전에 견준다 (A15).
     private var draftStamp: FileStamp?
     private var autosave: Task<Void, Never>?
+    /// 앞에 선 저장. 새 저장은 이것이 끝난 뒤에 쓴다 (빌드 29 · 4번).
+    private var saveChain: Task<Void, Never>?
+    /// 지금 쓰고 있나. 쓰는 도중에 다시 불린 저장은 제 차례를 기다리지 않는다.
+    private var isWriting = false
     /// **편집기의 정체성.** 파일을 실제로 읽어 편집기에 새 글을 넣을 때만 바뀐다.
     /// 경로를 정체성으로 쓰면 제목 따라 이름이 바뀔 때(54) 편집기가 글을 갈아 끼우며
     /// 커서와 키보드를 잃는다. 이름이 바뀌어도 글은 같다 — 정체성도 같다.
@@ -964,6 +968,10 @@ final class LibraryModel: ObservableObject {
         guard draftPath != nil, text != draft else { return }
         draft = text
         isDirty = true
+        scheduleAutosave()
+    }
+
+    private func scheduleAutosave() {
         autosave?.cancel()
         autosave = Task { [weak self] in
             try? await Task.sleep(for: Self.autosaveDelay)
@@ -974,14 +982,49 @@ final class LibraryModel: ObservableObject {
 
     /// 지금 쓴다. 노트를 바꾸기 전 · 앱이 뒤로 갈 때 · 읽기로 넘길 때 부른다.
     ///
-    /// **자료 유실이 가장 비싼 자리다.** 실패하면 오류를 올리고 `isDirty` 를
-    /// 그대로 둔다 — 다음 기회(2초 뒤 · 화면 전환 · 앱 종료 직전)에 다시 쓴다.
-    /// `settlingTitle` 은 **제목 줄을 떠났다**는 뜻 — 그때만 파일명을 맞춘다 (89).
-    /// 화면을 닫거나 노트를 바꾸는 길도 그렇게 부른다.
+    /// **저장은 한 번에 하나만 돈다** (빌드 29 · 4번). 부르는 곳이 여럿이다 — 2초 자동
+    /// 저장 · 제목 줄 이탈(89) · 노트 바꾸기 · 앱이 뒤로 가기 · 지켜보기. 이것들이
+    /// 겹쳐 돌면 앞엣것이 옛 글을 디스크에 넣는 사이 뒤엣것이 새 글을 넣어, 다음 저장이
+    /// **제 손으로 쓴 글을 남의 글로 보고** 충돌 사본을 만들었다. 뒤엣것은 앞엣것이
+    /// 끝나기를 기다린다.
     func save(settlingTitle: Bool = false) async {
         autosave?.cancel()
         autosave = nil
-        guard isDirty, let store, var path = draftPath else { return }
+        // **쓰는 중에 다시 불렸다.** 충돌 사본을 만든 뒤 목록을 다시 읽는 길이 여기로
+        // 돌아온다 (`reloadNotes` → `loadSelectedText` → `save`). 앞엣것을 기다리면
+        // 그것이 곧 나 자신이라 영영 안 끝난다. 이미 쓰는 중이니 할 일도 없다.
+        guard !isWriting else { return }
+        let queued = saveChain
+        let task = Task { @MainActor [weak self] in
+            await queued?.value
+            await self?.write(settlingTitle: settlingTitle)
+        }
+        saveChain = task
+        await task.value
+    }
+
+    /// 실제로 쓰는 자리. `save` 만 부른다 — 줄 세우기는 그쪽이 한다.
+    ///
+    /// **자료 유실이 가장 비싼 자리다.** 실패하면 오류를 올리고 `isDirty` 를
+    /// 그대로 둔다 — 다음 기회(2초 뒤 · 화면 전환 · 앱 종료 직전)에 다시 쓴다.
+    /// `settlingTitle` 은 **제목 줄을 떠났다**는 뜻 — 그때만 파일명을 맞춘다 (89).
+    private func write(settlingTitle: Bool) async {
+        guard let store, var path = draftPath else { return }
+        isWriting = true
+        defer { isWriting = false }
+        guard isDirty else {
+            // 쓸 글은 없지만 **제목 줄을 떠났다** — 이름은 맞춰야 한다 (빌드 29 · 2번).
+            // 제목을 치고 2초가 지나면 자동 저장이 글을 먼저 넣어 버린다. 그때는 더는
+            // 더럽지 않으니 여기서 물러나면 **이름이 영영 안 맞는다.**
+            if settlingTitle { await followTitle(of: draft, at: path) }
+            return
+        }
+        // **쓸 글과 견줄 글을 여기서 한 번 붙든다** (빌드 29 · 4번). 아래의 `await` 가
+        // 도는 동안 사용자는 계속 친다. 그때 `draft` 를 다시 읽으면 **디스크에 간 글**과
+        // **기억해 둔 글**이 어긋나고, 다음 저장이 그 어긋남을 다른 기기의 글로 읽어
+        // 헛충돌 사본을 만든다. 지금 쓰는 것은 이 글 하나다.
+        let written = draft
+        let expecting = noteText
         let original = path
         var conflictPath: String?
         do {
@@ -989,13 +1032,13 @@ final class LibraryModel: ObservableObject {
             // 조정 **안**에서 한다 — 검사와 쓰기 사이에 다른 기기의 글이 들어와도 덮지 않는다.
             // 정말 다른 글이면 **덮어쓰지 않고** `이름 (충돌 …).md` 로 나란히 쓰고 그쪽을 연다.
             do {
-                try await store.writeText(draft, to: path, expecting: noteText)
+                try await store.writeText(written, to: path, expecting: expecting)
                 lastError = nil
             } catch WriteConflict.changedOnDisk {
                 let name = path.split(separator: "/").last.map(String.init) ?? path
                 let conflict = try await store.createNote(
                     named: FolderStore.conflictName(for: name),
-                    in: Paths.directory(of: path), text: draft)
+                    in: Paths.directory(of: path), text: written)
                 draftPath = conflict
                 path = conflict
                 conflictPath = conflict
@@ -1004,8 +1047,10 @@ final class LibraryModel: ObservableObject {
                 log("충돌: \(name) 이 디스크에서 바뀌어 내 글을 \(shown) 로 저장")
             }
             draftStamp = await store.stamp(of: path)
-            noteText = draft
-            isDirty = false
+            noteText = written
+            // 쓰는 동안 더 쳤으면 **아직 더럽다.** 무턱대고 내리면 그 글자들이 다음
+            // 편집 때까지 파일에 안 들어간다 (빌드 29 · 4번).
+            isDirty = draft != written
             saveFailed = false
             lastSaved = Date()
             if let conflictPath {
@@ -1019,15 +1064,16 @@ final class LibraryModel: ObservableObject {
                 let old = notes[index]
                 notes[index] = NoteSummary(relativePath: old.relativePath, title: old.title,
                                            preview: old.preview, modifiedAt: Date(),
-                                           size: (draft as NSString).length, isDownloaded: old.isDownloaded)
+                                           size: (written as NSString).length, isDownloaded: old.isDownloaded)
                 notes.sort { $0.modifiedAt > $1.modifiedAt }
             }
-            await renderReading(path: path, text: draft)
+            await renderReading(path: path, text: written)
             // **제목 줄에 커서가 있는 동안에는 이름을 안 바꾼다** (89).
             if settlingTitle || !cursorOnTitleLine {
-                await followTitle(of: draft, at: path)
+                await followTitle(of: written, at: path)
             }
             scheduleIndexRefresh()
+            if isDirty { scheduleAutosave() }
         } catch ReadError.notDownloaded {
             // 디스크를 확인할 수 없어 **덮지 않았다.** `isDirty` 를 그대로 둬 다음 기회에 다시 쓴다 (86).
             saveFailed = true

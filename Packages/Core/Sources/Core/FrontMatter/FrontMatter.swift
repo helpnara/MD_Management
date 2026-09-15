@@ -123,13 +123,24 @@ public enum FrontMatterParser {
     /// 맞춘다 — **파일명이 이긴다.**
     ///
     /// - 첫 줄이 `# 파일명` 이면 이미 맞다 → `nil` (아무것도 안 쓴다).
-    /// - 첫 줄에 `#` 제목이 없으면 `# 파일명` 과 빈 줄을 맨 위에 넣는다.
+    /// - `#` 제목이 아예 없으면 `# 파일명` 과 빈 줄을 맨 위에 넣는다.
     /// - 첫 줄이 다른 `# 제목` 이면 `# 파일명` 을 위에 넣고 본문의 `#` 제목들을 **모두 `##` 로**
-    ///   한 단계 내린다 (코드 블록 안은 건드리지 않는다). 머리말은 그대로다.
+    ///   한 단계 내린다 (코드 블록 안은 건드리지 않는다).
+    ///
+    /// **손대지 않는 두 자리** (빌드 29 · 5번, 사용자):
+    /// - **머리말이 있는 파일.** 옵시디언 같은 다른 앱이 관리하고 `title:` 칸을 이미 갖고 있다.
+    ///   거기에 `# 파일명` 을 얹으면 남의 문서 구조를 바꾼다.
+    /// - **`# 제목` 앞에 다른 글이 있는 파일.** 위에 얹으면 `#` 이 둘이 되고, 내리면 글쓴이가
+    ///   짜 둔 단계가 통째로 밀린다. 첫 줄이 제목일 때만 파일명이 이긴다.
     public static func aligned(_ text: String, toFileName fileName: String) -> String? {
         let title = Paths.baseName(Paths.normalized(fileName))
         guard !title.isEmpty else { return nil }
+        let parsed = parse(text)
+        // 머리말이 있는 파일은 다른 앱의 것이다 — 읽기만 한다.
+        if parsed.frontMatter != nil { return nil }
         let heading = firstHeading(of: text)
+        // 제목이 첫 줄이 아니다 — 앞에 다른 글이 있다.
+        if heading == nil, hasTopHeading(parsed.body) { return nil }
         if heading == title { return nil }
         // **`A 2.md` 안의 `# A` 는 다른 제목이 아니라 번호 붙은 사본이다.** 이름이 겹쳐
         // 앱이 `이름 2` 로 비켜 갔거나 iCloud 가 그렇게 바꿔 둔 것 — 그대로 둔다.
@@ -156,6 +167,21 @@ public enum FrontMatterParser {
         }
         let body = rest.trimmingCharacters(in: .newlines)
         return head + "# " + title + "\n\n" + body + (body.isEmpty ? "" : "\n")
+    }
+
+    /// 본문 어딘가에 `# 제목` 이 있나. 코드 울타리 안은 글자일 뿐이라 빼고 센다.
+    static func hasTopHeading(_ body: String) -> Bool {
+        var inFence = false
+        for line in body.components(separatedBy: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+                inFence.toggle()
+                continue
+            }
+            if inFence { continue }
+            if trimmed.hasPrefix("# ") { return true }
+        }
+        return false
     }
 
     /// `A 2` 는 `A` 의 번호 붙은 사본인가. 빈칸 하나와 숫자만 더 붙었을 때.

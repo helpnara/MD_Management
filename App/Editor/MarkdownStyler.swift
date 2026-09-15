@@ -25,6 +25,11 @@ enum MarkdownStyler {
     ///
     /// `cursor` 는 커서 자리 (UTF-16). 그 문단은 마커를 흐리게(L1), 나머지는 숨긴다(L2).
     /// `nil` 이면 다 흐리게(L1) — 커서를 모를 때(전체 다시 칠하기)만.
+    /// 커서가 **어디에도 없다** 는 뜻의 자리 (편집이 끝났을 때 · 빌드 29 · 2번).
+    /// 어떤 문단의 시작보다도 앞이라 모든 문단이 마커를 숨긴다 (L2).
+    /// `cursor: nil` 과는 다르다 — 그쪽은 **커서를 모른다**는 뜻이라 다 드러낸다.
+    static let noCursor = -1
+
     @discardableResult
     static func restyle(_ storage: NSTextStorage, touching range: NSRange,
                         with sheet: EditorStyleSheet, previousHeader: Int = 0,

@@ -1,2 +1,2 @@
-markdown-it-py>=3,<5
+markdown-it-py>=4.2,<5
 PyYAML>=6,<7
