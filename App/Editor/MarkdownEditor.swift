@@ -43,8 +43,13 @@ struct MarkdownEditor: UIViewRepresentable {
     /// 커서가 **제목 줄(머리말 뒤 첫 줄)** 에 있나. 바뀔 때만 알린다 — 그 줄을 떠나야
     /// 파일명을 바꾼다 (89). 치는 중간마다 바꾸면 iCloud 가 그 하나하나를 퍼뜨려 충돌을 부른다.
     var onTitleLineChanged: @MainActor (Bool) -> Void = { _ in }
+    /// 커서가 편집기에 붙었나 · 떨어졌나 (98). 아이폰에는 키보드를 내릴 길이 없어
+    /// 이 값으로 `키보드 내리기` 단추를 띄운다.
+    var onFocusChanged: @MainActor (Bool) -> Void = { _ in }
 
-    func makeCoordinator() -> Coordinator { Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged) }
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged, onFocus: onFocusChanged)
+    }
 
     func makeUIView(context: Context) -> UITextView {
         // **TextKit 2 를 손으로 조립하지 않는다.** 빌드 7 에서 NSTextContentStorage ·
@@ -84,6 +89,7 @@ struct MarkdownEditor: UIViewRepresentable {
         // 저장이 **이전 노트로** 간다.
         coordinator.onEdit = onEdit
         coordinator.onTitleLine = onTitleLineChanged
+        coordinator.onFocus = onFocusChanged
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
@@ -93,6 +99,7 @@ struct MarkdownEditor: UIViewRepresentable {
     final class Coordinator: NSObject, UITextViewDelegate, NSTextStorageDelegate {
         var onEdit: @MainActor (String) -> Void
         var onTitleLine: @MainActor (Bool) -> Void
+        var onFocus: @MainActor (Bool) -> Void
         /// 마지막으로 알린 값. 바뀔 때만 알린다.
         private var wasOnTitleLine = false
         weak var view: UITextView?
@@ -115,9 +122,11 @@ struct MarkdownEditor: UIViewRepresentable {
         private var sizeCategory = UIApplication.shared.preferredContentSizeCategory
 
         init(onEdit: @escaping @MainActor (String) -> Void,
-             onTitleLine: @escaping @MainActor (Bool) -> Void) {
+             onTitleLine: @escaping @MainActor (Bool) -> Void,
+             onFocus: @escaping @MainActor (Bool) -> Void) {
             self.onEdit = onEdit
             self.onTitleLine = onTitleLine
+            self.onFocus = onFocus
         }
 
         /// 커서가 제목 줄에 있나 — 머리말 뒤 **첫 문단**이 제목 줄이다.
@@ -367,6 +376,7 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 남고(L1), 그 줄이 제목 줄이면 파일명도 안 맞춰졌다. 커서가 사라지는 이
         /// 자리에서 둘 다 갚는다 — 커서가 없는 것처럼 다시 칠하고, 제목을 확정한다.
         func textViewDidEndEditing(_ textView: UITextView) {
+            onFocus(false)
             restyleCursorLine(textView, showsMarkers: false)
             guard wasOnTitleLine else { return }
             wasOnTitleLine = false
@@ -375,6 +385,7 @@ struct MarkdownEditor: UIViewRepresentable {
 
         /// 다시 커서가 왔다 — 그 줄의 마커를 도로 드러낸다.
         func textViewDidBeginEditing(_ textView: UITextView) {
+            onFocus(true)
             restyleCursorLine(textView, showsMarkers: true)
             reportTitleLine(textView)
         }

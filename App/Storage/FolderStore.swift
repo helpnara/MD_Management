@@ -752,6 +752,33 @@ actor FolderStore {
         try? FileManager.default.removeItem(at: directory)
     }
 
+    /// **공유 임시 폴더에 아직 남은 것** — 꾸러미 몇 개 · 몇 바이트 (97, 사용자 제안).
+    /// 기기 저장 공간이 쌓이는지는 눈으로 보기 어렵다. 공유가 끝날 때마다 이것을 최근 일에
+    /// 적어 두면, 늘 `0개 · 0B` 인지 사람이 훑어보고 알 수 있다.
+    nonisolated static func shareScratch() -> (count: Int, bytes: Int) {
+        let temporary = FileManager.default.temporaryDirectory
+        guard let entries = try? FileManager.default.contentsOfDirectory(
+            at: temporary, includingPropertiesForKeys: [.isDirectoryKey]) else { return (0, 0) }
+        var count = 0
+        var bytes = 0
+        for entry in entries where entry.lastPathComponent.hasPrefix("share-") {
+            count += 1
+            bytes += folderBytes(entry)
+        }
+        return (count, bytes)
+    }
+
+    /// 폴더 아래 모든 파일의 크기 합.
+    nonisolated static func folderBytes(_ directory: URL) -> Int {
+        guard let walker = FileManager.default.enumerator(
+            at: directory, includingPropertiesForKeys: [.fileSizeKey]) else { return 0 }
+        var bytes = 0
+        for case let url as URL in walker {
+            bytes += (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        }
+        return bytes
+    }
+
     // MARK: - 속
 
     private func coordinateRead(_ url: URL, _ body: (URL) -> Void) {

@@ -46,6 +46,10 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    /// **편집기에 커서가 있나** (98). 아이폰에는 키보드를 내릴 길이 없어 `키보드 내리기`
+    /// 단추를 띄운다 — 그 단추가 보일 때를 이것으로 정한다.
+    @Published var editorHasFocus = false
+
     /// 공유할 때 **링크된 노트도 한 단계 넣을까** (설계서 §7.6-5). 켜짐이 기본.
     @Published var sharesLinkedNotes: Bool = UserDefaults.standard.object(forKey: "share.linked") as? Bool ?? true {
         didSet { UserDefaults.standard.set(sharesLinkedNotes, forKey: "share.linked") }
@@ -628,11 +632,27 @@ final class LibraryModel: ObservableObject {
     func cancelShare(_ package: SharePackage) {
         sharePrompt = nil
         FolderStore.cleanUpShare(package.directory)
+        logShareScratch()
+    }
+
+    /// **치운 뒤에 무엇이 남았나** (97, 사용자 제안). 저장 공간이 쌓이는지는 눈으로 보기
+    /// 어렵다 — 공유가 끝날 때마다 남은 임시 꾸러미 수와 크기를 최근 일에 적는다.
+    /// 늘 `0개 · 0B` 이면 안 쌓이는 것이다.
+    private func logShareScratch() {
+        let left = FolderStore.shareScratch()
+        log("공유 임시 폴더 치움 — 남은 것 \(left.count)개 · \(Self.readableBytes(left.bytes))")
+    }
+
+    /// 사람이 읽을 크기. `1.2MB` 처럼.
+    static func readableBytes(_ bytes: Int) -> String {
+        if bytes < 1024 { return "\(bytes)B" }
+        if bytes < 1024 * 1024 { return String(format: "%.1fKB", Double(bytes) / 1024) }
+        return String(format: "%.1fMB", Double(bytes) / (1024 * 1024))
     }
 
     private func present(_ package: SharePackage) {
         shareDirectory = package.directory
-        log("공유: \(package.url.lastPathComponent) (\(package.bytes / 1024)KB\(package.isZip ? " · zip" : ""))")
+        log("공유 꾸러미 \(package.url.lastPathComponent) — \(Self.readableBytes(package.bytes))\(package.isZip ? " · zip" : "")")
         sheet = .share(package.url)
     }
 
@@ -640,6 +660,7 @@ final class LibraryModel: ObservableObject {
     func shareSheetClosed() {
         if let directory = shareDirectory { FolderStore.cleanUpShare(directory) }
         shareDirectory = nil
+        logShareScratch()
     }
 
     /// 읽기 모드에서 첨부를 눌렀다 — QuickLook 으로 연다 (78). 파일이 없으면 말한다.

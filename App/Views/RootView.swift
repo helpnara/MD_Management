@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import PhotosUI
 import Core
 
@@ -630,7 +631,8 @@ private struct NoteDetail: View {
                 onEdit: library.noteEdited,
                 insertion: library.insertion,
                 onInserted: { library.insertion = nil },
-                onTitleLineChanged: { library.cursorOnTitleLine = $0 })
+                onTitleLineChanged: { library.cursorOnTitleLine = $0 },
+                onFocusChanged: { library.editorHasFocus = $0 })
         }
     }
 
@@ -653,6 +655,19 @@ private struct NoteDetail: View {
         ToolbarItem(placement: .topBarTrailing) {
             // 저장 상태를 숨기지 않는다. 아무 표시가 없는 것이 가장 무섭다.
             SaveIndicator()
+        }
+        if !library.isReading, library.editorHasFocus {
+            ToolbarItem(placement: .topBarTrailing) {
+                // **키보드를 내리는 길** (98). 아이폰에는 `완료` 자리가 없어 한번 커서가
+                // 붙으면 키보드를 못 치웠다 — 그러면 편집이 끝나는 자리(92)에도 못 닿는다.
+                // **키보드 위에 도구를 달지 않는다** (CLAUDE.md) — 위 도구 줄에 세운다.
+                Button {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                                    to: nil, from: nil, for: nil)
+                } label: {
+                    Label("키보드 내리기", systemImage: "keyboard.chevron.compact.down")
+                }
+            }
         }
         if !library.isReading {
             ToolbarItem(placement: .topBarTrailing) {
