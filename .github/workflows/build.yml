@@ -313,6 +313,8 @@ jobs:
           # **고른 폴더(b) 상태의 설정** — 돌아가기 단추와 안내 문구가 보여야 한다. 폴더 고르기
           # 창 자체는 시뮬레이터 스크립트로 못 누르므로 견본 폴더를 (b) 인 척 연다.
           shoot 12-settings-chosen.png -sampleFolder -settings -chosenFolder
+          # **검색** — 2글자 `회의` 는 LIKE 폴백 길이다 (ADR-0003). 결과에 견본 노트가 보여야 한다.
+          shoot 13-search.png -sampleFolder -search 회의
           # **새 노트** — 만들기 → 열기 흐름. 편집기에 `# 새 노트` 한 줄이 보여야 한다.
           shoot 10-new-note.png -sampleFolder -newNote
           # **첨부 시험** — 사진 셋(영문 · 한글+공백 · 퍼센트 인코딩)이 다
@@ -386,6 +388,7 @@ jobs:
             "screenshots/07-diagnostics.png:0,0.15,1,0.80" \
             "screenshots/09-settings.png:0,0.15,1,0.80" \
             "screenshots/11-trash.png:0,0.15,1,0.80" \
+            "screenshots/13-search.png:0,0.18,1,0.60" \
             "screenshots/12-settings-chosen.png:0,0.15,1,0.80" \
             "screenshots/10-new-note.png:0,0.12,1,0.40" \
             "screenshots/dark/02-note.png:0,0.15,1,0.75" \
