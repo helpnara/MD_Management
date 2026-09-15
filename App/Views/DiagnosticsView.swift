@@ -63,6 +63,37 @@ struct DiagnosticsView: View {
                     row("하위 폴더", "\(library.folders.count)개")
                 }
 
+
+                Section {
+
+                    row("색인된 노트", "\(library.indexStatus.noteCount)개")
+
+                    row("trigram", library.indexStatus.trigramAvailable ? "있음" : "없음 — LIKE 만")
+
+                    row("색인 크기", "\(library.indexStatus.fileBytes / 1024)KB")
+
+                    row("마지막 갱신", String(format: "%.2f초", library.indexStatus.lastRefreshSeconds))
+
+                    Button {
+
+                        Task { await library.rebuildIndex() }
+
+                    } label: {
+
+                        Label("색인 다시 만들기", systemImage: "arrow.clockwise")
+
+                    }
+
+                } header: {
+
+                    Text("검색 색인")
+
+                } footer: {
+
+                    Text("색인은 캐시입니다. 검색이 이상하면 다시 만드세요 — 파일은 건드리지 않습니다 (A4 · A5).")
+
+                }
+
                 Section("경로") {
                     Text(library.rootPath)
                         .font(.scaledMono(.caption))
