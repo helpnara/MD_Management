@@ -96,7 +96,10 @@ enum NoteLinkAction {
         case "missing":
             self = .missing(path)
         case "note":
-            self = Paths.isNoteFile(path) ? .note(path) : .attachment(path)
+            // `assets/` 안의 `.md` 는 **첨부**다 — 문서 첨부로 넣은 것. 노트로 열면 `assets` 폴더로
+            // 옮겨 가 버린다 (빌드 24 · 17번). 미리보기로 연다.
+            let inAssets = path.split(separator: "/").dropLast().contains("assets")
+            self = (Paths.isNoteFile(path) && !inAssets) ? .note(path) : .attachment(path)
         default:
             self = .missing(path)
         }

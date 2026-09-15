@@ -317,7 +317,19 @@ public enum LineStyler {
 
         let afterClose = text.index(after: close)
         guard afterClose < end, text[afterClose] == "(" else { return nil }
-        guard let paren = findUnescaped(")", in: text, from: text.index(after: afterClose), to: end) else { return nil }
+        let destination = text.index(after: afterClose)
+        let paren: String.Index
+        if destination < end, text[destination] == "<" {
+            // **`<…>` 주소.** `>` 까지는 괄호가 들어 있어도 전부 주소다 — 빈칸 · 괄호가 든 파일명을
+            // 이렇게 감싼다 (빌드 24 · 18번: 첫 `)` 에서 끊어 링크가 반 토막 났다). `>` 바로 뒤가 `)`.
+            guard let gt = findUnescaped(">", in: text, from: text.index(after: destination), to: end),
+                  text.index(after: gt) < end, text[text.index(after: gt)] == ")" else { return nil }
+            paren = text.index(after: gt)
+        } else {
+            // 맨 주소: 짝을 이룬 괄호는 주소의 일부다 (CommonMark) — `[a](b(c).md)`.
+            guard let balanced = findClosingParen(text, from: destination, to: end) else { return nil }
+            paren = balanced
+        }
 
         let finish = text.index(after: paren)
         markers.append(span(text, start, inner, .marker))   // `[` 또는 `![`
@@ -404,6 +416,27 @@ public enum LineStyler {
 
     private static func isWord(_ character: Character) -> Bool {
         character.isLetter || character.isNumber
+    }
+
+    /// 링크 주소의 닫는 `)` — 안의 `(` `)` 가 짝을 이루면 넘어간다. 이스케이프는 건너뛴다.
+    private static func findClosingParen(_ text: String, from start: String.Index, to end: String.Index) -> String.Index? {
+        var cursor = start
+        var depth = 0
+        while cursor < end {
+            let ch = text[cursor]
+            if ch == "\\" {
+                let next = text.index(after: cursor)
+                cursor = next < end ? text.index(after: next) : end
+                continue
+            }
+            if ch == "(" { depth += 1 }
+            else if ch == ")" {
+                if depth == 0 { return cursor }
+                depth -= 1
+            }
+            cursor = text.index(after: cursor)
+        }
+        return nil
     }
 
     private static func findUnescaped(_ target: Character, in text: String,

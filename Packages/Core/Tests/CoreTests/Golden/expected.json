@@ -1233,6 +1233,42 @@
         }
       ],
       "text": "- [x] [문서](docs/a.md) 읽기"
+    },
+    {
+      "block": null,
+      "content": "[새 노트(아이폰 작성).md](<assets/새 노트(아이폰 작성)-1.md>)",
+      "name": "링크 — 꺾쇠 주소에 괄호",
+      "spans": [
+        {
+          "text": "새 노트(아이폰 작성).md",
+          "token": "link"
+        }
+      ],
+      "text": "[새 노트(아이폰 작성).md](<assets/새 노트(아이폰 작성)-1.md>)"
+    },
+    {
+      "block": null,
+      "content": "[문서](docs/a(1).md)",
+      "name": "링크 — 주소 안 짝 괄호",
+      "spans": [
+        {
+          "text": "문서",
+          "token": "link"
+        }
+      ],
+      "text": "[문서](docs/a(1).md)"
+    },
+    {
+      "block": null,
+      "content": "![](<assets/내 사진(1).jpg>)",
+      "name": "그림 — 꺾쇠 주소에 빈칸과 괄호",
+      "spans": [
+        {
+          "text": "",
+          "token": "image"
+        }
+      ],
+      "text": "![](<assets/내 사진(1).jpg>)"
     }
   ]
 }
