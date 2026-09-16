@@ -48,7 +48,10 @@ final class LineStylerGoldenTests: XCTestCase {
             XCTAssertEqual(trimmedTrailing(rest ?? "<잘못된 자리>"), item.content,
                            "마커 뗀 내용이 다르다 — \(where_)")
 
-            let actual = style.inlineSpans.map { span -> String in
+            // **`#태그` 는 여기서 빼고 견준다.** markdown-it 은 태그를 모른다 — 그것은
+            // 마크다운이 아니라 우리 규칙이다(T2). 태그에는 제 심판이 따로 있다
+            // (`TagGoldenTests`, 13건). 여기서는 **마크다운만** 견준다.
+            let actual = style.inlineSpans.filter { $0.token != .tag }.map { span -> String in
                 let text = slice(item.text, start: span.start, length: span.length) ?? "<잘못된 자리>"
                 return "\(span.token.rawValue):\(span.token == .inlineCode ? strippedCode(text) : text)"
             }

@@ -28,10 +28,14 @@ final class ListEditingTests: XCTestCase {
         XCTAssertEqual(ListEditing.returnPressed(in: "- [ ] "), .replacePrefix(length: 6, with: ""))
         XCTAssertEqual(ListEditing.returnPressed(in: "  - "), .replacePrefix(length: 4, with: "- "),
                        "겹친 빈 항목 → 한 단계 위로")
-        // 빈칸 네 개부터는 CommonMark 가 **코드 블록**으로 읽는다 — 문단 하나만 보는
-        // `LineStyler` 도 그렇게 판정한다 (ADR-0005 의 "겹친 블록은 L1 범위 밖").
-        // 그래서 세 단계 이상 겹친 목록은 여기서 잇지 않는다. 빌드 9 CI 가 잡았다.
-        XCTAssertNil(ListEditing.returnPressed(in: "    - "))
+        // **세 단계 이상도 이어진다** (T4, 빌드 34). 빌드 9 부터 빌드 33 까지는 여기서
+        // `nil` 이었다 — 빈칸 네 개를 CommonMark 가 코드로 읽기 때문이다. 그러나 그것은
+        // **앞 줄이 목록이라는 문맥이 없을 때** 이야기고, 파일에서는 겹친 항목이 맞다.
+        // 이제 목록 마커가 네 칸 규칙을 이긴다 (`LineStyler.startsListItem`).
+        XCTAssertEqual(ListEditing.returnPressed(in: "    - "), .replacePrefix(length: 6, with: "  - "),
+                       "셋째 단계 빈 항목 → 둘째 단계로")
+        XCTAssertEqual(ListEditing.returnPressed(in: "    - 셋째"), .insert("\n    - "),
+                       "셋째 단계에서도 다음 항목을 이어 준다")
     }
 
     func testPlainParagraphIsNotHandled() {
