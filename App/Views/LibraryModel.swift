@@ -732,6 +732,12 @@ final class LibraryModel: ObservableObject {
 
     /// 문서 첨부 — 사진과 같은 길로 (78). 고른 파일을 `assets/` 에 **복사**하고 커서 자리에
     /// `[이름.pdf](<assets/이름-1.pdf>)` 를 넣는다. 원본은 건드리지 않는다. 여러 개면 한 줄씩.
+    ///
+    /// **`.md` 는 다르다** (111, 사용자 — 빌드 33 · 10번). 노트는 첨부가 아니라 폴더의
+    /// 시민이다. `assets/` 에 복사하면 **원본과 딴 살림을 차린 사본**이 생기고, 그 사본을
+    /// 고치게 된다. 그래서:
+    /// - **폴더 안에 이미 있는 노트**면 복사하지 않고 **그 자리로 링크한다** (`../` 까지 붙여).
+    /// - **밖에서 온 노트**면 `assets/` 가 아니라 **그 노트 옆**에 들여온다.
     func attachDocuments(_ urls: [URL]) async {
         guard let store, let note = selectedNote, !urls.isEmpty else { return }
         let folder = Paths.directory(of: note.relativePath)
@@ -751,6 +757,26 @@ final class LibraryModel: ObservableObject {
                 }
                 return data
             }.value
+            // **노트는 노트로** (111). 폴더 안의 것이면 그 자리로 링크하고, 밖의 것이면
+            // 그 노트 옆에 들여온다. 어느 쪽이든 `assets/` 에는 안 들어간다.
+            if Paths.isNoteFile(name) {
+                do {
+                    let inFolder = await store.relativePath(of: url)
+                    let target: String
+                    if let inFolder {
+                        target = inFolder
+                    } else {
+                        guard let data = loaded else { failed.append(name); continue }
+                        target = try await store.importNote(data, named: name, in: folder)
+                    }
+                    guard target != note.relativePath else { continue }   // 제 자신으로 가는 링크는 넣지 않는다
+                    let link = Paths.relativeLink(from: folder, to: target)
+                    lines.append(ImageImport.markdownLink(label: Paths.baseName(name), path: link))
+                } catch {
+                    failed.append(name)
+                }
+                continue
+            }
             guard let data = loaded else { failed.append(name); continue }
             let ext = Paths.fileExtension(name).lowercased()
             let stem = Paths.safeFileName(Paths.baseName(name), fallback: "문서")
@@ -764,6 +790,7 @@ final class LibraryModel: ObservableObject {
         }
         if !lines.isEmpty {
             insertion = Insertion(text: lines.joined(separator: "\n"))
+            await reloadNotes()   // 밖에서 들여온 노트가 목록에 서야 한다 (111)
             log("문서 첨부 \(lines.count)개: \(note.relativePath)")
         }
         lastError = failed.isEmpty ? nil : "첨부하지 못했습니다: \(failed.joined(separator: ", "))"

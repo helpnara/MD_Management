@@ -238,9 +238,19 @@ actor SearchIndex {
 
     /// 본문의 첫 글줄 — 제목 줄(`# `)은 목록에 이미 있으니 건너뛴다.
     static func firstBodyLine(of body: String) -> String {
+        var passedTitle = false
         for line in body.components(separatedBy: "\n") {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.isEmpty || trimmed.hasPrefix("#") { continue }
+            if trimmed.isEmpty { continue }
+            // 글자가 한 자도 없는 줄(`---` 수평선 · 장식)은 제목도 미리보기도 아니다 (107 과 같은 규칙).
+            guard trimmed.contains(where: { $0.isLetter || $0.isNumber }) else { continue }
+            // **첫 줄은 제목이다** (107). 목록에 이미 그것이 보이므로 건너뛴다 —
+            // 안 건너뛰면 제목과 미리보기에 **같은 글이 두 번** 나온다 (빌드 33 · 5번, 사용자).
+            // 예전에는 `#` 로 시작하는 줄만 건너뛰었다. 이제 제목에 `#` 이 없을 수 있다.
+            if !passedTitle {
+                passedTitle = true
+                continue
+            }
             return tidy(trimmed)
         }
         return ""

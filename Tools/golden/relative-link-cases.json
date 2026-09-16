@@ -1,0 +1,55 @@
+{
+  "_설명": "노트 위치에서 목표 파일로 가는 상대 링크 (빌드 34 · 108). `join` 의 반대다 — 되돌리면 목표와 같아야 한다.",
+  "cases": [
+    {
+      "name": "최상위-같은자리",
+      "folder": "",
+      "target": "회의.md"
+    },
+    {
+      "name": "최상위-첨부",
+      "folder": "",
+      "target": "assets/그림.png"
+    },
+    {
+      "name": "최상위-깊은곳",
+      "folder": "",
+      "target": "a/b/c.md"
+    },
+    {
+      "name": "하위-같은폴더",
+      "folder": "회의",
+      "target": "회의/기록.md"
+    },
+    {
+      "name": "하위-첨부",
+      "folder": "회의",
+      "target": "회의/assets/a.png"
+    },
+    {
+      "name": "하위에서-최상위로",
+      "folder": "회의",
+      "target": "assets/그림.png"
+    },
+    {
+      "name": "두단계-한칸위로",
+      "folder": "회의/하위",
+      "target": "회의/위.md"
+    },
+    {
+      "name": "다른폴더로",
+      "folder": "아이디어",
+      "target": "회의/기록.md"
+    },
+    {
+      "name": "두단계-다른가지",
+      "folder": "가/나",
+      "target": "가/다/라.md"
+    },
+    {
+      "name": "같은이름폴더-헷갈리지않게",
+      "folder": "회의",
+      "target": "회의록.md"
+    }
+  ]
+}

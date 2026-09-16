@@ -345,6 +345,25 @@ actor FolderStore {
         encodings[relativePath] = .utf8
     }
 
+    /// **이 URL 이 우리 폴더 안의 파일인가.** 안이면 폴더 기준 상대경로, 밖이면 `nil`.
+    ///
+    /// 문서 피커가 건네는 URL 은 심볼릭 링크를 지나올 수 있어(`/private/var…`)
+    /// 양쪽을 다 풀어서 견준다.
+    func relativePath(of url: URL) -> String? {
+        openScopeIfNeeded()
+        let base = root.standardizedFileURL.resolvingSymlinksInPath().path
+        let target = url.standardizedFileURL.resolvingSymlinksInPath().path
+        guard target.hasPrefix(base + "/") else { return nil }
+        return Paths.normalized(String(target.dropFirst(base.count + 1)))
+    }
+
+    /// **노트를 노트로 들여온다** (111). `assets/` 가 아니라 **그 노트 옆**에 둔다 —
+    /// `.md` 는 첨부가 아니라 폴더의 시민이다. 이름이 겹치면 `이름 2.md` 로 비켜 간다.
+    func importNote(_ data: Data, named name: String, in folder: String) throws -> String {
+        guard let text = Self.decode(data)?.text else { throw ReadError.notDownloaded }
+        return try createNote(named: Paths.baseName(name), in: folder, text: text)
+    }
+
     /// 안전 저장용 임시 파일 자리. **원본과 같은 볼륨의 교체 전용 폴더**여야 한다.
     ///
     /// 빌드 20 까지는 앱의 `tmp` 에 썼다. 그러면 `replaceItemAt` 이 자리를 맞바꾸지 못하고

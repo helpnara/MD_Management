@@ -35,6 +35,7 @@ CASES = ROOT / "Tools" / "golden" / "cases.json"
 STYLE_CASES = ROOT / "Tools" / "golden" / "style-cases.json"
 INDENT_CASES = ROOT / "Tools" / "golden" / "indent-cases.json"
 RENUMBER_CASES = ROOT / "Tools" / "golden" / "renumber-cases.json"
+LINK_CASES = ROOT / "Tools" / "golden" / "relative-link-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -614,6 +615,38 @@ def build_renumber_cases() -> list[dict]:
             for case in spec["cases"]]
 
 
+# ── 상대 링크 — `join` 의 반대 (빌드 34 · 108) ────────────────────────────────
+
+
+def relative_link(note_folder: str, target: str) -> str:
+    """노트 위치에서 목표 파일로 가는 상대 링크. `join` 을 거꾸로 돌린 것이다."""
+    base = [p for p in nfc(note_folder).split("/") if p]
+    goal = [p for p in nfc(target).split("/") if p]
+    if not goal:
+        return ""
+    shared = 0
+    goal_folders = len(goal) - 1     # 마지막 조각은 파일 이름이다
+    while shared < len(base) and shared < goal_folders and base[shared] == goal[shared]:
+        shared += 1
+    return "../" * (len(base) - shared) + "/".join(goal[shared:])
+
+
+def build_link_cases() -> list[dict]:
+    spec = json.loads(LINK_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        link = relative_link(case["folder"], case["target"])
+        out.append({
+            "name": case["name"],
+            "folder": case["folder"],
+            "target": case["target"],
+            "link": link,
+            # **되돌아오나.** `join(folder, link)` 이 목표와 같아야 링크가 산다.
+            "resolved": join(case["folder"], link),
+        })
+    return out
+
+
 # ── 만들기 ───────────────────────────────────────────────────────────────────
 
 def resolved_entry(link: dict, note_path: str) -> dict:
@@ -662,6 +695,7 @@ def build() -> dict:
         "styleCases": build_style_cases(),
         "indentCases": build_indent_cases(),
         "renumberCases": build_renumber_cases(),
+        "linkCases": build_link_cases(),
     }
 
 
@@ -684,7 +718,8 @@ def main() -> int:
         loaded = json.loads(current)
         print(f"기댓값 {len(loaded['cases'])}건 · 줄 모양 {len(loaded['styleCases'])}건"
               f" · 들여쓰기 {len(loaded['indentCases'])}건"
-              f" · 번호 {len(loaded['renumberCases'])}건 — 커밋된 것과 같습니다.")
+              f" · 번호 {len(loaded['renumberCases'])}건"
+              f" · 상대 링크 {len(loaded['linkCases'])}건 — 커밋된 것과 같습니다.")
         return 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -693,7 +728,8 @@ def main() -> int:
     print(f"{OUT.relative_to(ROOT)} — 사례 {len(loaded['cases'])}건"
           f" · 줄 모양 {len(loaded['styleCases'])}건"
           f" · 들여쓰기 {len(loaded['indentCases'])}건"
-          f" · 번호 {len(loaded['renumberCases'])}건")
+          f" · 번호 {len(loaded['renumberCases'])}건"
+          f" · 상대 링크 {len(loaded['linkCases'])}건")
     return 0
 
 

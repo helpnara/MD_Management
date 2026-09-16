@@ -116,6 +116,28 @@ public enum Paths {
         return stack.isEmpty ? nil : stack.joined(separator: "/")
     }
 
+    /// **노트 위치에서 목표 파일로 가는 상대 링크** (108 · 빌드 34).
+    ///
+    /// `join(base:relative:)` 의 반대다 — `join(base: noteFolder, relative: 결과) == target` 이 된다.
+    /// 겹치는 앞부분을 떼고, 남은 폴더 수만큼 `../` 를 붙인다.
+    ///
+    /// 같은 폴더면 파일 이름뿐이다 (`회의.md`). 한 단계 아래면 `assets/그림.png`,
+    /// 한 단계 위면 `../회의.md`.
+    public static func relativeLink(from noteFolder: String, to target: String) -> String {
+        let base = normalized(noteFolder).split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        var goal = normalized(target).split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard !goal.isEmpty else { return "" }
+
+        var shared = 0
+        // 목표의 **마지막 조각은 파일 이름**이라 폴더로 세지 않는다.
+        let goalFolders = goal.count - 1
+        while shared < base.count, shared < goalFolders, base[shared] == goal[shared] { shared += 1 }
+
+        let up = String(repeating: "../", count: base.count - shared)
+        goal.removeFirst(shared)
+        return up + goal.joined(separator: "/")
+    }
+
     // MARK: - 링크 해석
 
     /// 마크다운 링크 하나를 노트 위치 기준으로 푼다.
