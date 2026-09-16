@@ -47,7 +47,7 @@ struct SettingsView: View {
                     Toggle("첫 줄을 파일명으로", isOn: $library.syncsFileName)
                         .font(.scaled(.body))
                 } header: {
-                    Text("제목")
+                    Text("편집")
                 } footer: {
                     Text("노트를 열 때 첫 줄 `# 제목` 이 파일명과 다르면 **파일명으로** 맞춥니다. 제목이 없으면 넣고, 다른 제목이면 `##` 로 한 단계 내립니다. 앱 안에서 제목을 고치면 파일명이 따라갑니다. 다른 앱과 같이 쓰는 폴더라면 끄세요 — 여는 것만으로 파일이 바뀝니다.")
                 }
@@ -61,8 +61,8 @@ struct SettingsView: View {
                     Text("첨부가 없으면 `.md` 하나, 있으면 `.zip` 하나로 보냅니다. 이 스위치를 켜면 본문이 링크한 다른 노트도 **한 단계만** 함께 넣습니다.")
                 }
 
-                filesSection
-
+                // **노트** (122 · T11). 휴지통과 `파일` 앱 안내는 둘 다 **노트 파일 이야기**다 —
+                // 흩어져 있던 두 구역을 하나로 묶고, 긴 안내는 한 칸 안쪽으로 내렸다.
                 Section {
                     NavigationLink {
                         TrashView().environmentObject(library)
@@ -78,10 +78,19 @@ struct SettingsView: View {
                             Image(systemName: "trash")
                         }
                     }
+                    NavigationLink {
+                        FilesHelpView()
+                    } label: {
+                        Label("`파일` 앱에서 열기", systemImage: "folder.badge.questionmark")
+                    }
+                } header: {
+                    Text("노트")
                 } footer: {
                     Text("지운 노트는 폴더 안 `.trash` 로 옮겨집니다. `파일` 앱은 숨김 폴더를 보여 주지 않으므로 여기서 봅니다.")
                 }
 
+                // **도움** (122 · T11). 무엇이 어긋났는지 보는 곳과, 만드는 사람이 쓰는
+                // 시험 도구의 스위치. 시험 도구는 **누르면 자료를 만들므로** 기본은 꺼짐이다.
                 Section {
                     // **시트를 갈아 끼우지 않고 밀어 넣는다.** 떠 있는 시트의
                     // item 을 바꾸면 SwiftUI 가 닫았다 여는 사이에 화면이 튄다.
@@ -90,8 +99,12 @@ struct SettingsView: View {
                     } label: {
                         Label("진단 정보", systemImage: "stethoscope")
                     }
+                    Toggle("시험 도구 보기", isOn: $library.showsTestTools)
+                        .font(.scaled(.body))
+                } header: {
+                    Text("도움")
                 } footer: {
-                    Text("무엇이 어긋났는지 복사해 보낼 수 있는 화면입니다.")
+                    Text("진단 화면에는 무엇이 어긋났는지가 있고, 복사해 보낼 수 있습니다. **시험 도구**를 켜면 그 아래에 첨부 · 큰 노트 · 규모 시험 단추가 나옵니다 — 누르면 **파일을 만드는** 단추라 평소에는 감춰 둡니다.")
                 }
             }
             .navigationTitle("설정")
@@ -129,28 +142,46 @@ struct SettingsView: View {
         }
     }
 
-    /// **여기서 정직해야 한다.** 켜고 끄는 스위치를 만들 수 없다.
-    ///
-    /// iOS 의 `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다루고
-    /// **문서 종류는 목록에 없다.** 앱이 스스로를 `.md` 의 기본 앱으로 만드는 API 도
-    /// 없다. 그래서 스위치 대신 **어디를 눌러야 하는지**를 적는다. 없는 스위치를
-    /// 그려 두면 눌러도 아무 일이 없어 더 나쁘다.
-    private var filesSection: some View {
-        Section {
-            step(1, "`파일` 앱에서 `.md` 파일을 **길게 누릅니다**.")
-            step(2, "**공유** → 목록에서 **느린 여백** 을 고릅니다.")
-            step(3, "**느린 여백 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다.")
-        } header: {
-            Text("파일 앱에서 열기")
-        } footer: {
-            Text("""
-            iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.
-
-            느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.
-
-            평소 쓰는 노트는 **느린 여백 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다.
-            """)
+    private func row(_ name: String, _ value: String) -> some View {
+        HStack(spacing: Metrics.gutter) {
+            Text(name)
+                .foregroundStyle(Palette.ink)
+            Spacer(minLength: Metrics.rowSpacing)
+            // 문장이 아니라 짧은 값이다. 큰 글씨에서는 줄을 바꾸게 둔다.
+            Text(value)
+                .foregroundStyle(Palette.inkFaint)
+                .multilineTextAlignment(.trailing)
         }
+        .font(.scaled(.body))
+    }
+}
+
+/// **`파일` 앱에서 여는 방법** (122 · T11 — 설정에서 한 칸 안쪽으로 내려왔다).
+///
+/// **여기서 정직해야 한다.** 켜고 끄는 스위치를 만들 수 없다. iOS 의
+/// `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다루고 **문서 종류는
+/// 목록에 없다.** 앱이 스스로를 `.md` 의 기본 앱으로 만드는 API 도 없다. 그래서
+/// 스위치 대신 **어디를 눌러야 하는지**를 적는다. 없는 스위치를 그려 두면 눌러도
+/// 아무 일이 없어 더 나쁘다.
+struct FilesHelpView: View {
+    var body: some View {
+        List {
+            Section {
+                step(1, "`파일` 앱에서 `.md` 파일을 **길게 누릅니다**.")
+                step(2, "**공유** → 목록에서 **느린 여백** 을 고릅니다.")
+                step(3, "**느린 여백 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다.")
+            } footer: {
+                Text("""
+                iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.
+
+                느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.
+
+                평소 쓰는 노트는 **느린 여백 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다.
+                """)
+            }
+        }
+        .navigationTitle("파일 앱에서 열기")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func step(_ number: Int, _ text: String) -> some View {
@@ -165,19 +196,6 @@ struct SettingsView: View {
                 .frame(width: Metrics.iconSide, height: Metrics.iconSide)
                 .background(Circle().fill(Palette.inkFaint))
         }
-    }
-
-    private func row(_ name: String, _ value: String) -> some View {
-        HStack(spacing: Metrics.gutter) {
-            Text(name)
-                .foregroundStyle(Palette.ink)
-            Spacer(minLength: Metrics.rowSpacing)
-            // 문장이 아니라 짧은 값이다. 큰 글씨에서는 줄을 바꾸게 둔다.
-            Text(value)
-                .foregroundStyle(Palette.inkFaint)
-                .multilineTextAlignment(.trailing)
-        }
-        .font(.scaled(.body))
     }
 }
 

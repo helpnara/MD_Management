@@ -107,6 +107,14 @@ final class LibraryModel: ObservableObject {
     @Published var syncsFileName: Bool = UserDefaults.standard.object(forKey: "title.align") as? Bool ?? true {
         didSet { UserDefaults.standard.set(syncsFileName, forKey: "title.align") }
     }
+    /// **시험 도구를 보여 줄까** (122 · T11). **꺼짐이 기본.**
+    ///
+    /// 진단 화면에는 두 종류가 섞여 있었다 — 무엇이 어긋났나(쓰는 사람)와 시험 도구
+    /// (만드는 사람). 뒤엣것은 **누르면 자료를 만든다** — 노트 300개는 iCloud 에 20MB 를
+    /// 올린다. 그래서 기본으로 감추고 설정에서 켜야 보이게 한다.
+    @Published var showsTestTools: Bool = UserDefaults.standard.object(forKey: "tools.visible") as? Bool ?? false {
+        didSet { UserDefaults.standard.set(showsTestTools, forKey: "tools.visible") }
+    }
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
     @Published var isReading = false
     /// 이름을 바꾸는 중인 노트 · 새 이름. 화면의 알림창이 이것을 본다.

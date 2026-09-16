@@ -153,54 +153,19 @@ struct DiagnosticsView: View {
                     }
                 }
 
-                Section {
-                    Button {
-                        Task { await library.makeAttachmentTest() }
-                    } label: {
-                        Label("첨부 시험 파일 만들기", systemImage: "photo.badge.plus")
-                    }
-                } header: {
-                    Text("첨부 시험")
-                } footer: {
-                    Text("`첨부 시험.md` 와 `assets` 의 사진 둘을 만들고 **읽기 모드로 엽니다.** 사진 셋이 다 보이면 첨부가 제대로 도는 것입니다. 만든 파일은 언제든 지우셔도 됩니다.")
-                }
-
-                Section {
-                    Button {
-                        Task { await library.makeBigNote() }
-                    } label: {
-                        Label("큰 노트 만들기 (300줄)", systemImage: "doc.text.magnifyingglass")
-                    }
-                } header: {
-                    Text("큰 노트 시험")
-                } footer: {
-                    Text("`큰 노트 시험.md` 를 300줄 · 20KB 안팎으로 만들고 **편집기로 엽니다.** 커서를 위아래로 훑어 지연이나 튐이 없으면 통과입니다. 만든 파일은 언제든 지우셔도 됩니다.")
-                }
-
-                Section {
-                    if let made = library.scaleProgress {
-                        HStack {
-                            ProgressView()
-                            Text("만드는 중 \(made) / \(LibraryModel.scaleCount)")
-                                .font(.scaled(.subheadline))
-                                .foregroundStyle(Palette.inkFaint)
-                        }
-                    } else {
-                        Button {
-                            Task { await library.makeScaleTest() }
+                // **시험 도구는 한 칸 안쪽** (122 · T11). 누르면 **파일을 만드는** 단추라
+                // 쓰는 사람이 무엇이 어긋났는지 보러 왔을 때 눈앞에 있을 것이 아니다.
+                // 설정의 `시험 도구 보기` 를 켜야 이 칸이 나온다 — 기본은 꺼짐이다.
+                if library.showsTestTools {
+                    Section {
+                        NavigationLink {
+                            TestToolsView().environmentObject(library)
                         } label: {
-                            Label("노트 300개 만들기 (약 20MB)", systemImage: "square.stack.3d.up")
+                            Label("시험 도구", systemImage: "wrench.and.screwdriver")
                         }
-                        Button(role: .destructive) {
-                            Task { await library.removeScaleTest() }
-                        } label: {
-                            Label("규모 시험 폴더 지우기", systemImage: "trash")
-                        }
+                    } footer: {
+                        Text("첨부 · 큰 노트 · 규모 시험. **파일을 만드는 단추**입니다. 설정의 `시험 도구 보기` 를 끄면 이 칸이 사라집니다.")
                     }
-                } header: {
-                    Text("규모 시험")
-                } footer: {
-                    Text("`규모 시험` 폴더에 노트 300개(합쳐 약 20MB)를 만듭니다. **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `색인 크기` · `마지막 검색` 을 보면 S1 과 A5 를 한 번에 잴 수 있습니다. 지우기는 휴지통으로 갑니다.")
                 }
 
                 Section {
@@ -238,6 +203,81 @@ struct DiagnosticsView: View {
                 .textSelection(.enabled)
         }
         .font(.scaled(.callout))
+    }
+}
+
+/// **시험 도구** (122 · T11 — 진단에서 한 칸 안쪽으로 내려왔다).
+///
+/// 여기 있는 것은 전부 **누르면 파일을 만든다.** 여기서 컴파일할 수 없어서(CLAUDE.md §2)
+/// 실기기에서 재볼 자리를 앱 안에 만든 것들이다 (101 · 102). 쓰는 사람의 화면이 아니므로
+/// 설정에서 켜야 보인다.
+struct TestToolsView: View {
+    @EnvironmentObject private var library: LibraryModel
+    /// 300개를 만들기 전에 한 번 더 묻는다 — 되돌리기가 20MB 짜리다.
+    @State private var confirmingScale = false
+
+    var body: some View {
+        List {
+            Section {
+                Button {
+                    Task { await library.makeAttachmentTest() }
+                } label: {
+                    Label("첨부 시험 파일 만들기", systemImage: "photo.badge.plus")
+                }
+            } header: {
+                Text("첨부 시험")
+            } footer: {
+                Text("`첨부 시험.md` 와 `assets` 의 사진 둘을 만들고 **읽기 모드로 엽니다.** 사진 셋이 다 보이면 첨부가 제대로 도는 것입니다. 만든 파일은 언제든 지우셔도 됩니다.")
+            }
+
+            Section {
+                Button {
+                    Task { await library.makeBigNote() }
+                } label: {
+                    Label("큰 노트 만들기 (300줄)", systemImage: "doc.text.magnifyingglass")
+                }
+            } header: {
+                Text("큰 노트 시험")
+            } footer: {
+                Text("`큰 노트 시험.md` 를 300줄 · 20KB 안팎으로 만들고 **편집기로 엽니다.** 커서를 위아래로 훑어 지연이나 튐이 없으면 통과입니다. 만든 파일은 언제든 지우셔도 됩니다.")
+            }
+
+            Section {
+                if let made = library.scaleProgress {
+                    HStack {
+                        ProgressView()
+                        Text("만드는 중 \(made) / \(LibraryModel.scaleCount)")
+                            .font(.scaled(.subheadline))
+                            .foregroundStyle(Palette.inkFaint)
+                    }
+                } else {
+                    Button {
+                        confirmingScale = true
+                    } label: {
+                        Label("노트 300개 만들기 (약 20MB)", systemImage: "square.stack.3d.up")
+                    }
+                    Button(role: .destructive) {
+                        Task { await library.removeScaleTest() }
+                    } label: {
+                        Label("규모 시험 폴더 지우기", systemImage: "trash")
+                    }
+                }
+            } header: {
+                Text("규모 시험")
+            } footer: {
+                Text("`규모 시험` 폴더에 노트 300개(합쳐 약 20MB)를 만듭니다. **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `색인 크기` · `마지막 검색` 을 보면 S1 과 A5 를 한 번에 잴 수 있습니다. 지우기는 휴지통으로 갑니다.")
+            }
+        }
+        .navigationTitle("시험 도구")
+        .navigationBarTitleDisplayMode(.inline)
+        // **한 번 더 묻는다** (122 · T11-4). 300개는 iCloud 가 20MB 를 올리므로
+        // 잘못 눌렀을 때 값이 크다.
+        .confirmationDialog("노트 300개를 만들까요?", isPresented: $confirmingScale, titleVisibility: .visible) {
+            Button("만들기") { Task { await library.makeScaleTest() } }
+            Button("취소", role: .cancel) { }
+        } message: {
+            Text("`규모 시험` 폴더에 약 20MB 를 만듭니다. iCloud 가 그만큼을 올립니다 — 데이터와 시간이 듭니다. 지울 때는 휴지통으로 갑니다.")
+        }
     }
 }
 
