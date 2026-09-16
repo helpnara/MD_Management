@@ -99,7 +99,11 @@ public enum FrontMatterParser {
         for line in body.components(separatedBy: "\n") {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty { continue }
-            return stripHeadingMarker(trimmed)
+            guard let text = stripHeadingMarker(trimmed) else { continue }
+            // **글자가 한 자도 없는 줄은 건너뛴다** — `---` 수평선이나 장식 줄이다.
+            // 사람이 파일명으로 삼고 싶은 줄이 아니다 (골든 `no-frontmatter.md` 가 그것을 잡았다).
+            guard text.contains(where: { $0.isLetter || $0.isNumber }) else { continue }
+            return text
         }
         return nil
     }

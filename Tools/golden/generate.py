@@ -124,17 +124,46 @@ def parse_front_matter(text: str) -> dict | None:
     }
 
 
+def strip_heading_marker(line: str) -> str:
+    """`# 제목` · `### 제목` 에서 마커를 뗀다. 마커가 없으면 그대로."""
+    hashes = 0
+    for ch in line:
+        if ch == "#":
+            hashes += 1
+        else:
+            break
+    if 1 <= hashes <= 6:
+        after = line[hashes:]
+        # `#태그` 는 제목이 아니다 — 마커 뒤에 빈칸이 있어야 한다 (CommonMark).
+        if after == "" or after[0] == " ":
+            line = after.rstrip("#")
+    return line.strip()
+
+
+def first_line(text: str) -> str | None:
+    """**첫 줄이 곧 제목이다** (T6). `#` 은 있어도 없어도 된다.
+
+    글자가 한 자도 없는 줄(`---` 수평선 · 장식)은 건너뛴다 — 사람이 파일명으로
+    삼고 싶은 줄이 아니다.
+    """
+    _, body = split_front_matter(text)
+    for line in body.split("\n"):
+        stripped = strip_heading_marker(line.strip())
+        if not stripped:
+            continue
+        if not any(ch.isalpha() or ch.isdigit() for ch in stripped):
+            continue
+        return stripped
+    return None
+
+
 def note_title(text: str, file_name: str) -> str:
     matter = parse_front_matter(text)
     if matter and matter["title"]:
         return matter["title"]
-    _, body = split_front_matter(text)
-    for line in body.split("\n"):
-        stripped = line.strip()
-        if stripped.startswith("#"):
-            heading = stripped.lstrip("#").strip()
-            if heading:
-                return heading
+    first = first_line(text)
+    if first:
+        return first
     name = nfc(file_name)
     dot = name.rfind(".")
     return name[:dot] if dot > 0 else name
