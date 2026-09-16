@@ -44,7 +44,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("첫 줄 제목을 파일명에 맞추기", isOn: $library.alignsTitles)
+                    Toggle("첫 줄을 파일명으로", isOn: $library.syncsFileName)
                         .font(.scaled(.body))
                 } header: {
                     Text("제목")

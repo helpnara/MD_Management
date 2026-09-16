@@ -96,10 +96,11 @@ enum NoteLinkAction {
         case "missing":
             self = .missing(path)
         case "note":
-            // `assets/` 안의 `.md` 는 **첨부**다 — 문서 첨부로 넣은 것. 노트로 열면 `assets` 폴더로
-            // 옮겨 가 버린다 (빌드 24 · 17번). 미리보기로 연다.
-            let inAssets = path.split(separator: "/").dropLast().contains("assets")
-            self = (Paths.isNoteFile(path) && !inAssets) ? .note(path) : .attachment(path)
+            // **`.md` 는 어디에 있든 노트로 연다** (T7, 사용자 요청 — 메모 앱의 메모 간 링크처럼).
+            // 빌드 26 까지는 `assets/` 안의 것만 미리보기로 물러섰다. 노트로 열면 보고 있는
+            // 폴더가 `assets` 로 끌려갔기 때문이다 (빌드 24 · 17번). 이제 **링크로 여는 길은
+            // 폴더를 안 건드린다** — 그 제약이 없어졌다.
+            self = Paths.isNoteFile(path) ? .note(path) : .attachment(path)
         default:
             self = .missing(path)
         }

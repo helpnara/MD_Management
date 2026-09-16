@@ -656,6 +656,16 @@ private struct NoteDetail: View {
             // 저장 상태를 숨기지 않는다. 아무 표시가 없는 것이 가장 무섭다.
             SaveIndicator()
         }
+        if !library.linkTrail.isEmpty {
+            ToolbarItem(placement: .topBarLeading) {
+                // **왔던 노트로** (T7). 시스템 뒤로는 그대로 목록으로 간다 — 둘은 다른 길이다.
+                Button {
+                    Task { await library.goBackAlongLink() }
+                } label: {
+                    Label("왔던 노트", systemImage: "arrow.uturn.backward")
+                }
+            }
+        }
         if !library.isReading, library.editorHasFocus {
             ToolbarItem(placement: .topBarTrailing) {
                 // **키보드를 내리는 길** (98). 아이폰에는 `완료` 자리가 없어 한번 커서가

@@ -45,6 +45,28 @@ actor FolderStore {
     ///
     /// **첫 줄 미리보기를 여기서 만들지 않는다.** 파일을 다 열면 300개에 3초를
     /// 못 맞추고, iCloud 미다운로드 파일은 아예 못 읽는다 (설계서 §7.5 · S1).
+    /// **파일 하나의 요약** — 목록에 없는 노트를 상세 칸에 띄울 때 쓴다 (T7).
+    /// 링크를 따라 `assets/` 안의 `.md` 로 갈 때가 그 자리다.
+    func summary(of relativePath: String) -> NoteSummary? {
+        openScopeIfNeeded()
+        let url = root.appendingPathComponent(relativePath)
+        let keys: [URLResourceKey] = [
+            .isDirectoryKey, .contentModificationDateKey, .fileSizeKey,
+            .isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey
+        ]
+        guard let values = try? url.resourceValues(forKeys: Set(keys)), values.isDirectory != true else {
+            return nil
+        }
+        let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
+        return NoteSummary(
+            relativePath: relativePath,
+            title: Paths.baseName(name),
+            preview: "",
+            modifiedAt: values.contentModificationDate ?? .distantPast,
+            size: values.fileSize ?? 0,
+            isDownloaded: Self.isDownloaded(values))
+    }
+
     func notes(in relativeFolder: String = "", includingHidden: Bool = false) -> [NoteSummary] {
         openScopeIfNeeded()
         let folder = relativeFolder.isEmpty ? root : root.appendingPathComponent(relativeFolder)
@@ -572,7 +594,7 @@ actor FolderStore {
     /// 첫 줄이 제목이 아니면 아무것도 안 한다. 바꿨으면 `true`.
     func retitle(_ relativePath: String, to title: String) throws -> Bool {
         let text = try readText(at: relativePath)
-        guard let updated = FrontMatterParser.replacingFirstHeading(in: text, with: title),
+        guard let updated = FrontMatterParser.replacingFirstLine(in: text, with: title),
               updated != text else { return false }
         try writeText(updated, to: relativePath)
         return true

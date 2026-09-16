@@ -85,28 +85,46 @@ public enum FrontMatterParser {
         return 0
     }
 
-    /// **파일명이 따라갈 제목** (54). 머리말을 뗀 본문의 **첫 줄**(빈 줄은 건너뛴다)이
-    /// `# 제목` 이면 그 제목, 아니면 `nil`. `##` 이하나 본문 중간의 제목은 보지 않는다 —
-    /// 첫 줄의 `#` 만 파일명과 같다는 것이 사용자의 관찰이었다.
-    public static func firstHeading(of text: String) -> String? {
+    /// **파일명이 따라갈 글** (54 · T6, 2026-09-16 사용자 결정).
+    ///
+    /// 머리말을 뗀 본문의 **첫 줄**(빈 줄은 건너뛴다) 그대로다. **`#` 을 치지 않아도 된다** —
+    /// `팀 이슈회의` 라고만 써도 파일명이 된다. 첫 줄이 `# 팀 이슈회의` 면 마크다운 마커를
+    /// 떼고 `팀 이슈회의` 를 준다 (예전에 쓰던 노트가 그대로 동작한다).
+    ///
+    /// **왜 `#` 을 요구하지 않게 했나.** 요구하던 시절에는 반대 방향(`aligned` — 파일명이
+    /// 본문을 이긴다)이 필요했고, 자료 사고가 전부 거기서 나왔다 (빌드 20 · 1, 30 · 5,
+    /// 32 · 103). 한 방향만 남기면 **앱이 본문을 고치는 코드가 하나도 없다** (ADR-0001).
+    public static func firstLine(of text: String) -> String? {
         let body = parse(text).body
         for line in body.components(separatedBy: "\n") {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty { continue }
-            guard trimmed.hasPrefix("# ") else { return nil }
-            var heading = trimmed.dropFirst(2).trimmingCharacters(in: .whitespaces)
-            // 닫는 `#` 은 CommonMark 가 제목에서 뺀다 (`# 제목 #`).
-            while heading.hasSuffix("#") { heading.removeLast() }
-            heading = heading.trimmingCharacters(in: .whitespaces)
-            return heading.isEmpty ? nil : heading
+            return stripHeadingMarker(trimmed)
         }
         return nil
     }
 
-    /// **첫 줄 `# 제목` 의 제목을 바꾼 글** (54 의 반대 방향 — 파일명을 바꾸면 제목이 따라간다).
-    /// 첫 줄이 제목이 아니면 `nil` — 없는 제목을 만들어 넣지는 않는다. 머리말과 나머지는 그대로다.
-    public static func replacingFirstHeading(in text: String, with title: String) -> String? {
-        guard firstHeading(of: text) != nil else { return nil }
+    /// `# 제목` · `### 제목` 에서 마커를 뗀다. 마커가 없으면 그대로.
+    /// 닫는 `#` 도 뗀다 — CommonMark 가 제목에서 빼는 것과 같다 (`# 제목 #`).
+    static func stripHeadingMarker(_ line: String) -> String? {
+        var rest = Substring(line)
+        let hashes = rest.prefix { $0 == "#" }
+        if !hashes.isEmpty, hashes.count <= 6 {
+            let after = rest.dropFirst(hashes.count)
+            // `#태그` 는 제목이 아니다 — 마커 뒤에 빈칸이 있어야 한다 (CommonMark).
+            if after.isEmpty || after.first == " " {
+                rest = after
+                while rest.last == "#" { rest = rest.dropLast() }
+            }
+        }
+        let text = rest.trimmingCharacters(in: .whitespaces)
+        return text.isEmpty ? nil : text
+    }
+
+    /// **첫 줄의 글을 바꾼 것** (54 의 반대 방향 — 파일명을 바꾸면 첫 줄이 따라간다).
+    /// 첫 줄이 `# ` 로 시작했으면 **그 마커를 그대로 두고** 글자만 바꾼다.
+    /// 쓸 줄이 없으면(빈 노트) `nil` — 없는 줄을 만들지는 않는다.
+    public static func replacingFirstLine(in text: String, with title: String) -> String? {
         let header = headerLength(of: text)
         let utf16 = Array(text.utf16)
         var head = String(decoding: utf16[0..<header], as: UTF16.self)
@@ -114,81 +132,16 @@ public enum FrontMatterParser {
         // 머리말 뒤 첫 줄바꿈까지가 머리말이다 (headerLength 는 닫는 울타리까지만 센다).
         if !head.isEmpty, rest.hasPrefix("\n") { head += "\n"; rest.removeFirst() }
         var lines = rest.components(separatedBy: "\n")
-        guard let index = lines.firstIndex(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }) else { return nil }
-        lines[index] = "# " + title
+        guard let index = lines.firstIndex(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty })
+        else { return nil }
+
+        let old = lines[index]
+        let indent = old.prefix { $0 == " " || $0 == "\t" }
+        let marker = old.dropFirst(indent.count).prefix { $0 == "#" }
+        let keepsMarker = !marker.isEmpty && marker.count <= 6
+            && (old.dropFirst(indent.count + marker.count).first.map { $0 == " " } ?? true)
+        lines[index] = keepsMarker ? "\(indent)\(marker) \(title)" : "\(indent)\(title)"
         return head + lines.joined(separator: "\n")
-    }
-
-    /// **파일명에 맞춘 글** (62, 사용자 규칙). 밖에서 만든 파일을 열 때 첫 줄 제목과 파일명을
-    /// 맞춘다 — **파일명이 이긴다.**
-    ///
-    /// - 첫 줄이 `# 파일명` 이면 이미 맞다 → `nil` (아무것도 안 쓴다).
-    /// - `#` 제목이 아예 없으면 `# 파일명` 과 빈 줄을 맨 위에 넣는다.
-    /// - 첫 줄이 다른 `# 제목` 이면 `# 파일명` 을 위에 넣고 본문의 `#` 제목들을 **모두 `##` 로**
-    ///   한 단계 내린다 (코드 블록 안은 건드리지 않는다).
-    ///
-    /// **손대지 않는 두 자리** (빌드 29 · 5번, 사용자):
-    /// - **머리말이 있는 파일.** 옵시디언 같은 다른 앱이 관리하고 `title:` 칸을 이미 갖고 있다.
-    ///   거기에 `# 파일명` 을 얹으면 남의 문서 구조를 바꾼다.
-    /// - **`# 제목` 앞에 다른 글이 있는 파일.** 위에 얹으면 `#` 이 둘이 되고, 내리면 글쓴이가
-    ///   짜 둔 단계가 통째로 밀린다. 첫 줄이 제목일 때만 파일명이 이긴다.
-    public static func aligned(_ text: String, toFileName fileName: String) -> String? {
-        let title = Paths.baseName(Paths.normalized(fileName))
-        guard !title.isEmpty else { return nil }
-        let parsed = parse(text)
-        // 머리말이 있는 파일은 다른 앱의 것이다 — 읽기만 한다.
-        if parsed.frontMatter != nil { return nil }
-        let heading = firstHeading(of: text)
-        // 제목이 첫 줄이 아니다 — 앞에 다른 글이 있다.
-        if heading == nil, hasTopHeading(parsed.body) { return nil }
-        if heading == title { return nil }
-        // **`A 2.md` 안의 `# A` 는 다른 제목이 아니라 번호 붙은 사본이다.** 이름이 겹쳐
-        // 앱이 `이름 2` 로 비켜 갔거나 iCloud 가 그렇게 바꿔 둔 것 — 그대로 둔다.
-        // 고쳐 쓰면 `# A 2` 아래 `## A` 가 생겨 사본마다 군더더기가 남는다 (빌드 20 · 1번).
-        if let heading, isNumberedCopy(title, of: heading) { return nil }
-
-        let header = headerLength(of: text)
-        let utf16 = Array(text.utf16)
-        var head = String(decoding: utf16[0..<header], as: UTF16.self)
-        var rest = String(decoding: utf16[header...], as: UTF16.self)
-        if !head.isEmpty, rest.hasPrefix("\n") { head += "\n"; rest.removeFirst() }
-
-        if firstHeading(of: text) != nil {
-            // 다른 제목이 있다 — 그것을 비롯한 본문의 `#` 을 `##` 로.
-            var inFence = false
-            let demoted = rest.components(separatedBy: "\n").map { line -> String in
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
-                if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") { inFence.toggle(); return line }
-                if inFence { return line }
-                if trimmed.hasPrefix("# ") { return "#" + line.drop { $0 == " " } }
-                return line
-            }
-            rest = demoted.joined(separator: "\n")
-        }
-        let body = rest.trimmingCharacters(in: .newlines)
-        return head + "# " + title + "\n\n" + body + (body.isEmpty ? "" : "\n")
-    }
-
-    /// 본문 어딘가에 `# 제목` 이 있나. 코드 울타리 안은 글자일 뿐이라 빼고 센다.
-    static func hasTopHeading(_ body: String) -> Bool {
-        var inFence = false
-        for line in body.components(separatedBy: "\n") {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
-                inFence.toggle()
-                continue
-            }
-            if inFence { continue }
-            if trimmed.hasPrefix("# ") { return true }
-        }
-        return false
-    }
-
-    /// `A 2` 는 `A` 의 번호 붙은 사본인가. 빈칸 하나와 숫자만 더 붙었을 때.
-    static func isNumberedCopy(_ name: String, of base: String) -> Bool {
-        guard name.hasPrefix(base + " ") else { return false }
-        let tail = name.dropFirst(base.count + 1)
-        return !tail.isEmpty && tail.allSatisfy(\.isNumber)
     }
 
     /// 목록에 보여 줄 제목. 머리말 → 첫 `# 제목` → 파일명 순으로 고른다.
@@ -197,12 +150,8 @@ public enum FrontMatterParser {
         if let fromMatter = parsed.frontMatter?.title, !fromMatter.isEmpty {
             return fromMatter
         }
-        for line in parsed.body.components(separatedBy: "\n") {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard trimmed.hasPrefix("#") else { continue }
-            let heading = trimmed.drop { $0 == "#" }.trimmingCharacters(in: .whitespaces)
-            if !heading.isEmpty { return heading }
-        }
+        // **첫 줄이 곧 제목이다** (T6). `#` 이 있으면 떼고, 없으면 그대로.
+        if let first = firstLine(of: text) { return first }
         // 확장자를 뗀 파일명.
         let name = Paths.normalized(fileName)
         if let dot = name.lastIndex(of: "."), dot != name.startIndex {

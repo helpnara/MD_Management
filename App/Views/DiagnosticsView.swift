@@ -17,6 +17,8 @@ struct DiagnosticsView: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.dismiss) private var dismiss
     @State private var copied = false
+    /// 최근 일을 다 펼쳤나 (T9). 기본은 다섯 줄이다.
+    @State private var showsAllEvents = false
 
     // 가지가 둘이라 `@ViewBuilder` 가 필요하다 — 두 가지의 타입이 다르다.
     @ViewBuilder
@@ -79,14 +81,19 @@ struct DiagnosticsView: View {
 
                     row("마지막 검색", String(format: "%.2f초", library.searchSeconds))
 
-                    Button {
-
-                        Task { await library.rebuildIndex() }
-
-                    } label: {
-
-                        Label("색인 다시 만들기", systemImage: "arrow.clockwise")
-
+                    if library.isIndexing {
+                        HStack {
+                            ProgressView()
+                            Text("색인을 만드는 중입니다")
+                                .font(.scaled(.subheadline))
+                                .foregroundStyle(Palette.inkFaint)
+                        }
+                    } else {
+                        Button {
+                            Task { await library.rebuildIndex() }
+                        } label: {
+                            Label("색인 다시 만들기", systemImage: "arrow.clockwise")
+                        }
                     }
 
                 } header: {
@@ -121,15 +128,28 @@ struct DiagnosticsView: View {
 
                 if !library.events.isEmpty {
                     Section {
-                        ForEach(Array(library.events.prefix(20).enumerated()), id: \.offset) { _, event in
+                        // **다섯 줄만** (T9). 시험할 때 목록이 길어 그 아래 단추까지 내려가야 했다.
+                        let shown = showsAllEvents ? library.events.count : min(5, library.events.count)
+                        ForEach(Array(library.events.prefix(shown).enumerated()), id: \.offset) { _, event in
                             Text(event)
                                 .font(.scaledMono(.caption))
                                 .foregroundStyle(Palette.ink)
                         }
+                        if library.events.count > 5 {
+                            Button(showsAllEvents ? "접기" : "더 보기 (\(library.events.count)줄)") {
+                                showsAllEvents.toggle()
+                            }
+                        }
+                        Button(role: .destructive) {
+                            library.clearEvents()
+                            showsAllEvents = false
+                        } label: {
+                            Text("최근 일 지우기")
+                        }
                     } header: {
                         Text("최근 일")
                     } footer: {
-                        Text("충돌 · 저장 실패 · 다른 기기의 변경이 여기 쌓입니다. 빨간 띠가 떴는데 이유를 모르겠으면 이것을 복사해 보내 주세요.")
+                        Text("충돌 · 저장 실패 · 다른 기기의 변경이 여기 쌓입니다. 빨간 띠가 떴는데 이유를 모르겠으면 이것을 복사해 보내 주세요. **복사 단추는 접혀 있어도 갖고 있는 전부를 복사합니다.**")
                     }
                 }
 

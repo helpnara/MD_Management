@@ -35,7 +35,28 @@ final class LibraryModel: ObservableObject {
 
     /// 최상위는 빈 문자열.
     @Published var selectedFolder = ""
-    @Published var selectedNoteID: String?
+    @Published var selectedNoteID: String? {
+        didSet {
+            // 목록에서 다른 노트를 고르면 링크 자취를 접는다 (T7). 링크로 가는 길은
+            // `openLinked` 가 **먼저** `linkedNote` 를 세우므로 여기서 안 접힌다.
+            guard selectedNoteID != linkedNote?.relativePath else { return }
+            linkedNote = nil
+            linkTrail = []
+        }
+    }
+
+    /// **목록에 없는데 상세 칸에 떠 있는 노트** (T7). 링크를 따라온 것 — `assets/` 안의
+    /// `.md` 처럼 폴더 목록에 안 보이는 자리에 있을 수 있다.
+    @Published private(set) var linkedNote: NoteSummary?
+
+    /// 링크를 따라오기 **전에 어디에 있었나.** 뒤로 갈 때 폴더 · 노트 · 모드를 되살린다.
+    struct LinkStep: Equatable, Sendable {
+        let folder: String
+        let notePath: String?
+        let linked: Bool
+        let wasReading: Bool
+    }
+    @Published private(set) var linkTrail: [LinkStep] = []
     /// 커서가 **제목 줄**에 있나 (89). 그 줄에 있는 동안에는 파일명을 바꾸지 않는다 —
     /// 치는 중간마다 바꾸면 `제` · `제주` · `제주 일` 로 파일이 계속 옮겨지고,
     /// iCloud 가 그 하나하나를 퍼뜨려 충돌을 부른다. **떠날 때 한 번** 바꾼다.
@@ -67,8 +88,11 @@ final class LibraryModel: ObservableObject {
 
     /// 열 때 첫 줄 제목을 파일명에 맞출까 (62). **켜짐이 기본.** 다른 앱과 같이 쓰는 폴더라면
     /// 끈다 — 여는 것만으로 파일이 고쳐지기 때문이다. `UserDefaults` 에 둔다.
-    @Published var alignsTitles: Bool = UserDefaults.standard.object(forKey: "title.align") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(alignsTitles, forKey: "title.align") }
+    /// **첫 줄을 파일명으로 따라가게 할까** (T6). 켜짐이 기본.
+    /// 예전 이름은 `alignsTitles` 였다 — 그때는 파일명이 본문을 이기는 반대 방향까지
+    /// 함께 켰다. 이제 방향은 하나뿐이라 이름도 그렇게 바꿨다.
+    @Published var syncsFileName: Bool = UserDefaults.standard.object(forKey: "title.align") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(syncsFileName, forKey: "title.align") }
     }
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
     @Published var isReading = false
@@ -186,7 +210,9 @@ final class LibraryModel: ObservableObject {
     var isSample: Bool { kind == .sample }
 
     var selectedNote: NoteSummary? {
-        notes.first { $0.id == selectedNoteID }
+        // 링크를 따라온 노트가 먼저다 — 목록(`notes`)에는 없을 수 있다 (T7).
+        if let linked = linkedNote, linked.id == selectedNoteID { return linked }
+        return notes.first { $0.id == selectedNoteID }
     }
 
     var folderName: String {
@@ -874,6 +900,9 @@ final class LibraryModel: ObservableObject {
     @Published private(set) var searchResults: [SearchHit] = []
     @Published private(set) var isSearching = false
     @Published private(set) var indexStatus = IndexStatus()
+    /// **색인이 도는 중인가** (T8). 표시가 없으면 사용자가 또 누르고, 누를 때마다
+    /// 앞 작업을 접고 처음부터 다시 만든다. 도는 동안 단추를 막는다.
+    @Published private(set) var isIndexing = false
     /// 마지막으로 목록을 읽는 데 걸린 시간 (S1) · 검색에 걸린 시간 (A5c). 진단에 보인다.
     @Published private(set) var listSeconds: Double = 0
     @Published private(set) var searchSeconds: Double = 0
@@ -921,8 +950,12 @@ final class LibraryModel: ObservableObject {
     /// 첫 색인은 뒤에서 돈다 — 목록은 기다리지 않는다 (S1).
     private func scheduleIndexRefresh() {
         indexTask?.cancel()
+        isIndexing = true
         indexTask = Task { [weak self] in
-            guard let self, let index = self.index, let store = self.store else { return }
+            guard let self else { return }
+            // 접힌 것이면 끄지 않는다 — 뒤이어 선 작업이 그 깃발의 임자다.
+            defer { if !Task.isCancelled { self.isIndexing = false } }
+            guard let index = self.index, let store = self.store else { return }
             // 색인은 폴더 **전체**를 안다 — 하위 폴더까지. 목록은 보고 있는 폴더뿐이다.
             let all = await store.allNotes()
             guard !Task.isCancelled else { return }
@@ -958,6 +991,9 @@ final class LibraryModel: ObservableObject {
         formatter.dateFormat = "HH:mm:ss"
         return formatter
     }()
+
+    /// 최근 일을 비운다 (T9). 새 시험을 시작할 때 묵은 줄을 치우면 방금 한 일만 남는다.
+    func clearEvents() { events.removeAll() }
 
     func log(_ message: String) {
         events.insert("\(Self.eventClock.string(from: Date())) \(message)", at: 0)
@@ -1264,7 +1300,7 @@ final class LibraryModel: ObservableObject {
     /// 그 뒤로는 `제목 2` 자리를 지킨다 (`FolderStore.rename` 의 `keeping`).
     /// 편집기는 건드리지 않는다 — `editorSession` 이 그대로라 커서도 키보드도 그대로다.
     private func followTitle(of text: String, at path: String) async {
-        guard let store, let heading = FrontMatterParser.firstHeading(of: text) else { return }
+        guard syncsFileName, let store, let heading = FrontMatterParser.firstLine(of: text) else { return }
         let wanted = Paths.safeFileName(heading, fallback: "")
         let fileName = path.split(separator: "/").last.map(String.init) ?? path
         guard !wanted.isEmpty, wanted != Paths.baseName(fileName) else { return }
@@ -1321,7 +1357,9 @@ final class LibraryModel: ObservableObject {
         }
         notes = Self.withPreviews(loaded, from: previews)
         scheduleIndexRefresh()
-        if let current = selectedNoteID, !loaded.contains(where: { $0.id == current }) {
+        // 링크를 따라온 노트는 목록에 없는 것이 맞다 — 지우지 않는다 (T7).
+        if let current = selectedNoteID, current != linkedNote?.relativePath,
+           !loaded.contains(where: { $0.id == current }) {
             selectedNoteID = nil
         }
         if selectedNoteID == nil, autoSelectsFirstNote {
@@ -1358,7 +1396,7 @@ final class LibraryModel: ObservableObject {
             log("열려 있는 노트를 다시 읽음 — 편집기가 글을 갈아 끼운다: \(note.relativePath)")
         }
         do {
-            var text = try await store.readText(at: note.relativePath)
+            let text = try await store.readText(at: note.relativePath)
             // **이 파일이 UTF-8 이었나.** 아니면 예전 인코딩으로 읽어 낸 것이고,
             // 여는 것만으로 고쳐 쓰면 남의 파일을 바꾸는 셈이다 (62를 건너뛴다).
             let encoding = await store.encoding(of: note.relativePath)
@@ -1373,20 +1411,12 @@ final class LibraryModel: ObservableObject {
                 log("이미 깨진 글자가 든 파일: \(note.relativePath)")
                 lastError = "이 노트에는 이미 깨진 글자가 있습니다. 파일이 그렇게 저장돼 있어 앱이 되살릴 수 없습니다."
             }
-            // **첫 줄 제목과 파일명을 맞춘다 — 파일명이 이긴다** (62). 밖에서 만든 파일이
-            // 여기로 들어오는 길목이다. 맞으면 아무것도 안 쓴다.
-            //
-            // **이미 들고 있던 노트에는 걸지 않는다** (103). 제목을 치는 동안 파일명은
-            // 아직 옛 이름이다 — 줄을 떠나야 바꾸기 때문이다(89). 그 사이에 이것이 돌면
-            // `# 팀 이슈회의` 를 `## 팀 이슈회의` 로 내리고 옛 이름을 위에 얹는다.
-            // **치는 도중에 글이 뒤집힌다.** 맞이하는 걸음은 열 때 한 번이면 된다.
+            // **앱은 본문을 고치지 않는다** (T6, 2026-09-16 사용자 결정). 예전에는 여기서
+            // 62(파일명이 이긴다)가 돌아 밖에서 온 파일의 `# 제목` 을 `## ` 로 내리고 파일명을
+            // 위에 얹었다. 자료 사고가 전부 거기서 나왔다 (빌드 20 · 1, 30 · 5, 32 · 103).
+            // 이제 맞추는 길은 **한 방향뿐이다 — 첫 줄이 파일명을 끌고 간다** (`followTitle`).
+            // 밖에서 온 파일은 이름이 달라도 **그대로 둔다.** 목록에는 첫 줄이 보인다.
             let isNewlyOpened = note.relativePath != draftPath
-            if alignsTitles, isUTF8, !broken, isNewlyOpened,
-               let fixed = FrontMatterParser.aligned(text, toFileName: note.fileName) {
-                try await store.writeText(fixed, to: note.relativePath)
-                text = fixed
-                log("제목을 파일명에 맞춤: \(note.relativePath)")
-            }
             noteText = text
             draft = text
             draftPath = note.relativePath
@@ -1435,28 +1465,55 @@ final class LibraryModel: ObservableObject {
     ///
     /// **목록에 없다고 없는 파일은 아니다** — 목록이 늦었을 수 있다. 그래서 폴더를 다시 읽고
     /// 고른다. 정말 없으면 그렇다고 말한다 (빌드 20 · 10 · 11번 — 링크로 열 때만 어긋났다).
+    /// **링크를 따라 다른 노트로 간다** (T7, 사용자 요청 — 메모 앱의 메모 간 링크처럼).
+    ///
+    /// **보고 있는 폴더를 건드리지 않는다.** 예전에는 그 파일의 폴더로 목록을 통째로 옮겨,
+    /// `assets/` 안의 `.md` 로 가면 목록이 `assets` 로 끌려갔다 (빌드 24 · 17번). 지금은
+    /// 상세 칸에만 띄우고, 왔던 자리를 **자취**에 쌓아 되돌아갈 수 있게 한다.
+    /// 도착하면 **편집 모드**다 — 돌아올 때는 떠날 때의 모드를 되살린다.
     func open(relativePath: String) async {
         guard let store else { return }
-        if let match = notes.first(where: { $0.relativePath == relativePath }) {
-            selectedNoteID = match.id
-            return
-        }
         guard await store.existingPaths(among: [relativePath]).contains(relativePath) else {
             log("링크가 가리키는 노트가 없음: \(relativePath)")
             lastError = "링크가 가리키는 노트가 폴더에 없습니다: \(relativePath)"
             return
         }
+        guard relativePath != selectedNoteID else { return }
         await save()
-        let folder = Paths.directory(of: relativePath)
-        if folder != selectedFolder {
-            // 다른 폴더의 노트다 — 그 폴더로 옮겨 간다. 목록은 `.task(id: selectedFolder)` 가 읽는다.
-            selectedNoteID = nil
-            selectedFolder = folder
+        var trail = linkTrail
+        trail.append(LinkStep(folder: selectedFolder, notePath: selectedNoteID,
+                              linked: linkedNote != nil, wasReading: isReading))
+        // 목록에 있으면 그 줄을 쓰고(선택 표시가 산다), 없으면 파일에서 요약을 만든다.
+        if let match = notes.first(where: { $0.relativePath == relativePath }) {
+            linkedNote = nil
+            selectedNoteID = match.id
         } else {
-            // 같은 폴더인데 목록에 없다 — 목록이 늦은 것. 지금 다시 읽는다.
+            linkedNote = await store.summary(of: relativePath)
+            selectedNoteID = relativePath
+        }
+        linkTrail = trail   // `selectedNoteID` 의 `didSet` 이 접은 것을 되돌린다.
+        isReading = false
+        log("링크를 따라 감: \(relativePath)")
+    }
+
+    /// **왔던 노트로 되돌아간다** (T7). 폴더 · 노트 · 모드를 떠날 때대로 되살린다.
+    func goBackAlongLink() async {
+        guard let step = linkTrail.popLast() else { return }
+        await save()
+        let trail = linkTrail
+        if step.folder != selectedFolder {
+            selectedFolder = step.folder
+            await reloadFolders()
             await reloadNotes()
         }
-        selectedNoteID = relativePath
+        if step.linked, let path = step.notePath, let store {
+            linkedNote = await store.summary(of: path)
+        } else {
+            linkedNote = nil
+        }
+        selectedNoteID = step.notePath
+        linkTrail = trail       // `selectedNoteID` 의 `didSet` 이 접은 것을 되돌린다.
+        isReading = step.wasReading
     }
 
     private func clearNote() {
