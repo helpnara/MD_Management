@@ -239,9 +239,23 @@ struct MarkdownEditor: UIViewRepresentable {
 
         /// 글자가 바뀌기 **전에** 조합 중인지 본다. 조합 중 속성 갱신은 조합을
         /// 끊는다. 여기서 세운 것이 맞는지는 **실기기만 판정할 수 있다** (S10).
+        /// 줄이 통째로 지워졌다 — 바뀐 뒤에 번호를 맞출 자리 (104).
+        private var pendingRenumber: Int?
+
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
             isComposing = textView.markedTextRange != nil
+            // **줄이 없어졌나.** 지워진 자리에 줄바꿈이 끼어 있으면 항목 하나가 사라진
+            // 것이다 — 아래 번호가 어긋난다. 바뀐 뒤(`textViewDidChange`)에 맞춘다.
+            // **커서가 줄을 떠날 때마다 맞추지 않는다** — 그러면 `6.` 다음에 손으로 친
+            // `5.` 까지 `7.` 로 덮는다 (빌드 32 · 7번, 사용자). 손으로 친 번호는 그대로 둔다.
+            if range.length > 0, !isRenumbering {
+                let storage = textView.textStorage.string as NSString
+                if NSMaxRange(range) <= storage.length,
+                   storage.substring(with: range).contains("\n") {
+                    pendingRenumber = range.location
+                }
+            }
             // 조합 중의 줄바꿈은 건드리지 않는다 — 조합을 끊는다.
             if text == "\n", !isComposing, continueList(in: textView, at: range) {
                 return false
@@ -446,12 +460,6 @@ struct MarkdownEditor: UIViewRepresentable {
                                                   previousHeader: headerLength, cursor: cursorHint)
             textView.textStorage.endEditing()
             isStyling = false
-
-            // **떠난 줄이 번호 목록이었다면 거기서 번호를 맞춘다** (104). 항목을 지운 자리가
-            // 여기로 온다 — 지우는 순간에 맞추면 치는 중에 숫자가 움직여 거슬린다.
-            if previous.length > 0, NSMaxRange(previous) <= text.length {
-                renumberList(around: previous.location, in: textView)
-            }
         }
 
         /// **편집이 끝났다** — 키보드가 내려갔거나 다른 곳으로 초점이 갔다 (빌드 29 · 2번).
@@ -541,6 +549,11 @@ struct MarkdownEditor: UIViewRepresentable {
                                                       touching: textView.selectedRange, with: sheet,
                                                       previousHeader: headerLength, cursor: cursorHint)
                 isStyling = false
+            }
+            // 줄이 없어졌으면 이제 번호를 맞춘다 (104).
+            if let location = pendingRenumber {
+                pendingRenumber = nil
+                if !composing { renumberList(around: location, in: textView) }
             }
             // **여기서 `loadedText` 를 갱신하지 않는다.** 갱신하면 "사용자가
             // 손대지 않았나" 가 늘 참이 되어, 뒤늦게 온 파일 글이 방금 친 것을
