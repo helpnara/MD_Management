@@ -98,6 +98,17 @@ final class LibraryModel: ObservableObject {
     @Published var isReading = false
     /// 이름을 바꾸는 중인 노트 · 새 이름. 화면의 알림창이 이것을 본다.
     @Published var renaming: NoteSummary?
+    /// **어느 노트를 어느 폴더로 옮길까** (T1). 링크를 고칠지 물어보는 창이 이것으로 뜬다.
+    struct Move: Identifiable, Equatable {
+        let note: NoteSummary
+        let folder: String
+        let links: Int
+        var id: String { note.relativePath + "→" + folder }
+    }
+    /// 폴더를 고르는 창 (아이폰 — 줄을 밀어 `이동`).
+    @Published var movingNote: NoteSummary?
+    /// 고칠 링크가 있어 물어보는 창.
+    @Published var moveConfirm: Move?
     @Published var renameText = ""
     /// 지울지 묻는 중인 노트. **모든 삭제에 확인** (CLAUDE.md §1).
     @Published var trashing: NoteSummary?
@@ -648,6 +659,43 @@ final class LibraryModel: ObservableObject {
             lastError = nil
         } catch {
             lastError = "폴더를 지우지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// **노트를 폴더로 옮긴다** (T1, 사용자 요청 — 아이패드는 끌어다 놓기, 아이폰은 줄 밀기).
+    ///
+    /// 폴더 안을 가리키는 링크가 있으면 **먼저 물어본다.** 링크를 고치는 것은 앱이 본문에
+    /// 손대는 일이라, 사용자가 그러라고 한 순간에만 한다 (107 에서 62 를 지운 까닭과 같다).
+    func beginMove(_ note: NoteSummary, to folder: String) async {
+        guard let store, Paths.directory(of: note.relativePath) != folder else { return }
+        let links = await store.folderLinkCount(of: note.relativePath)
+        if links == 0 {
+            await finishMove(Move(note: note, folder: folder, links: 0), rebasesLinks: false)
+        } else {
+            moveConfirm = Move(note: note, folder: folder, links: links)
+        }
+    }
+
+    /// 물어본 뒤 실제로 옮긴다. `rebasesLinks` 가 거짓이면 본문을 그대로 둔다 —
+    /// 그러면 사진과 첨부가 안 보이게 되지만, 그것도 사용자의 선택이다.
+    func finishMove(_ move: Move, rebasesLinks: Bool) async {
+        guard let store else { return }
+        moveConfirm = nil
+        movingNote = nil
+        await save()
+        do {
+            let moved = try await store.moveNote(move.note.relativePath, to: move.folder,
+                                                 rebasesLinks: rebasesLinks)
+            log("옮김: \(move.note.relativePath) → \(moved)"
+                + (rebasesLinks && move.links > 0 ? " (링크 \(move.links)개 고침)" : ""))
+            if draftPath == move.note.relativePath { clearNote() }
+            if selectedNoteID == move.note.relativePath { selectedNoteID = nil }
+            await reloadFolders()
+            await reloadNotes()
+            scheduleIndexRefresh()
+            lastError = nil
+        } catch {
+            lastError = "옮기지 못했습니다: \(error.localizedDescription)"
         }
     }
 

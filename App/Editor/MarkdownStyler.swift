@@ -94,7 +94,10 @@ enum MarkdownStyler {
         var markerWidth: CGFloat = 0
         if style.block == .listItem || style.block == .orderedItem,
            let marker = style.markers.first {
-            depth = marker.start / 2
+            // 앞 빈칸 **둘에 한 단계.** 탭 하나는 네 칸으로 센다 — 탭으로 들여쓴 줄이
+            // 한 단계도 안 들어간 것처럼 그려지던 자리다 (T4).
+            let prefixText = text.substring(with: NSRange(location: line.location, length: marker.start))
+            depth = prefixText.reduce(0) { $0 + ($1 == "\t" ? 4 : 1) } / 2
             let prefix = text.substring(with: NSRange(location: line.location + marker.start,
                                                       length: style.contentStart - marker.start))
             markerWidth = (prefix as NSString).size(withAttributes: [.font: sheet.body]).width

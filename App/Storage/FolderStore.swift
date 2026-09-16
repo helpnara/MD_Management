@@ -364,6 +364,47 @@ actor FolderStore {
         return try createNote(named: Paths.baseName(name), in: folder, text: text)
     }
 
+    /// **노트를 다른 폴더로 옮긴다** (T1, 사용자 요청).
+    ///
+    /// `rebasesLinks` 가 참이면 옮기기 **전에** 본문의 상대 링크를 새 자리에 맞춰 고친다
+    /// (`MarkdownLinks.rebased`). 앱이 본문을 고치는 유일한 자리이므로, 부르는 쪽이
+    /// **사용자에게 몇 개를 고칠지 먼저 알린 뒤에** 참으로 부른다 (107 에서 62 를 지운 까닭).
+    ///
+    /// 이름이 겹치면 `이름 2.md` 로 비켜 간다. 옮겨진 자리의 상대경로를 준다.
+    func moveNote(_ relativePath: String, to folder: String, rebasesLinks: Bool) throws -> String {
+        openScopeIfNeeded()
+        let from = Paths.directory(of: relativePath)
+        guard from != folder else { return relativePath }
+        let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
+
+        if rebasesLinks {
+            let text = try readText(at: relativePath)
+            let fixed = MarkdownLinks.rebased(text, from: from, to: folder)
+            if fixed != text { try writeText(fixed, to: relativePath, expecting: text) }
+        }
+
+        try createFolder(folder)
+        let target = uniqueRelativePath(name: name, in: folder)
+        try move(from: root.appendingPathComponent(relativePath),
+                 to: root.appendingPathComponent(target))
+        encodings[target] = encodings[relativePath]
+        encodings[relativePath] = nil
+        return target
+    }
+
+    /// 이 노트가 **폴더 안을 가리키는 링크**를 몇 개 갖고 있나 (T1).
+    /// 옮기기 전에 사용자에게 "링크 N개를 고칩니다" 라고 알리려고 센다.
+    func folderLinkCount(of relativePath: String) -> Int {
+        openScopeIfNeeded()
+        guard let text = try? readText(at: relativePath) else { return 0 }
+        let note = Paths.normalized(relativePath)
+        var count = 0
+        for link in MarkdownLinks.extract(from: text) {
+            if case .relative = Paths.resolve(link: link.destination, fromNoteAt: note) { count += 1 }
+        }
+        return count
+    }
+
     /// 안전 저장용 임시 파일 자리. **원본과 같은 볼륨의 교체 전용 폴더**여야 한다.
     ///
     /// 빌드 20 까지는 앱의 `tmp` 에 썼다. 그러면 `replaceItemAt` 이 자리를 맞바꾸지 못하고

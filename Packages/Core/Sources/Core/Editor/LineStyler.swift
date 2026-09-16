@@ -18,6 +18,8 @@ public enum StyleToken: String, Equatable, Sendable, CaseIterable {
     case inlineCode
     case link
     case image
+    /// `#태그` — 노란색으로 (T2). 마커가 아니라 **글자 전체**가 이것이다.
+    case tag
 
     /// 마크다운 마커(`#` `**` `-` `> ` …).
     /// **L1 은 흐리게, L2 는 숨긴다.** 문자열에서 지우지 않는다 (ADR-0005).
@@ -123,8 +125,14 @@ public enum LineStyler {
             leading += text[cursor] == "\t" ? 4 : 1
             cursor = text.index(after: cursor)
         }
-        // 네 칸 이상 들여쓴 줄은 코드다.
-        if leading >= 4 { return (.codeBlock, text.endIndex) }
+        // **목록 마커가 네 칸 규칙을 이긴다** (T4, 2026-09-16 사용자 — 개요가 두 단계에서
+        // 멈췄다). CommonMark 만 보면 `    - 셋째` 는 네 칸 들여쓴 **코드**가 맞다. 하지만
+        // 그것은 **앞 줄이 목록이었다는 문맥이 없을 때** 이야기다 — `LineStyler` 는 문단
+        // 하나만 보므로(ADR-0005) 그 문맥을 알 수 없다. 메모 앱에서 겹친 개요는 흔하고
+        // 네 칸 코드 블록은 드물다(코드는 ``` 울타리로 쓴다). 흔한 쪽을 고른다.
+        if leading >= 4, !startsListItem(text, from: cursor) {
+            return (.codeBlock, text.endIndex)
+        }
         guard cursor < text.endIndex else { return (nil, cursor) }
 
         // 제목
@@ -188,6 +196,26 @@ public enum LineStyler {
         }
 
         return (nil, cursor)
+    }
+
+    /// 여기서 목록 항목이 시작하나 — `- ` · `* ` · `+ ` · `1. ` · `1) `.
+    /// 네 칸 규칙보다 먼저 물어보는 자리다 (T4).
+    private static func startsListItem(_ text: String, from start: String.Index) -> Bool {
+        guard start < text.endIndex else { return false }
+        if text[start] == "-" || text[start] == "*" || text[start] == "+" {
+            let next = text.index(after: start)
+            return next < text.endIndex && text[next] == " "
+        }
+        guard text[start].isASCII, text[start].isNumber else { return false }
+        var digits = start
+        var count = 0
+        while digits < text.endIndex, text[digits].isASCII, text[digits].isNumber, count < 9 {
+            count += 1
+            digits = text.index(after: digits)
+        }
+        guard digits < text.endIndex, text[digits] == "." || text[digits] == ")" else { return false }
+        let after = text.index(after: digits)
+        return after < text.endIndex && text[after] == " "
     }
 
     /// `[ ]` · `[x]` 를 마커로 먹는다. 작업 목록 항목의 체크박스다.
@@ -259,6 +287,12 @@ public enum LineStyler {
             }
             if let found = scanEmphasis(text, at: cursor, to: end, markers: &markers) {
                 spans.append(contentsOf: found.spans)
+                cursor = found.next
+                continue
+            }
+            // `#태그` (T2). **코드 · 링크를 먼저 먹은 뒤**라 그 안의 `#` 은 여기 안 온다.
+            if character == "#", let found = scanTag(text, at: cursor, to: end) {
+                spans.append(found.span)
                 cursor = found.next
                 continue
             }
@@ -340,6 +374,22 @@ public enum LineStyler {
             spans.append(contentsOf: inlineScan(text, from: inner, to: close, markers: &markers))
         }
         return (spans, finish)
+    }
+
+    /// `#태그` 하나 — 규칙은 Core 의 `Tags` 가 정한다 (T2).
+    /// 여기서는 **이 자리에서 시작하나**만 물어본다.
+    private static func scanTag(_ text: String, at start: String.Index,
+                                to end: String.Index) -> (span: StyleSpan, next: String.Index)? {
+        let atStart = start == text.startIndex
+        guard atStart || text[text.index(before: start)].isWhitespace else { return nil }
+        var cursor = text.index(after: start)
+        var hasLetter = false
+        while cursor < end, Tags.isTagCharacter(text[cursor]) {
+            if !text[cursor].isNumber { hasLetter = true }
+            cursor = text.index(after: cursor)
+        }
+        guard cursor > text.index(after: start), hasLetter else { return nil }
+        return (span(text, start, cursor, .tag), cursor)
     }
 
     /// `**굵게**` · `*기울임*` · `~취소~` · `~~취소~~` · `***굵고 기울임***`.

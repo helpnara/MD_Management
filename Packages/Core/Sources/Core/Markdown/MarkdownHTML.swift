@@ -154,6 +154,27 @@ public enum MarkdownHTML {
         return out
     }
 
+    /// 글자를 이스케이프하면서 `#태그` 만 `<span class="yb-tag">` 으로 감싼다 (T2).
+    ///
+    /// **감싸는 껍데기는 우리가 쓴 것이고, 안의 글자는 이스케이프한 것이다.** 사용자 글이
+    /// HTML 이 되는 길은 열리지 않는다 (§안전 1겹).
+    public static func escapeMarkingTags(_ text: String) -> String {
+        let spans = Tags.scan(text)
+        guard !spans.isEmpty else { return escape(text) }
+        let utf16 = Array(text.utf16)
+        var out = ""
+        var cursor = 0
+        for span in spans {
+            guard span.start >= cursor, span.start + span.length <= utf16.count else { continue }
+            out += escape(String(decoding: utf16[cursor..<span.start], as: UTF16.self))
+            let tag = String(decoding: utf16[span.start..<(span.start + span.length)], as: UTF16.self)
+            out += "<span class=\"yb-tag\">" + escape(tag) + "</span>"
+            cursor = span.start + span.length
+        }
+        out += escape(String(decoding: utf16[cursor...], as: UTF16.self))
+        return out
+    }
+
     static func missingBox(label: String) -> String {
         "<span class=\"yb-missing\">\(escape(label))</span>"
     }
@@ -192,6 +213,10 @@ public enum MarkdownHTML {
        빌드 4 에서 점 · 체크박스가 한 줄, 글이 다음 줄로 갈라졌다. */
     li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.15em; }
     li:has(> input[type="checkbox"]) > p { display: inline; }
+    .yb-tag {
+      color: var(--yb-tag, #B88500);
+      font-weight: 600;
+    }
     blockquote {
       margin: 1em 0;
       padding: 0.1em 0 0.1em 0.9em;
@@ -260,7 +285,9 @@ private struct NoteRewriter: MarkupRewriter {
     // MARK: 이스케이프 (안전 1겹)
 
     mutating func visitText(_ text: Text) -> Markup? {
-        Text(MarkdownHTML.escape(text.string))
+        // **`#태그` 를 같은 색으로** (T2). 편집기와 읽기 모드가 다르게 그리면 그것이 곧
+        // 버그 자리다 (93 에서 배웠다). 규칙은 한 군데 — `Tags.scan` 이다.
+        Text(MarkdownHTML.escapeMarkingTags(text.string))
     }
 
     mutating func visitInlineCode(_ inlineCode: InlineCode) -> Markup? {

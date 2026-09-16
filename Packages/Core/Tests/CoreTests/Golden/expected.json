@@ -1007,6 +1007,99 @@
       "target": "회의록.md"
     }
   ],
+  "rebaseCases": [
+    {
+      "from": "",
+      "name": "최상위에서-하위로-첨부",
+      "rebased": "![스케치](../assets/a.png) 를 본다",
+      "text": "![스케치](assets/a.png) 를 본다",
+      "to": "회의"
+    },
+    {
+      "from": "회의",
+      "name": "하위에서-최상위로-첨부",
+      "rebased": "![스케치](회의/assets/a.png)",
+      "text": "![스케치](assets/a.png)",
+      "to": ""
+    },
+    {
+      "from": "회의",
+      "name": "다른-하위폴더로",
+      "rebased": "![스케치](../회의/assets/a.png) 와 [노트](../회의/기록.md)",
+      "text": "![스케치](assets/a.png) 와 [노트](기록.md)",
+      "to": "아이디어"
+    },
+    {
+      "from": "",
+      "name": "각괄호-빈칸이름",
+      "rebased": "[사진](<../assets/내 사진.png>)",
+      "text": "[사진](<assets/내 사진.png>)",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "바깥주소는-그대로",
+      "rebased": "[애플](https://apple.com) 과 [메일](mailto:a@b.c)",
+      "text": "[애플](https://apple.com) 과 [메일](mailto:a@b.c)",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "앵커만-그대로",
+      "rebased": "[절로](#머리말)",
+      "text": "[절로](#머리말)",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "앵커붙은-노트링크",
+      "rebased": "[절](../기록.md#정한-것)",
+      "text": "[절](기록.md#정한-것)",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "절대경로는-그대로",
+      "rebased": "[뿌리](/etc/passwd)",
+      "text": "[뿌리](/etc/passwd)",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "폴더밖은-그대로",
+      "rebased": "[밖](../바깥.png)",
+      "text": "[밖](../바깥.png)",
+      "to": "회의"
+    },
+    {
+      "from": "회의",
+      "name": "같은폴더면-안고친다",
+      "rebased": "![스케치](assets/a.png)",
+      "text": "![스케치](assets/a.png)",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "여러개-한줄에",
+      "rebased": "![a](../../assets/a.png) ![b](../../assets/b.png) 끝",
+      "text": "![a](assets/a.png) ![b](assets/b.png) 끝",
+      "to": "가/나"
+    },
+    {
+      "from": "",
+      "name": "링크없는글",
+      "rebased": "그냥 글이다. 괄호 (여기) 도 있다.",
+      "text": "그냥 글이다. 괄호 (여기) 도 있다.",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "겹친괄호-주소",
+      "rebased": "[그림](../assets/a(1).png)",
+      "text": "[그림](assets/a(1).png)",
+      "to": "회의"
+    }
+  ],
   "renumberCases": [
     {
       "fixes": [],
@@ -1668,6 +1761,176 @@
       "name": "취소선-셋이상",
       "spans": [],
       "text": "a~~~b~~~c"
+    },
+    {
+      "block": "listItem",
+      "content": "셋째 단계",
+      "name": "개요-셋째단계",
+      "spans": [],
+      "text": "    - 셋째 단계"
+    },
+    {
+      "block": "listItem",
+      "content": "넷째 단계",
+      "name": "개요-넷째단계",
+      "spans": [],
+      "text": "      - 넷째 단계"
+    },
+    {
+      "block": "orderedItem",
+      "content": "깊은 번호",
+      "name": "개요-깊은번호",
+      "spans": [],
+      "text": "    1. 깊은 번호"
+    },
+    {
+      "block": "listItem",
+      "content": "**굵은** 셋째",
+      "name": "개요-깊은강조",
+      "spans": [
+        {
+          "text": "굵은",
+          "token": "strong"
+        }
+      ],
+      "text": "    - **굵은** 셋째"
+    },
+    {
+      "block": "listItem",
+      "content": "깊은 할 일",
+      "name": "개요-깊은체크박스",
+      "spans": [],
+      "text": "    - [ ] 깊은 할 일"
+    }
+  ],
+  "tagCases": [
+    {
+      "name": "줄첫머리",
+      "tags": [
+        {
+          "length": 3,
+          "start": 0,
+          "text": "#회의"
+        }
+      ],
+      "text": "#회의 오늘 정한 것"
+    },
+    {
+      "name": "문장가운데",
+      "tags": [
+        {
+          "length": 3,
+          "start": 3,
+          "text": "#회의"
+        }
+      ],
+      "text": "오늘 #회의 에서 정했다"
+    },
+    {
+      "name": "여럿",
+      "tags": [
+        {
+          "length": 3,
+          "start": 0,
+          "text": "#회의"
+        },
+        {
+          "length": 3,
+          "start": 4,
+          "text": "#기획"
+        },
+        {
+          "length": 7,
+          "start": 8,
+          "text": "#2026계획"
+        }
+      ],
+      "text": "#회의 #기획 #2026계획"
+    },
+    {
+      "name": "제목은아니다",
+      "tags": [],
+      "text": "# 진짜 제목"
+    },
+    {
+      "name": "둘째제목도아니다",
+      "tags": [],
+      "text": "## 작은 제목"
+    },
+    {
+      "name": "낱말안은아니다",
+      "tags": [],
+      "text": "a#b 와 색#코드"
+    },
+    {
+      "name": "숫자만은아니다",
+      "tags": [],
+      "text": "#1 번과 #2026"
+    },
+    {
+      "name": "숫자섞이면태그",
+      "tags": [
+        {
+          "length": 7,
+          "start": 0,
+          "text": "#2026계획"
+        }
+      ],
+      "text": "#2026계획"
+    },
+    {
+      "name": "겹친태그",
+      "tags": [
+        {
+          "length": 5,
+          "start": 0,
+          "text": "#일/회의"
+        }
+      ],
+      "text": "#일/회의 로 나눈다"
+    },
+    {
+      "name": "밑줄과붙임표",
+      "tags": [
+        {
+          "length": 5,
+          "start": 0,
+          "text": "#내_태그"
+        },
+        {
+          "length": 5,
+          "start": 8,
+          "text": "#긴-이름"
+        }
+      ],
+      "text": "#내_태그 와 #긴-이름"
+    },
+    {
+      "name": "샵만",
+      "tags": [],
+      "text": "# 과 #"
+    },
+    {
+      "name": "이모지뒤",
+      "tags": [
+        {
+          "length": 3,
+          "start": 3,
+          "text": "#회의"
+        }
+      ],
+      "text": "🙂 #회의"
+    },
+    {
+      "name": "마침표에서끝",
+      "tags": [
+        {
+          "length": 3,
+          "start": 0,
+          "text": "#회의"
+        }
+      ],
+      "text": "#회의. 끝"
     }
   ]
 }

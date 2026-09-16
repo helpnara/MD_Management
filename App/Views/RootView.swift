@@ -99,6 +99,31 @@ private struct NoteActionAlerts: ViewModifier {
             // **모든 삭제에 확인.** 지우지 않고 `.trash/` 로 옮긴다 (CLAUDE.md §1).
             .alert("지울까요?", isPresented: trashPresented, presenting: library.trashing,
                    actions: trashActions, message: trashMessage)
+            // **링크를 고칠지 먼저 묻는다** (T1). 앱이 본문에 손대는 유일한 자리다.
+            .alert("링크를 고칠까요?", isPresented: movePresented, presenting: library.moveConfirm,
+                   actions: moveActions, message: moveMessage)
+            // 아이폰 — 줄을 밀어 `이동` 하면 폴더를 고른다.
+            .sheet(item: $library.movingNote) { note in
+                FolderPickerView(note: note)
+                    .environmentObject(library)
+            }
+    }
+
+    private var movePresented: Binding<Bool> {
+        Binding(get: { library.moveConfirm != nil }, set: { if !$0 { library.moveConfirm = nil } })
+    }
+
+    @ViewBuilder
+    private func moveActions(_ move: LibraryModel.Move) -> some View {
+        Button("고치고 옮기기") { Task { await library.finishMove(move, rebasesLinks: true) } }
+        Button("그냥 옮기기") { Task { await library.finishMove(move, rebasesLinks: false) } }
+        Button("취소", role: .cancel) { library.moveConfirm = nil }
+    }
+
+    private func moveMessage(_ move: LibraryModel.Move) -> some View {
+        Text("이 노트에는 폴더 안을 가리키는 링크가 \(move.links)개 있습니다. "
+             + "옮기면 자리가 달라지므로 링크도 새 자리에 맞춰 고쳐야 사진과 첨부가 보입니다. "
+             + "**그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다.")
     }
 
     private var renamePresented: Binding<Bool> {
@@ -265,9 +290,14 @@ private struct FolderSidebar: View {
         List(selection: $selection) {
             Section {
                 row(name: library.folderName, path: "", count: library.notes.count, isRoot: true)
+                    // 최상위로도 끌어다 놓을 수 있다 (T1).
+                    .dropDestination(for: String.self) { paths, _ in drop(paths, into: "") }
                 ForEach(library.folders) { folder in
                     row(name: folder.name, path: folder.relativePath, count: folder.noteCount, isRoot: false)
                         .swipeActions(edge: .trailing) { folderSwipeActions(for: folder) }
+                        .dropDestination(for: String.self) { paths, _ in
+                            drop(paths, into: folder.relativePath)
+                        }
                 }
             } footer: {
                 Label(library.kind.label, systemImage: icon(for: library.kind))
@@ -326,6 +356,15 @@ private struct FolderSidebar: View {
     }
 
     /// 하위 폴더에도 노트처럼 지우기 · 이름 (사용자 요청, 빌드 17). 최상위는 없다.
+    /// 끌어다 놓은 노트를 그 폴더로 (T1). 실을 수 있는 것은 **노트 경로 문자열**이다 —
+    /// 남의 앱에서 온 글자는 우리 목록에 없으므로 그냥 무시된다.
+    private func drop(_ paths: [String], into folder: String) -> Bool {
+        let notes = paths.compactMap { path in library.notes.first { $0.relativePath == path } }
+        guard let note = notes.first else { return false }
+        Task { await library.beginMove(note, to: folder) }
+        return true
+    }
+
     @ViewBuilder
     private func folderSwipeActions(for folder: FolderSummary) -> some View {
         // 노트 줄과 같은 이유로 `role: .destructive` 를 안 쓴다 (위 `swipeActions` 주석).
@@ -477,9 +516,17 @@ private struct NoteList: View {
             Label("이름", systemImage: "pencil.line")
         }
         .tint(Palette.accent)
+        // **이동** (T1). 아이패드는 폴더로 끌어다 놓아도 된다.
+        Button {
+            library.movingNote = note
+        } label: {
+            Label("이동", systemImage: "folder")
+        }
+        .tint(Palette.inkFaint)
     }
 
     private func row(for note: NoteSummary) -> some View {
+                // 아이패드에서 폴더로 끌어다 놓기 (T1). 싣는 것은 경로 하나다.
                 VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
                     HStack(spacing: Metrics.rowSpacing) {
                         Text(note.title)
@@ -507,6 +554,55 @@ private struct NoteList: View {
                         .foregroundStyle(Palette.inkFaint)
                 }
                 .padding(.vertical, 2)
+                // **끌어서 폴더로** (T1). 싣는 것은 경로 하나 — 폴더 줄이 그것을 받는다.
+                .draggable(note.relativePath)
+    }
+}
+
+/// **어느 폴더로 옮길까** (T1). 아이폰에는 끌어다 놓을 자리가 없어 목록으로 고른다.
+private struct FolderPickerView: View {
+    let note: NoteSummary
+    @EnvironmentObject private var library: LibraryModel
+    @Environment(\.dismiss) private var dismiss
+
+    private var current: String { Paths.directory(of: note.relativePath) }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    row(name: library.folderName, path: "")
+                    ForEach(library.folders) { folder in
+                        row(name: folder.name, path: folder.relativePath)
+                    }
+                } footer: {
+                    Text("**\(note.title)** 을 옮깁니다. 지금 있는 폴더는 고를 수 없습니다.")
+                        .font(.scaled(.caption))
+                }
+            }
+            .navigationTitle("어느 폴더로")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("취소") { library.movingNote = nil }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func row(name: String, path: String) -> some View {
+        Button {
+            Task { await library.beginMove(note, to: path) }
+        } label: {
+            Label {
+                Text(name).font(.scaled(.body))
+            } icon: {
+                Image(systemName: path.isEmpty ? "tray" : "folder")
+            }
+            .foregroundStyle(path == current ? Palette.inkFaint : Palette.ink)
+        }
+        .disabled(path == current)
     }
 }
 

@@ -22,6 +22,14 @@ enum Palette {
     static let accent = Color(uiColor: .tintColor)
     /// 인용 세로선 · 구분선
     static let rule = Color(uiColor: .separator)
+    /// `#태그` (T2). 편집기와 뷰어가 같은 색을 쓴다.
+    static let tag = Color(uiColor: tagUIColor)
+
+    static let tagUIColor = UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 1.00, green: 0.84, blue: 0.35, alpha: 1)
+            : UIColor(red: 0.72, green: 0.52, blue: 0.00, alpha: 1)
+    }
 
     // MARK: - 뷰어 CSS 로 넘기는 같은 토큰
 
@@ -61,6 +69,7 @@ enum Palette {
           --yb-ink-faint: \(hex(.secondaryLabel));
           --yb-accent: \(hex(.tintColor));
           --yb-rule: \(hex(.separator));
+          --yb-tag: \(hex(tagUIColor));
         """
     }
 }

@@ -36,6 +36,8 @@ STYLE_CASES = ROOT / "Tools" / "golden" / "style-cases.json"
 INDENT_CASES = ROOT / "Tools" / "golden" / "indent-cases.json"
 RENUMBER_CASES = ROOT / "Tools" / "golden" / "renumber-cases.json"
 LINK_CASES = ROOT / "Tools" / "golden" / "relative-link-cases.json"
+TAG_CASES = ROOT / "Tools" / "golden" / "tag-cases.json"
+REBASE_CASES = ROOT / "Tools" / "golden" / "rebase-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -436,12 +438,39 @@ def strip_checkbox(content: str) -> str:
     return content
 
 
+def list_marker_width(line: str) -> int | None:
+    """줄 첫머리의 목록 마커가 몇 칸인가 (앞 빈칸 제외). 목록이 아니면 `None`."""
+    rest = line.lstrip(" \t")
+    if rest[:2] in ("- ", "* ", "+ "):
+        return 2
+    digits = ""
+    for ch in rest:
+        if ch in "0123456789":
+            digits += ch
+        else:
+            break
+    if digits and len(digits) <= 9 and rest[len(digits):len(digits) + 2] in (". ", ") "):
+        return len(digits) + 2
+    return None
+
+
+def indent_width(line: str) -> int:
+    return sum(4 if ch == "\t" else 1 for ch in line[:len(line) - len(line.lstrip(" \t"))])
+
+
 def style_facts(line: str) -> dict:
     """한 줄의 블록 종류 · 마커 뗀 내용 · 강조 구간."""
     # 표는 여러 줄이라 한 줄만으로는 markdown-it 이 표로 읽지 않는다. 편집기는 줄
     # 단위라서 `|` 로 시작하면 표 줄로 보고 고정폭 원문 그대로 둔다 (ADR-0005).
     if line.strip().startswith("|"):
         return {"block": "tableRow", "content": "", "spans": []}
+
+    # **깊이 들여쓴 목록 줄은 문맥째로 물어본다** (T4). 한 줄만 주면 markdown-it 도
+    # 네 칸 이상을 코드로 읽는다 — 그것이 CommonMark 다. 하지만 파일에서는 앞 줄이
+    # 목록이므로 겹친 항목이 맞다. **조상 항목을 앞에 붙여** markdown-it 이 스스로
+    # `겹친 항목` 이라고 답하게 한다. 기댓값을 손으로 적지 않기 위해서다.
+    if indent_width(line) >= 4 and list_marker_width(line) is not None:
+        return style_facts_in_list_context(line)
 
     tokens = make_parser().parse(line)
     if not tokens:
@@ -466,6 +495,30 @@ def style_facts(line: str) -> dict:
     if block in ("listItem", "orderedItem"):
         content = strip_checkbox(content)
 
+    return {"block": block, "content": content, "spans": inline_spans(inline.children)}
+
+
+def style_facts_in_list_context(line: str) -> dict:
+    """조상 항목을 앞에 붙여 물어본 뒤, **마지막 항목**의 값을 쓴다."""
+    goal = indent_width(line)
+    # 두 칸에 한 단계씩 조상을 세운다: `- 조상`, `  - 조상`, …
+    context = "".join(f"{'  ' * step}- 조상\n" for step in range(goal // 2))
+    tokens = make_parser().parse(context + line)
+
+    block = None
+    for token in tokens:
+        if token.type == "bullet_list_open":
+            block = "listItem"
+        elif token.type == "ordered_list_open":
+            block = "orderedItem"
+    inline = None
+    for token in tokens:
+        if token.type == "inline":
+            inline = token
+    if block is None or inline is None:
+        raise SystemExit(f"문맥을 붙여도 목록으로 안 읽힌다 — {line!r}")
+
+    content = strip_checkbox(inline.content)
     return {"block": block, "content": content, "spans": inline_spans(inline.children)}
 
 
@@ -647,6 +700,135 @@ def build_link_cases() -> list[dict]:
     return out
 
 
+# ── `#태그` — 설계서의 규칙을 파이썬으로 다시 (빌드 34 · T2) ──────────────────
+
+TAG_EXTRA = "_-/"
+
+
+def is_tag_character(ch: str) -> bool:
+    return ch.isalnum() or ch in TAG_EXTRA
+
+
+def scan_tags(text: str) -> list[dict]:
+    """`#태그` 를 다 찾는다. UTF-16 오프셋.
+
+    1. `#` 앞이 줄 첫머리이거나 빈칸이다
+    2. 바로 뒤에 태그 글자가 온다
+    3. 숫자만인 것은 태그가 아니다
+    """
+    found = []
+    chars = list(text)
+    offset = 0
+    i = 0
+    while i < len(chars):
+        width = len(chars[i].encode("utf-16-le")) // 2
+        if chars[i] != "#" or not (i == 0 or chars[i - 1].isspace()):
+            offset += width
+            i += 1
+            continue
+        end = i + 1
+        length = 1
+        has_letter = False
+        while end < len(chars) and is_tag_character(chars[end]):
+            if not chars[end].isdigit():
+                has_letter = True
+            length += len(chars[end].encode("utf-16-le")) // 2
+            end += 1
+        if length > 1 and has_letter:
+            found.append({"start": offset, "length": length,
+                          "text": "".join(chars[i:end])})
+            offset += length
+            i = end
+            continue
+        offset += width
+        i += 1
+    return found
+
+
+def build_tag_cases() -> list[dict]:
+    spec = json.loads(TAG_CASES.read_text(encoding="utf-8"))
+    return [{"name": case["name"], "text": case["text"], "tags": scan_tags(case["text"])}
+            for case in spec["cases"]]
+
+
+# ── 옮길 때 링크 고치기 — 설계서의 규칙을 파이썬으로 다시 (빌드 34 · T1) ──────
+
+
+def read_destination(text: str, start: int):
+    """`](` 바로 뒤에서 닫는 `)` 까지. `<…>` 와 겹친 괄호를 다룬다."""
+    if start >= len(text):
+        return None
+    if text[start] == "<":
+        i = start + 1
+        while i < len(text) and text[i] != ">":
+            if text[i] == "\n":
+                return None
+            i += 1
+        if i >= len(text) or i + 1 >= len(text) or text[i + 1] != ")":
+            return None
+        return text[start:i + 1], i + 1
+    depth = 0
+    i = start
+    while i < len(text):
+        ch = text[i]
+        if ch == "\n":
+            return None
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            if depth == 0:
+                return text[start:i], i
+            depth -= 1
+        i += 1
+    return None
+
+
+def rebase_one(raw: str, note: str, new_folder: str) -> str:
+    wrapped = len(raw) >= 2 and raw.startswith("<") and raw.endswith(">")
+    inner = raw[1:-1] if wrapped else raw
+    anchor = ""
+    target = inner
+    hash_at = inner.find("#")
+    if hash_at > 0:
+        anchor = inner[hash_at:]
+        target = inner[:hash_at]
+    got = resolve(target, note)
+    if got["kind"] != "relative":
+        return raw
+    link = relative_link(new_folder, got["value"]) + anchor
+    return "<" + link + ">" if (wrapped or " " in link) else link
+
+
+def rebase_links(text: str, old_folder: str, new_folder: str) -> str:
+    if old_folder == new_folder:
+        return text
+    note = "노트.md" if not old_folder else old_folder + "/노트.md"
+    out = []
+    cursor = 0
+    while True:
+        bracket = text.find("](", cursor)
+        if bracket < 0:
+            break
+        out.append(text[cursor:bracket + 2])
+        cursor = bracket + 2
+        piece = read_destination(text, cursor)
+        if piece is None:
+            continue
+        raw, end = piece
+        out.append(rebase_one(raw, note, new_folder))
+        out.append(text[end])
+        cursor = end + 1
+    out.append(text[cursor:])
+    return "".join(out)
+
+
+def build_rebase_cases() -> list[dict]:
+    spec = json.loads(REBASE_CASES.read_text(encoding="utf-8"))
+    return [{"name": case["name"], "text": case["text"], "from": case["from"], "to": case["to"],
+             "rebased": rebase_links(case["text"], case["from"], case["to"])}
+            for case in spec["cases"]]
+
+
 # ── 만들기 ───────────────────────────────────────────────────────────────────
 
 def resolved_entry(link: dict, note_path: str) -> dict:
@@ -696,6 +878,8 @@ def build() -> dict:
         "indentCases": build_indent_cases(),
         "renumberCases": build_renumber_cases(),
         "linkCases": build_link_cases(),
+        "tagCases": build_tag_cases(),
+        "rebaseCases": build_rebase_cases(),
     }
 
 
@@ -719,7 +903,9 @@ def main() -> int:
         print(f"기댓값 {len(loaded['cases'])}건 · 줄 모양 {len(loaded['styleCases'])}건"
               f" · 들여쓰기 {len(loaded['indentCases'])}건"
               f" · 번호 {len(loaded['renumberCases'])}건"
-              f" · 상대 링크 {len(loaded['linkCases'])}건 — 커밋된 것과 같습니다.")
+              f" · 상대 링크 {len(loaded['linkCases'])}건"
+              f" · 태그 {len(loaded['tagCases'])}건"
+              f" · 옮기기 {len(loaded['rebaseCases'])}건 — 커밋된 것과 같습니다.")
         return 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -729,7 +915,9 @@ def main() -> int:
           f" · 줄 모양 {len(loaded['styleCases'])}건"
           f" · 들여쓰기 {len(loaded['indentCases'])}건"
           f" · 번호 {len(loaded['renumberCases'])}건"
-          f" · 상대 링크 {len(loaded['linkCases'])}건")
+          f" · 상대 링크 {len(loaded['linkCases'])}건"
+          f" · 태그 {len(loaded['tagCases'])}건"
+          f" · 옮기기 {len(loaded['rebaseCases'])}건")
     return 0
 
 

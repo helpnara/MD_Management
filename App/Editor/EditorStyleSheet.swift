@@ -21,6 +21,8 @@ struct EditorStyleSheet {
     let markerInk: UIColor
     let quoteInk: UIColor
     let linkInk: UIColor
+    /// `#태그` 의 색 (T2). 노란색은 흰 바탕에서 옅으므로 **다크 모드와 라이트 모드를 따로** 잡는다.
+    let tagInk: UIColor
     let codeBackground: UIColor
 
     let plainParagraph: NSParagraphStyle
@@ -54,6 +56,11 @@ struct EditorStyleSheet {
         markerInk = .tertiaryLabel
         quoteInk = .secondaryLabel
         linkInk = .tintColor
+        tagInk = UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(red: 1.00, green: 0.84, blue: 0.35, alpha: 1)     // 어두운 바탕 — 밝은 노랑
+                : UIColor(red: 0.72, green: 0.52, blue: 0.00, alpha: 1)     // 밝은 바탕 — 짙은 겨자
+        }
         codeBackground = .secondarySystemBackground
 
         let spacing = Metrics.scaledLength(2)
@@ -146,6 +153,9 @@ struct EditorStyleSheet {
             text.addAttribute(.backgroundColor, value: codeBackground, range: range)
         case .link, .image:
             text.addAttribute(.foregroundColor, value: linkInk, range: range)
+        case .tag:
+            // `#태그` — 노란색 (T2). 글꼴은 안 건드린다. 줄 높이가 달라지면 커서가 튄다.
+            text.addAttribute(.foregroundColor, value: tagInk, range: range)
         default:
             break
         }
