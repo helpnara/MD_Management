@@ -46,9 +46,13 @@ struct MarkdownEditor: UIViewRepresentable {
     /// 커서가 편집기에 붙었나 · 떨어졌나 (98). 아이폰에는 키보드를 내릴 길이 없어
     /// 이 값으로 `키보드 내리기` 단추를 띄운다.
     var onFocusChanged: @MainActor (Bool) -> Void = { _ in }
+    /// 커서가 있는 줄이 **사진 줄**이면 그 주소 (ADR-0005 의 L3 후퇴판).
+    /// 편집기 안에 사진을 그리는 대신, 아래 띠에 작게 띄우고 눌러서 전체화면으로 본다.
+    var onImageLineChanged: @MainActor (String?) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged, onFocus: onFocusChanged)
+        Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
+                    onFocus: onFocusChanged, onImageLine: onImageLineChanged)
     }
 
     func makeUIView(context: Context) -> UITextView {
@@ -90,6 +94,7 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.onEdit = onEdit
         coordinator.onTitleLine = onTitleLineChanged
         coordinator.onFocus = onFocusChanged
+        coordinator.onImageLine = onImageLineChanged
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
@@ -100,6 +105,9 @@ struct MarkdownEditor: UIViewRepresentable {
         var onEdit: @MainActor (String) -> Void
         var onTitleLine: @MainActor (Bool) -> Void
         var onFocus: @MainActor (Bool) -> Void
+        var onImageLine: @MainActor (String?) -> Void
+        /// 마지막으로 알린 사진 주소. 바뀔 때만 알린다.
+        private var lastImageLine: String??
         /// 마지막으로 알린 값. 바뀔 때만 알린다.
         private var wasOnTitleLine = false
         weak var view: UITextView?
@@ -126,10 +134,28 @@ struct MarkdownEditor: UIViewRepresentable {
 
         init(onEdit: @escaping @MainActor (String) -> Void,
              onTitleLine: @escaping @MainActor (Bool) -> Void,
-             onFocus: @escaping @MainActor (Bool) -> Void) {
+             onFocus: @escaping @MainActor (Bool) -> Void,
+             onImageLine: @escaping @MainActor (String?) -> Void) {
             self.onEdit = onEdit
             self.onTitleLine = onTitleLine
             self.onFocus = onFocus
+            self.onImageLine = onImageLine
+        }
+
+        /// **커서 줄에 사진이 있나** (L3 후퇴판). 규칙은 Core 의 `MarkdownLinks` 가 정한다 —
+        /// 줄 하나만 주고 첫 그림 링크의 주소를 가져온다. 바뀔 때만 바깥에 알린다.
+        func reportImageLine(_ textView: UITextView) {
+            let text = textView.textStorage.string as NSString
+            var found: String?
+            if text.length > 0 {
+                let location = min(textView.selectedRange.location, text.length)
+                let line = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+                found = MarkdownLinks.extract(from: text.substring(with: line))
+                    .first { $0.kind == .image }?.destination
+            }
+            guard lastImageLine != .some(found) else { return }
+            lastImageLine = .some(found)
+            onImageLine(found)
         }
 
         /// 커서가 제목 줄에 있나 — 머리말 뒤 **첫 문단**이 제목 줄이다.
@@ -441,6 +467,7 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 조합 중에는 건드리지 않는다 — 조합이 끊긴다 (S10).
         func textViewDidChangeSelection(_ textView: UITextView) {
             reportTitleLine(textView)
+            reportImageLine(textView)
             guard !isStyling, !isComposing, textView.markedTextRange == nil, let sheet else { return }
             let text = textView.textStorage.string as NSString
             guard text.length > 0 else { return }
@@ -494,6 +521,7 @@ struct MarkdownEditor: UIViewRepresentable {
             DispatchQueue.main.async { [weak self, weak textView] in
                 guard let self, let textView, textView.isFirstResponder else { return }
                 self.showMarkersOnCursorLine(textView)
+                self.reportImageLine(textView)
             }
         }
 

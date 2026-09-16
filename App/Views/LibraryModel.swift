@@ -45,6 +45,19 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    /// **고정된 노트** (T10). 목록 맨 위에 따로 선다. 폴더 안 숨김 파일에 적어 두므로
+    /// iCloud 로 따라가고 본문은 한 글자도 안 건드린다.
+    @Published private(set) var pinned: [String] = []
+
+    /// 고정된 것 · 아닌 것으로 가른 목록. 화면은 이 둘만 그린다.
+    var pinnedNotes: [NoteSummary] {
+        pinned.compactMap { path in notes.first { $0.relativePath == path } }
+    }
+    var looseNotes: [NoteSummary] {
+        let set = Set(pinned)
+        return notes.filter { !set.contains($0.relativePath) }
+    }
+
     /// **목록에 없는데 상세 칸에 떠 있는 노트** (T7). 링크를 따라온 것 — `assets/` 안의
     /// `.md` 처럼 폴더 목록에 안 보이는 자리에 있을 수 있다.
     @Published private(set) var linkedNote: NoteSummary?
@@ -308,6 +321,7 @@ final class LibraryModel: ObservableObject {
         rootPath = choice.url.path
         selectedFolder = ""
         selectedNoteID = nil
+        await reloadPins()
         await reloadFolders()
         await reloadNotes()
 
@@ -635,6 +649,7 @@ final class LibraryModel: ObservableObject {
         await save()
         do {
             let moved = try await store.renameFolder(folder.relativePath, to: name)
+            pinned = await store.followPins(from: folder.relativePath, to: moved)
             let wasViewing = selectedFolder == folder.relativePath
             if wasViewing { selectedNoteID = nil }
             await reloadFolders()
@@ -654,12 +669,68 @@ final class LibraryModel: ObservableObject {
             let wasViewing = selectedFolder == folder.relativePath
             if wasViewing { selectedNoteID = nil }
             _ = try await store.trashFolder(folder.relativePath)
+            pinned = await store.unpin(folder.relativePath)
             await reloadFolders()
             if wasViewing { selectedFolder = "" }
             lastError = nil
         } catch {
             lastError = "폴더를 지우지 못했습니다: \(error.localizedDescription)"
         }
+    }
+
+    // MARK: - 커서 줄의 사진 (ADR-0005 L3 후퇴판)
+
+    /// **커서가 사진 줄에 있을 때 그 사진** (L3 후퇴판). 편집기 안에 그리는 대신
+    /// 아래 띠에 작게 띄우고, 누르면 전체화면으로 본다. ADR-0005 에 적어 둔 물러설 길이다 —
+    /// TextKit 2 프래그먼트(L3 본판)는 여기서 컴파일해 볼 수 없는 자리라 이쪽을 먼저 놓는다.
+    @Published private(set) var cursorImage: CursorImage?
+
+    struct CursorImage: Equatable, Identifiable {
+        let path: String
+        let image: Data
+        var id: String { path }
+    }
+
+    private var imageLineTask: Task<Void, Never>?
+
+    /// 편집기가 커서 줄의 그림 주소를 알려 준다. 폴더 안의 것만 띄운다 —
+    /// 바깥 주소는 우리가 읽을 수 없고, 없는 파일은 읽기 모드가 이미 알린다.
+    func cursorImageLineChanged(_ destination: String?) {
+        imageLineTask?.cancel()
+        guard let destination, let store, let note = draftPath else {
+            cursorImage = nil
+            return
+        }
+        guard case .relative(let path) = Paths.resolve(link: destination, fromNoteAt: note) else {
+            cursorImage = nil
+            return
+        }
+        if cursorImage?.path == path { return }
+        imageLineTask = Task { [weak self] in
+            let data = await store.data(forRelativePath: path)
+            guard !Task.isCancelled, let self else { return }
+            self.cursorImage = data.map { CursorImage(path: path, image: $0) }
+        }
+    }
+
+    /// 고정하거나 푼다 (T10). 고정한 차례가 곧 위에서 아래 차례다.
+    func togglePin(_ note: NoteSummary) async {
+        guard let store else { return }
+        let path = note.relativePath
+        if pinned.contains(path) {
+            pinned = await store.writePins(pinned.filter { $0 != path }, mergingDisk: false)
+            log("고정 품: \(path)")
+        } else {
+            // 새로 고정한 것을 **맨 앞**에 — 방금 고정한 것이 먼저 보인다.
+            pinned = await store.writePins([path] + pinned, mergingDisk: false)
+            log("고정함: \(path)")
+        }
+    }
+
+    /// 폴더를 열 때 · 다른 기기의 변경을 따라갈 때 다시 읽는다.
+    func reloadPins() async {
+        guard let store else { return }
+        pinned = await store.readPins()
     }
 
     /// **노트를 폴더로 옮긴다** (T1, 사용자 요청 — 아이패드는 끌어다 놓기, 아이폰은 줄 밀기).
@@ -686,6 +757,7 @@ final class LibraryModel: ObservableObject {
         do {
             let moved = try await store.moveNote(move.note.relativePath, to: move.folder,
                                                  rebasesLinks: rebasesLinks)
+            pinned = await store.followPins(from: move.note.relativePath, to: moved)
             log("옮김: \(move.note.relativePath) → \(moved)"
                 + (rebasesLinks && move.links > 0 ? " (링크 \(move.links)개 고침)" : ""))
             if draftPath == move.note.relativePath { clearNote() }
@@ -715,6 +787,7 @@ final class LibraryModel: ObservableObject {
         await save()
         do {
             let moved = try await store.rename(note.relativePath, to: name)
+            pinned = await store.followPins(from: note.relativePath, to: moved)
             // **파일명을 바꾸면 첫 줄 제목이 따라간다** (54 의 반대 방향, 빌드 16 · 2번).
             // 열려 있던 노트는 `save()` 로 먼저 비웠으므로 파일이 최신이다. 파일을 고치고
             // 다시 읽는다 — 편집기는 새 글을 받는다 (이름 바꾸기 창에서 왔으니 커서는 잃어도 된다).
@@ -736,6 +809,7 @@ final class LibraryModel: ObservableObject {
         await save()
         do {
             _ = try await store.trash(note.relativePath)
+            pinned = await store.unpin(note.relativePath)
             if selectedNoteID == note.id { selectedNoteID = nil }
             await reloadNotes()
             lastError = nil
@@ -1210,6 +1284,8 @@ final class LibraryModel: ObservableObject {
         // 아이폰에서 지운 것이 안 사라졌다). 목록을 실제로 읽어 다르면 그때만 반영한다.
         if Date().timeIntervalSince(lastFolderSweep) > 15 {
             lastFolderSweep = Date()
+            // 다른 기기에서 고정한 것도 여기서 따라온다 (T10).
+            await reloadPins()
             await reloadFolders()
             if !isDirty {
                 let fresh = await store.notes(in: selectedFolder)
@@ -1382,6 +1458,8 @@ final class LibraryModel: ObservableObject {
         do {
             let moved = try await store.rename(path, to: wanted)
             guard moved != path else { return }
+            // 이름이 바뀌면 고정도 따라간다 (T10) — 안 그러면 제목을 고쳤을 때 고정이 풀린다.
+            pinned = await store.followPins(from: path, to: moved)
             if draftPath == path {
                 draftPath = moved
                 draftStamp = await store.stamp(of: moved)
@@ -1593,6 +1671,7 @@ final class LibraryModel: ObservableObject {
 
     private func clearNote() {
         noteIsDownloading = false
+        cursorImage = nil
         noteText = ""
         draft = ""
         draftPath = nil

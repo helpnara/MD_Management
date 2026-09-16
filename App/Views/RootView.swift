@@ -419,10 +419,25 @@ private struct NoteList: View {
     var body: some View {
         List(selection: $library.selectedNoteID) {
             if library.searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-                ForEach(library.notes) { note in
-                    row(for: note)
-                        .tag(note.id)
-                        .swipeActions(edge: .trailing) { swipeActions(for: note) }
+                // **고정된 노트** (T10, 메모 앱처럼). 없으면 구역 자체가 안 보인다.
+                if !library.pinnedNotes.isEmpty {
+                    Section("고정된 노트") {
+                        ForEach(library.pinnedNotes) { note in
+                            row(for: note)
+                                .tag(note.id)
+                                .swipeActions(edge: .trailing) { swipeActions(for: note) }
+                        }
+                    }
+                }
+                Section {
+                    ForEach(library.looseNotes) { note in
+                        row(for: note)
+                            .tag(note.id)
+                            .swipeActions(edge: .trailing) { swipeActions(for: note) }
+                    }
+                } header: {
+                    // 고정이 없을 때는 머리글도 없다 — 구역이 하나뿐이면 이름이 군더더기다.
+                    if !library.pinnedNotes.isEmpty { Text("노트") }
                 }
             } else {
                 // 검색 결과 — 파일명 일치가 앞, 본문 일치가 뒤 (설계서 §6-E). 폴더 전체를 본다.
@@ -523,6 +538,14 @@ private struct NoteList: View {
             Label("이동", systemImage: "folder")
         }
         .tint(Palette.inkFaint)
+        // **고정** (T10). 고정한 차례가 곧 위에서 아래 차례다.
+        Button {
+            Task { await library.togglePin(note) }
+        } label: {
+            let isPinned = library.pinned.contains(note.relativePath)
+            Label(isPinned ? "고정 해제" : "고정", systemImage: isPinned ? "pin.slash" : "pin")
+        }
+        .tint(Palette.accent)
     }
 
     private func row(for note: NoteSummary) -> some View {
@@ -532,6 +555,12 @@ private struct NoteList: View {
                         Text(note.title)
                             .font(.scaled(.body, weight: .medium))
                             .foregroundStyle(Palette.ink)
+                        if library.pinned.contains(note.relativePath) {
+                            // 고정된 줄 (T10). 고정 구역 밖(검색 결과)에서도 알아볼 수 있게.
+                            Image(systemName: "pin.fill")
+                                .font(.scaled(.caption))
+                                .foregroundStyle(Palette.inkFaint)
+                        }
                         if !note.isDownloaded {
                             // iCloud 에 있지만 아직 안 내려온 파일 (설계서 §7.1).
                             // **글자를 함께 둔다** — 아이콘만으로는 눈에 안 띈다. 아이폰은 상세가
@@ -728,7 +757,37 @@ private struct NoteDetail: View {
                 insertion: library.insertion,
                 onInserted: { library.insertion = nil },
                 onTitleLineChanged: { library.cursorOnTitleLine = $0 },
-                onFocusChanged: { library.editorHasFocus = $0 })
+                onFocusChanged: { library.editorHasFocus = $0 },
+                onImageLineChanged: library.cursorImageLineChanged)
+            // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
+            // **키보드 툴바를 쓰지 않는다** — `safeAreaInset` 으로 화면 안에 그린다 (CLAUDE.md §1).
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if let found = library.cursorImage, let image = UIImage(data: found.image) {
+                    Button {
+                        Task { await library.previewAttachment(found.path) }
+                    } label: {
+                        HStack(spacing: Metrics.rowSpacing) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: Metrics.scaledLength(44), height: Metrics.scaledLength(44))
+                                .clipShape(RoundedRectangle(cornerRadius: Metrics.scaledLength(6)))
+                            Text(found.path.split(separator: "/").last.map(String.init) ?? found.path)
+                                .font(.scaled(.caption))
+                                .foregroundStyle(Palette.inkFaint)
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                .font(.scaled(.caption))
+                                .foregroundStyle(Palette.inkFaint)
+                        }
+                        .padding(.horizontal, Metrics.gutter)
+                        .padding(.vertical, Metrics.rowSpacing)
+                    }
+                    .buttonStyle(.plain)
+                    .background(Palette.paperRaised)
+                }
+            }
         }
     }
 

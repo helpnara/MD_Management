@@ -405,6 +405,49 @@ actor FolderStore {
         return count
     }
 
+    // MARK: - 고정된 노트 (T10)
+
+    /// 적어 둔 고정 목록. 없거나 깨졌으면 빈 목록 — 고정은 잃어도 자료가 아니다.
+    func readPins() -> [String] {
+        openScopeIfNeeded()
+        let url = root.appendingPathComponent(Pins.fileName)
+        var data: Data?
+        coordinateRead(url) { readURL in data = try? Data(contentsOf: readURL) }
+        guard let data else { return [] }
+        return Pins.decode(data)
+    }
+
+    /// **이름이 바뀌거나 옮겨졌을 때 고정도 따라간다** (T10). 부르는 쪽이 옛 자리와 새
+    /// 자리를 다 아는 자리에서 부른다 — `rename` · `moveNote` · `followTitle` · `renameFolder`.
+    @discardableResult
+    func followPins(from old: String, to new: String) -> [String] {
+        let moved = Pins.following(readPins(), from: old, to: new)
+        return writePins(moved, mergingDisk: false)
+    }
+
+    /// 휴지통으로 갔거나 영영 지워졌다 — 고정에서 뺀다.
+    @discardableResult
+    func unpin(_ gone: String) -> [String] {
+        let left = Pins.removing(readPins(), at: gone)
+        return writePins(left, mergingDisk: false)
+    }
+
+    /// **디스크에 있는 것과 합쳐서** 적는다 (T10). 두 기기가 각각 고정하면 파일이
+    /// 부딪히는데, 고정 목록은 집합이라 **합치면 된다** — 노트 본문처럼 판본을 꺼낼 일이 없다.
+    /// 그래서 쓰기 전에 한 번 더 읽는다.
+    @discardableResult
+    func writePins(_ paths: [String], mergingDisk: Bool = true) -> [String] {
+        openScopeIfNeeded()
+        let settled = mergingDisk ? Pins.merged(paths, readPins()) : Pins.tidy(paths)
+        do {
+            try createFolder(Pins.folder)
+            try writeData(Pins.encode(settled), to: Pins.fileName)
+        } catch {
+            // 고정을 못 적어도 노트는 멀쩡하다. 조용히 물러난다.
+        }
+        return settled
+    }
+
     /// 안전 저장용 임시 파일 자리. **원본과 같은 볼륨의 교체 전용 폴더**여야 한다.
     ///
     /// 빌드 20 까지는 앱의 `tmp` 에 썼다. 그러면 `replaceItemAt` 이 자리를 맞바꾸지 못하고

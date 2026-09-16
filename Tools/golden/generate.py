@@ -38,6 +38,7 @@ RENUMBER_CASES = ROOT / "Tools" / "golden" / "renumber-cases.json"
 LINK_CASES = ROOT / "Tools" / "golden" / "relative-link-cases.json"
 TAG_CASES = ROOT / "Tools" / "golden" / "tag-cases.json"
 REBASE_CASES = ROOT / "Tools" / "golden" / "rebase-cases.json"
+PIN_CASES = ROOT / "Tools" / "golden" / "pin-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -829,6 +830,63 @@ def build_rebase_cases() -> list[dict]:
             for case in spec["cases"]]
 
 
+# ── 고정된 노트 — 설계서의 규칙을 파이썬으로 다시 (빌드 35 · T10) ────────────
+
+
+def pins_tidy(paths: list[str]) -> list[str]:
+    seen = set()
+    out = []
+    for path in paths:
+        clean = nfc(path.strip())
+        if not clean or clean in seen:
+            continue
+        seen.add(clean)
+        out.append(clean)
+    return out
+
+
+def pins_following(paths: list[str], old: str, new: str) -> list[str]:
+    old_n, new_n = nfc(old), nfc(new)
+    if not old_n or old_n == new_n:
+        return pins_tidy(paths)
+    moved = []
+    for path in paths:
+        if path == old_n:
+            moved.append(new_n)
+        elif path.startswith(old_n + "/"):
+            moved.append(new_n + path[len(old_n):])
+        else:
+            moved.append(path)
+    return pins_tidy(moved)
+
+
+def pins_removing(paths: list[str], gone: str) -> list[str]:
+    target = nfc(gone)
+    if not target:
+        return pins_tidy(paths)
+    return pins_tidy([p for p in paths if p != target and not p.startswith(target + "/")])
+
+
+def build_pin_cases() -> list[dict]:
+    spec = json.loads(PIN_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        entry = {"name": case["name"], "pins": case["pins"]}
+        if "merge" in case:
+            entry["merge"] = case["merge"]
+            entry["merged"] = pins_tidy(case["pins"] + case["merge"])
+        if "from" in case:
+            entry["from"] = case["from"]
+            entry["to"] = case["to"]
+            entry["followed"] = pins_following(case["pins"], case["from"], case["to"])
+        if "gone" in case:
+            entry["gone"] = case["gone"]
+            entry["removed"] = pins_removing(case["pins"], case["gone"])
+        entry["tidied"] = pins_tidy(case["pins"])
+        out.append(entry)
+    return out
+
+
 # ── 만들기 ───────────────────────────────────────────────────────────────────
 
 def resolved_entry(link: dict, note_path: str) -> dict:
@@ -880,6 +938,7 @@ def build() -> dict:
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
         "rebaseCases": build_rebase_cases(),
+        "pinCases": build_pin_cases(),
     }
 
 
@@ -905,7 +964,8 @@ def main() -> int:
               f" · 번호 {len(loaded['renumberCases'])}건"
               f" · 상대 링크 {len(loaded['linkCases'])}건"
               f" · 태그 {len(loaded['tagCases'])}건"
-              f" · 옮기기 {len(loaded['rebaseCases'])}건 — 커밋된 것과 같습니다.")
+              f" · 옮기기 {len(loaded['rebaseCases'])}건"
+              f" · 고정 {len(loaded['pinCases'])}건 — 커밋된 것과 같습니다.")
         return 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -917,7 +977,8 @@ def main() -> int:
           f" · 번호 {len(loaded['renumberCases'])}건"
           f" · 상대 링크 {len(loaded['linkCases'])}건"
           f" · 태그 {len(loaded['tagCases'])}건"
-          f" · 옮기기 {len(loaded['rebaseCases'])}건")
+          f" · 옮기기 {len(loaded['rebaseCases'])}건"
+          f" · 고정 {len(loaded['pinCases'])}건")
     return 0
 
 
