@@ -479,6 +479,31 @@ struct MarkdownEditor: UIViewRepresentable {
         func textViewDidBeginEditing(_ textView: UITextView) {
             onFocus(true)
             cursorParagraph = Self.noParagraph
+            // **한 바퀴 뒤에 칠한다.** 지금은 커서 자리가 아직 안 정해졌다(100).
+            // 한 바퀴 뒤면 커서가 제자리에 있고, **선택이 안 바뀌어 `…DidChangeSelection`
+            // 이 아예 안 불리는 경우**(같은 자리를 다시 탭했을 때)도 여기서 갚는다 —
+            // 그때 기호가 안 나타나 다른 줄에 갔다 와야 보였다 (빌드 32 · 3번).
+            DispatchQueue.main.async { [weak self, weak textView] in
+                guard let self, let textView, textView.isFirstResponder else { return }
+                self.showMarkersOnCursorLine(textView)
+            }
+        }
+
+        /// **커서가 온 줄의 기호를 드러낸다** (L1). 커서가 이미 제자리에 있을 때만 부른다.
+        private func showMarkersOnCursorLine(_ textView: UITextView) {
+            guard !isStyling, !isRenumbering, !isComposing,
+                  textView.markedTextRange == nil, let sheet else { return }
+            let text = textView.textStorage.string as NSString
+            guard text.length > 0 else { return }
+            let location = min(textView.selectedRange.location, text.length)
+            let line = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+            isStyling = true
+            textView.textStorage.beginEditing()
+            headerLength = MarkdownStyler.restyle(textView.textStorage, touching: line, with: sheet,
+                                                  previousHeader: headerLength, cursor: location)
+            textView.textStorage.endEditing()
+            isStyling = false
+            cursorParagraph = line
         }
 
         /// 어떤 문단과도 같지 않은 값. 이것이 들어 있으면 다음 선택 변화가 반드시 다시 칠한다.
