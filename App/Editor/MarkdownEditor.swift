@@ -120,6 +120,8 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 한글 조합 중에는 속성을 건드리지 않는다 — 조합이 끊겨 자음과 모음이
         /// 따로 찍힌다 (안정화 기준 S10).
         private var isComposing = false
+        /// 번호를 다시 매기는 중. 그 사이에 오는 선택 변화로 되돌아오지 않게 한다.
+        private var isRenumbering = false
         private var sizeCategory = UIApplication.shared.preferredContentSizeCategory
 
         init(onEdit: @escaping @MainActor (String) -> Void,
@@ -293,8 +295,83 @@ struct MarkdownEditor: UIViewRepresentable {
                 textView.replace(target, withText: replacement)
                 textView.selectedRange = NSRange(location: line.location + (replacement as NSString).length, length: 0)
             }
+            // 가운데에 끼워 넣었으면 아래 번호들이 어긋난다 — 여기서 맞춘다 (104).
+            renumberList(around: textView.selectedRange.location, in: textView)
             onEdit(textView.text)
             return true
+        }
+
+        /// **번호 목록을 1 · 2 · 3 으로 맞춘다** (104, 사용자 요청).
+        ///
+        /// 규칙은 Core 의 `ListEditing.renumber` 가 정하고 여기서는 **숫자만** 바꿔 넣는다.
+        /// 줄 전체를 갈아 끼우지 않으므로 커서와 되돌리기가 덜 흔들린다. 뒤에서부터 넣어
+        /// 앞의 자리가 밀리지 않게 한다.
+        private func renumberList(around location: Int, in textView: UITextView) {
+            guard !isRenumbering, !isComposing, textView.markedTextRange == nil else { return }
+            let text = textView.textStorage.string as NSString
+            guard text.length > 0, let run = listRun(in: text, around: location) else { return }
+            let fixes = ListEditing.renumber(text.substring(with: run))
+            guard !fixes.isEmpty else { return }
+
+            isRenumbering = true
+            defer { isRenumbering = false }
+            var caret = textView.selectedRange.location
+            for fix in fixes.reversed() {
+                let range = NSRange(location: run.location + fix.start, length: fix.length)
+                guard NSMaxRange(range) <= text.length, let target = textRange(textView, range) else { continue }
+                textView.replace(target, withText: fix.number)
+                if range.location < caret { caret += (fix.number as NSString).length - fix.length }
+            }
+            let length = (textView.textStorage.string as NSString).length
+            textView.selectedRange = NSRange(location: max(0, min(caret, length)), length: 0)
+        }
+
+        /// 커서가 있는 줄을 둘러싼 **목록 한 덩이**. 목록 줄이 아니면 `nil`.
+        /// 항목 사이의 빈 줄 하나는 목록을 끊지 않는다 — 그렇게 쓰는 사람이 많다.
+        private func listRun(in text: NSString, around location: Int) -> NSRange? {
+            let seed = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+            guard Self.isItemLine(text, seed) else { return nil }
+            var start = seed.location
+            var end = NSMaxRange(seed)
+            while start > 0 {
+                let previous = text.paragraphRange(for: NSRange(location: start - 1, length: 0))
+                if Self.isItemLine(text, previous) {
+                    start = previous.location
+                    continue
+                }
+                // 빈 줄 하나는 건너뛴다 — 그 위가 항목일 때만.
+                guard Self.isBlankLine(text, previous), previous.location > 0 else { break }
+                let above = text.paragraphRange(for: NSRange(location: previous.location - 1, length: 0))
+                guard Self.isItemLine(text, above) else { break }
+                start = above.location
+            }
+            while end < text.length {
+                let next = text.paragraphRange(for: NSRange(location: end, length: 0))
+                if Self.isItemLine(text, next) {
+                    end = NSMaxRange(next)
+                    continue
+                }
+                guard Self.isBlankLine(text, next), NSMaxRange(next) < text.length else { break }
+                let below = text.paragraphRange(for: NSRange(location: NSMaxRange(next), length: 0))
+                guard Self.isItemLine(text, below) else { break }
+                end = NSMaxRange(below)
+            }
+            return NSRange(location: start, length: end - start)
+        }
+
+        private static func line(_ text: NSString, _ paragraph: NSRange) -> String {
+            var line = paragraph
+            if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
+            return text.substring(with: line)
+        }
+
+        private static func isItemLine(_ text: NSString, _ paragraph: NSRange) -> Bool {
+            ListEditing.returnPressed(in: line(text, paragraph)) != nil
+                || LineStyler.style(paragraph: line(text, paragraph)).block == .orderedItem
+        }
+
+        private static func isBlankLine(_ text: NSString, _ paragraph: NSRange) -> Bool {
+            line(text, paragraph).trimmingCharacters(in: .whitespaces).isEmpty
         }
 
         /// **탭 · 시프트 탭으로 들여쓰기** (빌드 29 · 1번). 규칙은 Core 의 `ListEditing` 이
@@ -369,6 +446,12 @@ struct MarkdownEditor: UIViewRepresentable {
                                                   previousHeader: headerLength, cursor: cursorHint)
             textView.textStorage.endEditing()
             isStyling = false
+
+            // **떠난 줄이 번호 목록이었다면 거기서 번호를 맞춘다** (104). 항목을 지운 자리가
+            // 여기로 온다 — 지우는 순간에 맞추면 치는 중에 숫자가 움직여 거슬린다.
+            if previous.length > 0, NSMaxRange(previous) <= text.length {
+                renumberList(around: previous.location, in: textView)
+            }
         }
 
         /// **편집이 끝났다** — 키보드가 내려갔거나 다른 곳으로 초점이 갔다 (빌드 29 · 2번).

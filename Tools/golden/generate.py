@@ -34,6 +34,7 @@ FIXTURES = ROOT / "Tools" / "golden" / "fixtures"
 CASES = ROOT / "Tools" / "golden" / "cases.json"
 STYLE_CASES = ROOT / "Tools" / "golden" / "style-cases.json"
 INDENT_CASES = ROOT / "Tools" / "golden" / "indent-cases.json"
+RENUMBER_CASES = ROOT / "Tools" / "golden" / "renumber-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -523,6 +524,67 @@ def build_indent_cases() -> list[dict]:
     } for case in spec["cases"]]
 
 
+# ── 번호 다시 매기기 — 설계서의 규칙을 파이썬으로 다시 (빌드 32 · 104) ─────────
+
+
+def renumber_block(block: str) -> list[dict]:
+    """번호 목록을 1 · 2 · 3 으로. 고칠 자리만 돌려준다 (UTF-16 오프셋).
+
+    - 첫 항목의 번호는 그대로 (CommonMark 는 `5.` 로 시작하는 목록을 허용한다)
+    - 겹친 단계는 따로 센다 (앞 빈칸 수가 단계)
+    - 빈 줄은 목록을 끊지 않는다
+    - 글줄이나 같은 단계의 글머리표가 오면 그 단계부터 아래는 끊긴다
+    """
+    fixes: list[dict] = []
+    nxt: dict[int, int] = {}
+    offset = 0
+
+    for line in block.split("\n"):
+        length = len(line.encode("utf-16-le")) // 2
+        here = offset
+        offset += length + 1
+
+        if not line.strip():
+            continue
+
+        indent = line[:len(line) - len(line.lstrip(" \t"))]
+        depth = sum(4 if ch == "\t" else 1 for ch in indent)
+        rest = line[len(indent):]
+
+        if rest[:2] in ("- ", "* ", "+ "):
+            nxt = {k: v for k, v in nxt.items() if k < depth}
+            continue
+
+        digits = ""
+        for ch in rest:
+            if ch in "0123456789":   # 아스키 숫자만 — 스위프트 쪽과 같게
+                digits += ch
+            else:
+                break
+        after = rest[len(digits):]
+        if not digits or len(digits) > 9 or after[:2] not in (". ", ") "):
+            nxt = {k: v for k, v in nxt.items() if k < depth}
+            continue
+
+        nxt = {k: v for k, v in nxt.items() if k <= depth}
+        read = int(digits)
+        wanted = nxt.get(depth, read)
+        if wanted != read:
+            fixes.append({
+                "start": here + len(indent.encode("utf-16-le")) // 2,
+                "length": len(digits),
+                "number": str(wanted),
+            })
+        nxt[depth] = wanted + 1
+    return fixes
+
+
+def build_renumber_cases() -> list[dict]:
+    spec = json.loads(RENUMBER_CASES.read_text(encoding="utf-8"))
+    return [{"name": case["name"], "text": case["text"], "fixes": renumber_block(case["text"])}
+            for case in spec["cases"]]
+
+
 # ── 만들기 ───────────────────────────────────────────────────────────────────
 
 def resolved_entry(link: dict, note_path: str) -> dict:
@@ -570,6 +632,7 @@ def build() -> dict:
         "cases": out_cases,
         "styleCases": build_style_cases(),
         "indentCases": build_indent_cases(),
+        "renumberCases": build_renumber_cases(),
     }
 
 
@@ -591,7 +654,8 @@ def main() -> int:
             return 1
         loaded = json.loads(current)
         print(f"기댓값 {len(loaded['cases'])}건 · 줄 모양 {len(loaded['styleCases'])}건"
-              f" · 들여쓰기 {len(loaded['indentCases'])}건 — 커밋된 것과 같습니다.")
+              f" · 들여쓰기 {len(loaded['indentCases'])}건"
+              f" · 번호 {len(loaded['renumberCases'])}건 — 커밋된 것과 같습니다.")
         return 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -599,7 +663,8 @@ def main() -> int:
     loaded = json.loads(fresh)
     print(f"{OUT.relative_to(ROOT)} — 사례 {len(loaded['cases'])}건"
           f" · 줄 모양 {len(loaded['styleCases'])}건"
-          f" · 들여쓰기 {len(loaded['indentCases'])}건")
+          f" · 들여쓰기 {len(loaded['indentCases'])}건"
+          f" · 번호 {len(loaded['renumberCases'])}건")
     return 0
 
 

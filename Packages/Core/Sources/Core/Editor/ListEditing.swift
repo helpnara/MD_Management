@@ -101,6 +101,75 @@ public enum ListEditing {
         return Shifted(text: shifted.joined(separator: "\n"), firstLineDelta: firstDelta)
     }
 
+    // MARK: - 번호 다시 매기기 (빌드 32 · 104)
+
+    /// 고칠 자리 하나 — **블록 안에서의 UTF-16 오프셋**과 그 자리에 넣을 숫자.
+    /// 줄 전체를 갈아 끼우지 않고 **숫자만** 바꾼다. 커서와 되돌리기가 덜 흔들린다.
+    public struct Renumber: Equatable, Sendable {
+        public let start: Int
+        public let length: Int
+        public let number: String
+
+        public init(start: Int, length: Int, number: String) {
+            self.start = start
+            self.length = length
+            self.number = number
+        }
+    }
+
+    /// **번호 목록을 1 · 2 · 3 으로 다시 맞춘다** (사용자 요청 — 중간에 넣거나 지우면 어긋난다).
+    ///
+    /// - 첫 항목의 번호는 **그대로 둔다.** `5.` 로 시작하는 목록은 5 · 6 · 7 이다 (CommonMark).
+    /// - 겹친 단계는 따로 센다. 앞 빈칸 수가 곧 단계다.
+    /// - 빈 줄은 목록을 끊지 않는다 — 항목 사이에 빈 줄을 두는 사람이 많다.
+    /// - 글줄(목록이 아닌 줄)이 나오면 그 단계부터 아래는 새 목록이다.
+    /// - 같은 단계에 글머리표(`- `)가 끼면 번호 목록이 거기서 끊긴다.
+    ///
+    /// 고칠 것이 없으면 빈 배열. 돌려주는 자리는 **앞에서 뒤 순서**다 — 넣을 때는 **뒤에서부터**.
+    public static func renumber(_ block: String) -> [Renumber] {
+        var fixes: [Renumber] = []
+        /// 단계(앞 빈칸 수)마다 다음에 올 번호.
+        var next: [Int: Int] = [:]
+        var offset = 0
+
+        for line in block.components(separatedBy: "\n") {
+            let length = line.utf16.count
+            defer { offset += length + 1 }   // 줄바꿈 한 칸
+
+            if line.trimmingCharacters(in: .whitespaces).isEmpty { continue }
+
+            let indent = line.prefix { $0 == " " || $0 == "\t" }
+            let depth = indent.reduce(0) { $0 + ($1 == "\t" ? 4 : 1) }
+            let rest = line.dropFirst(indent.count)
+
+            // 글머리표 — 이 단계의 번호 목록을 끊는다.
+            if rest.hasPrefix("- ") || rest.hasPrefix("* ") || rest.hasPrefix("+ ") {
+                next = next.filter { $0.key < depth }
+                continue
+            }
+
+            // **아스키 숫자만** 센다 — 파이썬 심판과 한 글자도 어긋나지 않게.
+            let digits = rest.prefix { $0.isASCII && $0.isNumber }
+            let after = rest.dropFirst(digits.count)
+            guard !digits.isEmpty, digits.count <= 9,
+                  after.hasPrefix(". ") || after.hasPrefix(") "), let read = Int(digits) else {
+                // 목록이 아닌 글줄 — 이 단계와 그 아래를 끊는다.
+                next = next.filter { $0.key < depth }
+                continue
+            }
+
+            // 더 깊은 단계는 여기서 끊긴다.
+            next = next.filter { $0.key <= depth }
+            let wanted = next[depth] ?? read   // 첫 항목의 번호는 그대로.
+            if wanted != read {
+                fixes.append(Renumber(start: offset + indent.utf16.count,
+                                      length: digits.utf16.count, number: String(wanted)))
+            }
+            next[depth] = wanted + 1
+        }
+        return fixes
+    }
+
     /// 목록 줄인가 — 앞 빈칸을 뺀 뒤 `- ` · `* ` · `+ ` · `1. ` · `1) ` 로 시작하나.
     ///
     /// **`LineStyler` 를 쓰지 않는다.** 그쪽은 문단 하나만 보므로 네 칸 이상 들여쓴 줄을

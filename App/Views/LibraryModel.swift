@@ -1375,7 +1375,13 @@ final class LibraryModel: ObservableObject {
             }
             // **첫 줄 제목과 파일명을 맞춘다 — 파일명이 이긴다** (62). 밖에서 만든 파일이
             // 여기로 들어오는 길목이다. 맞으면 아무것도 안 쓴다.
-            if alignsTitles, isUTF8, !broken,
+            //
+            // **이미 들고 있던 노트에는 걸지 않는다** (103). 제목을 치는 동안 파일명은
+            // 아직 옛 이름이다 — 줄을 떠나야 바꾸기 때문이다(89). 그 사이에 이것이 돌면
+            // `# 팀 이슈회의` 를 `## 팀 이슈회의` 로 내리고 옛 이름을 위에 얹는다.
+            // **치는 도중에 글이 뒤집힌다.** 맞이하는 걸음은 열 때 한 번이면 된다.
+            let isNewlyOpened = note.relativePath != draftPath
+            if alignsTitles, isUTF8, !broken, isNewlyOpened,
                let fixed = FrontMatterParser.aligned(text, toFileName: note.fileName) {
                 try await store.writeText(fixed, to: note.relativePath)
                 text = fixed
@@ -1386,7 +1392,11 @@ final class LibraryModel: ObservableObject {
             draftPath = note.relativePath
             draftStamp = await store.stamp(of: note.relativePath)
             isDirty = false
-            editorSession = UUID()
+            // **다른 노트로 갈 때만 정체성을 바꾼다** (103). 정체성이 바뀌면 편집기는
+            // 글을 **묻지 않고** 갈아 끼운다 — 한글을 조합하는 중이었다면 그 자리에서
+            // 쪼개진다 (`팀 이` 와 `ㅅ` 이 따로 남았다). 같은 노트를 다시 읽는 것은
+            // 편집기의 `load` 가 판정한다: 사용자가 손댔으면 그쪽이 최신이라 안 덮는다.
+            if isNewlyOpened { editorSession = UUID() }
             noteIsDownloading = false
             if !broken, isUTF8 { lastError = nil }
             await renderReading(path: note.relativePath, text: text)
