@@ -366,6 +366,96 @@ final class LibraryModel: ObservableObject {
         return lines.joined(separator: "\n") + "\n"
     }
 
+    // MARK: - 규모 시험 (S1 · A5 · A5b · A5c)
+
+    /// 규모 시험 자료가 들어가는 폴더. 한 곳에 모아 두면 지울 때도 한 번이다.
+    static let scaleFolder = "규모 시험"
+    /// 만들 노트 수 · 노트 하나의 목표 크기. 300개 · 20MB 가 가정 표의 값이다.
+    static let scaleCount = 300
+
+    /// 만드는 중인가 · 몇 개까지 갔나. 화면이 멈춘 것처럼 보이면 안 된다.
+    @Published private(set) var scaleProgress: Int?
+
+    /// **300개 · 20MB 를 만든다** (S1 · A5 · A5b · A5c).
+    ///
+    /// 이 넷은 자료가 없어 못 재던 칸이다. 손으로 300개를 만들 수는 없으니 앱이 만든다.
+    /// 만드는 동안 **iCloud 가 20MB 를 올린다** — 그것까지가 이 시험의 값이다.
+    /// 끝나면 `규모 시험 지우기` 한 번으로 휴지통에 간다.
+    func makeScaleTest() async {
+        guard let store else { return }
+        guard scaleProgress == nil else { return }
+        scaleProgress = 0
+        let started = Date()
+        var bytes = 0
+        do {
+            let folder = try await store.createSubfolder(named: Self.scaleFolder)
+            for number in 1...Self.scaleCount {
+                let text = Self.scaleNote(number)
+                bytes += text.utf8.count
+                _ = try await store.createNote(named: "시험 \(number)", in: folder, text: text)
+                // 열 개마다 화면에 알린다 — 300번 다 알리면 그리는 데 더 든다.
+                if number % 10 == 0 { scaleProgress = number }
+            }
+            let seconds = Date().timeIntervalSince(started)
+            log("규모 시험 \(Self.scaleCount)개 만듦 — \(Self.readableBytes(bytes)) · "
+                + "\(String(format: "%.1f", seconds))초")
+            scaleProgress = nil
+            selectedFolder = folder
+            await reloadFolders()
+            await reloadNotes()
+            sheet = nil
+            lastError = nil
+        } catch {
+            scaleProgress = nil
+            lastError = "규모 시험 자료를 만들지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 규모 시험 폴더를 **휴지통으로.** 영구 삭제는 설정 → 휴지통에서 (CLAUDE.md §1).
+    func removeScaleTest() async {
+        guard let store else { return }
+        do {
+            let moved = try await store.trashFolder(Self.scaleFolder)
+            log("규모 시험 폴더를 휴지통으로 — 노트 \(moved)개")
+            if selectedFolder == Self.scaleFolder { selectedFolder = "" }
+            await reloadFolders()
+            await reloadNotes()
+            await reloadTrash()
+            lastError = "규모 시험 폴더를 휴지통으로 옮겼습니다. 설정 → 휴지통에서 영구히 지울 수 있습니다."
+        } catch {
+            lastError = "규모 시험 폴더를 지우지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 노트 하나 — 평균 **68KB** 라야 300개가 20MB 가 된다. 번호에 따라 크기를 달리해
+    /// 작은 노트와 큰 노트가 섞이게 한다 (실제 폴더가 그렇다).
+    ///
+    /// **검색이 실제로 걸릴 말을 심는다** — `회의`(두 글자, LIKE 폴백) · `노후자금`(세 글자,
+    /// trigram) · `노후 자금`(구절). S6 가 재는 세 길이 그대로 여기 있다.
+    static func scaleNote(_ number: Int) -> String {
+        var lines = ["# 시험 \(number)", "",
+                     "규모 시험용 노트입니다. **지워도 됩니다.**", ""]
+        if number % 7 == 0 { lines.append("오늘 회의에서 정한 것을 적어 둡니다.") }
+        if number % 11 == 0 { lines.append("노후자금 계획을 다시 봅니다.") }
+        if number % 13 == 0 { lines.append("노후 자금 과 생활비를 갈라 적습니다.") }
+        lines.append("")
+        // 번호에 따라 두께를 달리한다 — 140 ~ 400 마디. 300개 합이 19.7MB · 평균 67KB 다
+        // (파이썬으로 미리 재 뒀다). 작은 노트와 큰 노트가 섞여야 실제 폴더를 닮는다.
+        let blocks = 140 + (number % 261)
+        for block in 1...blocks {
+            lines.append("## \(number)-\(block)")
+            lines.append("")
+            lines.append("이 문단은 크기를 채우려고 있습니다. **굵게** 와 *기울임* 과 `코드` 가 "
+                         + "섞여 있어 색인과 그리기가 실제 노트와 비슷하게 돕니다. "
+                         + "여백은 느리게 쓰는 사람을 위한 것입니다.")
+            lines.append("")
+            lines.append("- 항목 \(block)")
+            lines.append("> 인용 \(block)")
+            lines.append("")
+        }
+        return lines.joined(separator: "\n") + "\n"
+    }
+
     /// 곧은 따옴표를 문구 안에 쓰지 않는다 (CLAUDE.md §5).
     private static let attachmentTestNote = """
     # 첨부 시험
@@ -784,6 +874,9 @@ final class LibraryModel: ObservableObject {
     @Published private(set) var searchResults: [SearchHit] = []
     @Published private(set) var isSearching = false
     @Published private(set) var indexStatus = IndexStatus()
+    /// 마지막으로 목록을 읽는 데 걸린 시간 (S1) · 검색에 걸린 시간 (A5c). 진단에 보인다.
+    @Published private(set) var listSeconds: Double = 0
+    @Published private(set) var searchSeconds: Double = 0
     /// 목록의 첫 줄 미리보기 — **색인에서만** (설계서 §7.5). 색인 전이면 빈칸.
     private var previews: [String: String] = [:]
     private var searchTask: Task<Void, Never>?
@@ -811,8 +904,14 @@ final class LibraryModel: ObservableObject {
         searchTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled, let self, let index = self.index else { return }
+            // **검색에 걸린 시간도 앱이 잰다** (A5c · S6 — 0.5초 안).
+            let started = Date()
             let hits = await index.search(text)
             guard !Task.isCancelled else { return }
+            self.searchSeconds = Date().timeIntervalSince(started)
+            if self.searchSeconds > 0.2 || self.indexStatus.noteCount >= 100 {
+                self.log("검색 \(text) — \(String(format: "%.2f", self.searchSeconds))초 · \(hits.count)건")
+            }
             self.searchResults = hits
             self.isSearching = false
         }
@@ -1210,8 +1309,16 @@ final class LibraryModel: ObservableObject {
     func reloadNotes() async {
         guard let store else { return }
         isLoading = true
+        // **목록에 걸린 시간을 앱이 잰다** (S1 — 300개를 3초 안에). 사람이 초시계를
+        // 들 수는 없다. 오래 걸렸을 때만 적는다 — 평소에 최근 일을 어지럽히지 않는다.
+        let started = Date()
         folderStamp = await store.stamp(of: selectedFolder)
         let loaded = await store.notes(in: selectedFolder)
+        listSeconds = Date().timeIntervalSince(started)
+        if loaded.count >= 100 || listSeconds > 0.5 {
+            let where_ = selectedFolder.isEmpty ? "최상위" : selectedFolder
+            log("목록 \(loaded.count)개 — \(String(format: "%.2f", listSeconds))초 · \(where_)")
+        }
         notes = Self.withPreviews(loaded, from: previews)
         scheduleIndexRefresh()
         if let current = selectedNoteID, !loaded.contains(where: { $0.id == current }) {

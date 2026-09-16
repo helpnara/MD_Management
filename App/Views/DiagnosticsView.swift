@@ -74,6 +74,11 @@ struct DiagnosticsView: View {
 
                     row("마지막 갱신", String(format: "%.2f초", library.indexStatus.lastRefreshSeconds))
 
+                    // 앱이 스스로 잰 값이다 — 사람이 초시계를 들 수는 없다 (S1 · A5c).
+                    row("목록 읽기", String(format: "%.2f초", library.listSeconds))
+
+                    row("마지막 검색", String(format: "%.2f초", library.searchSeconds))
+
                     Button {
 
                         Task { await library.rebuildIndex() }
@@ -150,6 +155,32 @@ struct DiagnosticsView: View {
                     Text("큰 노트 시험")
                 } footer: {
                     Text("`큰 노트 시험.md` 를 300줄 · 20KB 안팎으로 만들고 **편집기로 엽니다.** 커서를 위아래로 훑어 지연이나 튐이 없으면 통과입니다. 만든 파일은 언제든 지우셔도 됩니다.")
+                }
+
+                Section {
+                    if let made = library.scaleProgress {
+                        HStack {
+                            ProgressView()
+                            Text("만드는 중 \(made) / \(LibraryModel.scaleCount)")
+                                .font(.scaled(.subheadline))
+                                .foregroundStyle(Palette.inkFaint)
+                        }
+                    } else {
+                        Button {
+                            Task { await library.makeScaleTest() }
+                        } label: {
+                            Label("노트 300개 만들기 (약 20MB)", systemImage: "square.stack.3d.up")
+                        }
+                        Button(role: .destructive) {
+                            Task { await library.removeScaleTest() }
+                        } label: {
+                            Label("규모 시험 폴더 지우기", systemImage: "trash")
+                        }
+                    }
+                } header: {
+                    Text("규모 시험")
+                } footer: {
+                    Text("`규모 시험` 폴더에 노트 300개(합쳐 약 20MB)를 만듭니다. **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `색인 크기` · `마지막 검색` 을 보면 S1 과 A5 를 한 번에 잴 수 있습니다. 지우기는 휴지통으로 갑니다.")
                 }
 
                 Section {
