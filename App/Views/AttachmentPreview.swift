@@ -14,6 +14,15 @@ struct AttachmentPreview: View {
                 .navigationTitle(url.lastPathComponent)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        // **다른 앱으로 열기** (119 · T7 셋째 물음). QuickLook 자체의 공유 단추는
+                        // 제 내비게이션 안에 있을 때만 나온다 — 여기서는 SwiftUI 화면에 얹혀
+                        // 있어 안 보인다. 그래서 우리가 세운다. 훑어보기가 못 그리는 형식
+                        // (zip 같은 것)도 이 길로 다른 앱에 넘길 수 있다.
+                        ShareLink(item: url) {
+                            Label("공유", systemImage: "square.and.arrow.up")
+                        }
+                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("닫기") { dismiss() }
                     }

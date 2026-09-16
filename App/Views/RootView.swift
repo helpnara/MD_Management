@@ -470,6 +470,7 @@ private struct NoteList: View {
                         }
                         .padding(.vertical, 2)
                     }
+                    .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }   // 121
                 }
             }
         }
@@ -583,6 +584,11 @@ private struct NoteList: View {
                         .foregroundStyle(Palette.inkFaint)
                 }
                 .padding(.vertical, 2)
+                // **구분선을 줄 맨 앞에 맞춘다** (121, 사용자 첨부 — 줄이 끊어져 보였다).
+                // SwiftUI 는 줄 안의 어느 요소를 기준으로 구분선을 들여쓸지 스스로 고르는데,
+                // `받는 중` 딱지가 붙은 줄에서는 **그 딱지 앞**을 골라 구분선이 화면 가운데서
+                // 시작했다. 딱지가 없는 줄은 맨 앞에서 시작하니 줄마다 길이가 달랐다.
+                .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
                 // **끌어서 폴더로** (T1). 싣는 것은 경로 하나 — 폴더 줄이 그것을 받는다.
                 .draggable(note.relativePath)
     }
@@ -650,6 +656,10 @@ private struct NoteDetail: View {
         Group {
             if let note = library.selectedNote {
                 content(for: note)
+                    // **어디서 온 노트인가** (120 · T7 의 값). 링크를 따라오면 목록에 없는
+                    // 노트가 상세 칸에 뜰 수 있다 — 목록은 `assets/` 를 안 보여 주기 때문이다.
+                    // 그때 한 줄로 어느 폴더의 파일인지 알린다.
+                    .safeAreaInset(edge: .top, spacing: 0) { linkedOrigin }
                     // 제목은 **직접 그린다.** 기본 제목은 iOS 가 툴바 버튼 수에 따라
                     // 가운데 · 왼쪽으로 옮겨 이름마다 자리가 달랐다 (49). 늘 왼쪽 ·
                     // 한 줄 · 꼬리 `…` 로 통일한다.
@@ -720,6 +730,31 @@ private struct NoteDetail: View {
             Button("확인", role: .cancel) { alert = nil }
         } message: {
             Text(alert ?? "")
+        }
+    }
+
+    /// 링크를 따라와서 **목록에 없는 노트**를 보고 있을 때의 출처 한 줄 (120).
+    /// 목록에 있는 노트면 `linkedNote` 가 비어 있어 아무것도 안 그린다.
+    @ViewBuilder
+    private var linkedOrigin: some View {
+        if let linked = library.linkedNote {
+            let folder = Paths.directory(of: linked.relativePath)
+            HStack(spacing: Metrics.rowSpacing) {
+                Image(systemName: "link")
+                if folder.isEmpty {
+                    Text("링크를 따라온 노트입니다")
+                } else {
+                    Text("링크를 따라온 노트입니다 — **\(folder)** 폴더의 파일")
+                }
+                Spacer(minLength: 0)
+            }
+            .font(.scaled(.caption))
+            .foregroundStyle(Palette.inkFaint)
+            .lineLimit(1)
+            .padding(.horizontal, Metrics.gutter)
+            .padding(.vertical, Metrics.rowSpacing)
+            .frame(maxWidth: .infinity)
+            .background(Palette.paperRaised)
         }
     }
 
