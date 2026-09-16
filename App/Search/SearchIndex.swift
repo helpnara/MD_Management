@@ -30,7 +30,13 @@ struct IndexStatus: Sendable {
 actor SearchIndex {
 
     /// 스키마가 바뀌면 올린다 — 파일이 이 판이 아니면 지우고 새로 만든다.
-    private static let version = 1
+    /// 색인 판. **규칙이 바뀌면 올린다** — 그러면 옛 파일은 버려지고 처음부터 다시 만든다
+    /// (CLAUDE.md §1: 색인은 캐시다, 마이그레이션을 쓰지 않는다).
+    ///
+    /// - v2 (빌드 35 · 115): 미리보기 규칙이 바뀌었다(110 — 첫 줄은 제목이므로 건너뛴다).
+    ///   판을 안 올렸더니 **고치지 않은 노트는 옛 미리보기를 그대로 들고 있었다** —
+    ///   목록에 제목과 같은 글이 두 번 나왔다 (빌드 34 · 1번, 사용자).
+    private static let version = 2
 
     private var db: OpaquePointer?
     private let fileURL: URL
