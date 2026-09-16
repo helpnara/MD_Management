@@ -1243,6 +1243,13 @@ final class LibraryModel: ObservableObject {
            await store.stamp(of: note.relativePath) == stamp {
             return
         }
+        // **커서가 튀면 여기를 의심한다.** 열려 있는 노트를 다시 읽으면 편집기가 글을
+        // 통째로 갈아 끼우고, 그때 커서는 글 끝으로 가며 화면이 그리로 끌려간다.
+        // 제자리 걸음이면 위에서 이미 물러났으므로, 여기까지 왔다는 것은 디스크가 정말
+        // 달라졌다는 뜻이다 — 최근 일에 남겨 둬야 다음에 원인을 짚을 수 있다 (빌드 31 · 2번).
+        if note.relativePath == draftPath {
+            log("열려 있는 노트를 다시 읽음 — 편집기가 글을 갈아 끼운다: \(note.relativePath)")
+        }
         do {
             var text = try await store.readText(at: note.relativePath)
             // **이 파일이 UTF-8 이었나.** 아니면 예전 인코딩으로 읽어 낸 것이고,

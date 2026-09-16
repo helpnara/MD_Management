@@ -111,7 +111,8 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 지난번 머리말 길이. 바뀌면 그 구간을 통째로 다시 칠한다 (`MarkdownStyler.restyle`).
         private var headerLength = 0
         /// 지난번 커서 문단. 커서가 다른 문단으로 가면 **둘만** 다시 칠한다 (S11).
-        private var cursorParagraph = NSRange(location: 0, length: 0)
+        /// `noParagraph` 면 아직 모른다는 뜻 — 다음 선택 변화가 반드시 다시 칠한다.
+        private var cursorParagraph = NSRange(location: NSNotFound, length: 0)
 
         /// 커서 자리. 그 문단만 마커를 흐리게(L1) 두고 나머지는 숨긴다(L2).
         /// VoiceOver 후퇴는 두지 않는다 — 사용자 결정 (빌드 14 · 13번, A10).
@@ -377,32 +378,47 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 자리에서 둘 다 갚는다 — 커서가 없는 것처럼 다시 칠하고, 제목을 확정한다.
         func textViewDidEndEditing(_ textView: UITextView) {
             onFocus(false)
-            restyleCursorLine(textView, showsMarkers: false)
+            hideMarkersOnCursorLine(textView)
+            // 다음에 커서가 오면 **그 줄이 어디든** 다시 칠하게 한다 (아래 참고).
+            cursorParagraph = Self.noParagraph
             guard wasOnTitleLine else { return }
             wasOnTitleLine = false
             onTitleLine(false)
         }
 
-        /// 다시 커서가 왔다 — 그 줄의 마커를 도로 드러낸다.
+        /// **다시 커서가 왔다.** 여기서는 아무것도 칠하지 않는다.
+        ///
+        /// 이 대리자는 **커서 자리가 정해지기 전에** 불린다 (빌드 31 · 2번 — 탭하면 화면이
+        /// 맨 아래로 끌려가고 커서가 글 끝으로 갔다). 여기서 속성을 바꾸면 TextKit 이
+        /// **아직 옛 선택**을 보고 그 자리로 화면을 옮긴다. 칠하는 일은 커서가 실제로 놓인
+        /// 뒤에 오는 `textViewDidChangeSelection` 에 맡기고, 여기서는 **지난 문단만 지워**
+        /// 그쪽이 반드시 다시 칠하게 한다.
         func textViewDidBeginEditing(_ textView: UITextView) {
             onFocus(true)
-            restyleCursorLine(textView, showsMarkers: true)
-            reportTitleLine(textView)
+            cursorParagraph = Self.noParagraph
         }
 
-        /// 커서가 있는 **한 문단만** 다시 칠한다 (S11 — 전체 재칠은 열 때 한 번뿐).
-        /// `showsMarkers` 가 거짓이면 커서가 없는 것처럼 칠해 마커를 숨긴다.
-        private func restyleCursorLine(_ textView: UITextView, showsMarkers: Bool) {
+        /// 어떤 문단과도 같지 않은 값. 이것이 들어 있으면 다음 선택 변화가 반드시 다시 칠한다.
+        private static let noParagraph = NSRange(location: NSNotFound, length: 0)
+
+        /// **커서가 떠났으니 그 줄의 마커도 숨긴다** (빌드 29 · 2번 — 마지막 줄은 떠날 자리가 없다).
+        /// 커서가 사라지는 자리라 화면이 움직일 까닭이 없다 — 속성 때문에 딸려 움직이지 않도록
+        /// 스크롤 자리를 붙들었다 놓는다.
+        private func hideMarkersOnCursorLine(_ textView: UITextView) {
             guard !isStyling, !isComposing, textView.markedTextRange == nil, let sheet else { return }
             let text = textView.textStorage.string as NSString
             guard text.length > 0 else { return }
             let location = min(textView.selectedRange.location, text.length)
             let line = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+            let offset = textView.contentOffset
             isStyling = true
+            textView.textStorage.beginEditing()
             headerLength = MarkdownStyler.restyle(textView.textStorage, touching: line, with: sheet,
                                                   previousHeader: headerLength,
-                                                  cursor: showsMarkers ? location : MarkdownStyler.noCursor)
+                                                  cursor: MarkdownStyler.noCursor)
+            textView.textStorage.endEditing()
             isStyling = false
+            textView.setContentOffset(offset, animated: false)
         }
 
         func textViewDidChange(_ textView: UITextView) {
