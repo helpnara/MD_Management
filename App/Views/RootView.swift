@@ -19,6 +19,10 @@ struct RootView: View {
             NoteDetail()
         }
         .navigationSplitViewStyle(.balanced)
+        // **상세 칸에도 바깥 폭을 알려 준다** (125). 아이패드의 상세 칸은 좁아도 regular 이고,
+        // 도구 줄을 아이폰에서만 줄이려면 **바깥 화면**의 폭을 봐야 한다. 예전에는 이 값을
+        // 시트에만 건넸다 — 그때는 띠가 둘이 되는 것만 막으면 됐다 (빌드 24 · 13번).
+        .environment(\.rootIsCompact, horizontalSizeClass == .compact)
         .tint(Palette.accent)
         .task {
             library.autoSelectsFirstNote = prefersPreselectedNote
@@ -644,6 +648,8 @@ private struct FolderPickerView: View {
 private struct NoteDetail: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.openURL) private var openURL
+    /// 아이폰인가 (125). **바깥 화면의 폭**을 본다 — 아이패드의 상세 칸은 좁아도 regular 다.
+    @Environment(\.rootIsCompact) private var rootIsCompact
     @State private var alert: String?
     /// 사진첩에서 고른 것들. 고르면 바로 읽어 **한 번에** 넣고 비운다 (77).
     @State private var pickedPhotos: [PhotosPickerItem] = []
@@ -840,11 +846,42 @@ private struct NoteDetail: View {
         }
     }
 
+    /// 넣기 — 사진첩 · 카메라 · 문서 (설계서 §2-4). 아이패드는 제 단추로, **아이폰은
+    /// `…` 안에** 선다 (125).
+    @ViewBuilder
+    private var insertItems: some View {
+        Button {
+            showsPhotoPicker = true
+        } label: {
+            Label("사진첩에서", systemImage: "photo.on.rectangle")
+        }
+        if CameraView.isAvailable {
+            Button {
+                showsCamera = true
+            } label: {
+                Label("카메라로 찍기", systemImage: "camera")
+            }
+        }
+        Button {
+            showsDocumentPicker = true
+        } label: {
+            Label("문서 첨부", systemImage: "doc.badge.plus")
+        }
+    }
+
     @ToolbarContentBuilder
     private func toolbarContent(for note: NoteSummary) -> some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            // 저장 상태를 숨기지 않는다. 아무 표시가 없는 것이 가장 무섭다.
-            SaveIndicator()
+        // **아이폰에서 늘 서 있는 것은 둘뿐이다** — `읽기 ↔ 쓰기` 와 `…` (125, 사용자 —
+        // 단추가 제목을 밀어냈다). 나머지는 `…` 안으로 들어가거나, **쉬는 상태가 아닐 때만**
+        // 나온다. 아이패드는 3단이라 위가 넓으므로 지금 그대로 둔다.
+        //
+        // **저장 상태를 아주 숨기지는 않는다** (설계서 §14 — 아무 표시가 없는 것이 가장
+        // 무섭다). 아이폰에서는 **쉬는 상태(`저장됨`)일 때만** 접는다. 쓰는 중이면 연필이,
+        // 실패하면 빨간 삼각형이 그대로 뜬다 — 연필이 사라지는 것이 곧 저장됐다는 말이다.
+        if !rootIsCompact || library.isDirty || library.saveFailed {
+            ToolbarItem(placement: .topBarTrailing) {
+                SaveIndicator()
+            }
         }
         if !library.linkTrail.isEmpty {
             ToolbarItem(placement: .topBarLeading) {
@@ -869,28 +906,11 @@ private struct NoteDetail: View {
                 }
             }
         }
-        if !library.isReading {
+        if !library.isReading, !rootIsCompact {
             ToolbarItem(placement: .topBarTrailing) {
                 // 사진첩 · 카메라 → assets/ → 커서 자리에 링크 (설계서 §2-4).
                 Menu {
-                    Button {
-                        showsPhotoPicker = true
-                    } label: {
-                        Label("사진첩에서", systemImage: "photo.on.rectangle")
-                    }
-                    if CameraView.isAvailable {
-                        Button {
-                            showsCamera = true
-                        } label: {
-                            Label("카메라로 찍기", systemImage: "camera")
-                        }
-                    }
-                    Divider()
-                    Button {
-                        showsDocumentPicker = true
-                    } label: {
-                        Label("문서 첨부", systemImage: "doc.badge.plus")
-                    }
+                    insertItems
                 } label: {
                     Label("넣기", systemImage: "photo")
                 }
@@ -898,6 +918,15 @@ private struct NoteDetail: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
+                // 아이폰에서는 넣기가 여기 산다 (125). 편집 모드일 때만이다 —
+                // 읽기 모드에는 커서가 없어 넣을 자리가 없다.
+                if rootIsCompact, !library.isReading {
+                    Section {
+                        insertItems
+                    } header: {
+                        Text("넣기")
+                    }
+                }
                 Button {
                     library.beginRename(note)
                 } label: {
