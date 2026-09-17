@@ -115,6 +115,16 @@ final class LibraryModel: ObservableObject {
     @Published var showsTestTools: Bool = UserDefaults.standard.object(forKey: "tools.visible") as? Bool ?? false {
         didSet { UserDefaults.standard.set(showsTestTools, forKey: "tools.visible") }
     }
+    /// **노트를 열 때 읽기 모드로 시작할까** (124, 사용자 — *평소에는 읽기 모드로 보고
+    /// 편집은 회의 뒤나 자료를 쓸 때만 쓴다*). **꺼짐이 기본** — 지금까지의 동작 그대로다.
+    @Published var opensInReadingMode: Bool = UserDefaults.standard.object(forKey: "mode.reading") as? Bool ?? false {
+        didSet { UserDefaults.standard.set(opensInReadingMode, forKey: "mode.reading") }
+    }
+    /// 이번에 여는 노트의 모드는 **부른 쪽이 이미 정했다** (124). 새 노트는 쓰려고 만든
+    /// 것이고 `왔던 노트` 는 떠날 때의 모드를 되살린다 — 위 스위치가 그것을 덮으면 안 된다.
+    /// 한 번 쓰이고 저절로 풀린다.
+    private var modeAlreadyChosen = false
+
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
     @Published var isReading = false
     /// 이름을 바꾸는 중인 노트 · 새 이름. 화면의 알림창이 이것을 본다.
@@ -363,6 +373,7 @@ final class LibraryModel: ObservableObject {
 
             await reloadFolders()
             await reloadNotes()
+            modeAlreadyChosen = true      // 사진이 다 보이는지 보는 시험이다 (124)
             selectedNoteID = "첨부 시험.md"
             isReading = true
             sheet = nil
@@ -388,6 +399,7 @@ final class LibraryModel: ObservableObject {
         do {
             let path = try await store.createNote(named: "큰 노트 시험", in: selectedFolder, text: text)
             await reloadNotes()
+            modeAlreadyChosen = true      // 커서를 훑어 보는 시험이다 (124)
             selectedNoteID = path
             isReading = false
             sheet = nil
@@ -617,6 +629,7 @@ final class LibraryModel: ObservableObject {
             let path = try await store.createNote(named: "새 노트", in: selectedFolder,
                                                   text: "# 새 노트\n\n")
             await reloadNotes()
+            modeAlreadyChosen = true      // 쓰려고 만든 노트다 (124)
             selectedNoteID = path
             isReading = false
             lastError = nil
@@ -1588,6 +1601,13 @@ final class LibraryModel: ObservableObject {
             // 쪼개진다 (`팀 이` 와 `ㅅ` 이 따로 남았다). 같은 노트를 다시 읽는 것은
             // 편집기의 `load` 가 판정한다: 사용자가 손댔으면 그쪽이 최신이라 안 덮는다.
             if isNewlyOpened { editorSession = UUID() }
+            // **노트를 열 때 읽기 모드로** (124). 부른 쪽이 모드를 이미 정했으면(새 노트 ·
+            // `왔던 노트` · 시험 파일) 그쪽을 따른다. **편집 모드로 되돌리지는 않는다** —
+            // 스위치는 켜는 쪽으로만 움직인다.
+            if isNewlyOpened {
+                if modeAlreadyChosen { modeAlreadyChosen = false }
+                else if opensInReadingMode { isReading = true }
+            }
             noteIsDownloading = false
             if !broken, isUTF8 { lastError = nil }
             await renderReading(path: note.relativePath, text: text)
@@ -1672,6 +1692,7 @@ final class LibraryModel: ObservableObject {
         } else {
             linkedNote = nil
         }
+        modeAlreadyChosen = true    // 떠날 때의 모드를 되살린다 — 스위치가 덮지 않는다 (124)
         selectedNoteID = step.notePath
         linkTrail = trail       // `selectedNoteID` 의 `didSet` 이 접은 것을 되돌린다.
         isReading = step.wasReading

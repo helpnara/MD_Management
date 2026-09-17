@@ -733,19 +733,19 @@ private struct NoteDetail: View {
         }
     }
 
-    /// 링크를 따라와서 **목록에 없는 노트**를 보고 있을 때의 출처 한 줄 (120).
+    /// **지금 목록에 없는 노트**를 보고 있을 때의 출처 한 줄 (120 · 문구는 123).
+    /// 링크를 따라왔거나 **검색으로 다른 폴더의 노트를 골랐을 때**다.
     /// 목록에 있는 노트면 `linkedNote` 가 비어 있어 아무것도 안 그린다.
     @ViewBuilder
     private var linkedOrigin: some View {
         if let linked = library.linkedNote {
+            // **문구는 일어난 일이 아니라 지금 상태를 말한다** (123). 이 줄은 링크뿐 아니라
+            // **검색으로 다른 폴더의 노트를 열었을 때도** 뜬다 — 오히려 그쪽이 흔하다.
+            // 링크를 따라왔다고 하면 검색으로 온 사람에게는 틀린 말이 된다.
             let folder = Paths.directory(of: linked.relativePath)
             HStack(spacing: Metrics.rowSpacing) {
-                Image(systemName: "link")
-                if folder.isEmpty {
-                    Text("링크를 따라온 노트입니다")
-                } else {
-                    Text("링크를 따라온 노트입니다 — **\(folder)** 폴더의 파일")
-                }
+                Image(systemName: "folder")
+                Text("지금 목록에 없는 노트입니다 — **\(folder.isEmpty ? library.folderName : folder)** 의 파일")
                 Spacer(minLength: 0)
             }
             .font(.scaled(.caption))
