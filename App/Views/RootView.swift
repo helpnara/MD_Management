@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Combine
 import PhotosUI
 import Core
 
@@ -650,6 +651,10 @@ private struct NoteDetail: View {
     @Environment(\.openURL) private var openURL
     /// 아이폰인가 (125). **바깥 화면의 폭**을 본다 — 아이패드의 상세 칸은 좁아도 regular 다.
     @Environment(\.rootIsCompact) private var rootIsCompact
+    /// **키보드가 지금 떠 있나** (126). 초점만 보면 안 된다 — 글을 아래로 끌어 키보드를
+    /// 내리면(`keyboardDismissMode = .interactive`) 편집기는 **초점을 그대로 쥐고 있어서**
+    /// `키보드 내리기` 단추가 키보드도 없이 남았다 (사용자 · 빌드 38 · 1번).
+    @State private var keyboardIsUp = false
     @State private var alert: String?
     /// 사진첩에서 고른 것들. 고르면 바로 읽어 **한 번에** 넣고 비운다 (77).
     @State private var pickedPhotos: [PhotosPickerItem] = []
@@ -693,6 +698,14 @@ private struct NoteDetail: View {
             }
         }
         .background(Palette.paper)
+        // **키보드가 떠 있나** (126). UIKit 이 알려 주는 것을 그대로 받는다 — 끌어서 내린
+        // 키보드도 여기서는 내려간 것으로 잡힌다. 초점(`editorHasFocus`)만으로는 못 잡는다.
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardIsUp = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+            keyboardIsUp = false
+        }
         .photosPicker(isPresented: $showsPhotoPicker, selection: $pickedPhotos,
                       maxSelectionCount: 20, matching: .images)
         .onChange(of: pickedPhotos) { _, items in
@@ -893,7 +906,7 @@ private struct NoteDetail: View {
                 }
             }
         }
-        if !library.isReading, library.editorHasFocus {
+        if !library.isReading, library.editorHasFocus, keyboardIsUp {
             ToolbarItem(placement: .topBarTrailing) {
                 // **키보드를 내리는 길** (98). 아이폰에는 `완료` 자리가 없어 한번 커서가
                 // 붙으면 키보드를 못 치웠다 — 그러면 편집이 끝나는 자리(92)에도 못 닿는다.
