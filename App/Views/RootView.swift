@@ -822,7 +822,7 @@ private struct NoteDetail: View {
                     cursorImageBar
                     // **편집 도구 띠** (127 · T13 1차). 키보드가 올라오면 `safeAreaInset` 이
                     // 그 위로 밀어 올린다 — **키보드 툴바를 쓰지 않는다** (CLAUDE.md §1).
-                    FormatBar { library.format($0) }
+                    FormatBar()
                 }
             }
         }
@@ -1000,20 +1000,22 @@ private struct NoteDetail: View {
 /// 엄지가 닿는 자리에 선다 — **키보드 툴바(`placement: .keyboard`)는 쓰지 않는다**
 /// (CLAUDE.md §1). 좁으면 가로로 민다.
 private struct FormatBar: View {
-    let action: (LibraryModel.FormatRequest.Kind) -> Void
+    /// **모델을 여기서 바로 본다.** 클로저로 넘기면 주 액터 격리가 벗겨져 Swift 6 가
+    /// 막는다 — 이 화면의 다른 단추들과 같은 꼴로 둔다.
+    @EnvironmentObject private var library: LibraryModel
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Metrics.rowSpacing) {
-                button("굵게", "bold") { action(.wrap(.bold)) }
-                button("기울임", "italic") { action(.wrap(.italic)) }
-                button("취소선", "strikethrough") { action(.wrap(.strikethrough)) }
+                button("굵게", "bold", .wrap(.bold))
+                button("기울임", "italic", .wrap(.italic))
+                button("취소선", "strikethrough", .wrap(.strikethrough))
                 rule
-                button("인용", "text.quote") { action(.quote) }
-                button("표 넣기", "tablecells") { action(.table) }
+                button("인용", "text.quote", .quote)
+                button("표 넣기", "tablecells", .table)
                 rule
-                button("내어쓰기", "decrease.indent") { action(.shift(deeper: false)) }
-                button("들여쓰기", "increase.indent") { action(.shift(deeper: true)) }
+                button("내어쓰기", "decrease.indent", .shift(deeper: false))
+                button("들여쓰기", "increase.indent", .shift(deeper: true))
             }
             .padding(.horizontal, Metrics.gutter)
             .padding(.vertical, Metrics.rowSpacing)
@@ -1033,8 +1035,10 @@ private struct FormatBar: View {
     /// 글자는 안 보이고 **아이콘만** 선다 — 띠가 한 줄을 넘지 않게. 이름은 보이스오버와
     /// 길게 누르기가 읽는다.
     private func button(_ name: String, _ symbol: String,
-                        action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+                        _ kind: LibraryModel.FormatRequest.Kind) -> some View {
+        Button {
+            library.format(kind)
+        } label: {
             Label(name, systemImage: symbol)
                 .labelStyle(.iconOnly)
                 .font(.scaled(.body))
