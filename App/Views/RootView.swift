@@ -1021,6 +1021,10 @@ private struct FormatBar: View {
             .padding(.horizontal, Metrics.gutter)
             .padding(.vertical, Metrics.rowSpacing)
         }
+        // **세로로는 딱 한 줄만 차지한다.** 가로 스크롤은 세로로도 남는 공간을 다 먹으려
+        // 해서, 그냥 두면 띠 높이가 제멋대로 잡히고 **아래가 잘린다** (시뮬레이터
+        // 스크린샷에서 잡혔다 — 아이콘 윗부분만 보였다).
+        .fixedSize(horizontal: false, vertical: true)
         .background(Palette.paperRaised)
         .overlay(alignment: .top) {
             Rectangle().fill(Palette.rule).frame(height: 0.5)
