@@ -1001,6 +1001,190 @@
         "\t- 나"
       ],
       "name": "탭으로 들여쓴 줄"
+    },
+    {
+      "depths": [
+        1,
+        2,
+        2,
+        3
+      ],
+      "lines": [
+        "- 내용",
+        "  1.  인식",
+        "  2.  공유",
+        "      1. 테스트"
+      ],
+      "name": "마커 뒤 빈칸이 둘"
+    },
+    {
+      "depths": [
+        1,
+        2
+      ],
+      "lines": [
+        "1.    가",
+        "      - 나"
+      ],
+      "name": "마커 뒤 빈칸이 넷"
+    },
+    {
+      "depths": [
+        1,
+        2
+      ],
+      "lines": [
+        "-     가",
+        "  - 나"
+      ],
+      "name": "마커 뒤 빈칸이 다섯 — 딸림은 하나"
+    }
+  ],
+  "enterCases": [
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 2,
+        "text": ""
+      },
+      "line": "- ",
+      "name": "최상위 빈 항목 — 보통 글이 된다",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 3,
+        "text": ""
+      },
+      "line": "1. ",
+      "name": "최상위 빈 번호 항목",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 6,
+        "text": ""
+      },
+      "line": "- [ ] ",
+      "name": "최상위 빈 체크박스",
+      "shallower": null
+    },
+    {
+      "above": [
+        "- 첫째"
+      ],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 4,
+        "text": "- "
+      },
+      "line": "  - ",
+      "name": "둘째 단계 — 첫째 단계로",
+      "shallower": "- 첫째"
+    },
+    {
+      "above": [
+        "- 첫째",
+        "  - 둘째"
+      ],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 6,
+        "text": "  - "
+      },
+      "line": "    - ",
+      "name": "셋째 단계 — 둘째 단계로",
+      "shallower": "  - 둘째"
+    },
+    {
+      "above": [
+        "- 내용",
+        "  1. 인식",
+        "  2. 공유",
+        "     1. 테스트"
+      ],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 9,
+        "text": "  1. "
+      },
+      "line": "      1. ",
+      "name": "숫자 셋째 단계 — 둘째 단계로",
+      "shallower": "  2. 공유"
+    },
+    {
+      "above": [
+        "- 내용",
+        "  1.  인식",
+        "  2.  공유",
+        "      1. 테스트"
+      ],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 9,
+        "text": "  1. "
+      },
+      "line": "      1. ",
+      "name": "마커 뒤 빈칸이 둘인 부모 밑에서",
+      "shallower": "  2.  공유"
+    },
+    {
+      "above": [
+        "10. 열",
+        "    - 안쪽"
+      ],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 6,
+        "text": "- "
+      },
+      "line": "    - ",
+      "name": "두자리 번호 부모 밑에서",
+      "shallower": "10. 열"
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "insert",
+        "text": "\n- "
+      },
+      "line": "- 첫째",
+      "name": "글이 있는 항목 — 다음 항목을 이어 준다",
+      "shallower": null
+    },
+    {
+      "above": [
+        "  1. 첫째"
+      ],
+      "action": {
+        "kind": "insert",
+        "text": "\n  3. "
+      },
+      "line": "  2. 둘째",
+      "name": "글이 있는 번호 항목",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "insert",
+        "text": "\n- [ ] "
+      },
+      "line": "- [x] 한 일",
+      "name": "체크한 항목 — 다음은 빈 칸으로",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": null,
+      "line": "그냥 글",
+      "name": "목록이 아니면 아무 일도 없다",
+      "shallower": null
     }
   ],
   "formatCases": [
@@ -1865,6 +2049,61 @@
       "shallower": "1) 하나",
       "text": "2) 둘",
       "under": "1) 하나"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 6,
+        "text": "      1. 테스트"
+      },
+      "name": "마커뒤빈칸둘-부모아래",
+      "outdented": null,
+      "shallower": "  2.  공유",
+      "text": "1. 테스트",
+      "under": "  2.  공유"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 4,
+        "text": "    - 자식"
+      },
+      "name": "마커뒤빈칸셋-부모아래",
+      "outdented": null,
+      "shallower": "-   부모",
+      "text": "- 자식",
+      "under": "-   부모"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 7,
+        "text": "       1. 자식"
+      },
+      "name": "마커뒤빈칸넷-부모아래",
+      "outdented": null,
+      "shallower": "10.    열",
+      "text": "1. 자식",
+      "under": "10.    열"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  - 자식"
+      },
+      "name": "마커뒤빈칸다섯-딸림은 하나다",
+      "outdented": null,
+      "shallower": "-     멀리 떨어진 글",
+      "text": "- 자식",
+      "under": "-     멀리 떨어진 글"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 3,
+        "text": "   - 자식"
+      },
+      "name": "마커뿐인 빈 항목 아래",
+      "outdented": null,
+      "shallower": "1. ",
+      "text": "- 자식",
+      "under": "1. "
     }
   ],
   "linkCases": [

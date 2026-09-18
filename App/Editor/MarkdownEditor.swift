@@ -392,7 +392,12 @@ struct MarkdownEditor: UIViewRepresentable {
             var line = paragraph
             if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
 
-            guard let action = ListEditing.returnPressed(in: text.substring(with: line)) else {
+            // **빈 항목에서 나올 때 얕은 위 줄까지** 간다 (141 뒷이야기). 단계의 너비는
+            // 부모의 마커에 따라 다르므로 빈칸 둘로는 어느 단계에도 못 선다.
+            let here = Self.leadingWidth(text.substring(with: line))
+            let shallower = Self.line(text, above: paragraph.location, shallowerThan: here)
+            guard let action = ListEditing.returnPressed(in: text.substring(with: line),
+                                                         outdentingTo: shallower) else {
                 return false
             }
             switch action {

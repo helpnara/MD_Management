@@ -17,7 +17,16 @@ public enum ListEditing {
     }
 
     /// `paragraph` 는 줄바꿈을 뺀 한 문단. 목록이 아니면 `nil` — 보통 줄바꿈이다.
-    public static func returnPressed(in paragraph: String) -> Action? {
+    ///
+    /// - `outdentingTo`: 위로 올라가며 만나는 **더 얕은 목록 줄** (141 뒷이야기).
+    ///   빈 항목에서 엔터를 치면 그 줄의 칸까지 나온다.
+    ///
+    /// **한 단계는 빈칸 둘이 아니다.** 예전에는 빈 항목에서 엔터를 치면 무조건 빈칸
+    /// **둘**을 뺐다. 단계의 너비는 부모의 마커에 따라 둘 · 셋 · 넷으로 다르므로, 둘만
+    /// 빼면 **어느 단계에도 없는 칸**에 서게 된다 — 사용자가 본 *커서가 엉뚱한 자리에
+    /// 있다가 글자를 치면 도로 가는* 일이다 (빌드 43). 이제 `outdent` 와 같은 셈을 쓴다.
+    public static func returnPressed(in paragraph: String,
+                                     outdentingTo shallower: String? = nil) -> Action? {
         let style = LineStyler.style(paragraph: paragraph)
         guard style.block == .listItem || style.block == .orderedItem else { return nil }
 
@@ -26,11 +35,13 @@ public enum ListEditing {
         let isEmpty = style.contentStart >= utf16.count
 
         if isEmpty {
-            // 겹친 항목이면 한 단계 위로, 아니면 마커를 지운다.
-            let leading = prefix.prefix { $0 == " " || $0 == "\t" }
-            if leading.count >= 2 {
-                let outdented = String(prefix.dropFirst(min(2, leading.count)))
-                return .replacePrefix(length: style.contentStart, with: outdented)
+            // 겹친 항목이면 **얕은 위 줄의 칸까지** 나오고, 더 나올 데가 없으면 마커를 지운다.
+            let marker = prefix.drop { $0 == " " || $0 == "\t" }
+            let here = leadingWidth(paragraph)
+            let target = shallower.map(leadingWidth) ?? 0
+            if here > target {
+                return .replacePrefix(length: style.contentStart,
+                                      with: String(repeating: " ", count: target) + String(marker))
             }
             return .replacePrefix(length: style.contentStart, with: "")
         }
@@ -170,26 +181,40 @@ public enum ListEditing {
         line.prefix { $0 == " " || $0 == "\t" }.reduce(0) { $0 + ($1 == "\t" ? 4 : 1) }
     }
 
-    /// 마커 너비 — `- ` 는 둘, `1. ` 은 셋, `10. ` 은 넷. 목록이 아니면 `nil`.
+    /// **글이 시작하는 칸** — 자식 항목은 여기까지 들어가야 겹친 것으로 읽힌다.
+    ///
+    /// **마커 뒤의 빈칸까지 센다** (141 뒷이야기 · 사용자 · 빌드 43 — *5칸인데 6칸이면
+    /// 맞게 나온다*). 예전에는 빈칸을 **하나로 못 박아** `1.  글` 처럼 둘을 띄운 줄에서
+    /// 한 칸을 덜 셌고, 그만큼 덜 들여쓴 자식은 겹치지 못했다. 마크다운은 마커 뒤
+    /// **빈칸 1~4 칸**을 딸림으로 보고 그 뒤부터가 글이다. 다섯 칸을 넘으면 딸림은
+    /// 하나이고 나머지는 항목 **안의 코드**다.
     ///
     /// **`LineStyler` 의 `contentStart` 를 쓰지 않는다.** 그쪽은 `- [ ] ` 의 체크박스까지
-    /// 마커로 세는데(화면에 그리려고), 마크다운이 보는 **글이 시작하는 칸**은 `- ` 뒤다.
-    /// 여섯 칸을 들여쓰면 부모의 글칸(둘)보다 네 칸이 더 들어가 **코드로 읽힌다** —
-    /// 겹친 목록이 아니라.
-    private static func markerWidth(_ line: String) -> Int? {
+    /// 마커로 세는데(화면에 그리려고), 마크다운이 보는 글칸은 `- ` 뒤다.
+    static func contentColumn(_ line: String) -> Int? {
+        let indent = leadingWidth(line)
         let rest = line.drop { $0 == " " || $0 == "\t" }
-        if rest.hasPrefix("- ") || rest.hasPrefix("* ") || rest.hasPrefix("+ ") { return 2 }
-        let digits = rest.prefix { $0.isASCII && $0.isNumber }
-        guard !digits.isEmpty else { return nil }
-        let after = rest.dropFirst(digits.count)
-        guard after.hasPrefix(". ") || after.hasPrefix(") ") else { return nil }
-        return digits.count + 2
-    }
-
-    /// **글이 시작하는 칸** — 자식 항목은 여기까지 들어가야 겹친 것으로 읽힌다.
-    private static func contentColumn(_ line: String) -> Int? {
-        guard let width = markerWidth(line) else { return nil }
-        return leadingWidth(line) + width
+        let markLength: Int
+        if let first = rest.first, first == "-" || first == "*" || first == "+" {
+            markLength = 1
+        } else {
+            let digits = rest.prefix { $0.isASCII && $0.isNumber }
+            guard !digits.isEmpty, digits.count <= 9,
+                  let punctuation = rest.dropFirst(digits.count).first,
+                  punctuation == "." || punctuation == ")" else { return nil }
+            markLength = digits.count + 1
+        }
+        let after = rest.dropFirst(markLength)
+        // 마커뿐인 빈 항목 — 딸림은 하나로 본다.
+        if after.allSatisfy({ $0 == " " || $0 == "\t" }) { return indent + markLength + 1 }
+        if after.hasPrefix("\t") {
+            // 탭은 **다음 네 칸 자리**까지 민다.
+            let column = indent + markLength
+            return column + (4 - column % 4)
+        }
+        let spaces = after.prefix { $0 == " " }.count
+        guard spaces > 0 else { return nil }
+        return indent + markLength + (spaces > 4 ? 1 : spaces)
     }
 
     // MARK: - 번호 다시 매기기 (빌드 32 · 104)

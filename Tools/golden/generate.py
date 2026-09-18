@@ -19,12 +19,14 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import re
 import sys
 import unicodedata
 import urllib.parse
 
 try:
     from markdown_it import MarkdownIt
+    import cmarkgfm
     import yaml
 except ImportError:  # pragma: no cover
     sys.exit("먼저 설치하세요: pip install -r Tools/golden/requirements.txt")
@@ -41,10 +43,36 @@ TAG_CASES = ROOT / "Tools" / "golden" / "tag-cases.json"
 REBASE_CASES = ROOT / "Tools" / "golden" / "rebase-cases.json"
 PIN_CASES = ROOT / "Tools" / "golden" / "pin-cases.json"
 FORMAT_CASES = ROOT / "Tools" / "golden" / "format-cases.json"
+ENTER_CASES = ROOT / "Tools" / "golden" / "enter-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
 MARKDOWN_EXTS = {"md", "markdown"}
+
+
+# ── 심판 둘 — markdown-it 과 cmark-gfm ────────────────────────────────────────
+#
+# **앱의 읽기 모드는 swift-markdown 으로 그린다.** swift-markdown 은 cmark-gfm 을
+# 감싼 것이라, 여기서 cmark-gfm 에게 물으면 **앱이 볼 모습**에 가장 가깝다.
+# markdown-it 은 다른 사람이 따로 구현한 것이라 둘이 어긋나면 그 자리가 수상하다.
+# 빌드 43 에서 목록이 겹치지 않은 일을 찾을 때, 둘이 **같은 답**을 준 덕분에 파서가
+# 아니라 **우리 셈**이 틀렸음을 빨리 알 수 있었다.
+
+
+def cmark_html(text: str) -> str:
+    """cmark-gfm 이 읽은 대로 (앱의 읽기 모드와 같은 계열)."""
+    return cmarkgfm.github_flavored_markdown_to_html(text)
+
+
+def nesting_count(text: str) -> int:
+    """목록 태그가 몇 겹인가 — **두 심판이 같은 수를 말해야** 한다."""
+    counts = []
+    for html in (make_parser().render(text), cmark_html(text)):
+        counts.append(html.count("<ol") + html.count("<ul"))
+    if counts[0] != counts[1]:
+        raise SystemExit(
+            f"::error::심판 둘이 갈린다 — markdown-it {counts[0]} · cmark-gfm {counts[1]}:\n{text}")
+    return counts[0]
 
 
 # ── 링크 뽑기 — markdown-it-py 로 (swift-markdown 과 다른 구현) ────────────────
@@ -572,26 +600,29 @@ def leading_width(line: str) -> int:
     return width
 
 
-def marker_width(line: str):
-    """`- ` 는 둘, `1. ` 은 셋, `10. ` 은 넷. 목록이 아니면 None."""
-    rest = line[len(line) - len(line.lstrip(" \t")):]
-    if rest[:2] in ("- ", "* ", "+ "):
-        return 2
-    digits = ""
-    for ch in rest:
-        if ch.isdigit() and ch.isascii():
-            digits += ch
-        else:
-            break
-    if digits and rest[len(digits):len(digits) + 2] in (". ", ") "):
-        return len(digits) + 2
-    return None
-
-
 def content_column(line: str):
-    """**글이 시작하는 칸** — 자식 항목은 여기까지 들어가야 겹친 것으로 읽힌다."""
-    width = marker_width(line)
-    return None if width is None else leading_width(line) + width
+    """**글이 시작하는 칸** — 자식은 여기까지 들어가야 겹친다 (141 뒷이야기).
+
+    마커 뒤 빈칸까지 센다. 마크다운은 마커 뒤 빈칸 1~4 칸을 딸림으로 보고 그 뒤부터가
+    글이다. 다섯 칸을 넘으면 딸림은 하나이고 나머지는 항목 안의 코드다. 예전에는 빈칸을
+    하나로 못 박아 `1.  글` 에서 한 칸을 덜 셌다.
+    """
+    indent = leading_width(line)
+    rest = line.lstrip(" \t")
+    m = re.match(r"^([-*+]|\d{1,9}[.)])", rest)
+    if not m:
+        return None
+    mark_length = len(m.group(1))
+    after = rest[mark_length:]
+    if after.strip(" \t") == "":
+        return indent + mark_length + 1          # 마커뿐인 빈 항목
+    if after.startswith("\t"):
+        column = indent + mark_length            # 탭은 다음 네 칸 자리까지 민다
+        return column + (4 - column % 4)
+    spaces = len(after) - len(after.lstrip(" "))
+    if spaces == 0:
+        return None
+    return indent + mark_length + (1 if spaces > 4 else spaces)
 
 
 def indent_block(block: str, under: str | None = None):
@@ -658,6 +689,7 @@ def check_depths(case: str, lines: list[str]) -> None:
     맞지 않는다 — 목록 항목은 `list_item_open` 하나에 한 줄로 또박또박 대응한다.
     """
     text = "\n".join(lines) + "\n"
+    nesting_count(text)          # 두 심판이 같은 말을 하는지 먼저 본다
     md = make_parser()
     seen, depth = [], 0
     for token in md.parse(text):
@@ -726,10 +758,9 @@ def check_nesting(case: str, parent: str, indented: str) -> None:
     # 읽지만(번호가 1이 아닌 목록은 문단을 못 끊는다), 앱에서는 곧바로 `1.` 이 된다.
     block = renumbered(parent + "\n" + indented)
 
-    md = make_parser()
-    html = md.render(block + "\n")
     # `<ol start="10">` 처럼 **속성이 붙은 태그**도 센다 — `<ol>` 만 찾으면 못 잡는다.
-    inner = html.count("<ol") + html.count("<ul")
+    # **심판 둘에게 함께 묻는다** — markdown-it 과 cmark-gfm (앱의 읽기 모드 계열).
+    inner = nesting_count(block + "\n")
     # 부모가 목록이면 **겹쳐야** 하고, 목록이 아니면 겹칠 자리가 없으니
     # **목록으로 남기만** 하면 된다 (141 — `10. ` 을 네 칸 넣어 코드로 만들던 자리).
     want = 2 if is_list_item(parent) else 1
@@ -773,6 +804,71 @@ def build_depth_cases() -> list[dict]:
         lines = case["lines"]
         check_depths(case["name"], lines)
         out.append({"name": case["name"], "lines": lines, "depths": depths_in(lines)})
+    return out
+
+
+# ── 엔터 — 빈 항목에서 나오기 (141 뒷이야기) ────────────────────────────────
+
+
+def marker_prefix(line: str):
+    """`- ` · `1. ` · `- [ ] ` 처럼 **편집기가 마커로 먹는** 앞머리. 목록이 아니면 None.
+
+    `LineStyler.contentStart` 와 같은 셈이다 — 체크박스까지 마커로 본다.
+    """
+    lead = line[: len(line) - len(line.lstrip(" \t"))]
+    rest = line[len(lead):]
+    m = re.match(r"^([-*+]|\d{1,9}[.)])([ ]+|$)", rest)
+    if not m:
+        return None
+    end = len(lead) + m.end()
+    box = re.match(r"^\[[ xX]\]([ ]+|$)", line[end:])
+    if m.group(1) in "-*+" and box:
+        end += box.end()
+    return line[:end]
+
+
+def return_pressed(line: str, shallower: str | None = None):
+    """엔터를 쳤을 때 (앱의 `ListEditing.returnPressed`).
+
+    빈 항목이면 **얕은 위 줄의 칸까지** 나온다. 예전에는 무조건 빈칸 둘을 뺐는데,
+    단계의 너비는 부모의 마커에 따라 둘 · 셋 · 넷으로 달라서 어느 단계에도 없는 칸에
+    서게 됐다 (사용자 · 빌드 43 — 커서가 엉뚱한 자리에 있다가 글자를 치면 도로 간다).
+    """
+    prefix = marker_prefix(line)
+    if prefix is None:
+        return None
+    if line[len(prefix):] != "":
+        return {"kind": "insert", "text": "\n" + next_marker(prefix)}
+    marker = prefix.lstrip(" \t")
+    here = leading_width(line)
+    target = leading_width(shallower) if shallower else 0
+    replacement = " " * target + marker if here > target else ""
+    return {"kind": "replacePrefix", "length": u16len(prefix), "text": replacement}
+
+
+def next_marker(prefix: str) -> str:
+    lead = prefix[: len(prefix) - len(prefix.lstrip(" \t"))]
+    rest = prefix[len(lead):]
+    digits = rest[: len(rest) - len(rest.lstrip("0123456789"))]
+    out = lead + (str(int(digits) + 1) if digits else "")
+    return out + rest[len(digits):].replace("[x]", "[ ]").replace("[X]", "[ ]")
+
+
+def build_enter_cases() -> list[dict]:
+    spec = json.loads(ENTER_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        above = case.get("above", [])
+        line = case["line"]
+        shallower = case.get("shallower")
+        action = return_pressed(line, shallower)
+        # **나온 결과가 여전히 제대로 된 목록인가** — 심판 둘에게 묻는다.
+        if action and action["kind"] == "replacePrefix" and action["text"]:
+            block = "\n".join(above + [action["text"] + "글"]) + "\n"
+            if nesting_count(block) < nesting_count("\n".join(above) + "\n"):
+                raise SystemExit(f"::error::[{case['name']}] 나오고 나니 목록이 무너졌다:\n{block}")
+        out.append({"name": case["name"], "above": above, "line": line,
+                    "shallower": shallower, "action": action})
     return out
 
 
@@ -1104,6 +1200,7 @@ def build() -> dict:
         "styleCases": build_style_cases(),
         "indentCases": build_indent_cases(),
         "depthCases": build_depth_cases(),
+        "enterCases": build_enter_cases(),
         "renumberCases": build_renumber_cases(),
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
@@ -1315,6 +1412,18 @@ def build_format_cases() -> list[dict]:
     return out
 
 
+def tally(loaded: dict) -> str:
+    """세어 보여 줄 것들 — **한 군데에만 적는다.** 두 벌로 갈라 두었더니 새 사례를 넣을
+    때마다 한쪽만 고쳐져 셈이 빠졌다."""
+    parts = [
+        ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
+        ("단계", "depthCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
+        ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"),
+    ]
+    return " · ".join(f"{name} {len(loaded[key])}건" for name, key in parts)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true",
@@ -1332,30 +1441,13 @@ def main() -> int:
             print("::error::기댓값이 어긋납니다. `python3 Tools/golden/generate.py` 를 돌리고 커밋하세요.")
             return 1
         loaded = json.loads(current)
-        print(f"기댓값 {len(loaded['cases'])}건 · 줄 모양 {len(loaded['styleCases'])}건"
-              f" · 들여쓰기 {len(loaded['indentCases'])}건"
-              f" · 단계 {len(loaded['depthCases'])}건"
-              f" · 번호 {len(loaded['renumberCases'])}건"
-              f" · 상대 링크 {len(loaded['linkCases'])}건"
-              f" · 태그 {len(loaded['tagCases'])}건"
-              f" · 옮기기 {len(loaded['rebaseCases'])}건"
-              f" · 고정 {len(loaded['pinCases'])}건"
-              f" · 편집 도구 {len(loaded['formatCases'])}건 — 커밋된 것과 같습니다.")
+        print("기댓값 " + tally(loaded) + " — 커밋된 것과 같습니다.")
         return 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(fresh, encoding="utf-8")
     loaded = json.loads(fresh)
-    print(f"{OUT.relative_to(ROOT)} — 사례 {len(loaded['cases'])}건"
-          f" · 줄 모양 {len(loaded['styleCases'])}건"
-          f" · 들여쓰기 {len(loaded['indentCases'])}건"
-          f" · 단계 {len(loaded['depthCases'])}건"
-          f" · 번호 {len(loaded['renumberCases'])}건"
-          f" · 상대 링크 {len(loaded['linkCases'])}건"
-          f" · 태그 {len(loaded['tagCases'])}건"
-          f" · 옮기기 {len(loaded['rebaseCases'])}건"
-          f" · 고정 {len(loaded['pinCases'])}건"
-          f" · 편집 도구 {len(loaded['formatCases'])}건")
+    print(f"{OUT.relative_to(ROOT)} — " + tally(loaded))
     return 0
 
 

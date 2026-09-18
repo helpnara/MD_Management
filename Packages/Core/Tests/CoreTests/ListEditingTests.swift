@@ -21,21 +21,21 @@ final class ListEditingTests: XCTestCase {
         XCTAssertEqual(ListEditing.returnPressed(in: "- [ ] 할 일"), .insert("\n- [ ] "))
     }
 
-    func testEmptyItemEndsOrOutdents() {
+    /// 빈 항목에서 엔터 — **얕은 위 줄의 칸까지** 나온다 (141 뒷이야기).
+    ///
+    /// 사례와 기댓값은 `EnterGoldenTests` 가 파이썬 대조로 지킨다. 여기서는 **문맥이
+    /// 없을 때** 무엇을 하는지만 본다 — 나올 데가 없으면 마커를 지운다.
+    func testEmptyItemEndsWhenThereIsNowhereToGo() {
         XCTAssertEqual(ListEditing.returnPressed(in: "- "), .replacePrefix(length: 2, with: ""),
                        "최상위 빈 항목 → 보통 글")
         XCTAssertEqual(ListEditing.returnPressed(in: "1. "), .replacePrefix(length: 3, with: ""))
         XCTAssertEqual(ListEditing.returnPressed(in: "- [ ] "), .replacePrefix(length: 6, with: ""))
-        XCTAssertEqual(ListEditing.returnPressed(in: "  - "), .replacePrefix(length: 4, with: "- "),
-                       "겹친 빈 항목 → 한 단계 위로")
-        // **세 단계 이상도 이어진다** (T4, 빌드 34). 빌드 9 부터 빌드 33 까지는 여기서
-        // `nil` 이었다 — 빈칸 네 개를 CommonMark 가 코드로 읽기 때문이다. 그러나 그것은
-        // **앞 줄이 목록이라는 문맥이 없을 때** 이야기고, 파일에서는 겹친 항목이 맞다.
-        // 이제 목록 마커가 네 칸 규칙을 이긴다 (`LineStyler.startsListItem`).
-        XCTAssertEqual(ListEditing.returnPressed(in: "    - "), .replacePrefix(length: 6, with: "  - "),
-                       "셋째 단계 빈 항목 → 둘째 단계로")
+        // **얕은 위 줄이 없으면 맨 앞까지 나온다.** 빈칸 둘씩 야금야금이 아니다 — 위에
+        // 아무것도 없는데 중간 칸에 서면 그 칸은 어느 단계도 아니다.
+        XCTAssertEqual(ListEditing.returnPressed(in: "    - "), .replacePrefix(length: 6, with: "- "),
+                       "문맥이 없으면 맨 앞으로")
         XCTAssertEqual(ListEditing.returnPressed(in: "    - 셋째"), .insert("\n    - "),
-                       "셋째 단계에서도 다음 항목을 이어 준다")
+                       "글이 있으면 셋째 단계에서도 다음 항목을 이어 준다")
     }
 
     func testPlainParagraphIsNotHandled() {
