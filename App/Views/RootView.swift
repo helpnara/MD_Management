@@ -58,7 +58,18 @@ struct RootView: View {
         }
         // **배너는 아래에 둔다.** 위에 두면 내비게이션 바를 덮어 제목과 버튼이
         // 잘린다 (빌드 2 스크린샷). 아래는 덮을 것이 없다.
-        .safeAreaInset(edge: .bottom, spacing: 0) { StatusBanner() }
+        //
+        // **편집 도구 띠도 같은 칸에 세운다** (127). 편집기 안에 그렸더니 이 배너가
+        // 화면 맨 아래 칸을 이미 차지하고 있어 **도구 띠가 그 아래로 깔려 잘렸다**
+        // (시뮬레이터 스크린샷 두 번). 한 칸에 위아래로 두면 둘 다 온전히 보인다.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                if library.selectedNoteID != nil, !library.isReading, library.sheet == nil {
+                    FormatBar()
+                }
+                StatusBanner()
+            }
+        }
         // **시트는 하나로 모은다.** 한 뷰에 `.sheet` 를 여러 개 걸면 마지막
         // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
         .modifier(NoteActionAlerts())
@@ -825,8 +836,6 @@ private struct NoteDetail: View {
                     onImageLineChanged: library.cursorImageLineChanged)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
-                // **편집 도구 띠** (127 · T13 1차).
-                FormatBar()
             }
         }
     }
