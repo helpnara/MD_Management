@@ -39,6 +39,7 @@ LINK_CASES = ROOT / "Tools" / "golden" / "relative-link-cases.json"
 TAG_CASES = ROOT / "Tools" / "golden" / "tag-cases.json"
 REBASE_CASES = ROOT / "Tools" / "golden" / "rebase-cases.json"
 PIN_CASES = ROOT / "Tools" / "golden" / "pin-cases.json"
+FORMAT_CASES = ROOT / "Tools" / "golden" / "format-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -939,7 +940,179 @@ def build() -> dict:
         "tagCases": build_tag_cases(),
         "rebaseCases": build_rebase_cases(),
         "pinCases": build_pin_cases(),
+        "formatCases": build_format_cases(),
     }
+
+
+# ── 편집 도구 띠 — 굵게 · 기울임 · 취소선 · 인용 · 표 (T13 1차) ────────────────
+#
+# **스위프트와 따로 구현한다.** 같은 규칙을 두 번 적어 서로를 잡게 하는 것이 이 심판의
+# 전부다 — 한쪽만 있으면 테스트가 버그를 승인한다 (CLAUDE.md §2).
+# 게다가 결과가 **정말 그 마크다운이 되는지**는 markdown-it 이 한 번 더 본다.
+
+WRAPS = {"bold": "**", "italic": "*", "strikethrough": "~~"}
+WRAP_TAG = {"bold": "strong", "italic": "em", "strikethrough": "s"}
+
+
+def to_units(text: str) -> list[int]:
+    raw = text.encode("utf-16-le")
+    return [int.from_bytes(raw[i:i + 2], "little") for i in range(0, len(raw), 2)]
+
+
+def from_units(units: list[int]) -> str:
+    return b"".join(u.to_bytes(2, "little") for u in units).decode("utf-16-le")
+
+
+def u16len(text: str) -> int:
+    return len(text.encode("utf-16-le")) // 2
+
+
+def toggle_wrap(op: str, text: str, start: int, length: int) -> dict:
+    units = to_units(text)
+    marker = to_units(WRAPS[op])
+    width = len(marker)
+    end = start + length
+    star = to_units("*")[0]
+    italic = op == "italic"
+
+    def at(index: int) -> bool:
+        return 0 <= index and index + width <= len(units) and units[index:index + width] == marker
+
+    def run_after(index: int) -> bool:
+        return italic and index + 1 < len(units) and units[index + 1] == star
+
+    def run_before(index: int) -> bool:
+        return italic and index - 1 >= 0 and units[index - 1] == star
+
+    # 1. 고른 글이 표시를 물고 있다.
+    if (length >= width * 2 and at(start) and at(end - width)
+            and not run_after(start) and not run_before(end - width)):
+        inner = from_units(units[start + width:end - width])
+        return {"start": start, "length": length, "text": inner,
+                "selectionStart": start, "selectionLength": u16len(inner)}
+    # 2. 고른 글 바깥이 표시다.
+    if (start >= width and end + width <= len(units) and at(start - width) and at(end)
+            and not run_before(start - width) and not run_after(end)):
+        inner = from_units(units[start:end])
+        return {"start": start - width, "length": length + width * 2, "text": inner,
+                "selectionStart": start - width, "selectionLength": length}
+    # 3. 감싼다. 가장자리의 빈칸은 물러난다 — `** 회**` 는 마크다운이 안 먹는다.
+    blanks = {0x20, 0x09, 0x0A}
+    begin, finish = start, end
+    while begin < finish and units[begin] in blanks:
+        begin += 1
+    while finish > begin and units[finish - 1] in blanks:
+        finish -= 1
+    inner = from_units(units[begin:finish])
+    return {"start": begin, "length": finish - begin,
+            "text": WRAPS[op] + inner + WRAPS[op],
+            "selectionStart": begin + width, "selectionLength": finish - begin}
+
+
+def line_range(units: list[int], start: int, length: int) -> tuple[int, int]:
+    newline = to_units("\n")[0]
+    begin = max(0, min(start, len(units)))
+    finish = max(begin, min(start + length, len(units)))
+    while begin > 0 and units[begin - 1] != newline:
+        begin -= 1
+    while finish < len(units) and units[finish] != newline:
+        finish += 1
+    if finish > begin and length > 0 and units[finish - 1] == newline:
+        finish -= 1
+    return begin, finish
+
+
+def unquote(line: str) -> str:
+    lead = line[:len(line) - len(line.lstrip(" \t"))]
+    rest = line[len(lead):]
+    if not rest.startswith(">"):
+        return line
+    rest = rest[1:]
+    if rest.startswith(" "):
+        rest = rest[1:]
+    return lead + rest
+
+
+def toggle_quote(text: str, start: int, length: int) -> dict:
+    units = to_units(text)
+    begin, finish = line_range(units, start, length)
+    lines = from_units(units[begin:finish]).split("\n")
+    meaningful = [line for line in lines if line.strip()]
+    all_quoted = bool(meaningful) and all(line.strip().startswith(">") for line in meaningful)
+
+    changed = [unquote(line) if all_quoted else (">" if not line.strip() else "> " + line)
+               for line in lines]
+    joined = "\n".join(changed)
+    return {"start": begin, "length": finish - begin, "text": joined,
+            "selectionStart": begin, "selectionLength": u16len(joined)}
+
+
+def make_table(text: str, start: int, rows: int = 3, columns: int = 3) -> dict:
+    units = to_units(text)
+    begin, finish = line_range(units, start, 0)
+    current = from_units(units[begin:finish])
+    empty_line = not current.strip()
+
+    header = "| " + " | ".join(f"제목 {n}" for n in range(1, columns + 1)) + " |"
+    rule = "| " + " | ".join(["---"] * columns) + " |"
+    body = ["|" + "  |" * columns] * max(1, rows - 1)
+    table = "\n".join([header, rule] + body)
+
+    insert_at = begin if empty_line else finish
+    before = "" if empty_line else "\n\n"
+    after = "\n" if insert_at >= len(units) else "\n\n"
+    piece = before + table + after
+    lead = u16len(before + "| ")
+    return {"start": insert_at, "length": 0, "text": piece,
+            "selectionStart": insert_at + lead, "selectionLength": u16len("제목 1")}
+
+
+def apply_edit(text: str, edit: dict) -> str:
+    units = to_units(text)
+    head = units[:edit["start"]]
+    tail = units[edit["start"] + edit["length"]:]
+    return from_units(head) + edit["text"] + from_units(tail)
+
+
+def check_with_markdown(op: str, applied: str, edit: dict) -> None:
+    """**결과가 정말 그 마크다운인가.** 우리 규칙이 맞다고 우기지 않고 파서에게 묻는다."""
+    md = make_parser()
+    html = md.render(applied)
+    # **건 것만 본다.** 푸는 쪽은 표시가 사라지는 것이 맞으므로 파서에게 물을 것이 없다.
+    added = u16len(edit["text"]) > edit["length"]
+    if op in WRAP_TAG and added:
+        inner = from_units(to_units(applied)[edit["selectionStart"]:
+                                             edit["selectionStart"] + edit["selectionLength"]])
+        if not inner.strip():
+            return
+        tag = WRAP_TAG[op]
+        if f"<{tag}>" not in html:
+            raise SystemExit(f"::error::{op} 를 걸었는데 <{tag}> 가 안 나온다: {applied!r}")
+    if op == "quote" and ">" in edit["text"] and "<blockquote>" not in html:
+        raise SystemExit(f"::error::인용을 걸었는데 blockquote 가 안 나온다: {applied!r}")
+    if op == "table" and "<table>" not in html:
+        raise SystemExit(f"::error::표를 넣었는데 table 이 안 나온다: {applied!r}")
+
+
+def build_format_cases() -> list[dict]:
+    spec = json.loads(FORMAT_CASES.read_text(encoding="utf-8"))
+    out: list[dict] = []
+    for case in spec["cases"]:
+        op, text = case["op"], case["text"]
+        start, length = case["start"], case.get("length", 0)
+        if op in WRAPS:
+            edit = toggle_wrap(op, text, start, length)
+        elif op == "quote":
+            edit = toggle_quote(text, start, length)
+        elif op == "table":
+            edit = make_table(text, start)
+        else:
+            raise SystemExit(f"::error::모르는 도구 {op!r}")
+        applied = apply_edit(text, edit)
+        check_with_markdown(op, applied, edit)
+        out.append({"name": case["name"], "op": op, "text": text,
+                    "start": start, "length": length, "edit": edit, "applied": applied})
+    return out
 
 
 def main() -> int:
@@ -965,7 +1138,8 @@ def main() -> int:
               f" · 상대 링크 {len(loaded['linkCases'])}건"
               f" · 태그 {len(loaded['tagCases'])}건"
               f" · 옮기기 {len(loaded['rebaseCases'])}건"
-              f" · 고정 {len(loaded['pinCases'])}건 — 커밋된 것과 같습니다.")
+              f" · 고정 {len(loaded['pinCases'])}건"
+              f" · 편집 도구 {len(loaded['formatCases'])}건 — 커밋된 것과 같습니다.")
         return 0
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
@@ -978,7 +1152,8 @@ def main() -> int:
           f" · 상대 링크 {len(loaded['linkCases'])}건"
           f" · 태그 {len(loaded['tagCases'])}건"
           f" · 옮기기 {len(loaded['rebaseCases'])}건"
-          f" · 고정 {len(loaded['pinCases'])}건")
+          f" · 고정 {len(loaded['pinCases'])}건"
+          f" · 편집 도구 {len(loaded['formatCases'])}건")
     return 0
 
 

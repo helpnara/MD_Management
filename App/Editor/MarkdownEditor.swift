@@ -40,6 +40,9 @@ struct MarkdownEditor: UIViewRepresentable {
     /// 커서 자리에 넣을 글 (사진 링크). 넣고 나면 `onInserted` 로 알린다.
     var insertion: LibraryModel.Insertion? = nil
     var onInserted: @MainActor () -> Void = {}
+    /// 편집 도구 띠의 부탁 (127). 하고 나면 `onFormatted` 로 알린다.
+    var format: LibraryModel.FormatRequest? = nil
+    var onFormatted: @MainActor () -> Void = {}
     /// 커서가 **제목 줄(머리말 뒤 첫 줄)** 에 있나. 바뀔 때만 알린다 — 그 줄을 떠나야
     /// 파일명을 바꾼다 (89). 치는 중간마다 바꾸면 iCloud 가 그 하나하나를 퍼뜨려 충돌을 부른다.
     var onTitleLineChanged: @MainActor (Bool) -> Void = { _ in }
@@ -98,6 +101,7 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
+        if let format, coordinator.apply(format) { onFormatted() }
     }
 
     @MainActor
@@ -106,6 +110,8 @@ struct MarkdownEditor: UIViewRepresentable {
         var onTitleLine: @MainActor (Bool) -> Void
         var onFocus: @MainActor (Bool) -> Void
         var onImageLine: @MainActor (String?) -> Void
+        /// 마지막으로 한 편집 도구 부탁 (127). 같은 것을 두 번 하지 않는다.
+        private var lastFormatID: UUID?
         /// 마지막으로 알린 사진 주소. 바뀔 때만 알린다.
         private var lastImageLine: String??
         /// 마지막으로 알린 값. 바뀔 때만 알린다.
@@ -217,6 +223,45 @@ struct MarkdownEditor: UIViewRepresentable {
             guard let target = textRange(view, range) else { return false }
             view.replace(target, withText: piece)
             view.selectedRange = NSRange(location: range.location + (piece as NSString).length, length: 0)
+            onEdit(view.text)
+            return true
+        }
+
+        /// **편집 도구 띠의 부탁을 한 번의 바꾸기로** (127 · T13 1차).
+        ///
+        /// 무엇을 넣을지는 `Core` 의 순수 함수가 정한다(`Formatting`) — 여기서는 그 결과를
+        /// `UITextView` 에 그대로 옮기기만 한다. **한 번의 `replace` 로 끝내는 것이 중요하다** —
+        /// 되돌리기(`⌘Z`)가 한 번에 걸린다.
+        func apply(_ request: LibraryModel.FormatRequest) -> Bool {
+            guard request.id != lastFormatID, let view else { return false }
+            lastFormatID = request.id
+
+            switch request.kind {
+            case .shift(let deeper):
+                shiftIndent(deeper)
+                return true
+            case .wrap(let wrap):
+                let selection = view.selectedRange
+                return apply(Formatting.toggle(wrap, in: view.textStorage.string,
+                                               start: selection.location,
+                                               length: selection.length), in: view)
+            case .quote:
+                let selection = view.selectedRange
+                return apply(Formatting.toggleQuote(in: view.textStorage.string,
+                                                    start: selection.location,
+                                                    length: selection.length), in: view)
+            case .table:
+                let selection = view.selectedRange
+                return apply(Formatting.table(in: view.textStorage.string,
+                                              start: selection.location), in: view)
+            }
+        }
+
+        private func apply(_ edit: Formatting.Edit, in view: UITextView) -> Bool {
+            let range = NSRange(location: edit.start, length: edit.length)
+            guard let target = textRange(view, range) else { return false }
+            view.replace(target, withText: edit.text)
+            view.selectedRange = NSRange(location: edit.selectionStart, length: edit.selectionLength)
             onEdit(view.text)
             return true
         }

@@ -819,6 +819,338 @@
       "title": "표와 코드가 든 노트"
     }
   ],
+  "formatCases": [
+    {
+      "applied": "오늘 **회의** 정리",
+      "edit": {
+        "length": 2,
+        "selectionLength": 2,
+        "selectionStart": 5,
+        "start": 3,
+        "text": "**회의**"
+      },
+      "length": 2,
+      "name": "굵게 — 고른 글을 감싼다",
+      "op": "bold",
+      "start": 3,
+      "text": "오늘 회의 정리"
+    },
+    {
+      "applied": "오늘 회의 정리",
+      "edit": {
+        "length": 6,
+        "selectionLength": 2,
+        "selectionStart": 3,
+        "start": 3,
+        "text": "회의"
+      },
+      "length": 6,
+      "name": "굵게 — 이미 굵으면 푼다 (표시까지 골랐다)",
+      "op": "bold",
+      "start": 3,
+      "text": "오늘 **회의** 정리"
+    },
+    {
+      "applied": "오늘 회의 정리",
+      "edit": {
+        "length": 6,
+        "selectionLength": 2,
+        "selectionStart": 3,
+        "start": 3,
+        "text": "회의"
+      },
+      "length": 2,
+      "name": "굵게 — 이미 굵으면 푼다 (안쪽만 골랐다)",
+      "op": "bold",
+      "start": 5,
+      "text": "오늘 **회의** 정리"
+    },
+    {
+      "applied": "오늘 회의****",
+      "edit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 7,
+        "start": 5,
+        "text": "****"
+      },
+      "length": 0,
+      "name": "굵게 — 고른 것이 없으면 표시만 넣는다",
+      "op": "bold",
+      "start": 5,
+      "text": "오늘 회의"
+    },
+    {
+      "applied": "**회의**",
+      "edit": {
+        "length": 2,
+        "selectionLength": 2,
+        "selectionStart": 2,
+        "start": 0,
+        "text": "**회의**"
+      },
+      "length": 2,
+      "name": "굵게 — 글 끝에서",
+      "op": "bold",
+      "start": 0,
+      "text": "회의"
+    },
+    {
+      "applied": "오늘 *회의* 정리",
+      "edit": {
+        "length": 2,
+        "selectionLength": 2,
+        "selectionStart": 4,
+        "start": 3,
+        "text": "*회의*"
+      },
+      "length": 2,
+      "name": "기울임 — 감싼다",
+      "op": "italic",
+      "start": 3,
+      "text": "오늘 회의 정리"
+    },
+    {
+      "applied": "오늘 회의 정리",
+      "edit": {
+        "length": 4,
+        "selectionLength": 2,
+        "selectionStart": 3,
+        "start": 3,
+        "text": "회의"
+      },
+      "length": 4,
+      "name": "기울임 — 이미 기울이면 푼다",
+      "op": "italic",
+      "start": 3,
+      "text": "오늘 *회의* 정리"
+    },
+    {
+      "applied": "오늘 ***회의*** 정리",
+      "edit": {
+        "length": 6,
+        "selectionLength": 6,
+        "selectionStart": 4,
+        "start": 3,
+        "text": "***회의***"
+      },
+      "length": 6,
+      "name": "기울임 — 굵은 글에 겹쳐 건다 (별을 벗기지 않는다)",
+      "op": "italic",
+      "start": 3,
+      "text": "오늘 **회의** 정리"
+    },
+    {
+      "applied": "오늘 ***회의*** 정리",
+      "edit": {
+        "length": 2,
+        "selectionLength": 2,
+        "selectionStart": 6,
+        "start": 5,
+        "text": "*회의*"
+      },
+      "length": 2,
+      "name": "기울임 — 안쪽만 골라도 굵은 것을 안 건드린다",
+      "op": "italic",
+      "start": 5,
+      "text": "오늘 **회의** 정리"
+    },
+    {
+      "applied": "오늘 ~~회의~~ 정리",
+      "edit": {
+        "length": 2,
+        "selectionLength": 2,
+        "selectionStart": 5,
+        "start": 3,
+        "text": "~~회의~~"
+      },
+      "length": 2,
+      "name": "취소선 — 감싼다",
+      "op": "strikethrough",
+      "start": 3,
+      "text": "오늘 회의 정리"
+    },
+    {
+      "applied": "오늘 회의 정리",
+      "edit": {
+        "length": 6,
+        "selectionLength": 2,
+        "selectionStart": 3,
+        "start": 3,
+        "text": "회의"
+      },
+      "length": 6,
+      "name": "취소선 — 푼다",
+      "op": "strikethrough",
+      "start": 3,
+      "text": "오늘 ~~회의~~ 정리"
+    },
+    {
+      "applied": "정리 🙂 **회의** 끝",
+      "edit": {
+        "length": 2,
+        "selectionLength": 2,
+        "selectionStart": 8,
+        "start": 6,
+        "text": "**회의**"
+      },
+      "length": 2,
+      "name": "굵게 — 한글과 이모지가 섞인 줄",
+      "op": "bold",
+      "start": 6,
+      "text": "정리 🙂 회의 끝"
+    },
+    {
+      "applied": "오늘 **회의** 정리",
+      "edit": {
+        "length": 2,
+        "selectionLength": 2,
+        "selectionStart": 5,
+        "start": 3,
+        "text": "**회의**"
+      },
+      "length": 3,
+      "name": "굵게 — 뒤 빈칸이 딸려 왔다 (물러나서 감싼다)",
+      "op": "bold",
+      "start": 3,
+      "text": "오늘 회의 정리"
+    },
+    {
+      "applied": "오늘 ****회의",
+      "edit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 5,
+        "start": 3,
+        "text": "****"
+      },
+      "length": 1,
+      "name": "굵게 — 빈칸만 골랐다",
+      "op": "bold",
+      "start": 2,
+      "text": "오늘 회의"
+    },
+    {
+      "applied": "첫 줄\n> 둘째 줄\n셋째 줄",
+      "edit": {
+        "length": 4,
+        "selectionLength": 6,
+        "selectionStart": 4,
+        "start": 4,
+        "text": "> 둘째 줄"
+      },
+      "length": 0,
+      "name": "인용 — 한 줄에 건다",
+      "op": "quote",
+      "start": 6,
+      "text": "첫 줄\n둘째 줄\n셋째 줄"
+    },
+    {
+      "applied": "> 첫 줄\n> 둘째 줄\n> 셋째 줄",
+      "edit": {
+        "length": 13,
+        "selectionLength": 19,
+        "selectionStart": 0,
+        "start": 0,
+        "text": "> 첫 줄\n> 둘째 줄\n> 셋째 줄"
+      },
+      "length": 10,
+      "name": "인용 — 여러 줄에 건다",
+      "op": "quote",
+      "start": 0,
+      "text": "첫 줄\n둘째 줄\n셋째 줄"
+    },
+    {
+      "applied": "첫 줄\n둘째 줄",
+      "edit": {
+        "length": 12,
+        "selectionLength": 8,
+        "selectionStart": 0,
+        "start": 0,
+        "text": "첫 줄\n둘째 줄"
+      },
+      "length": 12,
+      "name": "인용 — 이미 다 인용이면 푼다",
+      "op": "quote",
+      "start": 0,
+      "text": "> 첫 줄\n> 둘째 줄"
+    },
+    {
+      "applied": "> > 첫 줄\n> 둘째 줄",
+      "edit": {
+        "length": 10,
+        "selectionLength": 14,
+        "selectionStart": 0,
+        "start": 0,
+        "text": "> > 첫 줄\n> 둘째 줄"
+      },
+      "length": 11,
+      "name": "인용 — 하나만 인용이면 마저 건다",
+      "op": "quote",
+      "start": 0,
+      "text": "> 첫 줄\n둘째 줄"
+    },
+    {
+      "applied": "> 첫 줄\n>\n> 셋째 줄",
+      "edit": {
+        "length": 9,
+        "selectionLength": 14,
+        "selectionStart": 0,
+        "start": 0,
+        "text": "> 첫 줄\n>\n> 셋째 줄"
+      },
+      "length": 9,
+      "name": "인용 — 사이의 빈 줄에는 표시만",
+      "op": "quote",
+      "start": 0,
+      "text": "첫 줄\n\n셋째 줄"
+    },
+    {
+      "applied": "앞 글\n\n| 제목 1 | 제목 2 | 제목 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n",
+      "edit": {
+        "length": 0,
+        "selectionLength": 4,
+        "selectionStart": 7,
+        "start": 5,
+        "text": "| 제목 1 | 제목 2 | 제목 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n"
+      },
+      "length": 0,
+      "name": "표 — 빈 줄에 넣는다",
+      "op": "table",
+      "start": 5,
+      "text": "앞 글\n\n"
+    },
+    {
+      "applied": "앞 글\n\n| 제목 1 | 제목 2 | 제목 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n",
+      "edit": {
+        "length": 0,
+        "selectionLength": 4,
+        "selectionStart": 7,
+        "start": 3,
+        "text": "\n\n| 제목 1 | 제목 2 | 제목 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n"
+      },
+      "length": 0,
+      "name": "표 — 글이 있는 줄 다음에 넣는다",
+      "op": "table",
+      "start": 2,
+      "text": "앞 글"
+    },
+    {
+      "applied": "앞 글\n\n| 제목 1 | 제목 2 | 제목 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n\n\n뒷 글",
+      "edit": {
+        "length": 0,
+        "selectionLength": 4,
+        "selectionStart": 7,
+        "start": 3,
+        "text": "\n\n| 제목 1 | 제목 2 | 제목 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n\n"
+      },
+      "length": 0,
+      "name": "표 — 글 한복판에서",
+      "op": "table",
+      "start": 1,
+      "text": "앞 글\n뒷 글"
+    }
+  ],
   "indentCases": [
     {
       "indented": {

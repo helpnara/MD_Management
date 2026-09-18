@@ -107,6 +107,30 @@ final class LibraryModel: ObservableObject {
     @Published var syncsFileName: Bool = UserDefaults.standard.object(forKey: "title.align") as? Bool ?? true {
         didSet { UserDefaults.standard.set(syncsFileName, forKey: "title.align") }
     }
+    /// **편집 도구 띠가 편집기에 보내는 한 번짜리 부탁** (127 · T13 1차).
+    ///
+    /// 값을 고치는 길은 **편집기 하나뿐이다** (CLAUDE.md §1 — 값의 출입구는 하나다).
+    /// 그래서 띠는 본문을 건드리지 않고 **무엇을 해 달라**만 남긴다. 사진 넣기(`insertion`)와
+    /// 같은 꼴이다 — 편집기가 받아 `UITextView` 에서 한 번의 바꾸기로 끝낸다(되돌리기 한 번).
+    struct FormatRequest: Identifiable, Equatable {
+        let id = UUID()
+        let kind: Kind
+
+        enum Kind: Equatable {
+            case wrap(Formatting.Wrap)
+            case quote
+            case table
+            /// 들여쓰기 · 내어쓰기는 탭 · 시프트 탭과 **같은 길**을 쓴다 (112).
+            case shift(deeper: Bool)
+        }
+    }
+
+    @Published var formatRequest: FormatRequest?
+
+    func format(_ kind: FormatRequest.Kind) {
+        formatRequest = FormatRequest(kind: kind)
+    }
+
     /// **시험 도구를 보여 줄까** (122 · T11). **꺼짐이 기본.**
     ///
     /// 진단 화면에는 두 종류가 섞여 있었다 — 무엇이 어긋났나(쓰는 사람)와 시험 도구

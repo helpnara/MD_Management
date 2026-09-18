@@ -812,10 +812,26 @@ private struct NoteDetail: View {
                 onInserted: { library.insertion = nil },
                 onTitleLineChanged: { library.cursorOnTitleLine = $0 },
                 onFocusChanged: { library.editorHasFocus = $0 },
-                onImageLineChanged: library.cursorImageLineChanged)
+                onImageLineChanged: library.cursorImageLineChanged,
+                format: library.formatRequest,
+                onFormatted: { library.formatRequest = nil })
             // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
             // **키보드 툴바를 쓰지 않는다** — `safeAreaInset` 으로 화면 안에 그린다 (CLAUDE.md §1).
             .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    cursorImageBar
+                    // **편집 도구 띠** (127 · T13 1차). 키보드가 올라오면 `safeAreaInset` 이
+                    // 그 위로 밀어 올린다 — **키보드 툴바를 쓰지 않는다** (CLAUDE.md §1).
+                    FormatBar { library.format($0) }
+                }
+            }
+        }
+    }
+
+    /// 커서가 사진 줄에 있을 때만 서는 띠 (117 · ADR-0005 L3 후퇴판).
+    @ViewBuilder
+    private var cursorImageBar: some View {
+        Group {
                 if let found = library.cursorImage, let image = UIImage(data: found.image) {
                     Button {
                         Task { await library.previewAttachment(found.path) }
@@ -841,7 +857,6 @@ private struct NoteDetail: View {
                     .buttonStyle(.plain)
                     .background(Palette.paperRaised)
                 }
-            }
         }
     }
 
@@ -973,6 +988,64 @@ private struct NoteDetail: View {
         }
     }
 
+}
+
+/// **편집 도구 띠** (127 · T13 1차, 2026-09-18 사용자 — 워드의 도구 띠처럼).
+///
+/// **여기 있는 것은 마크다운 표준 안쪽뿐이다** — 굵게 · 기울임 · 취소선 · 인용 · 표 ·
+/// 들여 · 내어쓰기. 글자색 · 밑줄 · 형광펜은 마크다운에 없어서 넣지 않았다 (로드맵 T13 검토):
+/// 넣으면 **파일에 이 앱만 아는 글자를 심게 되고**, 그러면 다른 앱에서 그대로 드러난다.
+///
+/// 자리는 **편집기 아래**다. 키보드가 올라오면 `safeAreaInset` 이 그 위로 밀어 올리므로
+/// 엄지가 닿는 자리에 선다 — **키보드 툴바(`placement: .keyboard`)는 쓰지 않는다**
+/// (CLAUDE.md §1). 좁으면 가로로 민다.
+private struct FormatBar: View {
+    let action: (LibraryModel.FormatRequest.Kind) -> Void
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Metrics.rowSpacing) {
+                button("굵게", "bold") { action(.wrap(.bold)) }
+                button("기울임", "italic") { action(.wrap(.italic)) }
+                button("취소선", "strikethrough") { action(.wrap(.strikethrough)) }
+                rule
+                button("인용", "text.quote") { action(.quote) }
+                button("표 넣기", "tablecells") { action(.table) }
+                rule
+                button("내어쓰기", "decrease.indent") { action(.shift(deeper: false)) }
+                button("들여쓰기", "increase.indent") { action(.shift(deeper: true)) }
+            }
+            .padding(.horizontal, Metrics.gutter)
+            .padding(.vertical, Metrics.rowSpacing)
+        }
+        .background(Palette.paperRaised)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Palette.rule).frame(height: 0.5)
+        }
+    }
+
+    private var rule: some View {
+        Rectangle()
+            .fill(Palette.rule)
+            .frame(width: 0.5, height: Metrics.scaledLength(20))
+    }
+
+    /// 글자는 안 보이고 **아이콘만** 선다 — 띠가 한 줄을 넘지 않게. 이름은 보이스오버와
+    /// 길게 누르기가 읽는다.
+    private func button(_ name: String, _ symbol: String,
+                        action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(name, systemImage: symbol)
+                .labelStyle(.iconOnly)
+                .font(.scaled(.body))
+                .frame(minWidth: Metrics.scaledLength(40),
+                       minHeight: Metrics.scaledLength(34))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Palette.accent)
+        .accessibilityLabel(name)
+    }
 }
 
 /// 저장됐나 · 저장할 것이 남았나. 글자 하나로 늘 보인다.
