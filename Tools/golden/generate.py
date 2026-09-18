@@ -34,6 +34,7 @@ FIXTURES = ROOT / "Tools" / "golden" / "fixtures"
 CASES = ROOT / "Tools" / "golden" / "cases.json"
 STYLE_CASES = ROOT / "Tools" / "golden" / "style-cases.json"
 INDENT_CASES = ROOT / "Tools" / "golden" / "indent-cases.json"
+DEPTH_CASES = ROOT / "Tools" / "golden" / "depth-cases.json"
 RENUMBER_CASES = ROOT / "Tools" / "golden" / "renumber-cases.json"
 LINK_CASES = ROOT / "Tools" / "golden" / "relative-link-cases.json"
 TAG_CASES = ROOT / "Tools" / "golden" / "tag-cases.json"
@@ -593,11 +594,15 @@ def content_column(line: str):
     return None if width is None else leading_width(line) + width
 
 
-def indent_block(block: str, under: str | None = None):
-    """탭 — **부모의 글이 시작하는 칸**까지 들여쓴다 (139).
+MAX_LIST_START = 3      # 목록이 시작될 수 있는 가장 깊은 칸 — 넷이면 코드다
 
-    빈칸 둘은 글머리표에만 맞다. 숫자 목록(`1. `)은 **셋**이 필요하고, 둘만 넣으면
-    파일에는 겹치지 않은 목록이 저장된다 — 편집기에서만 겹쳐 보인다.
+
+def indent_block(block: str, under: str | None = None):
+    """탭 — **부모의 글칸까지, 거기서 멈춘다** (139 · 141).
+
+    139 에서는 `max(부모까지, 제 마커폭)` 이라 누를 때마다 마커폭만큼 더 깊어졌다.
+    부모의 글칸보다 **네 칸**을 넘기면 마크다운은 그 줄을 목록이 아니라 앞 문단에
+    딸린 글로 읽는다 — 화면은 멀쩡한데 파일이 무너진다.
     """
     lines = block.split("\n")
     first_item = next((line for line in lines if is_list_item(line)), None)
@@ -605,10 +610,13 @@ def indent_block(block: str, under: str | None = None):
         return None
 
     here = leading_width(first_item)
-    own = marker_width(first_item) or 2
     target = content_column(under) if under else None
-    delta = max((target if target is not None else here + own) - here, own)
-    pad = " " * delta
+    if target is None:
+        # 부모가 없거나 목록이 아니다 — 겹칠 자리가 없으니 목록으로 남을 만큼만.
+        target = min(here + len(INDENT_STEP), MAX_LIST_START)
+    if here >= target:
+        return None                      # **더 들어갈 자리가 없다**
+    pad = " " * (target - here)
 
     first_delta = 0
     out = []
@@ -620,6 +628,54 @@ def indent_block(block: str, under: str | None = None):
             first_delta = len(pad.encode("utf-16-le")) // 2
         out.append(pad + line)
     return {"text": "\n".join(out), "firstLineDelta": first_delta}
+
+
+def depths_in(lines: list[str]) -> list[int]:
+    """줄마다 몇 단계인가 — **마크다운이 세는 대로** (141).
+
+    편집기는 오래도록 앞 빈칸 ÷ 2 로 그렸다. 두 잣대가 달라 화면과 파일이 갈렸다.
+    """
+    columns: list[int] = []
+    out: list[int] = []
+    for line in lines:
+        if not line.strip():
+            out.append(len(columns))
+            continue
+        if not is_list_item(line):
+            columns = []
+            out.append(0)
+            continue
+        width = leading_width(line)
+        while columns and columns[-1] > width:
+            columns.pop()
+        out.append(len(columns) + 1)
+        columns.append(content_column(line) if content_column(line) is not None
+                       else width + len(INDENT_STEP))
+    return out
+
+
+def check_depths(case: str, lines: list[str]) -> None:
+    """**셈이 파서와 같은가** — markdown-it 이 연 항목의 깊이와 맞춰 본다 (141).
+
+    글이 아니라 **항목**을 센다. 글줄은 파서가 앞 문단에 붙여 버려 줄과 1:1 로
+    맞지 않는다 — 목록 항목은 `list_item_open` 하나에 한 줄로 또박또박 대응한다.
+    """
+    text = "\n".join(lines) + "\n"
+    md = make_parser()
+    seen, depth = [], 0
+    for token in md.parse(text):
+        if token.type in ("bullet_list_open", "ordered_list_open"):
+            depth += 1
+        elif token.type in ("bullet_list_close", "ordered_list_close"):
+            depth -= 1
+        elif token.type == "list_item_open":
+            seen.append(depth)
+    mine = [d for d, line in zip(depths_in(lines), lines) if is_list_item(line)]
+    if len(seen) != len(mine):
+        raise SystemExit(
+            f"::error::[{case}] 줄이 목록에서 튕겨 나갔다 — 항목 {len(mine)}줄인데 파서는 {len(seen)}개:\n{text}")
+    if seen != mine:
+        raise SystemExit(f"::error::[{case}] 단계가 어긋난다 — 내 셈 {mine} · 파서 {seen}:\n{text}")
 
 
 def outdent_block(block: str, to: str | None = None):
@@ -652,6 +708,16 @@ def outdent_block(block: str, to: str | None = None):
     return {"text": "\n".join(out), "firstLineDelta": first_delta}
 
 
+def renumbered(block: str) -> str:
+    """**앱이 하는 그대로** — 들여쓴 직후에 번호를 다시 매긴다 (129)."""
+    for fix in reversed(renumber_block(block)):
+        units = to_units(block)
+        head = from_units(units[:fix["start"]])
+        tail = from_units(units[fix["start"] + fix["length"]:])
+        block = head + fix["number"] + tail
+    return block
+
+
 def check_nesting(case: str, parent: str, indented: str) -> None:
     """**정말 겹쳤나** — 파서에게 묻는다 (139 가 여기서 났다).
 
@@ -661,19 +727,18 @@ def check_nesting(case: str, parent: str, indented: str) -> None:
     # **앱이 하는 그대로 본다** — 들여쓴 **직후에 번호를 다시 매긴다** (129). 그 둘을
     # 따로 보면 헛것을 잡는다: `1. 하나` 아래의 `2. 둘` 은 마크다운이 겹치지 않는 것으로
     # 읽지만(번호가 1이 아닌 목록은 문단을 못 끊는다), 앱에서는 곧바로 `1.` 이 된다.
-    block = parent + "\n" + indented
-    for fix in reversed(renumber_block(block)):
-        units = to_units(block)
-        head = from_units(units[:fix["start"]])
-        tail = from_units(units[fix["start"] + fix["length"]:])
-        block = head + fix["number"] + tail
+    block = renumbered(parent + "\n" + indented)
 
     md = make_parser()
     html = md.render(block + "\n")
     # `<ol start="10">` 처럼 **속성이 붙은 태그**도 센다 — `<ol>` 만 찾으면 못 잡는다.
     inner = html.count("<ol") + html.count("<ul")
-    if inner < 2:
-        raise SystemExit(f"::error::[{case}] 들여썼는데 겹치지 않았다:\n{block}")
+    # 부모가 목록이면 **겹쳐야** 하고, 목록이 아니면 겹칠 자리가 없으니
+    # **목록으로 남기만** 하면 된다 (141 — `10. ` 을 네 칸 넣어 코드로 만들던 자리).
+    want = 2 if is_list_item(parent) else 1
+    if inner < want:
+        trouble = "들여썼는데 겹치지 않았다" if want == 2 else "들여썼더니 목록이 아니게 됐다"
+        raise SystemExit(f"::error::[{case}] {trouble}:\n{block}")
 
 
 def build_indent_cases() -> list[dict]:
@@ -686,6 +751,8 @@ def build_indent_cases() -> list[dict]:
         # 부모를 준 사례는 **정말 겹쳤는지**까지 본다.
         if under and indented:
             check_nesting(case["name"], under, indented["text"])
+            # 그리고 **화면이 그릴 단계**가 파서와 같은지도 (141).
+            check_depths(case["name"], renumbered(under + "\n" + indented["text"]).split("\n"))
         out.append({
             "name": case["name"],
             "text": case["text"],
@@ -694,6 +761,17 @@ def build_indent_cases() -> list[dict]:
             "indented": indented,
             "outdented": outdent_block(case["text"], shallower),
         })
+    return out
+
+
+def build_depth_cases() -> list[dict]:
+    """편집기가 그려야 할 단계 (141). 사례마다 **파서와 맞춰 본 뒤** 내놓는다."""
+    spec = json.loads(DEPTH_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        lines = case["lines"]
+        check_depths(case["name"], lines)
+        out.append({"name": case["name"], "lines": lines, "depths": depths_in(lines)})
     return out
 
 
@@ -1024,6 +1102,7 @@ def build() -> dict:
         "cases": out_cases,
         "styleCases": build_style_cases(),
         "indentCases": build_indent_cases(),
+        "depthCases": build_depth_cases(),
         "renumberCases": build_renumber_cases(),
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
@@ -1254,6 +1333,7 @@ def main() -> int:
         loaded = json.loads(current)
         print(f"기댓값 {len(loaded['cases'])}건 · 줄 모양 {len(loaded['styleCases'])}건"
               f" · 들여쓰기 {len(loaded['indentCases'])}건"
+              f" · 단계 {len(loaded['depthCases'])}건"
               f" · 번호 {len(loaded['renumberCases'])}건"
               f" · 상대 링크 {len(loaded['linkCases'])}건"
               f" · 태그 {len(loaded['tagCases'])}건"
@@ -1268,6 +1348,7 @@ def main() -> int:
     print(f"{OUT.relative_to(ROOT)} — 사례 {len(loaded['cases'])}건"
           f" · 줄 모양 {len(loaded['styleCases'])}건"
           f" · 들여쓰기 {len(loaded['indentCases'])}건"
+          f" · 단계 {len(loaded['depthCases'])}건"
           f" · 번호 {len(loaded['renumberCases'])}건"
           f" · 상대 링크 {len(loaded['linkCases'])}건"
           f" · 태그 {len(loaded['tagCases'])}건"

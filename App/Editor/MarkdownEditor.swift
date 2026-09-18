@@ -477,10 +477,21 @@ struct MarkdownEditor: UIViewRepresentable {
             return text.substring(with: line)
         }
 
-        /// 이 자리 **바로 위 줄** (139). 없으면 `nil`.
+        /// 이 자리 위로 올라가며 만나는 **빈 줄이 아닌 첫 줄** (139 · 141). 없으면 `nil`.
+        ///
+        /// **빈 줄을 건너뛴다** (141). 항목 사이에 빈 줄을 두는 사람이 많은데, 바로 위
+        /// 줄만 보면 그 빈 줄에 걸려 부모를 못 찾았다 — `10. ` 부모 밑으로 들어가지
+        /// 못하고 겹치지 않은 목록이 저장됐다.
         private static func line(_ text: NSString, above location: Int) -> String? {
-            guard location > 0 else { return nil }
-            return line(text, text.paragraphRange(for: NSRange(location: location - 1, length: 0)))
+            var at = location
+            while at > 0 {
+                let paragraph = text.paragraphRange(for: NSRange(location: at - 1, length: 0))
+                let candidate = line(text, paragraph)
+                if !candidate.trimmingCharacters(in: .whitespaces).isEmpty { return candidate }
+                if paragraph.location == 0 { return nil }
+                at = paragraph.location
+            }
+            return nil
         }
 
         /// 이 자리 위로 올라가며 만나는 **더 얕은 첫 줄** (139). 내어쓰기가 여기까지 나온다.

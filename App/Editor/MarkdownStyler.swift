@@ -49,6 +49,9 @@ enum MarkdownStyler {
         // 이 앱에서 첫 줄은 **곧 파일명**이므로(107 · T6) 제목으로 보이는 편이 맞다.
         // 문단 하나만 보는 `LineStyler` 로는 알 수 없는 문맥이라 여기서 잰다.
         let titleStart = firstMeaningfulParagraph(in: text, after: header)
+        // 목록의 단계는 **덩이 전체를 봐야** 안다 (141). 문단마다 위로 훑으면 큰 노트에서
+        // 느려지므로 한 번에 재어 둔다.
+        let depths = listDepths(in: text, covering: touched)
         var location = touched.location
         let limit = NSMaxRange(touched)
 
@@ -63,7 +66,8 @@ enum MarkdownStyler {
                         && (at < NSMaxRange(paragraph) || NSMaxRange(paragraph) == text.length)
                 } ?? true
                 style(paragraph: paragraph, in: text, storage: storage, sheet: sheet,
-                      hasCursor: hasCursor, isTitle: paragraph.location == titleStart)
+                      hasCursor: hasCursor, isTitle: paragraph.location == titleStart,
+                      depth: depths[paragraph.location] ?? 0)
             }
             let next = NSMaxRange(paragraph)
             // 문단이 앞으로 안 가면 멈춘다 — 무한 반복 막이.
@@ -100,9 +104,58 @@ enum MarkdownStyler {
         return nil
     }
 
+    /// **목록 덩이의 단계를 미리 재어 둔다** (141).
+    ///
+    /// 마크다운은 자식이 **부모의 글칸**부터 시작해야 겹친 것으로 읽는다. 그 셈은 줄
+    /// 하나만 봐서는 할 수 없고 덩이의 머리부터 쌓아 올라가야 한다. 규칙은 Core 의
+    /// `ListEditing.depths` 가 정하고 여기서는 줄을 모아 건네기만 한다.
+    ///
+    /// 덩이의 머리는 위로 올라가다 **목록도 빈 줄도 아닌 줄**을 만나는 자리다 —
+    /// 빈 줄은 목록을 끊지 않으므로 건너뛴다.
+    private static func listDepths(in text: NSString, covering range: NSRange) -> [Int: Int] {
+        guard text.length > 0 else { return [:] }
+        let head = min(max(range.location, 0), text.length - 1)
+        var start = text.paragraphRange(for: NSRange(location: head, length: 0)).location
+        while start > 0 {
+            let above = text.paragraphRange(for: NSRange(location: start - 1, length: 0))
+            let line = lineText(text, above)
+            if !line.trimmingCharacters(in: .whitespaces).isEmpty, !ListEditing.isItem(line) { break }
+            if above.location == start { break }
+            start = above.location
+        }
+
+        var starts: [Int] = []
+        var lines: [String] = []
+        var at = start
+        let limit = max(NSMaxRange(range), start + 1)
+        while at < text.length {
+            let paragraph = text.paragraphRange(for: NSRange(location: at, length: 0))
+            starts.append(paragraph.location)
+            lines.append(lineText(text, paragraph))
+            let next = NSMaxRange(paragraph)
+            if next <= at { break }
+            at = next
+            if at >= limit { break }
+        }
+
+        let counted = ListEditing.depths(in: lines)
+        var map: [Int: Int] = [:]
+        for (index, location) in starts.enumerated() where index < counted.count {
+            map[location] = counted[index]
+        }
+        return map
+    }
+
+    /// 문단 범위에서 **줄바꿈을 뺀** 글.
+    private static func lineText(_ text: NSString, _ paragraph: NSRange) -> String {
+        var line = paragraph
+        if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
+        return text.substring(with: line)
+    }
+
     private static func style(paragraph: NSRange, in text: NSString,
                               storage: NSTextStorage, sheet: EditorStyleSheet,
-                              hasCursor: Bool, isTitle: Bool = false) {
+                              hasCursor: Bool, isTitle: Bool = false, depth: Int = 0) {
         // `paragraphRange` 는 끝의 줄바꿈까지 준다. `LineStyler` 는 줄 하나만 본다.
         var line = paragraph
         if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A {
@@ -110,21 +163,18 @@ enum MarkdownStyler {
         }
         let style = LineStyler.style(paragraph: text.substring(with: line))
 
-        // 목록: 겹친 단계는 마커 앞의 빈칸 수로 (둘에 한 단계), 매달린 들여쓰기는
-        // **실제 마커 폭**으로. `- ` · `1. ` · `- [ ] ` 가 다 달라서 고정값이면 어긋난다
-        // (빌드 8 · 10번).
-        var depth = 0
+        // 목록: 겹친 단계는 **부른 쪽이 재어 준다** (141 — 마크다운과 같은 셈이라야
+        // 화면과 파일이 안 갈린다). 매달린 들여쓰기는 **실제 마커 폭**으로 — `- ` ·
+        // `1. ` · `- [ ] ` 가 다 달라서 고정값이면 어긋난다 (빌드 8 · 10번).
         var markerWidth: CGFloat = 0
         if style.block == .listItem || style.block == .orderedItem,
            let marker = style.markers.first {
-            // 앞 빈칸 **둘에 한 단계.** 탭 하나는 네 칸으로 센다 — 탭으로 들여쓴 줄이
-            // 한 단계도 안 들어간 것처럼 그려지던 자리다 (T4).
-            let prefixText = text.substring(with: NSRange(location: line.location, length: marker.start))
-            depth = prefixText.reduce(0) { $0 + ($1 == "\t" ? 4 : 1) } / 2
             let prefix = text.substring(with: NSRange(location: line.location + marker.start,
                                                       length: style.contentStart - marker.start))
             markerWidth = (prefix as NSString).size(withAttributes: [.font: sheet.body]).width
         }
+        // 목록이 아닌 줄은 단계가 없다.
+        let depth = (style.block == .listItem || style.block == .orderedItem) ? max(0, depth - 1) : 0
         // 첫 글줄이고 **아직 아무 블록도 아니면** 제목처럼 그린다 (133). 이미 `#` 이
         // 붙었거나 목록 · 인용이면 그 모습을 그대로 둔다 — 글은 한 글자도 안 바뀐다.
         let block = (isTitle && style.block == nil) ? StyleToken.heading(level: 1) : style.block

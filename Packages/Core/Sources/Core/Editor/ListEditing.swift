@@ -53,26 +53,36 @@ public enum ListEditing {
         }
     }
 
-    /// **탭** — 고른 줄들을 한 단계 들여쓴다. 목록 줄이 하나도 없으면 `nil` 이다
-    /// (그때 편집기는 커서 자리에 빈칸 둘을 넣는다 — 글 한복판에서 탭이 먹통이 되지 않도록).
+    /// **목록이 시작될 수 있는 가장 깊은 칸.** 넷이면 마크다운은 코드로 읽는다.
+    public static let maxListStart = 3
+
+    /// **탭** — 고른 줄들을 **부모의 글칸까지** 들여쓴다. 목록 줄이 하나도 없거나
+    /// **이미 그만큼 들어가 있으면** `nil` 이다 (그때 편집기는 글 한복판이면 빈칸 둘을
+    /// 넣고, 목록이면 아무 일도 하지 않는다).
     /// 빈 줄은 그대로 둔다 — 빈칸만 남은 줄이 생기면 문단이 끊긴다.
     ///
-    /// **한 단계는 빈칸 둘이 아니다** (139, 사용자 — 편집기에서는 겹쳐 보이는데 읽기 모드와
-    /// 다른 앱에서는 나란히 나왔다). 마크다운은 자식 항목이 **부모의 글이 시작하는 칸**까지
-    /// 들어가야 겹친 것으로 읽는다 — `- ` 는 둘이면 되지만 **`1. ` 은 셋**이 필요하다.
-    /// 빈칸 둘만 넣으면 파일에는 **겹치지 않은 목록**이 저장된다. 파일이 원본이므로
-    /// (ADR-0001) 보이는 대로가 아니라 **파일이 맞아야** 한다.
+    /// **부모의 글칸에서 멈춘다 — 거기가 천장이다** (141, 사용자 · 빌드 42 —
+    /// *여전히 올바르게 동작하지 않는다*). 139 에서는 `max(부모까지, 제 마커폭)` 이라
+    /// **누를 때마다 마커폭만큼 더 깊어졌다.** 부모의 글칸보다 **네 칸**을 넘기는 순간
+    /// 마크다운은 그 줄을 목록이 아니라 **앞 문단에 딸린 글**로 읽는다 — 화면에서는
+    /// 멀쩡한데 파일이 무너지고, 읽기 모드에서 `공유 1. 테스트 2. 테스트` 한 줄이 된다.
     ///
-    /// - `under`: 블록 **바로 위 줄**. 그 줄이 목록이면 그 줄의 글이 시작하는 칸까지 들어간다.
-    ///   없으면 이 줄 제 마커 너비만큼 (`1. ` → 셋, `- ` → 둘).
+    /// - `under`: 위로 올라가며 만난 **빈 줄이 아닌 첫 줄**. 그 줄이 목록이면 그 줄의
+    ///   글이 시작하는 칸까지 들어간다 (`- ` 는 둘, `1. ` 은 셋, `10. ` 은 넷).
+    ///   목록이 아니거나 없으면 겹칠 자리가 없으므로 **목록으로 남을 만큼만** 간다.
     public static func indent(_ block: String, under previous: String? = nil) -> Shifted? {
         let lines = block.components(separatedBy: "\n")
         guard let firstItem = lines.first(where: { isItem($0) }) else { return nil }
 
         let here = leadingWidth(firstItem)
-        let target = previous.flatMap(contentColumn) ?? (here + (markerWidth(firstItem) ?? 2))
-        let delta = max(target - here, markerWidth(firstItem) ?? 2)
-        let pad = String(repeating: " ", count: delta)
+        let target: Int
+        if let previous, let column = contentColumn(previous) {
+            target = column
+        } else {
+            target = min(here + step.count, maxListStart)
+        }
+        guard here < target else { return nil }   // **더 들어갈 자리가 없다**
+        let pad = String(repeating: " ", count: target - here)
 
         var firstDelta = 0
         var shifted: [String] = []
@@ -86,6 +96,36 @@ public enum ListEditing {
             shifted.append(pad + line)
         }
         return Shifted(text: shifted.joined(separator: "\n"), firstLineDelta: firstDelta)
+    }
+
+    /// **줄마다 몇 단계인가** — 마크다운이 세는 대로 (141).
+    ///
+    /// 편집기는 오래도록 **앞 빈칸 ÷ 2** 로 단계를 그렸다. 마크다운은 그렇게 세지 않는다 —
+    /// 자식은 **부모의 글이 시작하는 칸**부터라야 겹친다. 잣대가 둘이라 화면과 파일이
+    /// 갈렸고, 사용자는 *편집 모드는 맞는데 읽기 모드가 다르다* 를 두 번 겪었다.
+    /// 이제 그리는 쪽도 읽는 쪽과 **같은 셈**을 쓴다.
+    ///
+    /// 목록이 아닌 줄은 0. 빈 줄은 목록을 끊지 않으므로 앞 단계를 이어 준다.
+    public static func depths(in lines: [String]) -> [Int] {
+        var columns: [Int] = []     // 지금 품고 있는 조상들의 **글칸**
+        var out: [Int] = []
+        out.reserveCapacity(lines.count)
+        for line in lines {
+            if line.trimmingCharacters(in: .whitespaces).isEmpty {
+                out.append(columns.count)
+                continue
+            }
+            guard isItem(line) else {
+                columns.removeAll()
+                out.append(0)
+                continue
+            }
+            let width = leadingWidth(line)
+            while let last = columns.last, last > width { columns.removeLast() }
+            out.append(columns.count + 1)
+            columns.append(contentColumn(line) ?? (width + step.count))
+        }
+        return out
     }
 
     /// **시프트 탭** — 한 단계 내어쓴다.
@@ -230,7 +270,7 @@ public enum ListEditing {
     ///
     /// **`LineStyler` 를 쓰지 않는다.** 그쪽은 문단 하나만 보므로 네 칸 이상 들여쓴 줄을
     /// 코드로 읽는데, 겹친 목록은 두 단계만 내려가도 그보다 깊어진다.
-    static func isItem(_ line: String) -> Bool {
+    public static func isItem(_ line: String) -> Bool {
         var rest = line[...].drop { $0 == " " || $0 == "\t" }
         if rest.hasPrefix("- ") || rest.hasPrefix("* ") || rest.hasPrefix("+ ") { return true }
         let digits = rest.prefix { $0.isNumber }

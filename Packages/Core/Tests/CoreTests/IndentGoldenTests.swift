@@ -65,4 +65,33 @@ final class IndentGoldenTests: XCTestCase {
             XCTAssertEqual(back?.text, item.text, "되돌아오지 않는다 — [\(item.name)]")
         }
     }
+
+    /// **부모의 글칸에서 멈춘다 — 한 번 더 눌러도 안 깊어진다** (141).
+    ///
+    /// 139 에서는 누를 때마다 마커폭만큼 더 들어갔다. 부모 글칸보다 네 칸을 넘기면
+    /// 마크다운은 그 줄을 목록이 아니라 **앞 문단에 딸린 글**로 읽는다 — 사용자 화면에
+    /// `공유 1. 테스트 2. 테스트` 한 줄로 나온 자리다.
+    func testSecondPressDoesNothing() throws {
+        for item in try Self.load().indentCases {
+            guard let parent = item.under,
+                  let once = ListEditing.indent(item.text, under: parent) else { continue }
+            XCTAssertNil(ListEditing.indent(once.text, under: parent),
+                         "한 번 더 눌렀더니 또 들어갔다 — [\(item.name)] \(once.text)")
+        }
+    }
+
+    /// **들여쓴 줄은 부모보다 딱 한 단계 깊다.** 두 단계를 뛰면 파일이 무너진다.
+    func testIndentGoesExactlyOneLevelDeeper() throws {
+        for item in try Self.load().indentCases {
+            guard let parent = item.under, ListEditing.isItem(parent),
+                  let once = ListEditing.indent(item.text, under: parent) else { continue }
+            let lines = [parent] + once.text.components(separatedBy: "\n")
+            let depths = ListEditing.depths(in: lines)
+            guard let parentDepth = depths.first, depths.count > 1 else { continue }
+            for (line, depth) in zip(lines, depths).dropFirst() where ListEditing.isItem(line) {
+                XCTAssertEqual(depth, parentDepth + 1,
+                               "부모보다 한 단계가 아니다 — [\(item.name)] \(line)")
+            }
+        }
+    }
 }
