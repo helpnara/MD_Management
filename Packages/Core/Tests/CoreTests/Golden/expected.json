@@ -2045,12 +2045,49 @@
       "fixes": [
         {
           "length": 1,
-          "number": "4",
+          "number": "1",
+          "start": 8
+        },
+        {
+          "length": 1,
+          "number": "2",
           "start": 19
         }
       ],
       "name": "겹친것만어긋남",
       "text": "1. 하나\n  3. 안쪽 하나\n  3. 안쪽 둘\n2. 둘"
+    },
+    {
+      "fixes": [
+        {
+          "length": 1,
+          "number": "1",
+          "start": 8
+        },
+        {
+          "length": 1,
+          "number": "2",
+          "start": 13
+        }
+      ],
+      "name": "들여쓴줄은1번부터",
+      "text": "1. 하나\n  2. 둘\n3. 셋"
+    },
+    {
+      "fixes": [
+        {
+          "length": 1,
+          "number": "1",
+          "start": 8
+        },
+        {
+          "length": 1,
+          "number": "2",
+          "start": 19
+        }
+      ],
+      "name": "겹친단계가2로시작하면고친다",
+      "text": "1. 하나\n  2. 안쪽 하나\n  3. 안쪽 둘\n2. 둘"
     }
   ],
   "styleCases": [

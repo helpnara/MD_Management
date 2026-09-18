@@ -160,7 +160,10 @@ public enum ListEditing {
 
             // 더 깊은 단계는 여기서 끊긴다.
             next = next.filter { $0.key <= depth }
-            let wanted = next[depth] ?? read   // 첫 항목의 번호는 그대로.
+            // **겹친 단계의 첫 항목은 1 부터** (134, 사용자 — 둘째 줄을 들여썼더니 `2.` 로
+            // 남았다). 맨 바깥 목록은 `5.` 로 시작할 수 있으므로(CommonMark) 그 번호를
+            // 그대로 두지만, **들여써서 새로 생긴 단계**가 2 로 시작하는 것은 뜻이 없다.
+            let wanted = next[depth] ?? (depth > 0 ? 1 : read)
             if wanted != read {
                 fixes.append(Renumber(start: offset + indent.utf16.count,
                                       length: digits.utf16.count, number: String(wanted)))

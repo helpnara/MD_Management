@@ -653,7 +653,8 @@ def renumber_block(block: str) -> list[dict]:
 
         nxt = {k: v for k, v in nxt.items() if k <= depth}
         read = int(digits)
-        wanted = nxt.get(depth, read)
+        # 겹친 단계의 첫 항목은 1 부터 (134). 맨 바깥만 제 번호를 지킨다.
+        wanted = nxt.get(depth, 1 if depth > 0 else read)
         if wanted != read:
             fixes.append({
                 "start": here + len(indent.encode("utf-16-le")) // 2,

@@ -566,12 +566,30 @@ struct MarkdownEditor: UIViewRepresentable {
         }
 
         /// **한 바퀴 뒤에** 맞춘다 — 방금 바꾼 글의 배치가 끝나야 그 자리가 참이다.
+        ///
+        /// **이미 보이면 가만히 둔다** (135, 사용자 — *조금 더 부드러웠으면*). 움직일 때마다
+        /// 끌어오면 손가락을 따라 화면이 잘게 떨린다. 가장자리에서 **한 줄 남짓 남았을 때만**
+        /// 움직이고, 그때도 딱 그만큼만 움직인다.
         private func keepVisible(_ textView: UITextView, at location: Int) {
             DispatchQueue.main.async { [weak textView] in
                 guard let textView, textView.isFirstResponder else { return }
                 let length = (textView.textStorage.string as NSString).length
-                let safe = NSRange(location: max(0, min(location, length)), length: 0)
-                textView.scrollRangeToVisible(safe)
+                let safe = max(0, min(location, length))
+                guard let position = textView.position(from: textView.beginningOfDocument, offset: safe) else { return }
+                let caret = textView.caretRect(for: position)
+                guard caret.height.isFinite, !caret.isNull, !caret.isInfinite else { return }
+
+                // 지금 눈에 보이는 칸 — 키보드와 아래 띠가 먹은 만큼을 뺀다.
+                let insets = textView.adjustedContentInset
+                let visible = CGRect(x: textView.contentOffset.x,
+                                     y: textView.contentOffset.y + insets.top,
+                                     width: textView.bounds.width,
+                                     height: textView.bounds.height - insets.top - insets.bottom)
+                // 가장자리에 붙기 전에 조금 미리 움직인다 — 한 줄 반쯤.
+                let margin = caret.height * 1.5
+                let room = visible.insetBy(dx: 0, dy: margin)
+                guard !room.contains(CGPoint(x: caret.midX, y: caret.midY)) else { return }
+                textView.scrollRectToVisible(caret.insetBy(dx: 0, dy: -margin), animated: false)
             }
         }
 

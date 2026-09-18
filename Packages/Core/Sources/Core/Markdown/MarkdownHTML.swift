@@ -204,7 +204,11 @@ public enum MarkdownHTML {
     /* **첫 줄은 `#` 이 없어도 제목이다** (133). 이 앱에서 첫 줄은 곧 파일명이므로(107)
        제목으로 보이는 편이 맞다. **파일은 한 글자도 안 바뀐다** — 보이는 모습만 그렇다.
        편집기도 같은 규칙으로 그린다 (`MarkdownStyler`) — 두 자리가 갈리면 93 이 된다. */
-    body > p:first-child { font-size: 1.55em; line-height: 1.3; font-weight: 700; margin: 0 0 0.6em; }
+    body > p:first-child { font-size: 1.55em; line-height: 1.3; font-weight: 700; }
+    /* **첫 덩이 위에는 빈 자리를 두지 않는다** (136, 사용자 — `# 제목` 을 쓰면 읽기 모드에서
+       제목 위로 한 줄이 비었다). 제목의 위 여백은 **글 사이**에서나 뜻이 있지 맨 처음에는
+       군더더기다. `#` 이 있든 없든 같은 자리에서 시작한다. */
+    body > :first-child { margin-top: 0; }
     a { color: var(--yb-accent); text-decoration: underline; text-underline-offset: 0.15em; }
     ul, ol { margin: 0.9em 0; padding-left: 1.4em; }
     li { margin: 0.25em 0; }
