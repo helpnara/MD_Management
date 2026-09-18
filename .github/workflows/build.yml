@@ -155,17 +155,25 @@ jobs:
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "선택한 iPad: ${NAME:-없음} ($UDID)"
 
+      # **오류 줄만 맨 끝에 다시 찍는다.** `xcodebuild` 의 로그는 수천 줄이고 오류는 그
+      # 한복판에 묻힌다 — 원격 세션에서는 그것을 찾는 일 자체가 한 바퀴다 (2026-09-18,
+      # 편집 도구 띠에서 두 번 겪었다). 로그 끝만 봐도 원인이 보이게 한다.
       - name: 빌드
         run: |
           set -o pipefail
-          xcodebuild \
+          if ! xcodebuild \
             -project Notebook.xcodeproj \
             -scheme "$SCHEME" \
             -configuration Debug \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            build 2>&1 | tee /tmp/build.log; then
+            echo "::group::오류 줄만"
+            grep -E "error:|error " /tmp/build.log | head -40 || echo "오류 줄을 못 찾았습니다"
+            echo "::endgroup::"
+            exit 1
+          fi
 
       # **iCloud 설정이 번들에 정말 박혔는지 본다.**
       #
