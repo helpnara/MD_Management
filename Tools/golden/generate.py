@@ -44,6 +44,7 @@ REBASE_CASES = ROOT / "Tools" / "golden" / "rebase-cases.json"
 PIN_CASES = ROOT / "Tools" / "golden" / "pin-cases.json"
 FORMAT_CASES = ROOT / "Tools" / "golden" / "format-cases.json"
 ENTER_CASES = ROOT / "Tools" / "golden" / "enter-cases.json"
+LINK_TRIGGER_CASES = ROOT / "Tools" / "golden" / "link-trigger-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -872,6 +873,92 @@ def build_enter_cases() -> list[dict]:
     return out
 
 
+# ── 타이핑으로 노트 연결하기 (147) ──────────────────────────────────────────
+
+TRIGGERS = [">>", "[["]
+MAX_QUERY = 50
+
+
+def link_query(text: str, caret: int):
+    """커서 앞에 방아쇠가 있나 (앱의 `NoteLinking.query`).
+
+    줄 하나 안에서만 보고, 커서에 **가장 가까운** 방아쇠를 고른다.
+    `>>` 는 줄 맨 앞에서는 방아쇠가 아니다 — 거기서는 인용이다.
+    """
+    units = to_units(text)
+    caret = max(0, min(caret, len(units)))
+    newline = to_units("\n")[0]
+
+    line_start = caret
+    while line_start > 0 and units[line_start - 1] != newline:
+        line_start -= 1
+    first_ink = line_start
+    while first_ink < caret and units[first_ink] in (0x20, 0x09):
+        first_ink += 1
+
+    best = None
+    for trigger in TRIGGERS:
+        mark = to_units(trigger)
+        at = caret - len(mark)
+        while at >= line_start:
+            if units[at:at + len(mark)] == mark:
+                found = _link_found(trigger, units, at, caret, first_ink)
+                if found and (best is None or found["start"] > best["start"]):
+                    best = found
+                break
+            at -= 1
+    return best
+
+
+def _link_found(trigger: str, units, start: int, caret: int, first_ink: int):
+    if trigger == ">>" and start == first_ink:
+        return None                      # 줄 맨 앞은 인용이다
+    begin = start + len(to_units(trigger))
+    if begin > caret:
+        return None
+    text = from_units(units[begin:caret])
+    if u16len(text) > MAX_QUERY:
+        return None
+    if "[" in text or "]" in text:
+        return None
+    return {"start": start, "length": caret - start, "text": text, "trigger": trigger}
+
+
+def markdown_link(label: str, path: str) -> str:
+    """`[이름](경로)` — 빈칸이 있으면 꺾쇠. 첨부를 넣을 때와 같은 규칙이다."""
+    safe = label.replace("]", " ")
+    return "[" + safe + "](" + ("<" + path + ">" if " " in path else path) + ")"
+
+
+def link_edit(title: str, path: str, note_folder: str, query: dict) -> dict:
+    piece = markdown_link(title, relative_link(note_folder, path))
+    return {"start": query["start"], "length": query["length"], "text": piece,
+            "selectionStart": query["start"] + u16len(piece), "selectionLength": 0}
+
+
+def build_link_trigger_cases() -> list[dict]:
+    spec = json.loads(LINK_TRIGGER_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        text, caret = case["text"], case["caret"]
+        query = link_query(text, caret)
+        edit = None
+        applied = None
+        if query and case.get("pick"):
+            pick = case["pick"]
+            edit = link_edit(pick["title"], pick["path"], case.get("noteFolder", ""), query)
+            applied = apply_edit(text, edit)
+            # **넣은 링크가 정말 링크로 읽히나** — 심판 둘에게 묻는다.
+            for html in (make_parser().render(applied), cmark_html(applied)):
+                if "<a href=" not in html:
+                    raise SystemExit(
+                        f"::error::[{case['name']}] 넣은 글이 링크로 안 읽힌다:\n{applied}")
+        out.append({"name": case["name"], "text": text, "caret": caret,
+                    "noteFolder": case.get("noteFolder", ""), "pick": case.get("pick"),
+                    "query": query, "edit": edit, "applied": applied})
+    return out
+
+
 # ── 번호 다시 매기기 — 설계서의 규칙을 파이썬으로 다시 (빌드 32 · 104) ─────────
 
 
@@ -1201,6 +1288,7 @@ def build() -> dict:
         "indentCases": build_indent_cases(),
         "depthCases": build_depth_cases(),
         "enterCases": build_enter_cases(),
+        "linkTriggerCases": build_link_trigger_cases(),
         "renumberCases": build_renumber_cases(),
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
@@ -1420,6 +1508,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"),
+        ("노트 연결", "linkTriggerCases"),
     ]
     return " · ".join(f"{name} {len(loaded[key])}건" for name, key in parts)
 

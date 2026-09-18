@@ -122,10 +122,78 @@ final class LibraryModel: ObservableObject {
             case table
             /// 들여쓰기 · 내어쓰기는 탭 · 시프트 탭과 **같은 길**을 쓴다 (112).
             case shift(deeper: Bool)
+            /// 고른 노트를 링크로 넣는다 (147). 방아쇠 자리는 편집기가 **다시 찾는다**.
+            ///
+            /// 폴더를 함께 싣는다 — 편집기는 노트가 어디 있는지 모르고, 링크는 **그 자리에서
+            /// 보는 상대 경로**라야 한다. 뷰에 값을 하나 더 다는 것보다 이쪽이 안전하다
+            /// (값을 다는 차례가 바뀌면 컴파일이 깨진다 · 빌드 40).
+            case link(title: String, path: String, noteFolder: String)
         }
     }
 
     @Published var formatRequest: FormatRequest?
+
+    // MARK: - 타이핑으로 노트 연결하기 (147)
+
+    /// 지금 커서 앞에 `>>` · `[[` 가 있나. `nil` 이면 목록을 닫는다.
+    @Published var linkQuery: NoteLinking.Query?
+    /// 보여 줄 후보 (제목만 본다 · 최대 여덟).
+    @Published var linkCandidates: [SearchHit] = []
+    private var linkTask: Task<Void, Never>?
+
+    /// 편집기가 방아쇠를 알려 왔다. 찾는 말이 바뀌었을 때만 색인을 두드린다.
+    func linkQueryChanged(_ query: NoteLinking.Query?) {
+        guard linkQuery?.text != query?.text || (query == nil) != (linkQuery == nil) else {
+            linkQuery = query
+            return
+        }
+        linkQuery = query
+        linkTask?.cancel()
+        guard let query, !query.text.trimmingCharacters(in: .whitespaces).isEmpty else {
+            linkCandidates = []
+            return
+        }
+        linkTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled, let self, let index = self.index else { return }
+            let hits = await index.titles(matching: query.text,
+                                          excluding: self.selectedNote?.relativePath)
+            guard !Task.isCancelled, self.linkQuery?.text == query.text else { return }
+            self.linkCandidates = hits
+        }
+    }
+
+    /// 고른 노트를 넣는다. 목록은 편집기가 실제로 넣은 뒤 닫는다.
+    func pickLink(_ hit: SearchHit) {
+        format(.link(title: hit.title, path: hit.relativePath, noteFolder: noteFolderForLink))
+        linkCandidates = []
+    }
+
+    /// 지금 노트가 든 폴더 — 링크는 여기서 보는 상대 경로다.
+    private var noteFolderForLink: String {
+        Paths.directory(of: selectedNote?.relativePath ?? "")
+    }
+
+    /// **없는 제목이면 새 노트를 만들어 연결한다** (147, 사용자 — 애플 메모처럼).
+    /// 지금 노트와 **같은 폴더**에 만든다.
+    func createNoteAndLink(named raw: String) {
+        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, let store else { return }
+        let folder = selectedFolder
+        Task { [weak self] in
+            do {
+                // **첫 줄이 곧 제목이다** (107 · T6) — 만들 때 그 줄을 넣어 둔다.
+                let path = try await store.createNote(named: name, in: folder,
+                                                      text: "# " + name + "\n\n")
+                guard let self else { return }
+                self.format(.link(title: name, path: path, noteFolder: self.noteFolderForLink))
+                self.linkCandidates = []
+                await self.reloadNotes()
+            } catch {
+                self?.report("새 노트를 만들지 못했습니다. " + error.localizedDescription)
+            }
+        }
+    }
 
     /// **커서 자리에 지금 걸려 있는 표시** (128, 사용자 — *선택이 되었는지 안 보인다*).
     /// 도구 띠가 이것을 보고 눌린 모습으로 그린다.

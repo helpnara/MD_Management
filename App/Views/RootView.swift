@@ -831,9 +831,12 @@ private struct NoteDetail: View {
                     onTitleLineChanged: { library.cursorOnTitleLine = $0 },
                     onFocusChanged: { library.editorHasFocus = $0 },
                     onImageLineChanged: library.cursorImageLineChanged,
-                    onActiveChanged: { library.activeFormats = $0 })
+                    onActiveChanged: { library.activeFormats = $0 },
+                    onLinkQueryChanged: library.linkQueryChanged)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
+                // **`>>` · `[[` 를 치면 노트 목록이 여기 뜬다** (147).
+                LinkPickerBar()
                 // **도구 띠는 상세 칸 안에 선다** (130, 사용자 — 아이패드에서 화면 폭
                 // 전체를 가로질렀다). 아이폰도 같은 길이다 — 화면이 곧 상세 칸이다.
                 FormatBar()
@@ -1012,6 +1015,54 @@ private struct NoteDetail: View {
 /// 자리는 **편집기 아래**다. 키보드가 올라오면 `safeAreaInset` 이 그 위로 밀어 올리므로
 /// 엄지가 닿는 자리에 선다 — **키보드 툴바(`placement: .keyboard`)는 쓰지 않는다**
 /// (CLAUDE.md §1). 좁으면 가로로 민다.
+/// **타이핑으로 노트 연결하기 — 고를 목록** (147, 2026-09-18 사용자 — 아이폰 메모처럼).
+///
+/// `>>회의` 라고 치면 제목에 `회의` 가 든 노트가 여기 뜬다. 고르면 그 자리에 링크가 들어간다.
+///
+/// **키보드 툴바를 쓰지 않는다** (CLAUDE.md §1). 편집 도구 띠와 같은 자리에, 상세 칸 안에
+/// 세로로 쌓아 그린다 — 겹쳐 덮다가 세 바퀴를 돈 적이 있다 (130).
+private struct LinkPickerBar: View {
+    @EnvironmentObject private var library: LibraryModel
+
+    var body: some View {
+        if let query = library.linkQuery, !query.text.trimmingCharacters(in: .whitespaces).isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Metrics.rowSpacing) {
+                    ForEach(library.linkCandidates) { hit in
+                        Button { library.pickLink(hit) } label: {
+                            Text(hit.title)
+                                .font(Font.scaled(.body))
+                                .lineLimit(1)
+                                .padding(.horizontal, Metrics.rowSpacing)
+                                .padding(.vertical, Metrics.rowSpacing / 2)
+                                .background(Palette.paper)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    // **없으면 만든다** (147, 사용자 — 애플 메모처럼). 지금 노트와 같은 폴더에.
+                    Button { library.createNoteAndLink(named: query.text) } label: {
+                        Label(query.text + " — 새 노트", systemImage: "plus")
+                            .font(Font.scaled(.body))
+                            .lineLimit(1)
+                            .padding(.horizontal, Metrics.rowSpacing)
+                            .padding(.vertical, Metrics.rowSpacing / 2)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, Metrics.gutter)
+                .padding(.vertical, Metrics.rowSpacing)
+            }
+            // 도구 띠와 같은 까닭으로 세로는 한 줄만 (빌드 40 에서 잘렸던 자리).
+            .fixedSize(horizontal: false, vertical: true)
+            .background(Palette.paperRaised)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Palette.rule).frame(height: 0.5)
+            }
+        }
+    }
+}
+
 private struct FormatBar: View {
     /// **모델을 여기서 바로 본다.** 클로저로 넘기면 주 액터 격리가 벗겨져 Swift 6 가
     /// 막는다 — 이 화면의 다른 단추들과 같은 꼴로 둔다.

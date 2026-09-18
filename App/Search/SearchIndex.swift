@@ -176,6 +176,30 @@ actor SearchIndex {
     // MARK: - 검색
 
     /// 파일명 일치를 앞에, 본문 일치를 뒤에 (설계서 §6-E). 최대 200개.
+    /// **제목에 이 말이 든 노트** (147 — 타이핑으로 노트 연결하기).
+    ///
+    /// 본문은 안 본다. 고르려고 보는 목록이라 짧아야 쓸 만하다 — 본문까지 훑으면 엉뚱한
+    /// 것이 잔뜩 섞인다. 자기 자신은 뺀다.
+    ///
+    /// `LIKE` 하나다. FTS 를 안 쓰는 까닭은 **두 글자짜리 제목**도 찾아야 하기 때문이다
+    /// (`SearchQuery` 가 짧은 말을 `LIKE` 로 돌리는 것과 같은 이유).
+    func titles(matching raw: String, excluding own: String?, limit: Int = 8) -> [SearchHit] {
+        let term = Paths.normalized(raw).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else { return [] }
+
+        var binds = [SearchQueryParser.likePattern(for: term)]
+        var sql = "SELECT rel_path, title FROM note WHERE title LIKE ? ESCAPE '\\'"
+        if let own, !own.isEmpty {
+            sql += " AND rel_path <> ?"
+            binds.append(own)
+        }
+        sql += " ORDER BY length(title), title LIMIT \(max(1, limit))"
+
+        return query(sql, binds).map { row in
+            SearchHit(relativePath: row[0], title: row[1], line: "", byTitle: true)
+        }
+    }
+
     func search(_ raw: String) -> [SearchHit] {
         let queryText = SearchQueryParser.parse(raw)
         guard !queryText.isEmpty else { return [] }

@@ -54,11 +54,14 @@ struct MarkdownEditor: UIViewRepresentable {
     var onImageLineChanged: @MainActor (String?) -> Void = { _ in }
     /// 커서 자리에 **지금 걸려 있는 표시** (128). 도구 띠가 눌린 모습으로 보여 준다.
     var onActiveChanged: @MainActor (Formatting.Active) -> Void = { _ in }
+    /// 커서 앞에 `>>` · `[[` 가 있나 (147). `nil` 이면 목록을 닫으라는 뜻이다.
+    var onLinkQueryChanged: @MainActor (NoteLinking.Query?) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
                     onFocus: onFocusChanged, onImageLine: onImageLineChanged,
-                    onActive: onActiveChanged)
+                    onActive: onActiveChanged,
+                    onLinkQuery: onLinkQueryChanged)
     }
 
     func makeUIView(context: Context) -> UITextView {
@@ -102,6 +105,7 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.onFocus = onFocusChanged
         coordinator.onImageLine = onImageLineChanged
         coordinator.onActive = onActiveChanged
+        coordinator.onLinkQuery = onLinkQueryChanged
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
@@ -115,9 +119,11 @@ struct MarkdownEditor: UIViewRepresentable {
         var onFocus: @MainActor (Bool) -> Void
         var onImageLine: @MainActor (String?) -> Void
         var onActive: @MainActor (Formatting.Active) -> Void
+        var onLinkQuery: @MainActor (NoteLinking.Query?) -> Void
         /// 마지막으로 알린 표시 상태 (128). 바뀔 때만 알린다 — 커서가 움직일 때마다
         /// 화면을 다시 그리면 값도 없이 비싸다.
         private var lastActive: Formatting.Active?
+        private var lastLinkQuery: NoteLinking.Query?
         /// 마지막으로 한 편집 도구 부탁 (127). 같은 것을 두 번 하지 않는다.
         private var lastFormatID: UUID?
         /// 지난 선택 (132). 어느 쪽 끝이 움직였는지 알려면 견줄 것이 있어야 한다.
@@ -152,12 +158,42 @@ struct MarkdownEditor: UIViewRepresentable {
              onTitleLine: @escaping @MainActor (Bool) -> Void,
              onFocus: @escaping @MainActor (Bool) -> Void,
              onImageLine: @escaping @MainActor (String?) -> Void,
-             onActive: @escaping @MainActor (Formatting.Active) -> Void) {
+             onActive: @escaping @MainActor (Formatting.Active) -> Void,
+             onLinkQuery: @escaping @MainActor (NoteLinking.Query?) -> Void) {
             self.onEdit = onEdit
             self.onTitleLine = onTitleLine
             self.onFocus = onFocus
             self.onImageLine = onImageLine
             self.onActive = onActive
+            self.onLinkQuery = onLinkQuery
+        }
+
+        /// **커서 앞에 방아쇠가 있나** (147). 규칙은 Core 의 `NoteLinking.query` 가 정한다.
+        ///
+        /// **조합 중에도 알린다.** 읽기만 하므로 조합을 깨지 않고, `>>회` 처럼 한글을 만드는
+        /// 동안에도 목록이 따라와야 쓸 만하다. 글을 바꾸는 쪽(`applyLink`)만 조합을 피한다.
+        private func reportLinkQuery(_ textView: UITextView) {
+            let selection = textView.selectedRange
+            guard selection.length == 0 else {
+                if lastLinkQuery != nil { lastLinkQuery = nil; onLinkQuery(nil) }
+                return
+            }
+            let found = NoteLinking.query(in: textView.textStorage.string, caret: selection.location)
+            guard found != lastLinkQuery else { return }
+            lastLinkQuery = found
+            onLinkQuery(found)
+        }
+
+        /// 고른 노트를 커서 자리에 넣는다 (147). 방아쇠는 **다시 찾는다** — 사이에 커서가
+        /// 움직였을 수 있다. 없으면 아무 일도 하지 않는다.
+        func applyLink(title: String, path: String, noteFolder: String) -> Bool {
+            guard let view, !isComposing, view.markedTextRange == nil else { return false }
+            guard let found = NoteLinking.query(in: view.textStorage.string,
+                                                caret: view.selectedRange.location) else { return false }
+            let done = apply(NoteLinking.link(to: title, path: path,
+                                              from: noteFolder, replacing: found), in: view)
+            if done { lastLinkQuery = nil; onLinkQuery(nil) }
+            return done
         }
 
         /// **커서 자리에 지금 무엇이 걸려 있나** (128). 규칙은 Core 의 `Formatting.active` 가
@@ -278,6 +314,8 @@ struct MarkdownEditor: UIViewRepresentable {
                 let selection = view.selectedRange
                 return apply(Formatting.table(in: view.textStorage.string,
                                               start: selection.location), in: view)
+            case .link(let title, let path, let noteFolder):
+                return applyLink(title: title, path: path, noteFolder: noteFolder)
             }
         }
 
@@ -288,6 +326,7 @@ struct MarkdownEditor: UIViewRepresentable {
             view.selectedRange = NSRange(location: edit.selectionStart, length: edit.selectionLength)
             keepCaretVisible(view)
             reportActiveFormats(view)
+            reportLinkQuery(view)
             onEdit(view.text)
             return true
         }
@@ -657,6 +696,7 @@ struct MarkdownEditor: UIViewRepresentable {
             reportTitleLine(textView)
             reportImageLine(textView)
             reportActiveFormats(textView)
+            reportLinkQuery(textView)
             keepSelectionEdgeVisible(textView)
             guard !isStyling, !isComposing, textView.markedTextRange == nil, let sheet else { return }
             let text = textView.textStorage.string as NSString
@@ -759,6 +799,8 @@ struct MarkdownEditor: UIViewRepresentable {
             let composing = textView.markedTextRange != nil
             let wasComposing = isComposing
             isComposing = composing
+            // 글자가 바뀔 때마다 방아쇠를 다시 본다 (147) — 조합 중에도 목록이 따라오게.
+            reportLinkQuery(textView)
 
             // 조합이 끝났다. 건너뛴 재칠을 여기서 갚는다.
             if wasComposing, !composing, let sheet {

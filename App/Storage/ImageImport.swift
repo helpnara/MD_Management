@@ -1,4 +1,5 @@
 import UIKit
+import Core
 
 /// 사진첩에서 온 사진을 노트 옆 `assets/` 에 넣을 모양으로 다듬는다.
 ///
@@ -44,9 +45,10 @@ enum ImageImport {
     }
 
     /// 문서 첨부의 링크 — `[이름.pdf](<assets/이름-1.pdf>)`. 사진과 같은 규칙으로 빈칸은 꺾쇠.
+    ///
+    /// **규칙은 Core 에 하나뿐이다** (147). 타이핑으로 노트를 연결할 때도 같은 함수를 쓴다 —
+    /// 두 군데에 적어 두면 한쪽만 고쳐지는 날이 온다.
     static func markdownLink(label: String, path: String) -> String {
-        let needsBrackets = path.contains(" ")
-        let safeLabel = label.replacingOccurrences(of: "]", with: " ")
-        return "[" + safeLabel + "](" + (needsBrackets ? "<" + path + ">" : path) + ")"
+        NoteLinking.markdownLink(label: label, path: path)
     }
 }
