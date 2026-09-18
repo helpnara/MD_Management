@@ -127,6 +127,10 @@ final class LibraryModel: ObservableObject {
 
     @Published var formatRequest: FormatRequest?
 
+    /// **커서 자리에 지금 걸려 있는 표시** (128, 사용자 — *선택이 되었는지 안 보인다*).
+    /// 도구 띠가 이것을 보고 눌린 모습으로 그린다.
+    @Published var activeFormats = Formatting.Active()
+
     func format(_ kind: FormatRequest.Kind) {
         formatRequest = FormatRequest(kind: kind)
     }

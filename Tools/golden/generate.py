@@ -967,13 +967,8 @@ def u16len(text: str) -> int:
     return len(text.encode("utf-16-le")) // 2
 
 
-def toggle_wrap(op: str, text: str, start: int, length: int) -> dict:
-    """표시의 **개수를 센다** — 별 하나는 기울임, 둘은 굵게, 셋은 둘 다.
-
-    굵게는 둘 이상이면 걸린 것, 기울임은 개수가 홀수면 걸린 것이다. 그래야
-    `***글***` 에서 기울임만 풀어 `**글**` 이 되고 다시 걸면 제자리로 돌아온다.
-    """
-    units = to_units(text)
+def scan_wrap(op: str, units: list[int], start: int, length: int) -> dict:
+    """양옆의 표시 개수를 센다. `toggle_wrap` 과 `active_at` 이 같이 쓴다."""
     mark = to_units(WRAPS[op])[0]
     need = 1 if op == "italic" else 2
     blanks = {0x20, 0x09, 0x0A}
@@ -998,8 +993,33 @@ def toggle_wrap(op: str, text: str, start: int, length: int) -> dict:
 
     both = min(left, right)
     is_on = (both % 2 == 1) if op == "italic" else (both >= need)
-    new_left = left - need if is_on else left + need
-    new_right = right - need if is_on else right + need
+    return {"from": begin, "to": finish, "left": left, "right": right, "on": is_on}
+
+
+def active_at(text: str, start: int, length: int) -> dict:
+    """커서 자리에 **지금 걸려 있는 표시** (128). 도구 띠의 눌린 모습이 이것이다."""
+    units = to_units(text)
+    active = {op: scan_wrap(op, units, start, length)["on"] for op in WRAPS}
+    begin, finish = line_range(units, start, length)
+    first = from_units(units[begin:finish]).split("\n")[0]
+    active["quote"] = first.lstrip(" \t").startswith(">")
+    return active
+
+
+def toggle_wrap(op: str, text: str, start: int, length: int) -> dict:
+    """표시의 **개수를 센다** — 별 하나는 기울임, 둘은 굵게, 셋은 둘 다.
+
+    굵게는 둘 이상이면 걸린 것, 기울임은 개수가 홀수면 걸린 것이다. 그래야
+    `***글***` 에서 기울임만 풀어 `**글**` 이 되고 다시 걸면 제자리로 돌아온다.
+    """
+    units = to_units(text)
+    mark = to_units(WRAPS[op])[0]
+    need = 1 if op == "italic" else 2
+    scan = scan_wrap(op, units, start, length)
+    begin, finish = scan["from"], scan["to"]
+    left, right, is_on = scan["left"], scan["right"], scan["on"]
+    new_left = max(0, left - need if is_on else left + need)
+    new_right = max(0, right - need if is_on else right + need)
 
     inner = from_units(units[begin:finish])
     one = from_units([mark])
@@ -1117,7 +1137,12 @@ def build_format_cases() -> list[dict]:
         applied = apply_edit(text, edit)
         check_with_markdown(op, applied, edit)
         out.append({"name": case["name"], "op": op, "text": text,
-                    "start": start, "length": length, "edit": edit, "applied": applied})
+                    "start": start, "length": length, "edit": edit, "applied": applied,
+                    # **누르기 전과 누른 뒤에 무엇이 걸려 있나** (128). 눌린 모습과 실제
+                    # 동작이 갈리지 않는지를 이 두 값이 지킨다.
+                    "activeBefore": active_at(text, start, length),
+                    "activeAfter": active_at(applied, edit["selectionStart"],
+                                             edit["selectionLength"])})
     return out
 
 

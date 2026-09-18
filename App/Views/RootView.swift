@@ -64,7 +64,8 @@ struct RootView: View {
         // (시뮬레이터 스크린샷 두 번). 한 칸에 위아래로 두면 둘 다 온전히 보인다.
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 0) {
-                if library.selectedNoteID != nil, !library.isReading, library.sheet == nil {
+                if horizontalSizeClass == .compact, library.selectedNoteID != nil,
+                   !library.isReading, library.sheet == nil {
                     FormatBar()
                 }
                 StatusBanner()
@@ -833,9 +834,14 @@ private struct NoteDetail: View {
                     onFormatted: { library.formatRequest = nil },
                     onTitleLineChanged: { library.cursorOnTitleLine = $0 },
                     onFocusChanged: { library.editorHasFocus = $0 },
-                    onImageLineChanged: library.cursorImageLineChanged)
+                    onImageLineChanged: library.cursorImageLineChanged,
+                    onActiveChanged: { library.activeFormats = $0 })
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
+                // **아이패드에서는 도구 띠가 상세 칸 안에만 선다** (130, 사용자 — 화면 폭
+                // 전체를 가로질렀다). 아이폰은 화면이 곧 상세 칸이라 아래 안내 띠와 같은
+                // 칸에 세운다 (127 — 거기 안 세우면 안내 띠에 가려 잘린다).
+                if !rootIsCompact { FormatBar() }
             }
         }
     }
@@ -1019,11 +1025,12 @@ private struct FormatBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Metrics.rowSpacing) {
-                button("굵게", "bold", .wrap(.bold))
-                button("기울임", "italic", .wrap(.italic))
-                button("취소선", "strikethrough", .wrap(.strikethrough))
+                button("굵게", "bold", .wrap(.bold), on: library.activeFormats.bold)
+                button("기울임", "italic", .wrap(.italic), on: library.activeFormats.italic)
+                button("취소선", "strikethrough", .wrap(.strikethrough),
+                       on: library.activeFormats.strikethrough)
                 rule
-                button("인용", "text.quote", .quote)
+                button("인용", "text.quote", .quote, on: library.activeFormats.quote)
                 button("표 넣기", "tablecells", .table)
                 rule
                 button("내어쓰기", "decrease.indent", .shift(deeper: false))
@@ -1050,8 +1057,12 @@ private struct FormatBar: View {
 
     /// 글자는 안 보이고 **아이콘만** 선다 — 띠가 한 줄을 넘지 않게. 이름은 보이스오버와
     /// 길게 누르기가 읽는다.
+    ///
+    /// **걸려 있으면 눌린 모습**이다 (128) — 파란 칸에 흰 글자. 색만으로 가르지 않으려고
+    /// 보이스오버에는 `켜짐` 을 함께 읽힌다 (색을 못 가리는 사람도 있다).
     private func button(_ name: String, _ symbol: String,
-                        _ kind: LibraryModel.FormatRequest.Kind) -> some View {
+                        _ kind: LibraryModel.FormatRequest.Kind,
+                        on isOn: Bool = false) -> some View {
         Button {
             library.format(kind)
         } label: {
@@ -1060,11 +1071,15 @@ private struct FormatBar: View {
                 .font(.scaled(.body))
                 .frame(minWidth: Metrics.scaledLength(40),
                        minHeight: Metrics.scaledLength(34))
+                .foregroundStyle(isOn ? Palette.paper : Palette.accent)
+                .background {
+                    RoundedRectangle(cornerRadius: Metrics.scaledLength(7))
+                        .fill(isOn ? Palette.accent : .clear)
+                }
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(Palette.accent)
-        .accessibilityLabel(name)
+        .accessibilityLabel(isOn ? "\(name) 켜짐" : name)
     }
 }
 

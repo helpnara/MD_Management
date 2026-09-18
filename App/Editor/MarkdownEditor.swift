@@ -52,10 +52,13 @@ struct MarkdownEditor: UIViewRepresentable {
     /// 커서가 있는 줄이 **사진 줄**이면 그 주소 (ADR-0005 의 L3 후퇴판).
     /// 편집기 안에 사진을 그리는 대신, 아래 띠에 작게 띄우고 눌러서 전체화면으로 본다.
     var onImageLineChanged: @MainActor (String?) -> Void = { _ in }
+    /// 커서 자리에 **지금 걸려 있는 표시** (128). 도구 띠가 눌린 모습으로 보여 준다.
+    var onActiveChanged: @MainActor (Formatting.Active) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
-                    onFocus: onFocusChanged, onImageLine: onImageLineChanged)
+                    onFocus: onFocusChanged, onImageLine: onImageLineChanged,
+                    onActive: onActiveChanged)
     }
 
     func makeUIView(context: Context) -> UITextView {
@@ -98,6 +101,7 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.onTitleLine = onTitleLineChanged
         coordinator.onFocus = onFocusChanged
         coordinator.onImageLine = onImageLineChanged
+        coordinator.onActive = onActiveChanged
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
@@ -110,8 +114,14 @@ struct MarkdownEditor: UIViewRepresentable {
         var onTitleLine: @MainActor (Bool) -> Void
         var onFocus: @MainActor (Bool) -> Void
         var onImageLine: @MainActor (String?) -> Void
+        var onActive: @MainActor (Formatting.Active) -> Void
+        /// 마지막으로 알린 표시 상태 (128). 바뀔 때만 알린다 — 커서가 움직일 때마다
+        /// 화면을 다시 그리면 값도 없이 비싸다.
+        private var lastActive: Formatting.Active?
         /// 마지막으로 한 편집 도구 부탁 (127). 같은 것을 두 번 하지 않는다.
         private var lastFormatID: UUID?
+        /// 지난 선택 (132). 어느 쪽 끝이 움직였는지 알려면 견줄 것이 있어야 한다.
+        private var lastSelection: NSRange?
         /// 마지막으로 알린 사진 주소. 바뀔 때만 알린다.
         private var lastImageLine: String??
         /// 마지막으로 알린 값. 바뀔 때만 알린다.
@@ -141,11 +151,25 @@ struct MarkdownEditor: UIViewRepresentable {
         init(onEdit: @escaping @MainActor (String) -> Void,
              onTitleLine: @escaping @MainActor (Bool) -> Void,
              onFocus: @escaping @MainActor (Bool) -> Void,
-             onImageLine: @escaping @MainActor (String?) -> Void) {
+             onImageLine: @escaping @MainActor (String?) -> Void,
+             onActive: @escaping @MainActor (Formatting.Active) -> Void) {
             self.onEdit = onEdit
             self.onTitleLine = onTitleLine
             self.onFocus = onFocus
             self.onImageLine = onImageLine
+            self.onActive = onActive
+        }
+
+        /// **커서 자리에 지금 무엇이 걸려 있나** (128). 규칙은 Core 의 `Formatting.active` 가
+        /// 정한다 — 도구 띠를 누를 때와 **같은 훑기**라 눌린 모습과 실제 동작이 안 갈린다.
+        private func reportActiveFormats(_ textView: UITextView) {
+            guard !isComposing, textView.markedTextRange == nil else { return }
+            let selection = textView.selectedRange
+            let active = Formatting.active(in: textView.textStorage.string,
+                                           start: selection.location, length: selection.length)
+            guard active != lastActive else { return }
+            lastActive = active
+            onActive(active)
         }
 
         /// **커서 줄에 사진이 있나** (L3 후퇴판). 규칙은 Core 의 `MarkdownLinks` 가 정한다 —
@@ -262,6 +286,8 @@ struct MarkdownEditor: UIViewRepresentable {
             guard let target = textRange(view, range) else { return false }
             view.replace(target, withText: edit.text)
             view.selectedRange = NSRange(location: edit.selectionStart, length: edit.selectionLength)
+            keepCaretVisible(view)
+            reportActiveFormats(view)
             onEdit(view.text)
             return true
         }
@@ -382,6 +408,7 @@ struct MarkdownEditor: UIViewRepresentable {
             }
             // 가운데에 끼워 넣었으면 아래 번호들이 어긋난다 — 여기서 맞춘다 (104).
             renumberList(around: textView.selectedRange.location, in: textView)
+            keepCaretVisible(textView)
             onEdit(textView.text)
             return true
         }
@@ -489,6 +516,12 @@ struct MarkdownEditor: UIViewRepresentable {
                 view.selectedRange = NSRange(location: block.location,
                                              length: (shifted.text as NSString).length)
             }
+            // **단계를 바꿨으면 번호를 다시 맞춘다** (129, 사용자 — 들여쓰기 뒤 번호가
+            // 어긋났다). 들여쓰거나 내어쓰면 그 줄이 **다른 단계로 옮겨 가므로** 위아래
+            // 번호가 다 어긋난다. 치는 중에는 안 건다(106) — 이것은 **손으로 시킨 구조
+            // 변경**이라 그 자리에서 맞추는 것이 맞다.
+            renumberList(around: view.selectedRange.location, in: view)
+            keepCaretVisible(view)
             onEdit(view.text)
         }
 
@@ -502,6 +535,46 @@ struct MarkdownEditor: UIViewRepresentable {
             onEdit(textView.text)
         }
 
+        /// **커서를 눈에 보이는 자리로** (131, 사용자 — *엔터를 빠르게 치면 커서가 키보드
+        /// 안으로 숨는다*).
+        ///
+        /// 우리가 **글을 직접 넣는 자리**(목록 이어 주기 · 들여쓰기 · 편집 도구)에서는
+        /// `UITextView` 가 스스로 스크롤을 맞춰 주지 않는다. 사람이 친 글자는 맞춰 주지만,
+        /// 코드가 넣은 글은 그 대상이 아니다 — 그래서 빠르게 줄바꿈을 이어 가면 커서가
+        /// 키보드 뒤로 내려가 버렸다. **한 바퀴 뒤에** 맞춘다: 방금 바꾼 글의 배치가
+        /// 끝나야 커서 자리가 참이다.
+        private func keepCaretVisible(_ textView: UITextView) {
+            keepVisible(textView, at: textView.selectedRange.location)
+        }
+
+        /// **고르는 쪽 끝을 따라간다** (132, 사용자 — *복사하려고 범위를 아래로 끌면
+        /// 커서가 키보드 안으로 숨는다*).
+        ///
+        /// 어느 쪽 끝이 움직였는지는 **지난 선택과 견주어** 안다 — 시작이 그대로면 끝을
+        /// 늘린 것이고, 아니면 앞쪽을 옮긴 것이다. 움직인 쪽을 보여 준다.
+        private func keepSelectionEdgeVisible(_ textView: UITextView) {
+            let selection = textView.selectedRange
+            defer { lastSelection = selection }
+            guard textView.isFirstResponder, !isComposing, textView.markedTextRange == nil else { return }
+            let moved: Int
+            if let previous = lastSelection, previous.location == selection.location {
+                moved = NSMaxRange(selection)
+            } else {
+                moved = selection.location
+            }
+            keepVisible(textView, at: moved)
+        }
+
+        /// **한 바퀴 뒤에** 맞춘다 — 방금 바꾼 글의 배치가 끝나야 그 자리가 참이다.
+        private func keepVisible(_ textView: UITextView, at location: Int) {
+            DispatchQueue.main.async { [weak textView] in
+                guard let textView, textView.isFirstResponder else { return }
+                let length = (textView.textStorage.string as NSString).length
+                let safe = NSRange(location: max(0, min(location, length)), length: 0)
+                textView.scrollRangeToVisible(safe)
+            }
+        }
+
         private func textRange(_ textView: UITextView, _ range: NSRange) -> UITextRange? {
             guard let start = textView.position(from: textView.beginningOfDocument, offset: range.location),
                   let end = textView.position(from: start, offset: range.length) else { return nil }
@@ -513,6 +586,8 @@ struct MarkdownEditor: UIViewRepresentable {
         func textViewDidChangeSelection(_ textView: UITextView) {
             reportTitleLine(textView)
             reportImageLine(textView)
+            reportActiveFormats(textView)
+            keepSelectionEdgeVisible(textView)
             guard !isStyling, !isComposing, textView.markedTextRange == nil, let sheet else { return }
             let text = textView.textStorage.string as NSString
             guard text.length > 0 else { return }

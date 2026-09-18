@@ -16,6 +16,12 @@ final class FormatGoldenTests: XCTestCase {
             let selectionStart: Int
             let selectionLength: Int
         }
+        struct Active: Decodable {
+            let bold: Bool
+            let italic: Bool
+            let strikethrough: Bool
+            let quote: Bool
+        }
         struct Case: Decodable {
             let name: String
             let op: String
@@ -24,6 +30,8 @@ final class FormatGoldenTests: XCTestCase {
             let length: Int
             let edit: Edit
             let applied: String
+            let activeBefore: Active
+            let activeAfter: Active
         }
         let formatCases: [Case]
     }
@@ -44,6 +52,33 @@ final class FormatGoldenTests: XCTestCase {
             XCTAssertEqual(made.selectionStart, item.edit.selectionStart, "선택 시작 — \(where_)")
             XCTAssertEqual(made.selectionLength, item.edit.selectionLength, "선택 길이 — \(where_)")
             XCTAssertEqual(apply(made, to: item.text), item.applied, "바꾼 뒤 글 — \(where_)")
+        }
+    }
+
+    /// **눌린 모습과 실제 동작이 갈리지 않는다** (128).
+    ///
+    /// 띠가 `굵게` 를 눌린 채로 그리는데 눌러도 안 풀리면, 사람은 앱을 못 믿게 된다.
+    /// 그래서 판정(`active`)과 동작(`toggle`)이 **같은 훑기**를 쓰는지를 여기서 지킨다.
+    func testActiveMatchesGolden() throws {
+        for item in try Self.load().formatCases {
+            let before = Formatting.active(in: item.text, start: item.start, length: item.length)
+            assertSame(before, item.activeBefore, "누르기 전 — [\(item.name)]")
+
+            let after = Formatting.active(in: item.applied,
+                                          start: item.edit.selectionStart,
+                                          length: item.edit.selectionLength)
+            assertSame(after, item.activeAfter, "누른 뒤 — [\(item.name)]")
+        }
+    }
+
+    /// **누르면 상태가 뒤집힌다.** 감싸기 세 가지에만 해당한다.
+    func testPressingFlipsTheState() throws {
+        for item in try Self.load().formatCases {
+            guard ["bold", "italic", "strikethrough"].contains(item.op),
+                  item.edit.selectionLength > 0 else { continue }
+            let before = value(item.activeBefore, item.op)
+            let after = value(item.activeAfter, item.op)
+            XCTAssertNotEqual(before, after, "누른 뒤에도 그대로다 — [\(item.name)]")
         }
     }
 
@@ -87,6 +122,22 @@ final class FormatGoldenTests: XCTestCase {
         case "italic": return "*"
         case "strikethrough": return "~~"
         default: return ""
+        }
+    }
+
+    private func assertSame(_ made: Formatting.Active, _ golden: Golden.Active, _ where_: String) {
+        XCTAssertEqual(made.bold, golden.bold, "굵게 — \(where_)")
+        XCTAssertEqual(made.italic, golden.italic, "기울임 — \(where_)")
+        XCTAssertEqual(made.strikethrough, golden.strikethrough, "취소선 — \(where_)")
+        XCTAssertEqual(made.quote, golden.quote, "인용 — \(where_)")
+    }
+
+    private func value(_ active: Golden.Active, _ op: String) -> Bool {
+        switch op {
+        case "bold": return active.bold
+        case "italic": return active.italic
+        case "strikethrough": return active.strikethrough
+        default: return active.quote
         }
     }
 

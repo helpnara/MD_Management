@@ -60,6 +60,67 @@ public enum Formatting {
     /// 바깥 개수에 함께 센다.
     public static func toggle(_ wrap: Wrap, in text: String, start: Int, length: Int) -> Edit {
         let units = Array(text.utf16)
+        let need = wrap == .italic ? 1 : 2
+        let scan = scan(wrap, units, start: start, length: length)
+        let (from, to, left, right, isOn) = (scan.from, scan.to, scan.left, scan.right, scan.isOn)
+
+        let newLeft = max(0, isOn ? left - need : left + need)
+        let newRight = max(0, isOn ? right - need : right + need)
+
+        let inner = string(units, from, to)
+        let one = String(wrap.rawValue.prefix(1))
+        let piece = String(repeating: one, count: newLeft) + inner
+            + String(repeating: one, count: newRight)
+        let editStart = from - left
+        let editLength = (to + right) - editStart
+        return Edit(start: editStart, length: editLength, text: piece,
+                    selectionStart: editStart + newLeft,
+                    selectionLength: (inner as NSString).length)
+    }
+
+    /// **지금 무엇이 걸려 있나** (128, 사용자 — *선택이 되었는지 안 되었는지가 안 보인다*).
+    ///
+    /// 워드의 도구 띠처럼 **누르면 눌린 채로 보이게** 하려면 화면이 이것을 알아야 한다.
+    /// 판정은 `toggle` 과 **같은 훑기**를 쓴다 — 두 길이 갈리면 *눌린 것처럼 보이는데
+    /// 눌러도 안 풀리는* 자리가 생긴다.
+    public struct Active: Equatable, Sendable {
+        public var bold = false
+        public var italic = false
+        public var strikethrough = false
+        public var quote = false
+
+        public init(bold: Bool = false, italic: Bool = false,
+                    strikethrough: Bool = false, quote: Bool = false) {
+            self.bold = bold
+            self.italic = italic
+            self.strikethrough = strikethrough
+            self.quote = quote
+        }
+    }
+
+    public static func active(in text: String, start: Int, length: Int) -> Active {
+        let units = Array(text.utf16)
+        var active = Active()
+        for wrap in Wrap.allCases {
+            let isOn = scan(wrap, units, start: start, length: length).isOn
+            switch wrap {
+            case .bold: active.bold = isOn
+            case .italic: active.italic = isOn
+            case .strikethrough: active.strikethrough = isOn
+            }
+        }
+        // 인용은 줄 이야기다 — **커서가 선 줄**이 `>` 로 시작하나.
+        let block = lineRange(units, start: start, length: length)
+        let first = string(units, block.start, block.end).components(separatedBy: "\n").first ?? ""
+        active.quote = first.drop(while: { $0 == " " || $0 == "\t" }).hasPrefix(">")
+        return active
+    }
+
+    /// 고른 글의 양옆을 훑어 **표시가 몇 개나 이어져 있나**를 센다. `toggle` 과 `active` 가
+    /// 이 하나를 같이 쓴다.
+    private static func scan(_ wrap: Wrap, _ units: [UInt16],
+                             start: Int,
+                             length: Int) -> (from: Int, to: Int, left: Int, right: Int, isOn: Bool) {
         let mark = Array(wrap.rawValue.utf16)[0]
         let need = wrap == .italic ? 1 : 2
         var from = clamp(start, 0, units.count)
@@ -80,18 +141,7 @@ public enum Formatting {
 
         let both = min(left, right)
         let isOn = wrap == .italic ? (both % 2 == 1) : (both >= need)
-        let newLeft = max(0, isOn ? left - need : left + need)
-        let newRight = max(0, isOn ? right - need : right + need)
-
-        let inner = string(units, from, to)
-        let one = String(wrap.rawValue.prefix(1))
-        let piece = String(repeating: one, count: newLeft) + inner
-            + String(repeating: one, count: newRight)
-        let editStart = from - left
-        let editLength = (to + right) - editStart
-        return Edit(start: editStart, length: editLength, text: piece,
-                    selectionStart: editStart + newLeft,
-                    selectionLength: (inner as NSString).length)
+        return (from, to, left, right, isOn)
     }
 
     // MARK: - 인용
