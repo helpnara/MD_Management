@@ -45,6 +45,10 @@ enum MarkdownStyler {
             let headerRange = text.paragraphRange(for: NSRange(location: 0, length: widest))
             touched = NSUnionRange(touched, headerRange)
         }
+        // **첫 줄은 `#` 이 없어도 제목이다** (133, 사용자 — *그냥 써 놓으니 글자가 너무 작다*).
+        // 이 앱에서 첫 줄은 **곧 파일명**이므로(107 · T6) 제목으로 보이는 편이 맞다.
+        // 문단 하나만 보는 `LineStyler` 로는 알 수 없는 문맥이라 여기서 잰다.
+        let titleStart = firstMeaningfulParagraph(in: text, after: header)
         var location = touched.location
         let limit = NSMaxRange(touched)
 
@@ -58,7 +62,8 @@ enum MarkdownStyler {
                     at >= paragraph.location
                         && (at < NSMaxRange(paragraph) || NSMaxRange(paragraph) == text.length)
                 } ?? true
-                style(paragraph: paragraph, in: text, storage: storage, sheet: sheet, hasCursor: hasCursor)
+                style(paragraph: paragraph, in: text, storage: storage, sheet: sheet,
+                      hasCursor: hasCursor, isTitle: paragraph.location == titleStart)
             }
             let next = NSMaxRange(paragraph)
             // 문단이 앞으로 안 가면 멈춘다 — 무한 반복 막이.
@@ -78,8 +83,26 @@ enum MarkdownStyler {
         return NSRange(location: location, length: min(range.length, length - location))
     }
 
+    /// 머리말 뒤 **첫 글줄**의 자리. 빈 줄은 건너뛴다. 없으면 `nil`.
+    private static func firstMeaningfulParagraph(in text: NSString, after header: Int) -> Int? {
+        var location = min(header, max(0, text.length - 1))
+        while location < text.length {
+            let paragraph = text.paragraphRange(for: NSRange(location: location, length: 0))
+            var line = paragraph
+            if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
+            if !text.substring(with: line).trimmingCharacters(in: .whitespaces).isEmpty {
+                return paragraph.location
+            }
+            let next = NSMaxRange(paragraph)
+            if next <= location { return nil }
+            location = next
+        }
+        return nil
+    }
+
     private static func style(paragraph: NSRange, in text: NSString,
-                              storage: NSTextStorage, sheet: EditorStyleSheet, hasCursor: Bool) {
+                              storage: NSTextStorage, sheet: EditorStyleSheet,
+                              hasCursor: Bool, isTitle: Bool = false) {
         // `paragraphRange` 는 끝의 줄바꿈까지 준다. `LineStyler` 는 줄 하나만 본다.
         var line = paragraph
         if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A {
@@ -102,7 +125,10 @@ enum MarkdownStyler {
                                                       length: style.contentStart - marker.start))
             markerWidth = (prefix as NSString).size(withAttributes: [.font: sheet.body]).width
         }
-        storage.setAttributes(sheet.base(for: style.block, depth: depth, markerWidth: markerWidth),
+        // 첫 글줄이고 **아직 아무 블록도 아니면** 제목처럼 그린다 (133). 이미 `#` 이
+        // 붙었거나 목록 · 인용이면 그 모습을 그대로 둔다 — 글은 한 글자도 안 바뀐다.
+        let block = (isTitle && style.block == nil) ? StyleToken.heading(level: 1) : style.block
+        storage.setAttributes(sheet.base(for: block, depth: depth, markerWidth: markerWidth),
                               range: paragraph)
 
         for span in style.inlineSpans {

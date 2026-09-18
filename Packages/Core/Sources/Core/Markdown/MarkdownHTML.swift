@@ -201,6 +201,10 @@ public enum MarkdownHTML {
     h3 { font-size: 1.12em; }
     h4, h5, h6 { font-size: 1em; }
     p { margin: 0.9em 0; }
+    /* **첫 줄은 `#` 이 없어도 제목이다** (133). 이 앱에서 첫 줄은 곧 파일명이므로(107)
+       제목으로 보이는 편이 맞다. **파일은 한 글자도 안 바뀐다** — 보이는 모습만 그렇다.
+       편집기도 같은 규칙으로 그린다 (`MarkdownStyler`) — 두 자리가 갈리면 93 이 된다. */
+    body > p:first-child { font-size: 1.55em; line-height: 1.3; font-weight: 700; margin: 0 0 0.6em; }
     a { color: var(--yb-accent); text-decoration: underline; text-underline-offset: 0.15em; }
     ul, ol { margin: 0.9em 0; padding-left: 1.4em; }
     li { margin: 0.25em 0; }
