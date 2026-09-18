@@ -70,6 +70,9 @@ jobs:
       # 그걸 찾느라 두 바퀴를 버렸다 (141 · 빌드 43 준비). CLAUDE.md 2 절과 같은 뜻이다.
       - name: 테스트
         working-directory: Packages/Core
+        # **`bash` 를 못 박는다.** 컨테이너의 기본 쉘은 `sh`(dash) 라 `pipefail` 이 없다 —
+        # 여기서 한 바퀴를 더 썼다.
+        shell: bash
         run: |
           set -o pipefail
           swift test 2>&1 | tee /tmp/test.log || {
