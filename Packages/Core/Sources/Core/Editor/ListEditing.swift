@@ -56,9 +56,24 @@ public enum ListEditing {
     /// **탭** — 고른 줄들을 한 단계 들여쓴다. 목록 줄이 하나도 없으면 `nil` 이다
     /// (그때 편집기는 커서 자리에 빈칸 둘을 넣는다 — 글 한복판에서 탭이 먹통이 되지 않도록).
     /// 빈 줄은 그대로 둔다 — 빈칸만 남은 줄이 생기면 문단이 끊긴다.
-    public static func indent(_ block: String) -> Shifted? {
+    ///
+    /// **한 단계는 빈칸 둘이 아니다** (139, 사용자 — 편집기에서는 겹쳐 보이는데 읽기 모드와
+    /// 다른 앱에서는 나란히 나왔다). 마크다운은 자식 항목이 **부모의 글이 시작하는 칸**까지
+    /// 들어가야 겹친 것으로 읽는다 — `- ` 는 둘이면 되지만 **`1. ` 은 셋**이 필요하다.
+    /// 빈칸 둘만 넣으면 파일에는 **겹치지 않은 목록**이 저장된다. 파일이 원본이므로
+    /// (ADR-0001) 보이는 대로가 아니라 **파일이 맞아야** 한다.
+    ///
+    /// - `under`: 블록 **바로 위 줄**. 그 줄이 목록이면 그 줄의 글이 시작하는 칸까지 들어간다.
+    ///   없으면 이 줄 제 마커 너비만큼 (`1. ` → 셋, `- ` → 둘).
+    public static func indent(_ block: String, under previous: String? = nil) -> Shifted? {
         let lines = block.components(separatedBy: "\n")
-        guard lines.contains(where: { isItem($0) }) else { return nil }
+        guard let firstItem = lines.first(where: { isItem($0) }) else { return nil }
+
+        let here = leadingWidth(firstItem)
+        let target = previous.flatMap(contentColumn) ?? (here + (markerWidth(firstItem) ?? 2))
+        let delta = max(target - here, markerWidth(firstItem) ?? 2)
+        let pad = String(repeating: " ", count: delta)
+
         var firstDelta = 0
         var shifted: [String] = []
         shifted.reserveCapacity(lines.count)
@@ -67,26 +82,37 @@ public enum ListEditing {
                 shifted.append(line)
                 continue
             }
-            if index == 0 { firstDelta = step.utf16.count }
-            shifted.append(step + line)
+            if index == 0 { firstDelta = pad.utf16.count }
+            shifted.append(pad + line)
         }
         return Shifted(text: shifted.joined(separator: "\n"), firstLineDelta: firstDelta)
     }
 
-    /// **시프트 탭** — 한 단계 내어쓴다. 줄마다 앞의 탭 하나 또는 빈칸 둘까지를 뗀다.
+    /// **시프트 탭** — 한 단계 내어쓴다.
+    ///
+    /// - `to`: 블록보다 **얕은** 바로 위 목록 줄. 그 줄의 들여쓰기까지 나온다.
+    ///   없으면 맨 앞까지(또는 뗄 수 있는 만큼).
+    ///
     /// 뗄 것이 하나도 없으면 `nil` — 아무 일도 일어나지 않는다.
-    public static func outdent(_ block: String) -> Shifted? {
+    public static func outdent(_ block: String, to shallower: String? = nil) -> Shifted? {
+        let lines = block.components(separatedBy: "\n")
+        let firstItem = lines.first(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty })
+        let here = firstItem.map(leadingWidth) ?? 0
+        let target = shallower.map(leadingWidth) ?? 0
+        // 몇 칸을 뗄까 — 얕은 줄이 있으면 그 줄까지, 없으면 한 단계(빈칸 둘)만.
+        let amount = here > target ? here - target : step.count
+
         var changed = false
         var firstDelta = 0
         var shifted: [String] = []
-        for (index, line) in block.components(separatedBy: "\n").enumerated() {
+        for (index, line) in lines.enumerated() {
             var rest = line[...]
             var removed = 0
             if rest.hasPrefix("\t") {
                 rest = rest.dropFirst()
                 removed = 1
             } else {
-                while removed < step.count, rest.hasPrefix(" ") {
+                while removed < amount, rest.hasPrefix(" ") {
                     rest = rest.dropFirst()
                     removed += 1
                 }
@@ -99,6 +125,33 @@ public enum ListEditing {
         }
         guard changed else { return nil }
         return Shifted(text: shifted.joined(separator: "\n"), firstLineDelta: firstDelta)
+    }
+
+    /// 줄 앞의 빈칸 너비 (탭은 네 칸).
+    private static func leadingWidth(_ line: String) -> Int {
+        line.prefix { $0 == " " || $0 == "\t" }.reduce(0) { $0 + ($1 == "\t" ? 4 : 1) }
+    }
+
+    /// 마커 너비 — `- ` 는 둘, `1. ` 은 셋, `10. ` 은 넷. 목록이 아니면 `nil`.
+    ///
+    /// **`LineStyler` 의 `contentStart` 를 쓰지 않는다.** 그쪽은 `- [ ] ` 의 체크박스까지
+    /// 마커로 세는데(화면에 그리려고), 마크다운이 보는 **글이 시작하는 칸**은 `- ` 뒤다.
+    /// 여섯 칸을 들여쓰면 부모의 글칸(둘)보다 네 칸이 더 들어가 **코드로 읽힌다** —
+    /// 겹친 목록이 아니라.
+    private static func markerWidth(_ line: String) -> Int? {
+        let rest = line.drop { $0 == " " || $0 == "\t" }
+        if rest.hasPrefix("- ") || rest.hasPrefix("* ") || rest.hasPrefix("+ ") { return 2 }
+        let digits = rest.prefix { $0.isASCII && $0.isNumber }
+        guard !digits.isEmpty else { return nil }
+        let after = rest.dropFirst(digits.count)
+        guard after.hasPrefix(". ") || after.hasPrefix(") ") else { return nil }
+        return digits.count + 2
+    }
+
+    /// **글이 시작하는 칸** — 자식 항목은 여기까지 들어가야 겹친 것으로 읽힌다.
+    private static func contentColumn(_ line: String) -> Int? {
+        guard let width = markerWidth(line) else { return nil }
+        return leadingWidth(line) + width
     }
 
     // MARK: - 번호 다시 매기기 (빌드 32 · 104)

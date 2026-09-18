@@ -477,6 +477,34 @@ struct MarkdownEditor: UIViewRepresentable {
             return text.substring(with: line)
         }
 
+        /// 이 자리 **바로 위 줄** (139). 없으면 `nil`.
+        private static func line(_ text: NSString, above location: Int) -> String? {
+            guard location > 0 else { return nil }
+            return line(text, text.paragraphRange(for: NSRange(location: location - 1, length: 0)))
+        }
+
+        /// 이 자리 위로 올라가며 만나는 **더 얕은 첫 줄** (139). 내어쓰기가 여기까지 나온다.
+        private static func line(_ text: NSString, above location: Int,
+                                 shallowerThan width: Int) -> String? {
+            var at = location
+            while at > 0 {
+                let paragraph = text.paragraphRange(for: NSRange(location: at - 1, length: 0))
+                let candidate = line(text, paragraph)
+                if !candidate.trimmingCharacters(in: .whitespaces).isEmpty,
+                   leadingWidth(candidate) < width {
+                    return candidate
+                }
+                if paragraph.location == 0 { return nil }
+                at = paragraph.location
+            }
+            return nil
+        }
+
+        /// 줄 앞의 빈칸 너비 (탭은 네 칸) — `ListEditing` 과 같은 셈.
+        static func leadingWidth(_ line: String) -> Int {
+            line.prefix { $0 == " " || $0 == "\t" }.reduce(0) { $0 + ($1 == "\t" ? 4 : 1) }
+        }
+
         private static func isItemLine(_ text: NSString, _ paragraph: NSRange) -> Bool {
             ListEditing.returnPressed(in: line(text, paragraph)) != nil
                 || LineStyler.style(paragraph: line(text, paragraph)).block == .orderedItem
@@ -502,7 +530,15 @@ struct MarkdownEditor: UIViewRepresentable {
             if block.length > 0, text.character(at: NSMaxRange(block) - 1) == 0x0A { block.length -= 1 }
             let before = text.substring(with: block)
 
-            guard let shifted = deeper ? ListEditing.indent(before) : ListEditing.outdent(before) else {
+            // **위 줄을 함께 본다** (139). 들여쓸 때는 **바로 위 줄**의 글이 시작하는 칸까지,
+            // 내어쓸 때는 **더 얕은 위 줄**의 들여쓰기까지 간다 — 그래야 파일이 정말
+            // 겹친 목록이 된다 (마크다운은 빈칸 둘로는 숫자 목록을 안 겹친다).
+            let above = Self.line(text, above: block.location)
+            let shallower = Self.line(text, above: block.location,
+                                      shallowerThan: Self.leadingWidth(before))
+            guard let shifted = deeper
+                    ? ListEditing.indent(before, under: above)
+                    : ListEditing.outdent(before, to: shallower) else {
                 // 목록이 아니다 — 탭은 빈칸 둘로, 시프트 탭은 아무 일도 없다.
                 if deeper { insertPlainIndent(in: view, at: selection) }
                 return

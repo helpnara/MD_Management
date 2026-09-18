@@ -558,11 +558,58 @@ def is_list_item(line: str) -> bool:
     return rest[len(digits):len(digits) + 2] in (". ", ") ")
 
 
-def indent_block(block: str):
-    """탭 — 목록 줄이 하나라도 있으면 빈 줄을 뺀 모든 줄 앞에 빈칸 둘."""
+def leading_width(line: str) -> int:
+    """줄 앞의 빈칸 너비 (탭은 네 칸)."""
+    width = 0
+    for ch in line:
+        if ch == " ":
+            width += 1
+        elif ch == "\t":
+            width += 4
+        else:
+            break
+    return width
+
+
+def marker_width(line: str):
+    """`- ` 는 둘, `1. ` 은 셋, `10. ` 은 넷. 목록이 아니면 None."""
+    rest = line[len(line) - len(line.lstrip(" \t")):]
+    if rest[:2] in ("- ", "* ", "+ "):
+        return 2
+    digits = ""
+    for ch in rest:
+        if ch.isdigit() and ch.isascii():
+            digits += ch
+        else:
+            break
+    if digits and rest[len(digits):len(digits) + 2] in (". ", ") "):
+        return len(digits) + 2
+    return None
+
+
+def content_column(line: str):
+    """**글이 시작하는 칸** — 자식 항목은 여기까지 들어가야 겹친 것으로 읽힌다."""
+    width = marker_width(line)
+    return None if width is None else leading_width(line) + width
+
+
+def indent_block(block: str, under: str | None = None):
+    """탭 — **부모의 글이 시작하는 칸**까지 들여쓴다 (139).
+
+    빈칸 둘은 글머리표에만 맞다. 숫자 목록(`1. `)은 **셋**이 필요하고, 둘만 넣으면
+    파일에는 겹치지 않은 목록이 저장된다 — 편집기에서만 겹쳐 보인다.
+    """
     lines = block.split("\n")
-    if not any(is_list_item(line) for line in lines):
+    first_item = next((line for line in lines if is_list_item(line)), None)
+    if first_item is None:
         return None
+
+    here = leading_width(first_item)
+    own = marker_width(first_item) or 2
+    target = content_column(under) if under else None
+    delta = max((target if target is not None else here + own) - here, own)
+    pad = " " * delta
+
     first_delta = 0
     out = []
     for index, line in enumerate(lines):
@@ -570,23 +617,29 @@ def indent_block(block: str):
             out.append(line)
             continue
         if index == 0:
-            first_delta = len(INDENT_STEP.encode("utf-16-le")) // 2
-        out.append(INDENT_STEP + line)
+            first_delta = len(pad.encode("utf-16-le")) // 2
+        out.append(pad + line)
     return {"text": "\n".join(out), "firstLineDelta": first_delta}
 
 
-def outdent_block(block: str):
-    """시프트 탭 — 줄마다 앞의 탭 하나 또는 빈칸 둘까지."""
+def outdent_block(block: str, to: str | None = None):
+    """시프트 탭 — **더 얕은 위 줄**의 들여쓰기까지 나온다 (139)."""
+    lines = block.split("\n")
+    first = next((line for line in lines if line.strip()), None)
+    here = leading_width(first) if first is not None else 0
+    target = leading_width(to) if to else 0
+    amount = here - target if here > target else len(INDENT_STEP)
+
     changed = False
     first_delta = 0
     out = []
-    for index, line in enumerate(block.split("\n")):
+    for index, line in enumerate(lines):
         removed = 0
         if line.startswith("\t"):
             line = line[1:]
             removed = 1
         else:
-            while removed < len(INDENT_STEP) and line.startswith(" "):
+            while removed < amount and line.startswith(" "):
                 line = line[1:]
                 removed += 1
         if removed:
@@ -599,14 +652,49 @@ def outdent_block(block: str):
     return {"text": "\n".join(out), "firstLineDelta": first_delta}
 
 
+def check_nesting(case: str, parent: str, indented: str) -> None:
+    """**정말 겹쳤나** — 파서에게 묻는다 (139 가 여기서 났다).
+
+    편집기가 겹쳐 그린다고 파일이 겹친 것은 아니다. 부모 줄과 들여쓴 줄을 붙여
+    markdown-it 에 넘겨, 목록 **안에 목록**이 생겼는지 본다.
+    """
+    # **앱이 하는 그대로 본다** — 들여쓴 **직후에 번호를 다시 매긴다** (129). 그 둘을
+    # 따로 보면 헛것을 잡는다: `1. 하나` 아래의 `2. 둘` 은 마크다운이 겹치지 않는 것으로
+    # 읽지만(번호가 1이 아닌 목록은 문단을 못 끊는다), 앱에서는 곧바로 `1.` 이 된다.
+    block = parent + "\n" + indented
+    for fix in reversed(renumber_block(block)):
+        units = to_units(block)
+        head = from_units(units[:fix["start"]])
+        tail = from_units(units[fix["start"] + fix["length"]:])
+        block = head + fix["number"] + tail
+
+    md = make_parser()
+    html = md.render(block + "\n")
+    # `<ol start="10">` 처럼 **속성이 붙은 태그**도 센다 — `<ol>` 만 찾으면 못 잡는다.
+    inner = html.count("<ol") + html.count("<ul")
+    if inner < 2:
+        raise SystemExit(f"::error::[{case}] 들여썼는데 겹치지 않았다:\n{block}")
+
+
 def build_indent_cases() -> list[dict]:
     spec = json.loads(INDENT_CASES.read_text(encoding="utf-8"))
-    return [{
-        "name": case["name"],
-        "text": case["text"],
-        "indented": indent_block(case["text"]),
-        "outdented": outdent_block(case["text"]),
-    } for case in spec["cases"]]
+    out = []
+    for case in spec["cases"]:
+        under = case.get("under")
+        shallower = case.get("shallower")
+        indented = indent_block(case["text"], under)
+        # 부모를 준 사례는 **정말 겹쳤는지**까지 본다.
+        if under and indented:
+            check_nesting(case["name"], under, indented["text"])
+        out.append({
+            "name": case["name"],
+            "text": case["text"],
+            "under": under,
+            "shallower": shallower,
+            "indented": indented,
+            "outdented": outdent_block(case["text"], shallower),
+        })
+    return out
 
 
 # ── 번호 다시 매기기 — 설계서의 규칙을 파이썬으로 다시 (빌드 32 · 104) ─────────

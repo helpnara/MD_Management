@@ -16,6 +16,10 @@ final class IndentGoldenTests: XCTestCase {
         struct Case: Decodable {
             let name: String
             let text: String
+            /// 바로 위 줄 (139). 들여쓰기가 여기 글이 시작하는 칸까지 간다.
+            let under: String?
+            /// 더 얕은 위 줄 (139). 내어쓰기가 여기까지 나온다.
+            let shallower: String?
             let indented: Shift?
             let outdented: Shift?
         }
@@ -32,12 +36,12 @@ final class IndentGoldenTests: XCTestCase {
         for item in try Self.load().indentCases {
             let where_ = "[\(item.name)] \(item.text)"
 
-            let indented = ListEditing.indent(item.text)
+            let indented = ListEditing.indent(item.text, under: item.under)
             XCTAssertEqual(indented?.text, item.indented?.text, "탭 — \(where_)")
             XCTAssertEqual(indented?.firstLineDelta, item.indented?.firstLineDelta,
                            "탭 커서 — \(where_)")
 
-            let outdented = ListEditing.outdent(item.text)
+            let outdented = ListEditing.outdent(item.text, to: item.shallower)
             XCTAssertEqual(outdented?.text, item.outdented?.text, "시프트 탭 — \(where_)")
             XCTAssertEqual(outdented?.firstLineDelta, item.outdented?.firstLineDelta,
                            "시프트 탭 커서 — \(where_)")
@@ -45,11 +49,14 @@ final class IndentGoldenTests: XCTestCase {
     }
 
     /// 들여썼다가 도로 내어쓰면 처음으로 돌아온다.
+    ///
+    /// **위 줄을 같이 준다** (139) — 들여쓰기는 부모의 글이 시작하는 칸까지 가고,
+    /// 내어쓰기는 그 부모의 들여쓰기까지 나온다. 같은 문맥을 줘야 제자리로 돌아온다.
     func testIndentThenOutdentRoundTrips() throws {
         for item in try Self.load().indentCases {
-            guard let indented = ListEditing.indent(item.text) else { continue }
-            XCTAssertEqual(ListEditing.outdent(indented.text)?.text, item.text,
-                           "되돌아오지 않는다 — [\(item.name)]")
+            guard let indented = ListEditing.indent(item.text, under: item.under) else { continue }
+            let back = ListEditing.outdent(indented.text, to: item.under ?? item.shallower)
+            XCTAssertEqual(back?.text, item.text, "되돌아오지 않는다 — [\(item.name)]")
         }
     }
 }

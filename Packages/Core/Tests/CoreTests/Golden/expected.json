@@ -1423,7 +1423,9 @@
       },
       "name": "목록-한줄",
       "outdented": null,
-      "text": "- 첫째"
+      "shallower": null,
+      "text": "- 첫째",
+      "under": null
     },
     {
       "indented": {
@@ -1435,25 +1437,31 @@
         "firstLineDelta": -2,
         "text": "- 둘째"
       },
-      "text": "  - 둘째"
+      "shallower": null,
+      "text": "  - 둘째",
+      "under": null
     },
     {
       "indented": {
-        "firstLineDelta": 2,
-        "text": "  1. 하나"
+        "firstLineDelta": 3,
+        "text": "   1. 하나"
       },
       "name": "목록-번호",
       "outdented": null,
-      "text": "1. 하나"
+      "shallower": null,
+      "text": "1. 하나",
+      "under": null
     },
     {
       "indented": {
-        "firstLineDelta": 2,
-        "text": "  3) 셋"
+        "firstLineDelta": 3,
+        "text": "   3) 셋"
       },
       "name": "목록-괄호번호",
       "outdented": null,
-      "text": "3) 셋"
+      "shallower": null,
+      "text": "3) 셋",
+      "under": null
     },
     {
       "indented": {
@@ -1462,7 +1470,9 @@
       },
       "name": "목록-체크박스",
       "outdented": null,
-      "text": "- [ ] 할 일"
+      "shallower": null,
+      "text": "- [ ] 할 일",
+      "under": null
     },
     {
       "indented": {
@@ -1471,7 +1481,9 @@
       },
       "name": "목록-여러줄",
       "outdented": null,
-      "text": "- 첫째\n- 둘째\n- 셋째"
+      "shallower": null,
+      "text": "- 첫째\n- 둘째\n- 셋째",
+      "under": null
     },
     {
       "indented": {
@@ -1480,7 +1492,9 @@
       },
       "name": "목록-빈줄섞임",
       "outdented": null,
-      "text": "- 첫째\n\n- 둘째"
+      "shallower": null,
+      "text": "- 첫째\n\n- 둘째",
+      "under": null
     },
     {
       "indented": {
@@ -1492,28 +1506,36 @@
         "firstLineDelta": -1,
         "text": "- 탭으로 들여쓴 줄"
       },
-      "text": "\t- 탭으로 들여쓴 줄"
+      "shallower": null,
+      "text": "\t- 탭으로 들여쓴 줄",
+      "under": null
     },
     {
       "indented": null,
       "name": "목록아님-글",
       "outdented": null,
-      "text": "그냥 글이다"
+      "shallower": null,
+      "text": "그냥 글이다",
+      "under": null
     },
     {
       "indented": null,
       "name": "목록아님-들여쓴글",
       "outdented": {
-        "firstLineDelta": -2,
-        "text": "  들여쓴 글"
+        "firstLineDelta": -4,
+        "text": "들여쓴 글"
       },
-      "text": "    들여쓴 글"
+      "shallower": null,
+      "text": "    들여쓴 글",
+      "under": null
     },
     {
       "indented": null,
       "name": "목록아님-제목",
       "outdented": null,
-      "text": "# 제목"
+      "shallower": null,
+      "text": "# 제목",
+      "under": null
     },
     {
       "indented": {
@@ -1522,13 +1544,75 @@
       },
       "name": "섞임-글과목록",
       "outdented": null,
-      "text": "머리 글\n- 항목"
+      "shallower": null,
+      "text": "머리 글\n- 항목",
+      "under": null
     },
     {
       "indented": null,
       "name": "목록아님-빼기만",
       "outdented": null,
-      "text": "-빈칸없음"
+      "shallower": null,
+      "text": "-빈칸없음",
+      "under": null
+    },
+    {
+      "indented": {
+        "firstLineDelta": 3,
+        "text": "   2. 둘"
+      },
+      "name": "숫자목록-부모아래",
+      "outdented": null,
+      "shallower": "1. 하나",
+      "text": "2. 둘",
+      "under": "1. 하나"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  - 둘째"
+      },
+      "name": "글머리표-부모아래",
+      "outdented": null,
+      "shallower": "- 첫째",
+      "text": "- 둘째",
+      "under": "- 첫째"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 4,
+        "text": "    2. 둘"
+      },
+      "name": "두자리번호-부모아래",
+      "outdented": null,
+      "shallower": "10. 열",
+      "text": "2. 둘",
+      "under": "10. 열"
+    },
+    {
+      "indented": {
+        "firstLineDelta": 3,
+        "text": "      1. 라마바"
+      },
+      "name": "겹친줄-내어쓰기",
+      "outdented": {
+        "firstLineDelta": -3,
+        "text": "1. 라마바"
+      },
+      "shallower": "1. 가나다",
+      "text": "   1. 라마바",
+      "under": null
+    },
+    {
+      "indented": {
+        "firstLineDelta": 2,
+        "text": "  - [ ] 둘째"
+      },
+      "name": "체크박스-부모아래",
+      "outdented": null,
+      "shallower": "- [ ] 첫째",
+      "text": "- [ ] 둘째",
+      "under": "- [ ] 첫째"
     }
   ],
   "linkCases": [
