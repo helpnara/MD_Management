@@ -242,6 +242,21 @@ struct TestToolsView: View {
                 Text("`큰 노트 시험.md` 를 300줄 · 20KB 안팎으로 만들고 **편집기로 엽니다.** 커서를 위아래로 훑어 지연이나 튐이 없으면 통과입니다. 만든 파일은 언제든 지우셔도 됩니다.")
             }
 
+            // **띠가 제대로 서는지 볼 길** (137, 사용자 — 18번을 확인할 방법이 없었다).
+            // 오류를 일부러 만들어 보는 것은 확인 방법으로 나쁘다 — 실패를 흉내 내려다
+            // **진짜 실패**를 만들 수 있다. 시험 도구가 바로 이런 자리다.
+            Section {
+                Button {
+                    library.report("시험용 안내 띠입니다. 눌러서 지우세요.")
+                } label: {
+                    Label("안내 띠 띄워 보기", systemImage: "exclamationmark.bubble")
+                }
+            } header: {
+                Text("띠 시험")
+            } footer: {
+                Text("화면 아래 **빨간 띠**를 띄웁니다. 편집 도구 띠와 겹치지 않는지, 큰 글씨에서 잘리지 않는지 볼 때 씁니다. 띠를 누르면 사라집니다.")
+            }
+
             Section {
                 if let made = library.scaleProgress {
                     HStack {

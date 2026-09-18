@@ -1526,11 +1526,21 @@ final class LibraryModel: ObservableObject {
         }
     }
 
-    func clearError() { lastError = nil }
+    func clearError() {
+        lastError = nil
+        errorIsAboutNote = false
+    }
+
+    /// 지금 띠에 뜬 오류가 **이 노트를 읽다가 난 것인가** (138, 사용자 — 노트를 열면 띠가
+    /// 사라져 확인할 수 없었다). 노트를 성공적으로 읽으면 *그 노트에 대한* 오류만 치운다 —
+    /// **저장 실패 · 지우기 실패 같은 남의 오류는 그대로 둔다.** 그것까지 지우면
+    /// **진짜 실패도 노트만 열면 사라진다.**
+    private var errorIsAboutNote = false
 
     /// 화면이 오류를 올리는 문. `lastError` 의 setter 는 모델 안에만 있다.
     func report(_ message: String) {
         lastError = message
+        errorIsAboutNote = false
         log("오류: \(message)")
     }
 
@@ -1612,6 +1622,7 @@ final class LibraryModel: ObservableObject {
             if broken {
                 log("이미 깨진 글자가 든 파일: \(note.relativePath)")
                 lastError = "이 노트에는 이미 깨진 글자가 있습니다. 파일이 그렇게 저장돼 있어 앱이 되살릴 수 없습니다."
+                errorIsAboutNote = true
             }
             // **앱은 본문을 고치지 않는다** (T6, 2026-09-16 사용자 결정). 예전에는 여기서
             // 62(파일명이 이긴다)가 돌아 밖에서 온 파일의 `# 제목` 을 `## ` 로 내리고 파일명을
@@ -1637,7 +1648,11 @@ final class LibraryModel: ObservableObject {
                 else if opensInReadingMode { isReading = true }
             }
             noteIsDownloading = false
-            if !broken, isUTF8 { lastError = nil }
+            // **이 노트에 대한 오류만 치운다** (138). 예전에는 어떤 오류든 지웠다.
+            if !broken, isUTF8, errorIsAboutNote {
+                lastError = nil
+                errorIsAboutNote = false
+            }
             await renderReading(path: note.relativePath, text: text)
         } catch ReadError.notDownloaded {
             // 아직 내려받는 중이다. **아무것도 쓰지 않는다** — 다 오면 지켜보기가 다시 부른다 (86).
