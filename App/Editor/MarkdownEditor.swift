@@ -585,15 +585,43 @@ struct MarkdownEditor: UIViewRepresentable {
             if block.length > 0, text.character(at: NSMaxRange(block) - 1) == 0x0A { block.length -= 1 }
             let before = text.substring(with: block)
 
-            // **위 줄을 함께 본다** (139). 들여쓸 때는 **바로 위 줄**의 글이 시작하는 칸까지,
-            // 내어쓸 때는 **더 얕은 위 줄**의 들여쓰기까지 간다 — 그래야 파일이 정말
-            // 겹친 목록이 된다 (마크다운은 빈칸 둘로는 숫자 목록을 안 겹친다).
-            let above = Self.line(text, above: block.location)
-            let shallower = Self.line(text, above: block.location,
+            // **딸린 줄까지 함께 옮기고, 붙을 자리는 앞 형제로** (148, 사용자 · 빌드 44 —
+            // *두 단계가 한꺼번에 들어가 버린다*). 규칙은 Core 가 정한다
+            // (`parentForIndent` · `subtreeEnd`) — 여기서는 줄을 모아 건네고 자리만 옮긴다.
+            var above: [String] = []
+            var parent: String?
+            var shallower: String?
+            if let run = listRun(in: text, around: block.location) {
+                let runLines = text.substring(with: run).components(separatedBy: "\n")
+                let head = text.substring(with: NSRange(location: run.location,
+                                                        length: block.location - run.location))
+                let first = head.isEmpty ? 0 : head.components(separatedBy: "\n").count - 1
+                let selected = before.components(separatedBy: "\n").count
+                let last = min(first + selected - 1, max(runLines.count - 1, 0))
+                let end = ListEditing.subtreeEnd(from: last, in: runLines)
+                // 딸린 줄이 있으면 바꿀 구간을 그만큼 넓힌다.
+                if end > last + 1 {
+                    var at = NSMaxRange(block)
+                    for _ in (last + 1)..<end where at < text.length {
+                        at = NSMaxRange(text.paragraphRange(for: NSRange(location: at, length: 0)))
+                    }
+                    block = NSRange(location: block.location, length: at - block.location)
+                    if block.length > 0, text.character(at: NSMaxRange(block) - 1) == 0x0A { block.length -= 1 }
+                }
+                above = Array(runLines.prefix(first))
+                let here = Self.leadingWidth(before)
+                parent = ListEditing.parentForIndent(of: before, above: above)
+                shallower = above.last { !$0.trimmingCharacters(in: .whitespaces).isEmpty
+                    && Self.leadingWidth($0) < here }
+            } else {
+                parent = Self.line(text, above: block.location)
+                shallower = Self.line(text, above: block.location,
                                       shallowerThan: Self.leadingWidth(before))
+            }
+            let moving = text.substring(with: block)
             guard let shifted = deeper
-                    ? ListEditing.indent(before, under: above)
-                    : ListEditing.outdent(before, to: shallower) else {
+                    ? ListEditing.indent(moving, under: parent)
+                    : ListEditing.outdent(moving, to: shallower) else {
                 // 목록이 아니다 — 탭은 빈칸 둘로, 시프트 탭은 아무 일도 없다.
                 if deeper { insertPlainIndent(in: view, at: selection) }
                 return

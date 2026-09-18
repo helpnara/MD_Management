@@ -49,8 +49,18 @@ enum MarkdownStyler {
         // 이 앱에서 첫 줄은 **곧 파일명**이므로(107 · T6) 제목으로 보이는 편이 맞다.
         // 문단 하나만 보는 `LineStyler` 로는 알 수 없는 문맥이라 여기서 잰다.
         let titleStart = firstMeaningfulParagraph(in: text, after: header)
-        // 목록의 단계는 **덩이 전체를 봐야** 안다 (141). 문단마다 위로 훑으면 큰 노트에서
-        // 느려지므로 한 번에 재어 둔다.
+        // **목록은 덩이 전체를 다시 칠한다** (149, 사용자 · 빌드 44 — *엔터를 치며 내려가면
+        // 아래 항목이 틀어진다*).
+        //
+        // 141 에서 단계를 **앞 줄들에 기대어** 세도록 바꿨다. 그러면 한 줄을 밀거나 당길 때
+        // **그 아래 줄들의 단계가 다 바뀐다.** 그런데 다시 칠하는 범위는 고친 문단 언저리
+        // 그대로였다 — 파일은 맞는데 화면만 옛 모습으로 남았다. 141 이전에는 단계가 줄
+        // 하나로 정해져서(빈칸 ÷ 2) 그 자리만 칠하면 됐다. **잣대를 바꿨으면 칠하는 범위도
+        // 바꿔야 했다.**
+        if let run = listRun(in: text, covering: touched) {
+            touched = NSUnionRange(touched, run)
+        }
+        // 문단마다 위로 훑으면 큰 노트에서 느려지므로 한 번에 재어 둔다.
         let depths = listDepths(in: text, covering: touched)
         var location = touched.location
         let limit = NSMaxRange(touched)
@@ -112,30 +122,66 @@ enum MarkdownStyler {
     ///
     /// 덩이의 머리는 위로 올라가다 **목록도 빈 줄도 아닌 줄**을 만나는 자리다 —
     /// 빈 줄은 목록을 끊지 않으므로 건너뛴다.
-    private static func listDepths(in text: NSString, covering range: NSRange) -> [Int: Int] {
-        guard text.length > 0 else { return [:] }
+    /// **이 범위가 걸친 목록 덩이** (149). 목록이 아니면 `nil`.
+    ///
+    /// 위아래로 목록도 빈 줄도 아닌 줄을 만날 때까지 넓힌다 — 빈 줄은 목록을 끊지 않는다.
+    static func listRun(in text: NSString, covering range: NSRange) -> NSRange? {
+        guard text.length > 0 else { return nil }
         let head = min(max(range.location, 0), text.length - 1)
         var start = text.paragraphRange(for: NSRange(location: head, length: 0)).location
-        while start > 0 {
-            let above = text.paragraphRange(for: NSRange(location: start - 1, length: 0))
+        var sawItem = false
+
+        var at = start
+        while at > 0 {
+            let above = text.paragraphRange(for: NSRange(location: at - 1, length: 0))
             let line = lineText(text, above)
             if !line.trimmingCharacters(in: .whitespaces).isEmpty, !ListEditing.isItem(line) { break }
-            if above.location == start { break }
-            start = above.location
+            if above.location == at { break }
+            at = above.location
+            start = at
         }
+
+        var end = max(NSMaxRange(range), start + 1)
+        end = min(end, text.length)
+        while end < text.length {
+            let next = text.paragraphRange(for: NSRange(location: end, length: 0))
+            let line = lineText(text, next)
+            if !line.trimmingCharacters(in: .whitespaces).isEmpty, !ListEditing.isItem(line) { break }
+            if NSMaxRange(next) <= end { break }
+            end = NSMaxRange(next)
+        }
+
+        // 덩이 안에 항목이 하나라도 있어야 목록이다.
+        var scan = start
+        while scan < end {
+            let paragraph = text.paragraphRange(for: NSRange(location: scan, length: 0))
+            if ListEditing.isItem(lineText(text, paragraph)) { sawItem = true; break }
+            if NSMaxRange(paragraph) <= scan { break }
+            scan = NSMaxRange(paragraph)
+        }
+        guard sawItem else { return nil }
+        return NSRange(location: start, length: end - start)
+    }
+
+    /// **목록 덩이의 단계를 미리 재어 둔다** (141).
+    ///
+    /// 마크다운은 자식이 **부모의 글칸**부터 시작해야 겹친 것으로 읽는다. 그 셈은 줄
+    /// 하나만 봐서는 할 수 없고 덩이의 머리부터 쌓아 올라가야 한다. 규칙은 Core 의
+    /// `ListEditing.depths` 가 정하고 여기서는 줄을 모아 건네기만 한다.
+    private static func listDepths(in text: NSString, covering range: NSRange) -> [Int: Int] {
+        guard text.length > 0, let run = listRun(in: text, covering: range) else { return [:] }
 
         var starts: [Int] = []
         var lines: [String] = []
-        var at = start
-        let limit = max(NSMaxRange(range), start + 1)
-        while at < text.length {
+        var at = run.location
+        let limit = NSMaxRange(run)
+        while at < limit {
             let paragraph = text.paragraphRange(for: NSRange(location: at, length: 0))
             starts.append(paragraph.location)
             lines.append(lineText(text, paragraph))
             let next = NSMaxRange(paragraph)
             if next <= at { break }
             at = next
-            if at >= limit { break }
         }
 
         let counted = ListEditing.depths(in: lines)

@@ -45,6 +45,7 @@ PIN_CASES = ROOT / "Tools" / "golden" / "pin-cases.json"
 FORMAT_CASES = ROOT / "Tools" / "golden" / "format-cases.json"
 ENTER_CASES = ROOT / "Tools" / "golden" / "enter-cases.json"
 LINK_TRIGGER_CASES = ROOT / "Tools" / "golden" / "link-trigger-cases.json"
+OUTLINE_CASES = ROOT / "Tools" / "golden" / "outline-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -659,6 +660,41 @@ def indent_block(block: str, under: str | None = None):
     return {"text": "\n".join(out), "firstLineDelta": first_delta}
 
 
+def parent_for_indent(block: str, above: list[str]):
+    """탭이 붙을 자리 — **바로 위 형제** (148).
+
+    바로 위 줄이 나보다 깊으면 그 줄의 자식이 되는 것이 아니다. 위로 올라가며
+    **나보다 깊지 않은 첫 줄**을 찾는다.
+    """
+    first = next((l for l in block.split("\n") if l.strip()), block)
+    here = leading_width(first)
+    for line in reversed(above):
+        if not line.strip():
+            continue
+        if leading_width(line) <= here:
+            return line
+    return None
+
+
+def subtree_end(index: int, lines: list[str]) -> int:
+    """이 줄에 딸린 아래 줄들의 **끝 다음 자리** (148)."""
+    if not (0 <= index < len(lines)):
+        return index
+    here = leading_width(lines[index])
+    end = index + 1
+    last_ink = end
+    while end < len(lines):
+        line = lines[end]
+        if not line.strip():
+            end += 1
+            continue
+        if leading_width(line) <= here:
+            break
+        end += 1
+        last_ink = end
+    return last_ink
+
+
 def depths_in(lines: list[str]) -> list[int]:
     """줄마다 몇 단계인가 — **마크다운이 세는 대로** (141).
 
@@ -794,6 +830,43 @@ def build_indent_cases() -> list[dict]:
             "indented": indented,
             "outdented": outdent_block(case["text"], shallower),
         })
+    return out
+
+
+def build_outline_cases() -> list[dict]:
+    """개요에서 항목 하나를 한 칸 미는 일 (148).
+
+    `lines` 와 `at` 을 주면 **딸린 줄까지** 옮기고, 결과를 심판 둘에게 물어
+    **딱 한 단계만** 깊어졌는지 본다.
+    """
+    spec = json.loads(OUTLINE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        lines, at = case["lines"], case["at"]
+        end = subtree_end(at, lines)
+        block = "\n".join(lines[at:end])
+        parent = parent_for_indent(block, lines[:at])
+        shifted = indent_block(block, parent) if case.get("deeper", True) else outdent_block(
+            block, next((l for l in reversed(lines[:at])
+                         if l.strip() and leading_width(l) < leading_width(lines[at])), None))
+        applied = None
+        if shifted:
+            applied = renumbered("\n".join(lines[:at] + shifted["text"].split("\n") + lines[end:]))
+            after = depths_in(applied.split("\n"))
+            before = depths_in(lines)
+            step = after[at] - before[at]
+            if case.get("deeper", True) and step != 1:
+                raise SystemExit(
+                    f"::error::[{case['name']}] 한 단계가 아니라 {step} 단계 움직였다:\n{applied}")
+            # 딸린 줄들은 **함께** 움직여야 한다 — 사이가 벌어지면 자식이 형제가 된다.
+            for index in range(at + 1, end):
+                if after[index] - before[index] != step:
+                    raise SystemExit(
+                        f"::error::[{case['name']}] 딸린 줄이 따라오지 않았다:\n{applied}")
+            nesting_count(applied + "\n")
+        out.append({"name": case["name"], "lines": lines, "at": at,
+                    "subtreeEnd": end, "parent": parent,
+                    "shifted": shifted, "applied": applied})
     return out
 
 
@@ -1287,6 +1360,7 @@ def build() -> dict:
         "styleCases": build_style_cases(),
         "indentCases": build_indent_cases(),
         "depthCases": build_depth_cases(),
+        "outlineCases": build_outline_cases(),
         "enterCases": build_enter_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
         "renumberCases": build_renumber_cases(),
@@ -1505,7 +1579,7 @@ def tally(loaded: dict) -> str:
     때마다 한쪽만 고쳐져 셈이 빠졌다."""
     parts = [
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
-        ("단계", "depthCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
+        ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"),
         ("노트 연결", "linkTriggerCases"),

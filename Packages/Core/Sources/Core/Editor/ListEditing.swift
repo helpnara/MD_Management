@@ -107,6 +107,57 @@ public enum ListEditing {
         return Shifted(text: shifted.joined(separator: "\n"), firstLineDelta: firstDelta)
     }
 
+    /// **탭이 붙을 자리 — 바로 위 형제** (148, 사용자 · 빌드 44 —
+    /// *두 단계가 한꺼번에 들어가 버린다*).
+    ///
+    /// 탭은 **한 단계만** 깊어진다. 바로 위 줄이 나보다 깊다고 그 줄의 자식이 되는 것이
+    /// 아니다 — 개요에서 항목을 한 칸 밀면 **앞 형제의 자식**이 된다.
+    ///
+    /// ```
+    /// 4. 과제 착수          ← 앞 형제. EDA 는 이 줄의 자식이 된다
+    ///    1. 데이터 수집
+    ///    2. 데이터 검증     ← 바로 위 줄. 여기 붙이면 두 단계가 들어간다
+    /// 5. EDA               ← 탭
+    /// ```
+    ///
+    /// 그래서 위로 올라가며 **나보다 깊지 않은 첫 줄**을 찾는다. 빈 줄은 건너뛴다.
+    /// 없으면 `nil` — 목록의 첫 항목이라 붙을 형제가 없다는 뜻이다.
+    public static func parentForIndent(of block: String, above lines: [String]) -> String? {
+        let first = block.components(separatedBy: "\n").first { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        let here = leadingWidth(first ?? block)
+        for line in lines.reversed() {
+            if line.trimmingCharacters(in: .whitespaces).isEmpty { continue }
+            if leadingWidth(line) <= here { return line }
+        }
+        return nil
+    }
+
+    /// **이 줄에 딸린 아래 줄들이 어디까지인가** (148). 돌려주는 값은 **끝 다음 자리**다.
+    ///
+    /// 항목을 밀거나 당길 때 **딸린 줄도 함께 간다.** 안 그러면 부모만 움직여 자식이
+    /// 형제가 되어 버린다 — 사용자의 `EDA` 밑에 있던 `모델링 · 시스템화 · 현장적용` 이
+    /// 그럴 뻔했다.
+    ///
+    /// 나보다 깊은 줄과 그 사이의 빈 줄이 딸린 줄이다. 끝의 빈 줄은 빼고 돌려준다 —
+    /// 빈 줄까지 밀면 빈칸만 남은 줄이 생겨 문단이 끊긴다.
+    public static func subtreeEnd(from index: Int, in lines: [String]) -> Int {
+        guard lines.indices.contains(index) else { return index }
+        let here = leadingWidth(lines[index])
+        var end = index + 1
+        var lastInk = end
+        while end < lines.count {
+            let line = lines[end]
+            if line.trimmingCharacters(in: .whitespaces).isEmpty {
+                end += 1
+                continue
+            }
+            guard leadingWidth(line) > here else { break }
+            end += 1
+            lastInk = end
+        }
+        return lastInk
+    }
+
     /// **줄마다 몇 단계인가** — 마크다운이 세는 대로 (141).
     ///
     /// 편집기는 오래도록 **앞 빈칸 ÷ 2** 로 단계를 그렸다. 마크다운은 그렇게 세지 않는다 —
