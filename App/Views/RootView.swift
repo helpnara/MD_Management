@@ -810,11 +810,12 @@ private struct NoteDetail: View {
                 onEdit: library.noteEdited,
                 insertion: library.insertion,
                 onInserted: { library.insertion = nil },
+                // **선언 순서가 곧 인자 순서다** (`MarkdownEditor` 의 메모와 같은 자리).
+                format: library.formatRequest,
+                onFormatted: { library.formatRequest = nil },
                 onTitleLineChanged: { library.cursorOnTitleLine = $0 },
                 onFocusChanged: { library.editorHasFocus = $0 },
-                onImageLineChanged: library.cursorImageLineChanged,
-                format: library.formatRequest,
-                onFormatted: { library.formatRequest = nil })
+                onImageLineChanged: library.cursorImageLineChanged)
             // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
             // **키보드 툴바를 쓰지 않는다** — `safeAreaInset` 으로 화면 안에 그린다 (CLAUDE.md §1).
             .safeAreaInset(edge: .bottom, spacing: 0) {
