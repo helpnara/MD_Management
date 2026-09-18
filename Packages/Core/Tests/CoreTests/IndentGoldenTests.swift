@@ -48,14 +48,20 @@ final class IndentGoldenTests: XCTestCase {
         }
     }
 
-    /// 들여썼다가 도로 내어쓰면 처음으로 돌아온다.
+    /// 들여썼다가 **왔던 칸으로** 도로 내어쓰면 처음으로 돌아온다.
     ///
-    /// **위 줄을 같이 준다** (139) — 들여쓰기는 부모의 글이 시작하는 칸까지 가고,
-    /// 내어쓰기는 그 부모의 들여쓰기까지 나온다. 같은 문맥을 줘야 제자리로 돌아온다.
+    /// 내어쓰기는 *한 단계*가 아니라 **얕은 위 줄의 칸까지** 나온다 (139). 그래서
+    /// 되돌아오는지 보려면 *왔던 칸*을 알려 줘야 한다 — 그것이 곧 **들여쓰기 전의 첫 줄**이다.
+    ///
+    /// **처음에는 사례의 부모 줄을 그대로 넘겼다가 두 곳에서 깨졌다** — 이미 들여쓴 채로
+    /// 시작하는 블록(`  - 둘째`)은 그 칸에 부모가 없어서, 내어쓰면 맨 앞까지 나오는 것이
+    /// 맞다. 깨진 것은 코드가 아니라 이 시험이 고른 문맥이었다.
     func testIndentThenOutdentRoundTrips() throws {
         for item in try Self.load().indentCases {
             guard let indented = ListEditing.indent(item.text, under: item.under) else { continue }
-            let back = ListEditing.outdent(indented.text, to: item.under ?? item.shallower)
+            let cameFrom = item.text.components(separatedBy: "\n")
+                .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            let back = ListEditing.outdent(indented.text, to: cameFrom)
             XCTAssertEqual(back?.text, item.text, "되돌아오지 않는다 — [\(item.name)]")
         }
     }
