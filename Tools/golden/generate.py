@@ -594,9 +594,6 @@ def content_column(line: str):
     return None if width is None else leading_width(line) + width
 
 
-MAX_LIST_START = 3      # 목록이 시작될 수 있는 가장 깊은 칸 — 넷이면 코드다
-
-
 def indent_block(block: str, under: str | None = None):
     """탭 — **부모의 글칸까지, 거기서 멈춘다** (139 · 141).
 
@@ -612,8 +609,8 @@ def indent_block(block: str, under: str | None = None):
     here = leading_width(first_item)
     target = content_column(under) if under else None
     if target is None:
-        # 부모가 없거나 목록이 아니다 — 겹칠 자리가 없으니 목록으로 남을 만큼만.
-        target = min(here + len(INDENT_STEP), MAX_LIST_START)
+        # 부모가 없거나 목록이 아니다 — 겹칠 자리가 없으니 빈칸 둘까지만.
+        target = len(INDENT_STEP)
     if here >= target:
         return None                      # **더 들어갈 자리가 없다**
     pad = " " * (target - here)
@@ -753,6 +750,10 @@ def build_indent_cases() -> list[dict]:
             check_nesting(case["name"], under, indented["text"])
             # 그리고 **화면이 그릴 단계**가 파서와 같은지도 (141).
             check_depths(case["name"], renumbered(under + "\n" + indented["text"]).split("\n"))
+        # **한 번 더 눌러도 안 깊어진다** (141). 천장이 없으면 목록에서 튕겨 나간다.
+        if indented and indent_block(indented["text"], under) is not None:
+            raise SystemExit(
+                f"::error::[{case['name']}] 한 번 더 눌렀더니 또 들어갔다:\n{indented['text']!r}")
         out.append({
             "name": case["name"],
             "text": case["text"],

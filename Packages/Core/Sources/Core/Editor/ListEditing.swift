@@ -53,9 +53,6 @@ public enum ListEditing {
         }
     }
 
-    /// **목록이 시작될 수 있는 가장 깊은 칸.** 넷이면 마크다운은 코드로 읽는다.
-    public static let maxListStart = 3
-
     /// **탭** — 고른 줄들을 **부모의 글칸까지** 들여쓴다. 목록 줄이 하나도 없거나
     /// **이미 그만큼 들어가 있으면** `nil` 이다 (그때 편집기는 글 한복판이면 빈칸 둘을
     /// 넣고, 목록이면 아무 일도 하지 않는다).
@@ -69,7 +66,8 @@ public enum ListEditing {
     ///
     /// - `under`: 위로 올라가며 만난 **빈 줄이 아닌 첫 줄**. 그 줄이 목록이면 그 줄의
     ///   글이 시작하는 칸까지 들어간다 (`- ` 는 둘, `1. ` 은 셋, `10. ` 은 넷).
-    ///   목록이 아니거나 없으면 겹칠 자리가 없으므로 **목록으로 남을 만큼만** 간다.
+    ///   목록이 아니거나 없으면 **겹칠 자리가 없다** — 그때는 빈칸 둘까지만 가고,
+    ///   거기서 또 누르면 아무 일도 안 한다. 넷이 되면 마크다운이 코드로 읽는다.
     public static func indent(_ block: String, under previous: String? = nil) -> Shifted? {
         let lines = block.components(separatedBy: "\n")
         guard let firstItem = lines.first(where: { isItem($0) }) else { return nil }
@@ -79,7 +77,7 @@ public enum ListEditing {
         if let previous, let column = contentColumn(previous) {
             target = column
         } else {
-            target = min(here + step.count, maxListStart)
+            target = step.count
         }
         guard here < target else { return nil }   // **더 들어갈 자리가 없다**
         let pad = String(repeating: " ", count: target - here)

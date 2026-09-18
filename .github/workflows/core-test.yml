@@ -66,6 +66,15 @@ jobs:
         working-directory: Packages/Core
         run: swift build
 
+      # **실패한 시험 이름만 따로 찍는다.** 로그가 길어 꼬리만 받으면 실패가 안 보이고,
+      # 그걸 찾느라 두 바퀴를 버렸다 (141 · 빌드 43 준비). CLAUDE.md 2 절과 같은 뜻이다.
       - name: 테스트
         working-directory: Packages/Core
-        run: swift test
+        run: |
+          set -o pipefail
+          swift test 2>&1 | tee /tmp/test.log || {
+            echo "::group::실패한 것만"
+            grep -E "error:|failed \(" /tmp/test.log | head -40
+            echo "::endgroup::"
+            exit 1
+          }

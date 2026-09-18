@@ -1612,10 +1612,7 @@
       "under": null
     },
     {
-      "indented": {
-        "firstLineDelta": 1,
-        "text": "   - 둘째"
-      },
+      "indented": null,
       "name": "목록-이미들여쓴줄",
       "outdented": {
         "firstLineDelta": -2,
