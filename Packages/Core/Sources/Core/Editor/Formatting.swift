@@ -45,54 +45,53 @@ public enum Formatting {
 
     /// **걸려 있으면 풀고, 없으면 건다.**
     ///
-    /// 세 가지를 차례로 본다.
-    /// 1. 고른 글이 **이미 표시를 물고 있나** (`**글**` 을 통째로 골랐다) → 벗긴다.
-    /// 2. 고른 글 **바로 바깥**이 표시인가 (`**` `글` `**` 에서 가운데만 골랐다) → 벗긴다.
-    /// 3. 아니면 감싼다. 고른 것이 없으면 표시만 넣고 **그 사이에 커서**를 둔다.
+    /// **표시의 개수를 센다.** 고른 글 양옆에 같은 글자가 몇 개 이어져 있는지 보고 정한다 —
+    /// 별 하나는 기울임, 둘은 굵게, 셋은 둘 다다(`***글***`). 그래서
     ///
-    /// **기울임과 굵게가 겹치는 자리**를 조심한다. `**글**` 에서 기울임을 누르면 별 하나를
-    /// 벗기는 것이 아니라 `***글***` 이 되어야 한다 — 별이 **둘 이상 이어져 있으면**
-    /// 기울임의 표시로 보지 않는다.
+    /// - 굵게는 **둘 이상**이면 걸려 있는 것 → 양쪽에서 **둘씩** 뺀다.
+    /// - 기울임은 개수가 **홀수**면 걸려 있는 것 → 양쪽에서 **하나씩** 뺀다.
+    /// - 없으면 그만큼 **더한다.**
+    ///
+    /// 이렇게 세면 `***글***` 에서 기울임만 풀어 `**글**` 이 되고, 다시 걸면 제자리로
+    /// 돌아온다. **처음에는 껍질을 벗기는 식으로 짰다가 여기서 되돌아오지 않았다** —
+    /// 파이썬 대조의 되돌아오기 시험이 잡았다.
+    ///
+    /// 고른 글이 **표시를 물고 있어도** 된다 (`**글**` 을 통째로 골랐을 때). 그 표시는
+    /// 바깥 개수에 함께 센다.
     public static func toggle(_ wrap: Wrap, in text: String, start: Int, length: Int) -> Edit {
         let units = Array(text.utf16)
-        let marker = Array(wrap.rawValue.utf16)
-        let width = marker.count
-        let start = clamp(start, 0, units.count)
-        let length = clamp(length, 0, units.count - start)
-        let end = start + length
+        let mark = Array(wrap.rawValue.utf16)[0]
+        let need = wrap == .italic ? 1 : 2
+        var from = clamp(start, 0, units.count)
+        var to = clamp(start + length, from, units.count)
 
-        // 1. 고른 글이 표시를 물고 있다.
-        if length >= width * 2,
-           matches(units, at: start, marker),
-           matches(units, at: end - width, marker),
-           !isRunOfMore(units, at: start, wrap),
-           !isRunOfMoreBackwards(units, at: end - width, wrap) {
-            let inner = string(units, start + width, end - width)
-            return Edit(start: start, length: length, text: inner,
-                        selectionStart: start, selectionLength: (inner as NSString).length)
-        }
-        // 2. 고른 글 바깥이 표시다.
-        if start >= width, end + width <= units.count,
-           matches(units, at: start - width, marker),
-           matches(units, at: end, marker),
-           !isRunOfMoreBackwards(units, at: start - width, wrap),
-           !isRunOfMore(units, at: end, wrap) {
-            let inner = string(units, start, end)
-            return Edit(start: start - width, length: length + width * 2, text: inner,
-                        selectionStart: start - width, selectionLength: length)
-        }
-        // 3. 감싼다. **가장자리의 빈칸은 물러난다** — `** 회**` 처럼 표시 안쪽이 빈칸으로
-        // 시작하면 **마크다운이 아예 안 먹는다**(강조는 빈칸에 붙지 못한다). 워드에서 낱말을
-        // 두 번 눌러 고르면 뒤 빈칸까지 딸려 오는 일이 흔하므로 이 자리는 자주 밟힌다.
-        // (파이썬 대조가 잡아 줬다 — 우리 규칙이 만든 글을 파서에게 물어본 덕이다.)
-        var from = start
-        var to = end
+        // 고른 글이 표시를 물고 있으면 안쪽으로 물러난다 — 바깥 개수에 함께 센다.
+        while from < to, units[from] == mark { from += 1 }
+        while to > from, units[to - 1] == mark { to -= 1 }
+        // 걸 때는 가장자리 빈칸에서도 물러난다. `** 글**` 은 **마크다운이 아예 안 먹는다**
+        // (강조는 빈칸에 붙지 못한다). 낱말을 두 번 눌러 고르면 뒤 빈칸이 흔히 딸려 온다.
         while from < to, isBlank(units[from]) { from += 1 }
         while to > from, isBlank(units[to - 1]) { to -= 1 }
+
+        var left = 0
+        while from - left - 1 >= 0, units[from - left - 1] == mark { left += 1 }
+        var right = 0
+        while to + right < units.count, units[to + right] == mark { right += 1 }
+
+        let both = min(left, right)
+        let isOn = wrap == .italic ? (both % 2 == 1) : (both >= need)
+        let newLeft = max(0, isOn ? left - need : left + need)
+        let newRight = max(0, isOn ? right - need : right + need)
+
         let inner = string(units, from, to)
-        return Edit(start: from, length: to - from,
-                    text: wrap.rawValue + inner + wrap.rawValue,
-                    selectionStart: from + width, selectionLength: to - from)
+        let one = String(wrap.rawValue.prefix(1))
+        let piece = String(repeating: one, count: newLeft) + inner
+            + String(repeating: one, count: newRight)
+        let editStart = from - left
+        let editLength = (to + right) - editStart
+        return Edit(start: editStart, length: editLength, text: piece,
+                    selectionStart: editStart + newLeft,
+                    selectionLength: (inner as NSString).length)
     }
 
     // MARK: - 인용
@@ -113,7 +112,9 @@ public enum Formatting {
 
         let changed: [String] = lines.map { line in
             if allQuoted { return unquote(line) }
-            return line.trimmingCharacters(in: .whitespaces).isEmpty ? ">" : "> " + line
+            if line.trimmingCharacters(in: .whitespaces).isEmpty { return ">" }
+            // **이미 인용인 줄에 또 걸지 않는다** — `> > 첫 줄` 은 인용 속 인용이다.
+            return line.drop(while: { $0 == " " || $0 == "\t" }).hasPrefix(">") ? line : "> " + line
         }
         let joined = changed.joined(separator: "\n")
         return Edit(start: block.start, length: block.end - block.start, text: joined,
@@ -170,27 +171,8 @@ public enum Formatting {
         unit == 0x20 || unit == 0x09 || unit == 0x0A
     }
 
-    private static func matches(_ units: [UInt16], at index: Int, _ marker: [UInt16]) -> Bool {
-        guard index >= 0, index + marker.count <= units.count else { return false }
-        for offset in 0..<marker.count where units[index + offset] != marker[offset] { return false }
-        return true
-    }
 
-    /// 기울임(`*`)일 때만 뜻이 있다 — 그 자리에서 **별이 더 이어지나**.
-    private static func isRunOfMore(_ units: [UInt16], at index: Int, _ wrap: Wrap) -> Bool {
-        guard wrap == .italic else { return false }
-        let star = Array("*".utf16)[0]
-        guard index + 1 < units.count else { return false }
-        return units[index + 1] == star
-    }
 
-    /// 앞쪽으로 별이 더 이어지나 (`index` 는 표시가 **끝나는** 자리).
-    private static func isRunOfMoreBackwards(_ units: [UInt16], at index: Int, _ wrap: Wrap) -> Bool {
-        guard wrap == .italic else { return false }
-        let star = Array("*".utf16)[0]
-        guard index - 1 >= 0 else { return false }
-        return units[index - 1] == star
-    }
 
     private static func lineRange(_ units: [UInt16], start: Int, length: Int) -> (start: Int, end: Int) {
         let newline = Array("\n".utf16)[0]

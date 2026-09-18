@@ -929,8 +929,8 @@
       "applied": "오늘 ***회의*** 정리",
       "edit": {
         "length": 6,
-        "selectionLength": 6,
-        "selectionStart": 4,
+        "selectionLength": 2,
+        "selectionStart": 6,
         "start": 3,
         "text": "***회의***"
       },
@@ -943,11 +943,11 @@
     {
       "applied": "오늘 ***회의*** 정리",
       "edit": {
-        "length": 2,
+        "length": 6,
         "selectionLength": 2,
         "selectionStart": 6,
-        "start": 5,
-        "text": "*회의*"
+        "start": 3,
+        "text": "***회의***"
       },
       "length": 2,
       "name": "기울임 — 안쪽만 골라도 굵은 것을 안 건드린다",
@@ -1076,13 +1076,13 @@
       "text": "> 첫 줄\n> 둘째 줄"
     },
     {
-      "applied": "> > 첫 줄\n> 둘째 줄",
+      "applied": "> 첫 줄\n> 둘째 줄",
       "edit": {
         "length": 10,
-        "selectionLength": 14,
+        "selectionLength": 12,
         "selectionStart": 0,
         "start": 0,
-        "text": "> > 첫 줄\n> 둘째 줄"
+        "text": "> 첫 줄\n> 둘째 줄"
       },
       "length": 11,
       "name": "인용 — 하나만 인용이면 마저 건다",

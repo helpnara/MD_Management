@@ -968,45 +968,46 @@ def u16len(text: str) -> int:
 
 
 def toggle_wrap(op: str, text: str, start: int, length: int) -> dict:
+    """표시의 **개수를 센다** — 별 하나는 기울임, 둘은 굵게, 셋은 둘 다.
+
+    굵게는 둘 이상이면 걸린 것, 기울임은 개수가 홀수면 걸린 것이다. 그래야
+    `***글***` 에서 기울임만 풀어 `**글**` 이 되고 다시 걸면 제자리로 돌아온다.
+    """
     units = to_units(text)
-    marker = to_units(WRAPS[op])
-    width = len(marker)
-    end = start + length
-    star = to_units("*")[0]
-    italic = op == "italic"
-
-    def at(index: int) -> bool:
-        return 0 <= index and index + width <= len(units) and units[index:index + width] == marker
-
-    def run_after(index: int) -> bool:
-        return italic and index + 1 < len(units) and units[index + 1] == star
-
-    def run_before(index: int) -> bool:
-        return italic and index - 1 >= 0 and units[index - 1] == star
-
-    # 1. 고른 글이 표시를 물고 있다.
-    if (length >= width * 2 and at(start) and at(end - width)
-            and not run_after(start) and not run_before(end - width)):
-        inner = from_units(units[start + width:end - width])
-        return {"start": start, "length": length, "text": inner,
-                "selectionStart": start, "selectionLength": u16len(inner)}
-    # 2. 고른 글 바깥이 표시다.
-    if (start >= width and end + width <= len(units) and at(start - width) and at(end)
-            and not run_before(start - width) and not run_after(end)):
-        inner = from_units(units[start:end])
-        return {"start": start - width, "length": length + width * 2, "text": inner,
-                "selectionStart": start - width, "selectionLength": length}
-    # 3. 감싼다. 가장자리의 빈칸은 물러난다 — `** 회**` 는 마크다운이 안 먹는다.
+    mark = to_units(WRAPS[op])[0]
+    need = 1 if op == "italic" else 2
     blanks = {0x20, 0x09, 0x0A}
-    begin, finish = start, end
+
+    begin = max(0, min(start, len(units)))
+    finish = max(begin, min(start + length, len(units)))
+    while begin < finish and units[begin] == mark:
+        begin += 1
+    while finish > begin and units[finish - 1] == mark:
+        finish -= 1
     while begin < finish and units[begin] in blanks:
         begin += 1
     while finish > begin and units[finish - 1] in blanks:
         finish -= 1
+
+    left = 0
+    while begin - left - 1 >= 0 and units[begin - left - 1] == mark:
+        left += 1
+    right = 0
+    while finish + right < len(units) and units[finish + right] == mark:
+        right += 1
+
+    both = min(left, right)
+    is_on = (both % 2 == 1) if op == "italic" else (both >= need)
+    new_left = left - need if is_on else left + need
+    new_right = right - need if is_on else right + need
+
     inner = from_units(units[begin:finish])
-    return {"start": begin, "length": finish - begin,
-            "text": WRAPS[op] + inner + WRAPS[op],
-            "selectionStart": begin + width, "selectionLength": finish - begin}
+    one = from_units([mark])
+    piece = one * new_left + inner + one * new_right
+    edit_start = begin - left
+    edit_length = (finish + right) - edit_start
+    return {"start": edit_start, "length": edit_length, "text": piece,
+            "selectionStart": edit_start + new_left, "selectionLength": u16len(inner)}
 
 
 def line_range(units: list[int], start: int, length: int) -> tuple[int, int]:
@@ -1040,8 +1041,13 @@ def toggle_quote(text: str, start: int, length: int) -> dict:
     meaningful = [line for line in lines if line.strip()]
     all_quoted = bool(meaningful) and all(line.strip().startswith(">") for line in meaningful)
 
-    changed = [unquote(line) if all_quoted else (">" if not line.strip() else "> " + line)
-               for line in lines]
+    def quoted(line: str) -> str:
+        if not line.strip():
+            return ">"
+        # 이미 인용인 줄에 또 걸지 않는다 — `> > 첫 줄` 이 되면 인용 속 인용이다.
+        return line if line.lstrip(" \t").startswith(">") else "> " + line
+
+    changed = [unquote(line) if all_quoted else quoted(line) for line in lines]
     joined = "\n".join(changed)
     return {"start": begin, "length": finish - begin, "text": joined,
             "selectionStart": begin, "selectionLength": u16len(joined)}
