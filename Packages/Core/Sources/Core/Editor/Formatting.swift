@@ -163,7 +163,7 @@ public enum Formatting {
         guard rest.hasPrefix(">") else { return line }
         rest = rest.dropFirst()
         if rest.hasPrefix(" ") { rest = rest.dropFirst() }
-        return leading + rest
+        return String(leading) + String(rest)
     }
 
     private static func isBlank(_ unit: UInt16) -> Bool {
