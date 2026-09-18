@@ -12,6 +12,17 @@ struct RootView: View {
     @State private var columnVisibility = NavigationSplitViewVisibility.all
 
     var body: some View {
+        // **안내 띠는 제 칸에 둔다** (133 손질). 예전에는 `safeAreaInset` 으로 얹었는데,
+        // 그러면 띠가 화면 맨 아래를 **겹쳐 덮는다** — 편집 도구 띠를 아래에 세우자
+        // 그 아래로 깔려 잘렸다 (127 · 130 에서 세 바퀴 돌았다). 세로로 쌓으면
+        // 겹칠 일이 없다: 위는 화면, 아래는 띠.
+        VStack(spacing: 0) {
+            splitView
+            StatusBanner()
+        }
+    }
+
+    private var splitView: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             FolderSidebar()
         } content: {
@@ -55,21 +66,6 @@ struct RootView: View {
             // 뒤로 갈 때는 제목도 확정한다 — 제목 줄에 커서를 둔 채 나갈 수 있다 (89).
             library.cursorOnTitleLine = false
             Task { await library.save(settlingTitle: true) }
-        }
-        // **배너는 아래에 둔다.** 위에 두면 내비게이션 바를 덮어 제목과 버튼이
-        // 잘린다 (빌드 2 스크린샷). 아래는 덮을 것이 없다.
-        //
-        // **편집 도구 띠도 같은 칸에 세운다** (127). 편집기 안에 그렸더니 이 배너가
-        // 화면 맨 아래 칸을 이미 차지하고 있어 **도구 띠가 그 아래로 깔려 잘렸다**
-        // (시뮬레이터 스크린샷 두 번). 한 칸에 위아래로 두면 둘 다 온전히 보인다.
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            VStack(spacing: 0) {
-                if horizontalSizeClass == .compact, library.selectedNoteID != nil,
-                   !library.isReading, library.sheet == nil {
-                    FormatBar()
-                }
-                StatusBanner()
-            }
         }
         // **시트는 하나로 모은다.** 한 뷰에 `.sheet` 를 여러 개 걸면 마지막
         // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
@@ -838,10 +834,9 @@ private struct NoteDetail: View {
                     onActiveChanged: { library.activeFormats = $0 })
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
-                // **아이패드에서는 도구 띠가 상세 칸 안에만 선다** (130, 사용자 — 화면 폭
-                // 전체를 가로질렀다). 아이폰은 화면이 곧 상세 칸이라 아래 안내 띠와 같은
-                // 칸에 세운다 (127 — 거기 안 세우면 안내 띠에 가려 잘린다).
-                if !rootIsCompact { FormatBar() }
+                // **도구 띠는 상세 칸 안에 선다** (130, 사용자 — 아이패드에서 화면 폭
+                // 전체를 가로질렀다). 아이폰도 같은 길이다 — 화면이 곧 상세 칸이다.
+                FormatBar()
             }
         }
     }
