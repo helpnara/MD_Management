@@ -804,27 +804,29 @@ private struct NoteDetail: View {
                 onOpen: handle)
         } else {
             // 쓰기 — 라이브 편집기 L1 (ADR-0005). 원문은 그대로 두고 속성만 바뀐다.
-            MarkdownEditor(
-                noteID: library.editorSession.uuidString,
-                text: library.noteText,
-                onEdit: library.noteEdited,
-                insertion: library.insertion,
-                onInserted: { library.insertion = nil },
-                // **선언 순서가 곧 인자 순서다** (`MarkdownEditor` 의 메모와 같은 자리).
-                format: library.formatRequest,
-                onFormatted: { library.formatRequest = nil },
-                onTitleLineChanged: { library.cursorOnTitleLine = $0 },
-                onFocusChanged: { library.editorHasFocus = $0 },
-                onImageLineChanged: library.cursorImageLineChanged)
-            // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
-            // **키보드 툴바를 쓰지 않는다** — `safeAreaInset` 으로 화면 안에 그린다 (CLAUDE.md §1).
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                VStack(spacing: 0) {
-                    cursorImageBar
-                    // **편집 도구 띠** (127 · T13 1차). 키보드가 올라오면 `safeAreaInset` 이
-                    // 그 위로 밀어 올린다 — **키보드 툴바를 쓰지 않는다** (CLAUDE.md §1).
-                    FormatBar()
-                }
+            //
+            // **세로로 쌓는다** — 편집기가 남은 높이를 갖고, 아래 두 띠는 제 높이만 갖는다.
+            // 예전에는 `safeAreaInset(edge: .bottom)` 으로 얹었는데 **띠가 아래로 잘렸다**
+            // (시뮬레이터 스크린샷 · 127). 키보드가 올라오면 SwiftUI 가 이 쌓기 전체를
+            // 밀어 올리므로 띠는 그대로 키보드 위에 선다 — **키보드 툴바를 쓰지 않는다**
+            // (CLAUDE.md §1).
+            VStack(spacing: 0) {
+                MarkdownEditor(
+                    noteID: library.editorSession.uuidString,
+                    text: library.noteText,
+                    onEdit: library.noteEdited,
+                    insertion: library.insertion,
+                    onInserted: { library.insertion = nil },
+                    // **선언 순서가 곧 인자 순서다** (`MarkdownEditor` 의 메모와 같은 자리).
+                    format: library.formatRequest,
+                    onFormatted: { library.formatRequest = nil },
+                    onTitleLineChanged: { library.cursorOnTitleLine = $0 },
+                    onFocusChanged: { library.editorHasFocus = $0 },
+                    onImageLineChanged: library.cursorImageLineChanged)
+                // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
+                cursorImageBar
+                // **편집 도구 띠** (127 · T13 1차).
+                FormatBar()
             }
         }
     }
