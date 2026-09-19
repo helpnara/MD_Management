@@ -47,6 +47,7 @@ ENTER_CASES = ROOT / "Tools" / "golden" / "enter-cases.json"
 LINK_TRIGGER_CASES = ROOT / "Tools" / "golden" / "link-trigger-cases.json"
 OUTLINE_CASES = ROOT / "Tools" / "golden" / "outline-cases.json"
 PASTE_CASES = ROOT / "Tools" / "golden" / "paste-cases.json"
+BROKEN_CASES = ROOT / "Tools" / "golden" / "broken-link-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -1346,6 +1347,99 @@ def _repair_one(raw: str, note: str, note_folder: str, files: list[str]):
     return "<" + link + ">" if (wrapped or " " in link) else link
 
 
+def find_broken_links(markdown: str, note_path: str, files: list[str]) -> list[dict]:
+    """이 노트에서 안 열리는 링크 (146).
+
+    **고치지 않는다. 찾아 주기만 한다.** 목록이 비어 있으면 아무것도 안 찾는다 —
+    아직 못 읽었을 때 *다 깨졌다* 고 말하는 것이 가장 나쁘다.
+    """
+    if not files or "](" not in markdown:
+        return []
+    known = set(files)
+    header = front_matter_header_length(markdown)
+    out, cursor = [], header
+    while True:
+        at = markdown.find("](", cursor)
+        if at < 0:
+            break
+        cursor = at + 2
+        piece = read_destination(markdown, cursor)
+        if piece is None:
+            continue
+        raw, end = piece
+        cursor = end + 1
+        resolved = _broken_target(raw, note_path, known)
+        if resolved is None:
+            continue
+        line = markdown.count("\n", 0, at) + 1
+        line_start = markdown.rfind("\n", 0, at) + 1
+        line_end = markdown.find("\n", at)
+        body = markdown[line_start:line_end if line_end >= 0 else len(markdown)].strip()
+        kind = "image" if _is_image(markdown, at) else "link"
+        out.append({"destination": raw, "resolved": resolved,
+                    "line": line, "text": body, "kind": kind})
+    return out
+
+
+def _broken_target(raw: str, note_path: str, known: set):
+    wrapped = raw.startswith("<") and raw.endswith(">") and len(raw) >= 2
+    inner = raw[1:-1] if wrapped else raw
+    target = inner
+    hash_at = inner.find("#")
+    if hash_at > 0:
+        target = inner[:hash_at]
+    if not target:
+        return None
+    got = resolve(target, note_path)
+    if got["kind"] == "relative":
+        return None if got["value"] in known else got["value"]
+    if got["kind"] == "outside":
+        return got["value"]
+    return None
+
+
+def _is_image(text: str, bracket: int) -> bool:
+    depth = 0
+    i = bracket
+    while i > 0:
+        i -= 1
+        ch = text[i]
+        if ch == "\n":
+            return False
+        if ch == "]":
+            depth += 1
+        if ch == "[":
+            if depth == 0:
+                return i > 0 and text[i - 1] == "!"
+            depth -= 1
+    return False
+
+
+def front_matter_header_length(text: str) -> int:
+    header, _ = split_front_matter(text)
+    return 0 if header is None else len(text) - len(split_front_matter(text)[1])
+
+
+def build_broken_cases() -> list[dict]:
+    spec = json.loads(BROKEN_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        broken = find_broken_links(case["text"], case["notePath"], case["files"])
+        # **멀쩡하다고 한 링크는 정말 열리나** — 찾은 것 말고 나머지를 다시 푼다.
+        # 원문 글자가 아니라 **풀린 경로**로 맞춘다 (파서는 퍼센트 인코딩을 남긴다).
+        flagged = {b["resolved"] for b in broken}
+        for link in extract_links(case["text"]):
+            got = resolve(link["destination"], case["notePath"])
+            if got["kind"] != "relative" or got["value"] in flagged:
+                continue
+            if got["value"] not in case["files"] and case["files"]:
+                raise SystemExit(
+                    f"::error::[{case['name']}] 안 열리는데 멀쩡하다고 했다: {got['value']}")
+        out.append({"name": case["name"], "text": case["text"],
+                    "notePath": case["notePath"], "files": case["files"], "broken": broken})
+    return out
+
+
 def build_paste_cases() -> list[dict]:
     spec = json.loads(PASTE_CASES.read_text(encoding="utf-8"))
     out = []
@@ -1479,6 +1573,7 @@ def build() -> dict:
         "enterCases": build_enter_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
         "pasteCases": build_paste_cases(),
+        "brokenCases": build_broken_cases(),
         "renumberCases": build_renumber_cases(),
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
@@ -1698,7 +1793,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"),
-        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"),
     ]
     return " · ".join(f"{name} {len(loaded[key])}건" for name, key in parts)
 

@@ -198,12 +198,25 @@ final class LibraryModel: ObservableObject {
         format(.link(title: label, path: file.relativePath, noteFolder: noteFolderForLink))
     }
 
+    // MARK: - 안 열리는 링크 찾기 (146)
+
+    /// 지금 노트에서 안 열리는 링크들. 시트를 열 때 센다.
+    @Published var brokenLinks: [BrokenLink] = []
+
+    /// **찾아 주기만 한다 — 고치지 않는다.** 앱이 본문을 고치는 자리는 둘뿐이다
+    /// (노트를 옮길 때 · 붙여넣을 때). 여기서 몰래 고치면 셋째 자리가 생긴다.
+    func showBrokenLinks() {
+        let path = selectedNote?.relativePath ?? ""
+        brokenLinks = BrokenLinks.find(in: noteText, notePath: path, files: vaultPaths)
+        sheet = .brokenLinks
+    }
+
     // MARK: - 붙여넣은 링크를 이 노트 기준으로 (144)
 
     /// 금고 안 파일들의 경로 — 붙여넣을 때 쓴다. 노트를 열 때 뒤에서 읽어 둔다.
     ///
     /// **비어 있으면 아무것도 안 고친다.** 아직 못 읽었을 때 안전한 쪽이다.
-    private var vaultPaths: [String] = []
+    private(set) var vaultPaths: [String] = []
     private var vaultPathsReadAt: Date?
 
     /// 노트를 열 때 한 번 (너무 자주는 안 읽는다).
@@ -351,6 +364,8 @@ final class LibraryModel: ObservableObject {
         case share(URL)
         /// **이미 있는 파일 고르기** (145). 고르면 링크만 넣는다 — 사본은 안 만든다.
         case linkFile
+        /// **안 열리는 링크 보기** (146). 찾아 주기만 한다 — 고치지 않는다.
+        case brokenLinks
 
         var id: String {
             switch self {
@@ -360,6 +375,7 @@ final class LibraryModel: ObservableObject {
             case .preview(let url): return "preview-\(url.path)"
             case .share(let url): return "share-\(url.path)"
             case .linkFile: return "linkFile"
+            case .brokenLinks: return "brokenLinks"
             }
         }
     }

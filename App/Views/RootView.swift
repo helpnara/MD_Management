@@ -89,6 +89,8 @@ struct RootView: View {
                     .onDisappear { library.shareSheetClosed() }
             case .linkFile:
                 LinkFilePicker().environmentObject(library)
+            case .brokenLinks:
+                BrokenLinkList().environmentObject(library)
             }
             }
             .environment(\.rootIsCompact, horizontalSizeClass == .compact)
@@ -921,6 +923,13 @@ private struct NoteDetail: View {
         } label: {
             Label("이미 있는 파일 연결", systemImage: "link")
         }
+        // **안 열리는 링크를 한 번에 모아 본다** (146). 읽기 모드의 네모는 그 자리까지
+        // 내려가야 보인다 — 긴 노트에서는 있는 줄도 모른다.
+        Button {
+            library.showBrokenLinks()
+        } label: {
+            Label("안 열리는 링크 찾기", systemImage: "link.badge.plus")
+        }
     }
 
     @ToolbarContentBuilder
@@ -1130,6 +1139,53 @@ private struct LinkFilePicker: View {
         guard !needle.isEmpty else { return library.linkableFiles }
         return library.linkableFiles.filter {
             $0.relativePath.localizedCaseInsensitiveContains(needle)
+        }
+    }
+}
+
+/// **안 열리는 링크 보기** (146, 사용자 제안).
+///
+/// 이 노트에서 가리키는 곳에 파일이 없는 링크를 **몇째 줄인지와 함께** 모아 준다.
+///
+/// **고치지 않는다. 보여 주기만 한다.** 앱이 본문을 고치는 자리는 둘뿐이다 — 노트를 옮길
+/// 때와 붙여넣을 때, 둘 다 사람이 시킨 그 순간이고 몇 개를 고칠지 먼저 알린다.
+/// 여기서 몰래 고치기 시작하면 셋째 자리가 생긴다.
+private struct BrokenLinkList: View {
+    @EnvironmentObject private var library: LibraryModel
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if library.brokenLinks.isEmpty {
+                    ContentUnavailableView("안 열리는 링크가 없습니다", systemImage: "checkmark.circle",
+                                           description: Text("이 노트의 링크가 모두 제 파일을 가리킵니다."))
+                } else {
+                    List(Array(library.brokenLinks.enumerated()), id: \.offset) { _, broken in
+                        VStack(alignment: .leading, spacing: Metrics.rowSpacing / 3) {
+                            Text("\(broken.line)째 줄")
+                                .font(Font.scaled(.caption))
+                                .foregroundStyle(Palette.inkFaint)
+                            Text(broken.text)
+                                .font(Font.scaled(.body))
+                                .foregroundStyle(Palette.ink)
+                                .lineLimit(2)
+                            Text(broken.resolved.isEmpty
+                                 ? "폴더 밖을 가리킵니다" : broken.resolved)
+                                .font(Font.scaled(.caption))
+                                .foregroundStyle(Palette.inkFaint)
+                        }
+                        .padding(.vertical, Metrics.rowSpacing / 3)
+                    }
+                }
+            }
+            .navigationTitle(library.brokenLinks.isEmpty
+                             ? "링크 살펴보기" : "안 열리는 링크 \(library.brokenLinks.count)개")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { library.sheet = nil }
+                }
+            }
         }
     }
 }
