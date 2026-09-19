@@ -9,6 +9,22 @@ import Core
 final class MarkdownTextView: UITextView {
     /// `true` 면 들여쓰기, `false` 면 내어쓰기.
     var onTab: (@MainActor (Bool) -> Void)?
+    /// **붙여넣을 글을 한 번 손볼 기회** (144). 고칠 것이 없으면 `nil` 을 돌려준다.
+    var onPaste: (@MainActor (String) -> String?)?
+
+    /// **붙여넣기** — 다른 폴더에서 온 상대 링크를 이 노트 기준으로 고친다 (144).
+    ///
+    /// `replace(_:withText:)` 한 번으로 끝낸다 — **되돌리기가 한 번에 걸린다.** 그래야
+    /// 사람이 고침을 무를 수 있다 (앱이 본문을 고치는 자리라 무를 수 있어야 한다).
+    override func paste(_ sender: Any?) {
+        guard let string = UIPasteboard.general.string,
+              let repaired = onPaste?(string), repaired != string,
+              let target = selectedTextRange else {
+            super.paste(sender)
+            return
+        }
+        replace(target, withText: repaired)
+    }
 
     override var keyCommands: [UIKeyCommand]? {
         let deeper = UIKeyCommand(input: "\t", modifierFlags: [], action: #selector(indentPressed))
@@ -56,12 +72,15 @@ struct MarkdownEditor: UIViewRepresentable {
     var onActiveChanged: @MainActor (Formatting.Active) -> Void = { _ in }
     /// 커서 앞에 `>>` · `[[` 가 있나 (147). `nil` 이면 목록을 닫으라는 뜻이다.
     var onLinkQueryChanged: @MainActor (NoteLinking.Query?) -> Void = { _ in }
+    /// 붙여넣을 글을 이 노트 기준으로 고친다 (144). 고칠 것이 없으면 `nil`.
+    var onPasteLinks: @MainActor (String) -> String? = { _ in nil }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
                     onFocus: onFocusChanged, onImageLine: onImageLineChanged,
                     onActive: onActiveChanged,
-                    onLinkQuery: onLinkQueryChanged)
+                    onLinkQuery: onLinkQueryChanged,
+                    onPasteLinks: onPasteLinks)
     }
 
     func makeUIView(context: Context) -> UITextView {
@@ -93,6 +112,9 @@ struct MarkdownEditor: UIViewRepresentable {
         view.onTab = { [weak coordinator = context.coordinator] deeper in
             coordinator?.shiftIndent(deeper)
         }
+        view.onPaste = { [weak coordinator = context.coordinator] pasted in
+            coordinator?.repairPastedLinks(pasted)
+        }
         return view
     }
 
@@ -106,6 +128,7 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.onImageLine = onImageLineChanged
         coordinator.onActive = onActiveChanged
         coordinator.onLinkQuery = onLinkQueryChanged
+        coordinator.onPasteLinks = onPasteLinks
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
@@ -120,6 +143,7 @@ struct MarkdownEditor: UIViewRepresentable {
         var onImageLine: @MainActor (String?) -> Void
         var onActive: @MainActor (Formatting.Active) -> Void
         var onLinkQuery: @MainActor (NoteLinking.Query?) -> Void
+        var onPasteLinks: @MainActor (String) -> String?
         /// 마지막으로 알린 표시 상태 (128). 바뀔 때만 알린다 — 커서가 움직일 때마다
         /// 화면을 다시 그리면 값도 없이 비싸다.
         private var lastActive: Formatting.Active?
@@ -159,14 +183,19 @@ struct MarkdownEditor: UIViewRepresentable {
              onFocus: @escaping @MainActor (Bool) -> Void,
              onImageLine: @escaping @MainActor (String?) -> Void,
              onActive: @escaping @MainActor (Formatting.Active) -> Void,
-             onLinkQuery: @escaping @MainActor (NoteLinking.Query?) -> Void) {
+             onLinkQuery: @escaping @MainActor (NoteLinking.Query?) -> Void,
+             onPasteLinks: @escaping @MainActor (String) -> String?) {
             self.onEdit = onEdit
             self.onTitleLine = onTitleLine
             self.onFocus = onFocus
             self.onImageLine = onImageLine
             self.onActive = onActive
             self.onLinkQuery = onLinkQuery
+            self.onPasteLinks = onPasteLinks
         }
+
+        /// 붙여넣을 글의 링크를 이 노트 기준으로 (144). 규칙은 Core 가 정한다.
+        func repairPastedLinks(_ pasted: String) -> String? { onPasteLinks(pasted) }
 
         /// **커서 앞에 방아쇠가 있나** (147). 규칙은 Core 의 `NoteLinking.query` 가 정한다.
         ///

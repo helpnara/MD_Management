@@ -46,6 +46,7 @@ FORMAT_CASES = ROOT / "Tools" / "golden" / "format-cases.json"
 ENTER_CASES = ROOT / "Tools" / "golden" / "enter-cases.json"
 LINK_TRIGGER_CASES = ROOT / "Tools" / "golden" / "link-trigger-cases.json"
 OUTLINE_CASES = ROOT / "Tools" / "golden" / "outline-cases.json"
+PASTE_CASES = ROOT / "Tools" / "golden" / "paste-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -1288,6 +1289,80 @@ def rebase_links(text: str, old_folder: str, new_folder: str) -> str:
     return "".join(out)
 
 
+def repair_pasted(text: str, note_folder: str, files: list[str]) -> dict:
+    """붙여넣은 글의 상대 링크를 이 노트 기준으로 (144).
+
+    여기서 안 맞으면서 금고 어딘가에 **딱 하나만** 있는 링크만 고친다.
+    여럿이면 손대지 않는다 — 짐작해서 고치면 엉뚱한 파일을 가리킨다.
+    """
+    if not files or "](" not in text:
+        return {"text": text, "fixed": 0}
+    note = (note_folder + "/노트.md") if note_folder else "노트.md"
+    out, cursor, fixed = "", 0, 0
+    while True:
+        at = text.find("](", cursor)
+        if at < 0:
+            break
+        out += text[cursor:at + 2]
+        cursor = at + 2
+        piece = read_destination(text, cursor)
+        if piece is None:
+            continue
+        raw, end = piece
+        rewritten = _repair_one(raw, note, note_folder, files)
+        out += rewritten if rewritten is not None else raw
+        if rewritten is not None:
+            fixed += 1
+        out += text[end:end + 1]
+        cursor = end + 1
+    out += text[cursor:]
+    return {"text": out, "fixed": fixed}
+
+
+def _repair_one(raw: str, note: str, note_folder: str, files: list[str]):
+    wrapped = raw.startswith("<") and raw.endswith(">") and len(raw) >= 2
+    inner = raw[1:-1] if wrapped else raw
+    anchor = ""
+    target = inner
+    hash_at = inner.find("#")
+    if hash_at > 0:
+        anchor, target = inner[hash_at:], inner[:hash_at]
+    if not target:
+        return None
+    here = resolve(target, note)
+    if here["kind"] != "relative":
+        return None
+    if here["value"] in files:
+        return None
+    tail = resolve(target, "노트.md")
+    if tail["kind"] != "relative":
+        return None
+    matches = [f for f in files if f == tail["value"] or f.endswith("/" + tail["value"])]
+    if len(matches) != 1:
+        return None
+    link = relative_link(note_folder, matches[0]) + anchor
+    if link == inner:
+        return None
+    return "<" + link + ">" if (wrapped or " " in link) else link
+
+
+def build_paste_cases() -> list[dict]:
+    spec = json.loads(PASTE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        repair = repair_pasted(case["text"], case.get("noteFolder", ""), case["files"])
+        # **고친 글이 여전히 링크로 읽히나** — 심판 둘에게 묻는다.
+        if repair["fixed"]:
+            for html in (make_parser().render(repair["text"]), cmark_html(repair["text"])):
+                if "<a href=" not in html and "<img" not in html:
+                    raise SystemExit(
+                        f"::error::[{case['name']}] 고친 글이 링크로 안 읽힌다:\n{repair['text']}")
+        out.append({"name": case["name"], "text": case["text"],
+                    "noteFolder": case.get("noteFolder", ""), "files": case["files"],
+                    "repaired": repair["text"], "fixed": repair["fixed"]})
+    return out
+
+
 def build_rebase_cases() -> list[dict]:
     spec = json.loads(REBASE_CASES.read_text(encoding="utf-8"))
     return [{"name": case["name"], "text": case["text"], "from": case["from"], "to": case["to"],
@@ -1403,6 +1478,7 @@ def build() -> dict:
         "outlineCases": build_outline_cases(),
         "enterCases": build_enter_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
+        "pasteCases": build_paste_cases(),
         "renumberCases": build_renumber_cases(),
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
@@ -1622,7 +1698,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"),
-        ("노트 연결", "linkTriggerCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"),
     ]
     return " · ".join(f"{name} {len(loaded[key])}건" for name, key in parts)
 

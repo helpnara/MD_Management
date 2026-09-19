@@ -834,7 +834,8 @@ private struct NoteDetail: View {
                     onFocusChanged: { library.editorHasFocus = $0 },
                     onImageLineChanged: library.cursorImageLineChanged,
                     onActiveChanged: { library.activeFormats = $0 },
-                    onLinkQueryChanged: library.linkQueryChanged)
+                    onLinkQueryChanged: library.linkQueryChanged,
+                    onPasteLinks: library.repairPastedLinks)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
                 // **`>>` · `[[` 를 치면 노트 목록이 여기 뜬다** (147).

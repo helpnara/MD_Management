@@ -2718,6 +2718,136 @@
       "subtreeEnd": 5
     }
   ],
+  "pasteCases": [
+    {
+      "files": [
+        "A/assets/체크리스트.pdf",
+        "A/메모.md",
+        "B/계획.md"
+      ],
+      "fixed": 1,
+      "name": "다른 폴더에서 복사해 왔다",
+      "noteFolder": "B",
+      "repaired": "[체크리스트](../A/assets/체크리스트.pdf)",
+      "text": "[체크리스트](assets/체크리스트.pdf)"
+    },
+    {
+      "files": [
+        "A/assets/체크리스트.pdf",
+        "A/메모.md"
+      ],
+      "fixed": 0,
+      "name": "여기서도 맞으면 그대로 둔다",
+      "noteFolder": "A",
+      "repaired": "[체크리스트](assets/체크리스트.pdf)",
+      "text": "[체크리스트](assets/체크리스트.pdf)"
+    },
+    {
+      "files": [
+        "A/assets/표.pdf",
+        "C/assets/표.pdf",
+        "B/계획.md"
+      ],
+      "fixed": 0,
+      "name": "같은 이름이 둘이면 손대지 않는다",
+      "noteFolder": "B",
+      "repaired": "[표](assets/표.pdf)",
+      "text": "[표](assets/표.pdf)"
+    },
+    {
+      "files": [
+        "A/assets/a.pdf"
+      ],
+      "fixed": 0,
+      "name": "바깥 주소는 그대로",
+      "noteFolder": "B",
+      "repaired": "[사이트](https://example.com/a.pdf)",
+      "text": "[사이트](https://example.com/a.pdf)"
+    },
+    {
+      "files": [
+        "A/assets/a.pdf"
+      ],
+      "fixed": 0,
+      "name": "절대경로는 그대로",
+      "noteFolder": "B",
+      "repaired": "[절대](/etc/hosts)",
+      "text": "[절대](/etc/hosts)"
+    },
+    {
+      "files": [
+        "회의/assets/사진.png",
+        "일지/9월/메모.md"
+      ],
+      "fixed": 1,
+      "name": "그림도 고친다",
+      "noteFolder": "일지/9월",
+      "repaired": "![](../../회의/assets/사진.png)",
+      "text": "![](assets/사진.png)"
+    },
+    {
+      "files": [
+        "자료/assets/목돈 배치.pdf",
+        "B/계획.md"
+      ],
+      "fixed": 1,
+      "name": "빈칸이 든 이름 — 꺾쇠로 감싼다",
+      "noteFolder": "B",
+      "repaired": "[목돈](<../자료/assets/목돈 배치.pdf>)",
+      "text": "[목돈](<assets/목돈 배치.pdf>)"
+    },
+    {
+      "files": [
+        "회의/9월 회의록.md",
+        "일지/오늘.md"
+      ],
+      "fixed": 1,
+      "name": "노트 링크도 고친다",
+      "noteFolder": "일지",
+      "repaired": "[9월 회의록](<../회의/9월 회의록.md>)",
+      "text": "[9월 회의록](<9월 회의록.md>)"
+    },
+    {
+      "files": [
+        "A/메모.md",
+        "B/계획.md"
+      ],
+      "fixed": 1,
+      "name": "앵커는 떼었다 붙인다",
+      "noteFolder": "B",
+      "repaired": "[절](../A/메모.md#결론)",
+      "text": "[절](메모.md#결론)"
+    },
+    {
+      "files": [
+        "A/assets/하나.pdf",
+        "B/계획.md"
+      ],
+      "fixed": 1,
+      "name": "한 글에 여럿 — 고칠 것만 고친다",
+      "noteFolder": "B",
+      "repaired": "[하나](../A/assets/하나.pdf) 그리고 [둘](https://example.com) 그리고 [셋](계획.md)",
+      "text": "[하나](assets/하나.pdf) 그리고 [둘](https://example.com) 그리고 [셋](계획.md)"
+    },
+    {
+      "files": [],
+      "fixed": 0,
+      "name": "금고를 모르면 아무것도 안 고친다",
+      "noteFolder": "B",
+      "repaired": "[체크리스트](assets/체크리스트.pdf)",
+      "text": "[체크리스트](assets/체크리스트.pdf)"
+    },
+    {
+      "files": [
+        "A/메모.md"
+      ],
+      "fixed": 0,
+      "name": "링크가 없는 글",
+      "noteFolder": "B",
+      "repaired": "그냥 붙여넣은 글이다",
+      "text": "그냥 붙여넣은 글이다"
+    }
+  ],
   "pinCases": [
     {
       "followed": [

@@ -198,6 +198,37 @@ final class LibraryModel: ObservableObject {
         format(.link(title: label, path: file.relativePath, noteFolder: noteFolderForLink))
     }
 
+    // MARK: - 붙여넣은 링크를 이 노트 기준으로 (144)
+
+    /// 금고 안 파일들의 경로 — 붙여넣을 때 쓴다. 노트를 열 때 뒤에서 읽어 둔다.
+    ///
+    /// **비어 있으면 아무것도 안 고친다.** 아직 못 읽었을 때 안전한 쪽이다.
+    private var vaultPaths: [String] = []
+    private var vaultPathsReadAt: Date?
+
+    /// 노트를 열 때 한 번 (너무 자주는 안 읽는다).
+    func refreshVaultPathsIfNeeded() {
+        if let at = vaultPathsReadAt, Date().timeIntervalSince(at) < 60 { return }
+        vaultPathsReadAt = Date()
+        Task { [weak self] in
+            guard let self, let store = self.store else { return }
+            let files = await store.linkableFiles()
+            self.vaultPaths = files.map(\.relativePath)
+        }
+    }
+
+    /// **붙여넣을 글의 링크를 이 노트 기준으로** (144). 고칠 것이 없으면 `nil`.
+    ///
+    /// 앱이 본문을 고치는 자리이므로 **고쳤다고 알리고**, 되돌리기 한 번으로 무를 수 있다
+    /// (편집기가 한 번의 바꾸기로 넣는다).
+    func repairPastedLinks(_ pasted: String) -> String? {
+        let repair = MarkdownLinks.repaired(pasted: pasted, noteFolder: noteFolderForLink,
+                                            files: vaultPaths)
+        guard repair.fixed > 0 else { return nil }
+        report("링크 \(repair.fixed)개를 이 노트에서 열리도록 고쳤습니다. 되돌리기로 무를 수 있습니다.")
+        return repair.text
+    }
+
     /// 지금 노트가 든 폴더 — 링크는 여기서 보는 상대 경로다.
     private var noteFolderForLink: String {
         Paths.directory(of: selectedNote?.relativePath ?? "")
@@ -1684,6 +1715,8 @@ final class LibraryModel: ObservableObject {
     func loadSelectedText() async {
         // 노트를 떠난다 — 제목 줄에 커서가 있었어도 여기서 확정한다 (89).
         cursorOnTitleLine = false
+        // 붙여넣을 때 쓸 금고 목록을 뒤에서 읽어 둔다 (144).
+        refreshVaultPathsIfNeeded()
         // **읽기 전에 쓴다.** 노트를 바꾸는 길목이 여기다 — 남은 글을 먼저 파일에
         // 넣지 않으면 그대로 사라진다.
         await save()

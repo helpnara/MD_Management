@@ -57,6 +57,87 @@ public enum MarkdownLinks {
         return out
     }
 
+    /// **붙여넣은 글의 상대 링크를 이 노트 기준으로 고친다** (144, 사용자 제안).
+    ///
+    /// `A` 폴더 노트의 `[이름](assets/파일.pdf)` 를 `B` 폴더 노트에 그대로 붙이면 링크가
+    /// 안 맞는다 — 같은 글자가 자리마다 다른 곳을 가리키기 때문이다. 여기서는 그 글자를
+    /// **이 노트에서 보는 경로**로 바꿔 준다: `[이름](../A/assets/파일.pdf)`.
+    ///
+    /// **사본을 만들지 않는다** (2026-09-18 사용자 — *사본이 늘면 내용이 갈라진다*).
+    /// 파일은 제자리에 그대로 두고 **링크만** 고친다.
+    ///
+    /// 손대는 것은 **여기서 안 맞으면서 금고 어딘가에 딱 하나만 있는** 링크뿐이다.
+    /// - 여기서도 맞으면 그대로 둔다.
+    /// - 바깥 주소 · 절대경로 · 앵커만 있는 것은 그대로 둔다.
+    /// - 같은 이름이 **여럿이면 손대지 않는다** — 어느 것인지 우리가 알 수 없다.
+    ///   짐작해서 고치면 엉뚱한 파일을 가리키게 되고, 그것이 가장 나쁘다.
+    ///
+    /// `files` 는 금고 기준 경로들이다. 비어 있으면 아무것도 안 고친다.
+    public struct Repair: Equatable, Sendable {
+        public let text: String
+        /// 몇 개를 고쳤나. 0 이면 글이 그대로다 — 사람에게 알릴 필요도 없다.
+        public let fixed: Int
+
+        public init(text: String, fixed: Int) {
+            self.text = text
+            self.fixed = fixed
+        }
+    }
+
+    public static func repaired(pasted text: String, noteFolder: String,
+                                files: [String]) -> Repair {
+        guard !files.isEmpty, text.contains("](") else { return Repair(text: text, fixed: 0) }
+        let note = noteFolder.isEmpty ? "노트.md" : noteFolder + "/노트.md"
+        var out = ""
+        var cursor = text.startIndex
+        var fixed = 0
+
+        while let bracket = text.range(of: "](", range: cursor..<text.endIndex) {
+            out += text[cursor..<bracket.upperBound]
+            cursor = bracket.upperBound
+            guard let piece = destination(in: text, from: cursor) else { continue }
+            if let rewritten = repair(piece.raw, note: note, noteFolder: noteFolder, files: files) {
+                out += rewritten
+                fixed += 1
+            } else {
+                out += piece.raw
+            }
+            out += text[piece.end..<text.index(after: piece.end)]   // 닫는 `)`
+            cursor = text.index(after: piece.end)
+        }
+        out += text[cursor...]
+        return Repair(text: out, fixed: fixed)
+    }
+
+    /// 링크 하나 — 고칠 것이 있으면 새 글자, 없으면 `nil`.
+    private static func repair(_ raw: String, note: String, noteFolder: String,
+                               files: [String]) -> String? {
+        let wrapped = raw.hasPrefix("<") && raw.hasSuffix(">") && raw.count >= 2
+        let inner = wrapped ? String(raw.dropFirst().dropLast()) : raw
+        var anchor = ""
+        var target = inner
+        if let hash = inner.firstIndex(of: "#"), hash != inner.startIndex {
+            anchor = String(inner[hash...])
+            target = String(inner[inner.startIndex..<hash])
+        }
+        guard !target.isEmpty else { return nil }
+        // 바깥 주소 · 절대경로 · 폴더 밖은 손대지 않는다.
+        guard case .relative(let here) = Paths.resolve(link: target, fromNoteAt: note) else {
+            return nil
+        }
+        guard !files.contains(here) else { return nil }     // 여기서도 맞는다
+        // 이 글자가 **금고의 맨 위에서** 가리키는 곳 — 꼬리를 얻는다.
+        guard case .relative(let tail) = Paths.resolve(link: target, fromNoteAt: "노트.md") else {
+            return nil
+        }
+        let matches = files.filter { $0 == tail || $0.hasSuffix("/" + tail) }
+        guard matches.count == 1, let found = matches.first else { return nil }
+
+        let link = Paths.relativeLink(from: noteFolder, to: found) + anchor
+        guard link != inner else { return nil }
+        return (wrapped || link.contains(" ")) ? "<" + link + ">" : link
+    }
+
     /// 링크 하나를 새 폴더 기준으로. 폴더 안을 가리키지 않으면 그대로 둔다.
     private static func rebase(_ raw: String, note: String, to newFolder: String) -> String {
         let wrapped = raw.hasPrefix("<") && raw.hasSuffix(">") && raw.count >= 2
