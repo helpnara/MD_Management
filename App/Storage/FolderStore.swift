@@ -893,6 +893,37 @@ actor FolderStore {
         return (count, bytes)
     }
 
+    /// **금고 안에서 이어 붙일 만한 파일들** (145, 사용자 제안 — *이미 있는 파일 연결하기*).
+    ///
+    /// 노트와 첨부를 함께 준다 — 첨부도 여러 노트에서 나눠 쓰고 싶어 나온 이야기다.
+    /// 숨김 폴더와 휴지통은 뺀다. 목록이 아주 커지지 않게 `limit` 에서 멈춘다.
+    ///
+    /// **사본을 만들지 않는다** (2026-09-18 사용자). 파일은 제자리에 두고 **링크만** 넣는다.
+    func linkableFiles(limit: Int = 2000) -> [LinkableFile] {
+        openScopeIfNeeded()
+        guard let walker = FileManager.default.enumerator(
+            at: root, includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]) else { return [] }
+
+        var found: [LinkableFile] = []
+        for case let url as URL in walker {
+            if found.count >= limit { break }
+            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            guard let relative = Paths.relative(of: url.path, under: root.path) else { continue }
+            let path = Paths.normalized(relative)
+            if isDirectory {
+                // 휴지통과 숨김 폴더 속은 아예 들어가지 않는다.
+                if url.lastPathComponent == ".trash" || url.lastPathComponent.hasPrefix(".") {
+                    walker.skipDescendants()
+                }
+                continue
+            }
+            guard !Paths.isHidden(path) else { continue }
+            found.append(LinkableFile(relativePath: path, name: url.lastPathComponent))
+        }
+        return found.sorted { $0.relativePath.localizedStandardCompare($1.relativePath) == .orderedAscending }
+    }
+
     /// 폴더 아래 모든 파일의 크기 합.
     nonisolated static func folderBytes(_ directory: URL) -> Int {
         guard let walker = FileManager.default.enumerator(

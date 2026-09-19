@@ -87,6 +87,8 @@ struct RootView: View {
                 ActivityView(url: url) { library.sheet = nil }
                     .ignoresSafeArea()
                     .onDisappear { library.shareSheetClosed() }
+            case .linkFile:
+                LinkFilePicker().environmentObject(library)
             }
             }
             .environment(\.rootIsCompact, horizontalSizeClass == .compact)
@@ -911,6 +913,13 @@ private struct NoteDetail: View {
         } label: {
             Label("문서 첨부", systemImage: "doc.badge.plus")
         }
+        // **이미 있는 파일은 사본을 만들지 않는다** (145). 제자리에 두고 링크만 넣는다 —
+        // 사본이 늘면 내용이 갈라지고 어느 쪽이 진짜인지 아무도 모른다 (2026-09-18 사용자).
+        Button {
+            library.startLinkingExistingFile()
+        } label: {
+            Label("이미 있는 파일 연결", systemImage: "link")
+        }
     }
 
     @ToolbarContentBuilder
@@ -1059,6 +1068,67 @@ private struct LinkPickerBar: View {
             .overlay(alignment: .top) {
                 Rectangle().fill(Palette.rule).frame(height: 0.5)
             }
+        }
+    }
+}
+
+/// **이미 있는 파일 연결하기** (145, 사용자 제안).
+///
+/// 금고 안의 노트와 첨부를 보여 주고, 고르면 **지금 노트 기준 상대 경로**로 링크를 넣는다.
+/// **파일은 제자리에 그대로 둔다** — 사본을 만들면 내용이 갈라져 어느 쪽이 진짜인지
+/// 아무도 모르게 된다 (2026-09-18 사용자).
+///
+/// 타이핑으로 부르는 `>>` · `[[` 와 **속이 같다** (147) — 넣는 부분은 `NoteLinking.link`
+/// 하나뿐이고 입구만 둘이다.
+private struct LinkFilePicker: View {
+    @EnvironmentObject private var library: LibraryModel
+    @State private var filter = ""
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if library.isLoadingLinkableFiles {
+                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if shown.isEmpty {
+                    ContentUnavailableView("찾는 파일이 없습니다", systemImage: "doc.questionmark",
+                                           description: Text("이름의 일부를 적어 보세요."))
+                } else {
+                    List(shown) { file in
+                        Button {
+                            library.linkExistingFile(file)
+                        } label: {
+                            VStack(alignment: .leading, spacing: Metrics.rowSpacing / 3) {
+                                Text(file.name)
+                                    .font(Font.scaled(.body))
+                                    .foregroundStyle(Palette.ink)
+                                if !file.folder.isEmpty {
+                                    Text(file.folder)
+                                        .font(Font.scaled(.caption))
+                                        .foregroundStyle(Palette.inkFaint)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .navigationTitle("이미 있는 파일 연결")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $filter, prompt: "파일 이름")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { library.sheet = nil }
+                }
+            }
+        }
+    }
+
+    /// 이름이든 폴더든 적은 말이 들어 있으면 보여 준다.
+    private var shown: [LinkableFile] {
+        let needle = filter.trimmingCharacters(in: .whitespaces)
+        guard !needle.isEmpty else { return library.linkableFiles }
+        return library.linkableFiles.filter {
+            $0.relativePath.localizedCaseInsensitiveContains(needle)
         }
     }
 }

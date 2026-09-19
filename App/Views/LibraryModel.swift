@@ -169,6 +169,35 @@ final class LibraryModel: ObservableObject {
         linkCandidates = []
     }
 
+    // MARK: - 이미 있는 파일 연결하기 (145)
+
+    /// 금고 안의 파일들 — 시트를 열 때 한 번 읽는다.
+    @Published var linkableFiles: [LinkableFile] = []
+    @Published var isLoadingLinkableFiles = false
+
+    /// 시트를 열고 목록을 읽는다.
+    func startLinkingExistingFile() {
+        sheet = .linkFile
+        linkableFiles = []
+        isLoadingLinkableFiles = true
+        Task { [weak self] in
+            guard let self, let store = self.store else { return }
+            let own = self.selectedNote?.relativePath
+            let files = await store.linkableFiles().filter { $0.relativePath != own }
+            self.linkableFiles = files
+            self.isLoadingLinkableFiles = false
+        }
+    }
+
+    /// 고른 파일을 **지금 노트 기준 상대 경로**로 넣는다. 파일은 제자리에 그대로 둔다.
+    func linkExistingFile(_ file: LinkableFile) {
+        sheet = nil
+        // 노트는 제목을, 첨부는 파일 이름을 보여 준다 — `[9월 회의록](…)` · `[표.pdf](…)`.
+        let label = Paths.isMarkdownFile(file.relativePath)
+            ? Paths.baseName(file.name) : file.name
+        format(.link(title: label, path: file.relativePath, noteFolder: noteFolderForLink))
+    }
+
     /// 지금 노트가 든 폴더 — 링크는 여기서 보는 상대 경로다.
     private var noteFolderForLink: String {
         Paths.directory(of: selectedNote?.relativePath ?? "")
@@ -289,6 +318,8 @@ final class LibraryModel: ObservableObject {
         case preview(URL)
         /// 공유 시트 — 임시 폴더에 만든 `.md` 하나 또는 `.zip` 하나 (설계서 §7.6).
         case share(URL)
+        /// **이미 있는 파일 고르기** (145). 고르면 링크만 넣는다 — 사본은 안 만든다.
+        case linkFile
 
         var id: String {
             switch self {
@@ -297,6 +328,7 @@ final class LibraryModel: ObservableObject {
             case .incoming(let file): return "incoming-\(file.id)"
             case .preview(let url): return "preview-\(url.path)"
             case .share(let url): return "share-\(url.path)"
+            case .linkFile: return "linkFile"
             }
         }
     }
