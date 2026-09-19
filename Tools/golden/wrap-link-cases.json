@@ -1,0 +1,28 @@
+{
+  "_note": "고른 글을 링크로 감싸기 (152). 자리를 손으로 세지 않는다 — 고를 글자(select)를 적으면 generate.py 가 UTF-16 자리를 찾는다. 손으로 세다 두 번 틀렸다 (빌드 47 준비).",
+  "cases": [
+    {"name": "고른 글이 링크 이름이 된다", "text": "이 문서는 체크리스트 입니다",
+     "select": "체크리스트", "pick": {"title": "목돈 배치", "path": "자료/목돈 배치.md"}},
+    {"name": "고른 것이 없으면 파일 이름", "text": "이 문서는  입니다",
+     "caretAfter": "이 문서는 ", "pick": {"title": "목돈 배치", "path": "자료/목돈 배치.md"}},
+    {"name": "뒤 빈칸이 딸려 왔다 — 링크 밖에 둔다", "text": "이 문서는 체크리스트 입니다",
+     "select": "체크리스트 ", "pick": {"title": "목돈 배치", "path": "자료/목돈 배치.md"}},
+    {"name": "앞뒤 빈칸이 다 딸려 왔다", "text": "이 문서는 체크리스트 입니다",
+     "select": " 체크리스트 ", "pick": {"title": "목돈 배치", "path": "자료/목돈 배치.md"}},
+    {"name": "빈칸만 골랐다 — 파일 이름", "text": "이 문서는 체크리스트 입니다",
+     "select": " ", "occurrence": 2, "pick": {"title": "목돈 배치", "path": "자료/목돈 배치.md"}},
+    {"name": "줄을 넘어 골랐다 — 한 글자도 안 지운다", "text": "첫 줄\n둘째 줄",
+     "select": "줄\n둘째", "pick": {"title": "회의록", "path": "회의/회의록.md"}},
+    {"name": "영문과 숫자", "text": "see EDA 2026 here",
+     "select": "EDA 2026", "noteFolder": "일지", "pick": {"title": "분석", "path": "자료/분석.md"}},
+    {"name": "위 폴더의 파일로", "text": "본문 체크리스트 끝",
+     "select": "체크리스트", "noteFolder": "일지/9월",
+     "pick": {"title": "체크리스트", "path": "자료/체크리스트.pdf"}},
+    {"name": "글 끝에서 골랐다", "text": "마지막 낱말",
+     "select": "낱말", "pick": {"title": "메모", "path": "메모.md"}},
+    {"name": "고른 글에 닫는 대괄호가 있다", "text": "이 [것] 을 보라",
+     "select": "[것]", "pick": {"title": "메모", "path": "메모.md"}},
+    {"name": "한글과 이모지", "text": "정리 🙂 회의 끝",
+     "select": "🙂 회의", "pick": {"title": "회의록", "path": "회의록.md"}}
+  ]
+}

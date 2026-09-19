@@ -118,10 +118,53 @@ public enum NoteLinking {
                                selectionLength: 0)
     }
 
+    /// **고른 글이 있으면 그것이 링크의 이름이 된다** (152, 빌드 47 · 4번에서 드러남).
+    ///
+    /// 워드 · 노션 · 옵시디언이 다 그렇다. 고른 글을 지우고 파일 이름을 넣으면
+    /// **사람이 친 글자가 조용히 사라진다.**
+    ///
+    /// ```
+    /// 이 문서는 [체크리스트] 입니다   ← `체크리스트` 를 골랐다
+    /// 이 문서는 [체크리스트](<자료/목돈 배치.md>) 입니다
+    /// ```
+    ///
+    /// 세 가지를 지킨다.
+    /// - 고른 글의 **가장자리 빈칸은 링크 밖에** 둔다 — 안에 넣으면 보기 싫고 뜻도 없다.
+    /// - **줄을 넘어 고른 것은 이름으로 쓰지 않는다.** 줄바꿈이 든 이름은 링크를 깨뜨린다.
+    ///   그때는 **한 글자도 지우지 않고** 고른 자리 앞에 끼워 넣는다.
+    /// - 고른 것이 빈칸뿐이면 파일 이름을 쓴다.
+    public static func link(to title: String, path: String, from noteFolder: String,
+                            wrapping start: Int, length: Int, in text: String) -> Formatting.Edit {
+        let units = Array(text.utf16)
+        var from = clamp(start, 0, units.count)
+        var to = clamp(start + max(length, 0), from, units.count)
+
+        // 줄을 넘어 골랐다 — 지우지 않고 그 앞에 넣는다.
+        let newline = Array("\n".utf16)[0]
+        if units[from..<to].contains(newline) {
+            return link(to: title, path: path, from: noteFolder, start: from, length: 0, in: text)
+        }
+        // 가장자리 빈칸은 링크 밖에 둔다.
+        while from < to, isBlank(units[from]) { from += 1 }
+        while to > from, isBlank(units[to - 1]) { to -= 1 }
+
+        let picked = String(decoding: units[from..<to], as: UTF16.self)
+        let label = picked.isEmpty ? title : picked
+        return link(to: label, path: path, from: noteFolder,
+                    start: from, length: to - from, in: text)
+    }
+
     /// `[이름](경로)` — **빈칸이 있으면 꺾쇠로 감싼다.** CommonMark 는 빈칸 있는 주소를
     /// 링크로 안 읽는다. 첨부를 넣을 때와 **같은 규칙**을 쓴다 (`ImageImport` 가 이것을 부른다).
     public static func markdownLink(label: String, path: String) -> String {
-        let safeLabel = label.replacingOccurrences(of: "]", with: " ")
+        // **대괄호는 역슬래시로 피한다** (152). 예전에는 `]` 를 빈칸으로 바꿨는데, 그러면
+        // 사람이 고른 글자가 **망가진다** — `[것]` 이 `[것 ` 이 됐다. 파이썬 대조가 잡았다.
+        // 역슬래시로 피하면 두 파서 모두 `[것]` 을 그대로 보여 준다.
+        var safeLabel = ""
+        for character in label {
+            if character == "[" || character == "]" || character == "\\" { safeLabel.append("\\") }
+            safeLabel.append(character)
+        }
         let needsBrackets = path.contains(" ")
         return "[" + safeLabel + "](" + (needsBrackets ? "<" + path + ">" : path) + ")"
     }

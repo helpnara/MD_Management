@@ -48,6 +48,7 @@ LINK_TRIGGER_CASES = ROOT / "Tools" / "golden" / "link-trigger-cases.json"
 OUTLINE_CASES = ROOT / "Tools" / "golden" / "outline-cases.json"
 PASTE_CASES = ROOT / "Tools" / "golden" / "paste-cases.json"
 BROKEN_CASES = ROOT / "Tools" / "golden" / "broken-link-cases.json"
+WRAP_CASES = ROOT / "Tools" / "golden" / "wrap-link-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -1040,8 +1041,15 @@ def _link_found(trigger: str, units, start: int, caret: int, first_ink: int):
 
 
 def markdown_link(label: str, path: str) -> str:
-    """`[이름](경로)` — 빈칸이 있으면 꺾쇠. 첨부를 넣을 때와 같은 규칙이다."""
-    safe = label.replace("]", " ")
+    """`[이름](경로)` — 빈칸이 있으면 꺾쇠. 첨부를 넣을 때와 같은 규칙이다.
+
+    대괄호는 **역슬래시로 피한다** (152) — 빈칸으로 바꾸면 사람이 고른 글자가 망가진다.
+    """
+    safe = ""
+    for ch in label:
+        if ch in "[]\\":
+            safe += "\\"
+        safe += ch
     return "[" + safe + "](" + ("<" + path + ">" if " " in path else path) + ")"
 
 
@@ -1063,6 +1071,28 @@ def link_edit_at(title: str, path: str, note_folder: str, start: int, length: in
     piece = markdown_link(title, relative_link(note_folder, path))
     return {"start": begin, "length": span, "text": piece,
             "selectionStart": begin + u16len(piece), "selectionLength": 0}
+
+
+def link_edit_wrapping(title: str, path: str, note_folder: str, start: int, length: int,
+                       text: str) -> dict:
+    """고른 글이 있으면 그것이 링크 이름 (152).
+
+    가장자리 빈칸은 링크 밖에 두고, 줄을 넘어 고른 것은 이름으로 쓰지 않는다
+    (그때는 한 글자도 안 지우고 앞에 끼워 넣는다).
+    """
+    units = to_units(text)
+    begin = min(max(start, 0), len(units))
+    end = min(max(begin, begin + max(length, 0)), len(units))
+    newline = to_units("\n")[0]
+    if newline in units[begin:end]:
+        return link_edit_at(title, path, note_folder, begin, 0, text)
+    blanks = (0x20, 0x09)
+    while begin < end and units[begin] in blanks:
+        begin += 1
+    while end > begin and units[end - 1] in blanks:
+        end -= 1
+    picked = from_units(units[begin:end])
+    return link_edit_at(picked or title, path, note_folder, begin, end - begin, text)
 
 
 def build_link_trigger_cases() -> list[dict]:
@@ -1450,6 +1480,47 @@ def front_matter_header_length(text: str) -> int:
     return 0 if header is None else len(text) - len(split_front_matter(text)[1])
 
 
+def _wrap_range(case: dict, text: str) -> tuple[int, int]:
+    """고를 자리를 **글자로 찾는다** — 손으로 세지 않는다 (152 를 만들며 두 번 틀렸다)."""
+    if "caretAfter" in case:
+        head = case["caretAfter"]
+        if head not in text:
+            raise SystemExit(f"::error::[{case['name']}] caretAfter 가 글에 없다: {head!r}")
+        return u16len(text[:text.index(head) + len(head)]), 0
+    needle = case["select"]
+    at, seen = -1, 0
+    for _ in range(case.get("occurrence", 1)):
+        at = text.find(needle, at + 1)
+        if at < 0:
+            raise SystemExit(f"::error::[{case['name']}] select 가 글에 없다: {needle!r}")
+        seen += 1
+    return u16len(text[:at]), u16len(needle)
+
+
+def build_wrap_cases() -> list[dict]:
+    """고른 글을 링크로 감싸기 (152)."""
+    spec = json.loads(WRAP_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        text = case["text"]
+        start, length = _wrap_range(case, text)
+        edit = link_edit_wrapping(case["pick"]["title"], case["pick"]["path"],
+                                  case.get("noteFolder", ""), start, length, text)
+        applied = apply_edit(text, edit)
+        for html in (make_parser().render(applied), cmark_html(applied)):
+            if "<a href=" not in html:
+                raise SystemExit(f"::error::[{case['name']}] 링크로 안 읽힌다:\n{applied}")
+        # **고른 글이 사라지면 안 된다** — 152 가 고치려는 바로 그 일이다.
+        picked = from_units(to_units(text)[start:start + length]).strip()
+        escaped = "".join(("\\" + ch if ch in "[]\\" else ch) for ch in picked)
+        if picked and "\n" not in picked and picked not in applied and escaped not in applied:
+            raise SystemExit(f"::error::[{case['name']}] 고른 글이 사라졌다: {picked!r}\n{applied}")
+        out.append({"name": case["name"], "text": text, "start": start,
+                    "length": length, "noteFolder": case.get("noteFolder", ""),
+                    "pick": case["pick"], "edit": edit, "applied": applied})
+    return out
+
+
 def build_broken_cases() -> list[dict]:
     spec = json.loads(BROKEN_CASES.read_text(encoding="utf-8"))
     out = []
@@ -1604,6 +1675,7 @@ def build() -> dict:
         "linkTriggerCases": build_link_trigger_cases(),
         "pasteCases": build_paste_cases(),
         "brokenCases": build_broken_cases(),
+        "wrapCases": build_wrap_cases(),
         "renumberCases": build_renumber_cases(),
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
@@ -1823,7 +1895,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"),
-        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"),
     ]
     return " · ".join(f"{name} {len(loaded[key])}건" for name, key in parts)
 

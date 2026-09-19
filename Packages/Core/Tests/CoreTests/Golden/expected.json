@@ -4273,5 +4273,216 @@
       ],
       "text": "#회의. 끝"
     }
+  ],
+  "wrapCases": [
+    {
+      "applied": "이 문서는 [체크리스트](<자료/목돈 배치.md>) 입니다",
+      "edit": {
+        "length": 5,
+        "selectionLength": 0,
+        "selectionStart": 28,
+        "start": 6,
+        "text": "[체크리스트](<자료/목돈 배치.md>)"
+      },
+      "length": 5,
+      "name": "고른 글이 링크 이름이 된다",
+      "noteFolder": "",
+      "pick": {
+        "path": "자료/목돈 배치.md",
+        "title": "목돈 배치"
+      },
+      "start": 6,
+      "text": "이 문서는 체크리스트 입니다"
+    },
+    {
+      "applied": "이 문서는 [목돈 배치](<자료/목돈 배치.md>) 입니다",
+      "edit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 28,
+        "start": 6,
+        "text": "[목돈 배치](<자료/목돈 배치.md>)"
+      },
+      "length": 0,
+      "name": "고른 것이 없으면 파일 이름",
+      "noteFolder": "",
+      "pick": {
+        "path": "자료/목돈 배치.md",
+        "title": "목돈 배치"
+      },
+      "start": 6,
+      "text": "이 문서는  입니다"
+    },
+    {
+      "applied": "이 문서는 [체크리스트](<자료/목돈 배치.md>) 입니다",
+      "edit": {
+        "length": 5,
+        "selectionLength": 0,
+        "selectionStart": 28,
+        "start": 6,
+        "text": "[체크리스트](<자료/목돈 배치.md>)"
+      },
+      "length": 6,
+      "name": "뒤 빈칸이 딸려 왔다 — 링크 밖에 둔다",
+      "noteFolder": "",
+      "pick": {
+        "path": "자료/목돈 배치.md",
+        "title": "목돈 배치"
+      },
+      "start": 6,
+      "text": "이 문서는 체크리스트 입니다"
+    },
+    {
+      "applied": "이 문서는 [체크리스트](<자료/목돈 배치.md>) 입니다",
+      "edit": {
+        "length": 5,
+        "selectionLength": 0,
+        "selectionStart": 28,
+        "start": 6,
+        "text": "[체크리스트](<자료/목돈 배치.md>)"
+      },
+      "length": 7,
+      "name": "앞뒤 빈칸이 다 딸려 왔다",
+      "noteFolder": "",
+      "pick": {
+        "path": "자료/목돈 배치.md",
+        "title": "목돈 배치"
+      },
+      "start": 5,
+      "text": "이 문서는 체크리스트 입니다"
+    },
+    {
+      "applied": "이 문서는 [목돈 배치](<자료/목돈 배치.md>)체크리스트 입니다",
+      "edit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 28,
+        "start": 6,
+        "text": "[목돈 배치](<자료/목돈 배치.md>)"
+      },
+      "length": 1,
+      "name": "빈칸만 골랐다 — 파일 이름",
+      "noteFolder": "",
+      "pick": {
+        "path": "자료/목돈 배치.md",
+        "title": "목돈 배치"
+      },
+      "start": 5,
+      "text": "이 문서는 체크리스트 입니다"
+    },
+    {
+      "applied": "첫 [회의록](회의/회의록.md)줄\n둘째 줄",
+      "edit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 18,
+        "start": 2,
+        "text": "[회의록](회의/회의록.md)"
+      },
+      "length": 4,
+      "name": "줄을 넘어 골랐다 — 한 글자도 안 지운다",
+      "noteFolder": "",
+      "pick": {
+        "path": "회의/회의록.md",
+        "title": "회의록"
+      },
+      "start": 2,
+      "text": "첫 줄\n둘째 줄"
+    },
+    {
+      "applied": "see [EDA 2026](../자료/분석.md) here",
+      "edit": {
+        "length": 8,
+        "selectionLength": 0,
+        "selectionStart": 27,
+        "start": 4,
+        "text": "[EDA 2026](../자료/분석.md)"
+      },
+      "length": 8,
+      "name": "영문과 숫자",
+      "noteFolder": "일지",
+      "pick": {
+        "path": "자료/분석.md",
+        "title": "분석"
+      },
+      "start": 4,
+      "text": "see EDA 2026 here"
+    },
+    {
+      "applied": "본문 [체크리스트](../../자료/체크리스트.pdf) 끝",
+      "edit": {
+        "length": 5,
+        "selectionLength": 0,
+        "selectionStart": 30,
+        "start": 3,
+        "text": "[체크리스트](../../자료/체크리스트.pdf)"
+      },
+      "length": 5,
+      "name": "위 폴더의 파일로",
+      "noteFolder": "일지/9월",
+      "pick": {
+        "path": "자료/체크리스트.pdf",
+        "title": "체크리스트"
+      },
+      "start": 3,
+      "text": "본문 체크리스트 끝"
+    },
+    {
+      "applied": "마지막 [낱말](메모.md)",
+      "edit": {
+        "length": 2,
+        "selectionLength": 0,
+        "selectionStart": 15,
+        "start": 4,
+        "text": "[낱말](메모.md)"
+      },
+      "length": 2,
+      "name": "글 끝에서 골랐다",
+      "noteFolder": "",
+      "pick": {
+        "path": "메모.md",
+        "title": "메모"
+      },
+      "start": 4,
+      "text": "마지막 낱말"
+    },
+    {
+      "applied": "이 [\\[것\\]](메모.md) 을 보라",
+      "edit": {
+        "length": 3,
+        "selectionLength": 0,
+        "selectionStart": 16,
+        "start": 2,
+        "text": "[\\[것\\]](메모.md)"
+      },
+      "length": 3,
+      "name": "고른 글에 닫는 대괄호가 있다",
+      "noteFolder": "",
+      "pick": {
+        "path": "메모.md",
+        "title": "메모"
+      },
+      "start": 2,
+      "text": "이 [것] 을 보라"
+    },
+    {
+      "applied": "정리 [🙂 회의](회의록.md) 끝",
+      "edit": {
+        "length": 5,
+        "selectionLength": 0,
+        "selectionStart": 18,
+        "start": 3,
+        "text": "[🙂 회의](회의록.md)"
+      },
+      "length": 5,
+      "name": "한글과 이모지",
+      "noteFolder": "",
+      "pick": {
+        "path": "회의록.md",
+        "title": "회의록"
+      },
+      "start": 3,
+      "text": "정리 🙂 회의 끝"
+    }
   ]
 }

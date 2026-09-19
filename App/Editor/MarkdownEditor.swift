@@ -227,8 +227,10 @@ struct MarkdownEditor: UIViewRepresentable {
                 edit = NoteLinking.link(to: title, path: path, from: noteFolder, replacing: found)
                 hadTrigger = true
             } else {
+                // **고른 글이 있으면 그것이 링크 이름이 된다** (152). 고른 글을 지우고
+                // 파일 이름을 넣으면 사람이 친 글자가 조용히 사라진다.
                 edit = NoteLinking.link(to: title, path: path, from: noteFolder,
-                                        start: selection.location, length: selection.length,
+                                        wrapping: selection.location, length: selection.length,
                                         in: view.textStorage.string)
                 hadTrigger = false
             }
