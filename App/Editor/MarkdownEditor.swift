@@ -228,7 +228,8 @@ struct MarkdownEditor: UIViewRepresentable {
                 hadTrigger = true
             } else {
                 edit = NoteLinking.link(to: title, path: path, from: noteFolder,
-                                        start: selection.location, length: selection.length)
+                                        start: selection.location, length: selection.length,
+                                        in: view.textStorage.string)
                 hadTrigger = false
             }
             let done = apply(edit, in: view)

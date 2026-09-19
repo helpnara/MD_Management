@@ -105,11 +105,16 @@ public enum NoteLinking {
     /// (사용자 · 빌드 46 — *파일을 선택해도 링크가 들어가지 않는다*).
     /// 고른 구간이 있으면 그 자리를 링크로 바꾼다.
     public static func link(to title: String, path: String, from noteFolder: String,
-                            start: Int, length: Int) -> Formatting.Edit {
+                            start: Int, length: Int, in text: String = "") -> Formatting.Edit {
+        // **글 밖을 가리키면 끝으로 당긴다.** 시트를 닫고 오는 길이라 커서 값이 묵었을 수
+        // 있다 — 묵은 값에 글자를 넣으려다 앱이 죽는 것이 가장 나쁘다.
+        let units = (text as NSString).length
+        let from = text.isEmpty ? max(start, 0) : clamp(start, 0, units)
+        let span = text.isEmpty ? max(length, 0) : clamp(length, 0, units - from)
         let relative = Paths.relativeLink(from: noteFolder, to: path)
         let piece = markdownLink(label: title, path: relative)
-        return Formatting.Edit(start: start, length: length, text: piece,
-                               selectionStart: start + (piece as NSString).length,
+        return Formatting.Edit(start: from, length: span, text: piece,
+                               selectionStart: from + (piece as NSString).length,
                                selectionLength: 0)
     }
 

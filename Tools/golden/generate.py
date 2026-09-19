@@ -1051,11 +1051,18 @@ def link_edit(title: str, path: str, note_folder: str, query: dict) -> dict:
             "selectionStart": query["start"] + u16len(piece), "selectionLength": 0}
 
 
-def link_edit_at(title: str, path: str, note_folder: str, start: int, length: int) -> dict:
-    """방아쇠 없이 커서 자리에 (145 — 메뉴에서 고르는 길)."""
+def link_edit_at(title: str, path: str, note_folder: str, start: int, length: int,
+                 text: str = "") -> dict:
+    """방아쇠 없이 커서 자리에 (145 — 메뉴에서 고르는 길).
+
+    글 밖을 가리키면 끝으로 당긴다 — 묵은 커서 값에 넣으려다 앱이 죽으면 안 된다.
+    """
+    units = u16len(text)
+    begin = max(start, 0) if not text else min(max(start, 0), units)
+    span = max(length, 0) if not text else min(max(length, 0), units - begin)
     piece = markdown_link(title, relative_link(note_folder, path))
-    return {"start": start, "length": length, "text": piece,
-            "selectionStart": start + u16len(piece), "selectionLength": 0}
+    return {"start": begin, "length": span, "text": piece,
+            "selectionStart": begin + u16len(piece), "selectionLength": 0}
 
 
 def build_link_trigger_cases() -> list[dict]:
@@ -1081,7 +1088,7 @@ def build_link_trigger_cases() -> list[dict]:
         if case.get("pick"):
             pick = case["pick"]
             menu_edit = link_edit_at(pick["title"], pick["path"],
-                                     case.get("noteFolder", ""), caret, 0)
+                                     case.get("noteFolder", ""), caret, 0, text)
             menu = apply_edit(text, menu_edit)
             for html in (make_parser().render(menu), cmark_html(menu)):
                 if "<a href=" not in html:
@@ -1091,7 +1098,7 @@ def build_link_trigger_cases() -> list[dict]:
                     "noteFolder": case.get("noteFolder", ""), "pick": case.get("pick"),
                     "query": query, "edit": edit, "applied": applied,
                     "menuEdit": link_edit_at(case["pick"]["title"], case["pick"]["path"],
-                                             case.get("noteFolder", ""), caret, 0)
+                                             case.get("noteFolder", ""), caret, 0, text)
                                 if case.get("pick") else None,
                     "menuApplied": menu})
     return out

@@ -2381,7 +2381,7 @@
   "linkTriggerCases": [
     {
       "applied": null,
-      "caret": 9,
+      "caret": 5,
       "edit": null,
       "menuApplied": null,
       "menuEdit": null,
@@ -2393,7 +2393,7 @@
     },
     {
       "applied": "어제 [9월 회의록](<../회의/9월 회의록.md>)",
-      "caret": 9,
+      "caret": 7,
       "edit": {
         "length": 4,
         "selectionLength": 0,
@@ -2405,8 +2405,8 @@
       "menuEdit": {
         "length": 0,
         "selectionLength": 0,
-        "selectionStart": 36,
-        "start": 9,
+        "selectionStart": 34,
+        "start": 7,
         "text": "[9월 회의록](<../회의/9월 회의록.md>)"
       },
       "name": "꺾쇠 둘 — 찾는 말이 있다",
@@ -2425,7 +2425,7 @@
     },
     {
       "applied": null,
-      "caret": 7,
+      "caret": 5,
       "edit": null,
       "menuApplied": null,
       "menuEdit": null,
@@ -2442,7 +2442,7 @@
     },
     {
       "applied": "어제 [9월 회의록](<회의/9월 회의록.md>)",
-      "caret": 12,
+      "caret": 10,
       "edit": {
         "length": 7,
         "selectionLength": 0,
@@ -2454,8 +2454,8 @@
       "menuEdit": {
         "length": 0,
         "selectionLength": 0,
-        "selectionStart": 36,
-        "start": 12,
+        "selectionStart": 34,
+        "start": 10,
         "text": "[9월 회의록](<회의/9월 회의록.md>)"
       },
       "name": "꺾쇠 둘 — 빈칸이 든 제목을 찾는 중",
@@ -2486,7 +2486,7 @@
     },
     {
       "applied": null,
-      "caret": 7,
+      "caret": 6,
       "edit": null,
       "menuApplied": null,
       "menuEdit": null,
@@ -2498,7 +2498,7 @@
     },
     {
       "applied": "첫 줄\n메모 [회의록](../../회의록.md)",
-      "caret": 14,
+      "caret": 11,
       "edit": {
         "length": 4,
         "selectionLength": 0,
@@ -2510,8 +2510,8 @@
       "menuEdit": {
         "length": 0,
         "selectionLength": 0,
-        "selectionStart": 33,
-        "start": 14,
+        "selectionStart": 30,
+        "start": 11,
         "text": "[회의록](../../회의록.md)"
       },
       "name": "꺾쇠 둘 — 둘째 줄 한복판",
@@ -2606,7 +2606,7 @@
     },
     {
       "applied": null,
-      "caret": 12,
+      "caret": 11,
       "edit": null,
       "menuApplied": null,
       "menuEdit": null,
@@ -2679,7 +2679,7 @@
     },
     {
       "applied": "본문 [체크리스트](../../자료/체크리스트.md)",
-      "caret": 8,
+      "caret": 7,
       "edit": {
         "length": 4,
         "selectionLength": 0,
@@ -2691,8 +2691,8 @@
       "menuEdit": {
         "length": 0,
         "selectionLength": 0,
-        "selectionStart": 34,
-        "start": 8,
+        "selectionStart": 33,
+        "start": 7,
         "text": "[체크리스트](../../자료/체크리스트.md)"
       },
       "name": "위 폴더의 노트로",

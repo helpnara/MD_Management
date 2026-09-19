@@ -4,14 +4,14 @@
     {
       "name": "꺾쇠 둘 — 글 한복판에서",
       "text": "어제 회의",
-      "caret": 9,
+      "caret": 5,
       "_typed": "'어제 ' 뒤에 '>>회의' 를 친 셈은 아래 사례들",
       "pick": null
     },
     {
       "name": "꺾쇠 둘 — 찾는 말이 있다",
       "text": "어제 >>회의",
-      "caret": 9,
+      "caret": 7,
       "noteFolder": "일지",
       "pick": {
         "title": "9월 회의록",
@@ -21,13 +21,13 @@
     {
       "name": "꺾쇠 둘 — 찾는 말이 아직 없다",
       "text": "어제 >>",
-      "caret": 7,
+      "caret": 5,
       "pick": null
     },
     {
       "name": "꺾쇠 둘 — 빈칸이 든 제목을 찾는 중",
       "text": "어제 >>9월 회의",
-      "caret": 12,
+      "caret": 10,
       "noteFolder": "",
       "pick": {
         "title": "9월 회의록",
@@ -43,13 +43,13 @@
     {
       "name": "꺾쇠 둘 — 앞 빈칸 뒤 줄머리도 인용이다",
       "text": "  >>인용",
-      "caret": 7,
+      "caret": 6,
       "pick": null
     },
     {
       "name": "꺾쇠 둘 — 둘째 줄 한복판",
       "text": "첫 줄\n메모 >>회의",
-      "caret": 14,
+      "caret": 11,
       "noteFolder": "일지/9월",
       "pick": {
         "title": "회의록",
@@ -85,7 +85,7 @@
     {
       "name": "커서에 가장 가까운 방아쇠를 고른다",
       "text": ">> 앞엣것 >>회의",
-      "caret": 12,
+      "caret": 11,
       "pick": null
     },
     {
@@ -113,7 +113,7 @@
     {
       "name": "위 폴더의 노트로",
       "text": "본문 [[체크",
-      "caret": 8,
+      "caret": 7,
       "noteFolder": "일지/9월",
       "pick": {
         "title": "체크리스트",
