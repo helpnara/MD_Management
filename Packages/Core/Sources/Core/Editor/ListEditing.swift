@@ -158,6 +158,53 @@ public enum ListEditing {
         return lastInk
     }
 
+    /// **줄 차례가 덩이 안에서 시작하는 자리** (UTF-16, 150).
+    ///
+    /// 줄 하나마다 줄바꿈 한 칸을 더한다. `index` 가 줄 수와 같으면 덩이의 끝이다.
+    public static func offset(ofLine index: Int, in lines: [String]) -> Int {
+        var at = 0
+        for line in lines.prefix(max(0, index)) { at += line.utf16.count + 1 }
+        return at
+    }
+
+    /// **한 번 밀거나 당길 때 실제로 움직이는 것** (150).
+    ///
+    /// 고른 줄과 **딸린 줄**이 어디까지인지, 어디에 붙을지, 어디까지 나올지를 한 번에 정한다.
+    /// 예전에는 이 셈이 편집기 쪽에 흩어져 있었고 **시험이 닿지 못했다** — 딸린 줄을 한 줄
+    /// 덜 데려가는 흠이 거기 숨어 있었다 (사용자 · 빌드 45 — *모델링은 따라오는데 시스템화는
+    /// 못 따라온다*). 이제 규칙과 셈이 여기 한곳에 있다.
+    public struct Move: Equatable, Sendable {
+        /// 움직일 첫 줄 차례.
+        public let first: Int
+        /// **끝 다음** 차례. `first..<end` 가 함께 간다.
+        public let end: Int
+        /// 들여쓸 때 붙을 자리 (앞 형제).
+        public let parent: String?
+        /// 내어쓸 때 나올 자리 (더 얕은 위 줄).
+        public let shallower: String?
+
+        public init(first: Int, end: Int, parent: String?, shallower: String?) {
+            self.first = first
+            self.end = end
+            self.parent = parent
+            self.shallower = shallower
+        }
+    }
+
+    public static func plan(movingFrom first: Int, count: Int, in lines: [String]) -> Move {
+        let first = min(max(first, 0), max(lines.count - 1, 0))
+        let last = min(first + max(count, 1) - 1, max(lines.count - 1, 0))
+        let end = subtreeEnd(from: last, in: lines)
+        let above = Array(lines.prefix(first))
+        let block = lines.isEmpty ? "" : lines[first...min(last, lines.count - 1)].joined(separator: "\n")
+        let here = leadingWidth(lines.indices.contains(first) ? lines[first] : "")
+        let shallower = above.last {
+            !$0.trimmingCharacters(in: .whitespaces).isEmpty && leadingWidth($0) < here
+        }
+        return Move(first: first, end: max(end, last + 1),
+                    parent: parentForIndent(of: block, above: above), shallower: shallower)
+    }
+
     /// **줄마다 몇 단계인가** — 마크다운이 세는 대로 (141).
     ///
     /// 편집기는 오래도록 **앞 빈칸 ÷ 2** 로 단계를 그렸다. 마크다운은 그렇게 세지 않는다 —

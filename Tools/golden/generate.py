@@ -833,40 +833,80 @@ def build_indent_cases() -> list[dict]:
     return out
 
 
-def build_outline_cases() -> list[dict]:
-    """개요에서 항목 하나를 한 칸 미는 일 (148).
+def offset_of_line(index: int, lines: list[str]) -> int:
+    """줄 차례가 덩이 안에서 시작하는 자리 (UTF-16, 150)."""
+    return sum(u16len(line) + 1 for line in lines[:max(0, index)])
 
-    `lines` 와 `at` 을 주면 **딸린 줄까지** 옮기고, 결과를 심판 둘에게 물어
-    **딱 한 단계만** 깊어졌는지 본다.
+
+def plan_move(first: int, count: int, lines: list[str]) -> dict:
+    """한 번 밀거나 당길 때 **실제로 움직이는 것** (150)."""
+    first = min(max(first, 0), max(len(lines) - 1, 0))
+    last = min(first + max(count, 1) - 1, max(len(lines) - 1, 0))
+    end = subtree_end(last, lines)
+    above = lines[:first]
+    block = "\n".join(lines[first:last + 1]) if lines else ""
+    here = leading_width(lines[first]) if 0 <= first < len(lines) else 0
+    shallower = next((l for l in reversed(above)
+                      if l.strip() and leading_width(l) < here), None)
+    return {"first": first, "end": max(end, last + 1),
+            "parent": parent_for_indent(block, above), "shallower": shallower}
+
+
+def apply_move(lines: list[str], first: int, count: int, deeper: bool):
+    """앱이 하는 그대로 — 옮기고 번호를 다시 매긴다. 못 옮기면 None."""
+    move = plan_move(first, count, lines)
+    block = "\n".join(lines[move["first"]:move["end"]])
+    shifted = (indent_block(block, move["parent"]) if deeper
+               else outdent_block(block, move["shallower"]))
+    if shifted is None:
+        return None
+    joined = "\n".join(lines[:move["first"]] + shifted["text"].split("\n") + lines[move["end"]:])
+    return renumbered(joined).split("\n")
+
+
+def build_outline_cases() -> list[dict]:
+    """개요에서 항목 하나를 한 칸 미는 일 (148 · 150).
+
+    딸린 줄까지 옮기고, 심판 둘에게 물어 **딱 한 단계만** 깊어졌는지,
+    **딸린 줄이 함께** 갔는지, **딸린 줄이 아닌 것은 그대로**인지,
+    그리고 **밀었다 당기면 제자리**인지 본다.
     """
     spec = json.loads(OUTLINE_CASES.read_text(encoding="utf-8"))
     out = []
     for case in spec["cases"]:
         lines, at = case["lines"], case["at"]
-        end = subtree_end(at, lines)
-        block = "\n".join(lines[at:end])
-        parent = parent_for_indent(block, lines[:at])
-        shifted = indent_block(block, parent) if case.get("deeper", True) else outdent_block(
-            block, next((l for l in reversed(lines[:at])
-                         if l.strip() and leading_width(l) < leading_width(lines[at])), None))
-        applied = None
-        if shifted:
-            applied = renumbered("\n".join(lines[:at] + shifted["text"].split("\n") + lines[end:]))
-            after = depths_in(applied.split("\n"))
-            before = depths_in(lines)
+        deeper = case.get("deeper", True)
+        move = plan_move(at, 1, lines)
+        applied = apply_move(lines, at, 1, deeper)
+        round_trip = None
+        if applied:
+            before, after = depths_in(lines), depths_in(applied)
             step = after[at] - before[at]
-            if case.get("deeper", True) and step != 1:
-                raise SystemExit(
-                    f"::error::[{case['name']}] 한 단계가 아니라 {step} 단계 움직였다:\n{applied}")
-            # 딸린 줄들은 **함께** 움직여야 한다 — 사이가 벌어지면 자식이 형제가 된다.
-            for index in range(at + 1, end):
+            if deeper and step != 1:
+                raise SystemExit(f"::error::[{case['name']}] 한 단계가 아니라 {step} 단계 움직였다:\n"
+                                 + "\n".join(applied))
+            for index in range(at + 1, move["end"]):
                 if after[index] - before[index] != step:
-                    raise SystemExit(
-                        f"::error::[{case['name']}] 딸린 줄이 따라오지 않았다:\n{applied}")
-            nesting_count(applied + "\n")
+                    raise SystemExit(f"::error::[{case['name']}] 딸린 줄이 따라오지 않았다:\n"
+                                     + "\n".join(applied))
+            # **딸린 줄 밖은 건드리지 않는다** — 한 줄 더 데려가면 남의 자식을 훔친다.
+            for index in range(move["end"], len(lines)):
+                if after[index] != before[index]:
+                    raise SystemExit(f"::error::[{case['name']}] 딸린 줄이 아닌 것까지 움직였다:\n"
+                                     + "\n".join(applied))
+            # **밀었다 당기면 제자리다** (150, 사용자 — 시스템화가 못 따라왔다).
+            back = apply_move(applied, at, 1, not deeper)
+            if back is not None:
+                round_trip = "\n".join(back)
+                if depths_in(back) != before:
+                    raise SystemExit(f"::error::[{case['name']}] 도로 당겼더니 제자리가 아니다:\n"
+                                     + round_trip)
+            nesting_count("\n".join(applied) + "\n")
         out.append({"name": case["name"], "lines": lines, "at": at,
-                    "subtreeEnd": end, "parent": parent,
-                    "shifted": shifted, "applied": applied})
+                    "subtreeEnd": move["end"], "parent": move["parent"],
+                    "offsets": [offset_of_line(i, lines) for i in range(len(lines) + 1)],
+                    "applied": "\n".join(applied) if applied else None,
+                    "roundTrip": round_trip})
     return out
 
 

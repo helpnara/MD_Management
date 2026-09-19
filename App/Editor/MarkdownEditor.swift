@@ -585,10 +585,11 @@ struct MarkdownEditor: UIViewRepresentable {
             if block.length > 0, text.character(at: NSMaxRange(block) - 1) == 0x0A { block.length -= 1 }
             let before = text.substring(with: block)
 
-            // **딸린 줄까지 함께 옮기고, 붙을 자리는 앞 형제로** (148, 사용자 · 빌드 44 —
-            // *두 단계가 한꺼번에 들어가 버린다*). 규칙은 Core 가 정한다
-            // (`parentForIndent` · `subtreeEnd`) — 여기서는 줄을 모아 건네고 자리만 옮긴다.
-            var above: [String] = []
+            // **딸린 줄까지 함께 옮기고, 붙을 자리는 앞 형제로** (148 · 150).
+            // **셈까지 Core 가 한다** (`plan`) — 여기서는 줄 차례를 글자 자리로 바꾸기만 한다.
+            // 예전에는 문단을 하나씩 걸어 구간을 넓혔는데, 시작 자리가 **줄바꿈 글자**를
+            // 가리켜 첫 바퀴가 같은 문단을 다시 집었다. 그래서 딸린 줄을 **한 줄 덜**
+            // 데려갔다 (사용자 · 빌드 45 — *모델링은 따라오는데 시스템화는 못 따라온다*).
             var parent: String?
             var shallower: String?
             if let run = listRun(in: text, around: block.location) {
@@ -597,22 +598,18 @@ struct MarkdownEditor: UIViewRepresentable {
                                                         length: block.location - run.location))
                 let first = head.isEmpty ? 0 : head.components(separatedBy: "\n").count - 1
                 let selected = before.components(separatedBy: "\n").count
-                let last = min(first + selected - 1, max(runLines.count - 1, 0))
-                let end = ListEditing.subtreeEnd(from: last, in: runLines)
-                // 딸린 줄이 있으면 바꿀 구간을 그만큼 넓힌다.
-                if end > last + 1 {
-                    var at = NSMaxRange(block)
-                    for _ in (last + 1)..<end where at < text.length {
-                        at = NSMaxRange(text.paragraphRange(for: NSRange(location: at, length: 0)))
-                    }
-                    block = NSRange(location: block.location, length: at - block.location)
-                    if block.length > 0, text.character(at: NSMaxRange(block) - 1) == 0x0A { block.length -= 1 }
-                }
-                above = Array(runLines.prefix(first))
-                let here = Self.leadingWidth(before)
-                parent = ListEditing.parentForIndent(of: before, above: above)
-                shallower = above.last { !$0.trimmingCharacters(in: .whitespaces).isEmpty
-                    && Self.leadingWidth($0) < here }
+                let move = ListEditing.plan(movingFrom: first, count: selected, in: runLines)
+                parent = move.parent
+                shallower = move.shallower
+
+                let from = run.location + ListEditing.offset(ofLine: move.first, in: runLines)
+                let to = min(run.location + ListEditing.offset(ofLine: move.end, in: runLines),
+                             NSMaxRange(run))
+                var moved = NSRange(location: from, length: max(0, to - from))
+                // 마지막 줄바꿈은 빼고 바꾼다 — 넣으면 줄이 하나 사라진다.
+                if moved.length > 0, NSMaxRange(moved) <= text.length,
+                   text.character(at: NSMaxRange(moved) - 1) == 0x0A { moved.length -= 1 }
+                if moved.length > 0 { block = moved }
             } else {
                 parent = Self.line(text, above: block.location)
                 shallower = Self.line(text, above: block.location,
