@@ -1051,6 +1051,13 @@ def link_edit(title: str, path: str, note_folder: str, query: dict) -> dict:
             "selectionStart": query["start"] + u16len(piece), "selectionLength": 0}
 
 
+def link_edit_at(title: str, path: str, note_folder: str, start: int, length: int) -> dict:
+    """방아쇠 없이 커서 자리에 (145 — 메뉴에서 고르는 길)."""
+    piece = markdown_link(title, relative_link(note_folder, path))
+    return {"start": start, "length": length, "text": piece,
+            "selectionStart": start + u16len(piece), "selectionLength": 0}
+
+
 def build_link_trigger_cases() -> list[dict]:
     spec = json.loads(LINK_TRIGGER_CASES.read_text(encoding="utf-8"))
     out = []
@@ -1068,9 +1075,25 @@ def build_link_trigger_cases() -> list[dict]:
                 if "<a href=" not in html:
                     raise SystemExit(
                         f"::error::[{case['name']}] 넣은 글이 링크로 안 읽힌다:\n{applied}")
+        # **방아쇠가 없어도 넣을 수 있어야 한다** (145). 메뉴에서 고르는 길이다 —
+        # 넣는 길이 방아쇠를 요구해서 먹통이던 자리다 (빌드 46).
+        menu = None
+        if case.get("pick"):
+            pick = case["pick"]
+            menu_edit = link_edit_at(pick["title"], pick["path"],
+                                     case.get("noteFolder", ""), caret, 0)
+            menu = apply_edit(text, menu_edit)
+            for html in (make_parser().render(menu), cmark_html(menu)):
+                if "<a href=" not in html:
+                    raise SystemExit(
+                        f"::error::[{case['name']}] 메뉴로 넣은 글이 링크로 안 읽힌다:\n{menu}")
         out.append({"name": case["name"], "text": text, "caret": caret,
                     "noteFolder": case.get("noteFolder", ""), "pick": case.get("pick"),
-                    "query": query, "edit": edit, "applied": applied})
+                    "query": query, "edit": edit, "applied": applied,
+                    "menuEdit": link_edit_at(case["pick"]["title"], case["pick"]["path"],
+                                             case.get("noteFolder", ""), caret, 0)
+                                if case.get("pick") else None,
+                    "menuApplied": menu})
     return out
 
 

@@ -95,10 +95,21 @@ public enum NoteLinking {
     /// - `path`: 고른 노트의 금고 기준 경로.
     public static func link(to title: String, path: String, from noteFolder: String,
                             replacing query: Query) -> Formatting.Edit {
+        link(to: title, path: path, from: noteFolder, start: query.start, length: query.length)
+    }
+
+    /// **방아쇠 없이 커서 자리에** (145 — 메뉴에서 고르는 길).
+    ///
+    /// 타이핑으로 부르면 `>>회의` 를 덮어쓰지만, 메뉴에서 고르면 **덮을 글자가 없다.**
+    /// 145 가 먹통이던 까닭이 이것이었다 — 넣는 길이 방아쇠를 **요구**하고 있었다
+    /// (사용자 · 빌드 46 — *파일을 선택해도 링크가 들어가지 않는다*).
+    /// 고른 구간이 있으면 그 자리를 링크로 바꾼다.
+    public static func link(to title: String, path: String, from noteFolder: String,
+                            start: Int, length: Int) -> Formatting.Edit {
         let relative = Paths.relativeLink(from: noteFolder, to: path)
         let piece = markdownLink(label: title, path: relative)
-        return Formatting.Edit(start: query.start, length: query.length, text: piece,
-                               selectionStart: query.start + (piece as NSString).length,
+        return Formatting.Edit(start: start, length: length, text: piece,
+                               selectionStart: start + (piece as NSString).length,
                                selectionLength: 0)
     }
 

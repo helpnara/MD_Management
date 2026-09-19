@@ -217,11 +217,22 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 움직였을 수 있다. 없으면 아무 일도 하지 않는다.
         func applyLink(title: String, path: String, noteFolder: String) -> Bool {
             guard let view, !isComposing, view.markedTextRange == nil else { return false }
-            guard let found = NoteLinking.query(in: view.textStorage.string,
-                                                caret: view.selectedRange.location) else { return false }
-            let done = apply(NoteLinking.link(to: title, path: path,
-                                              from: noteFolder, replacing: found), in: view)
-            if done { lastLinkQuery = nil; onLinkQuery(nil) }
+            // 방아쇠(`>>` · `[[`)를 쳤으면 그 글자를 덮고, 아니면 **커서 자리에** 넣는다.
+            // 방아쇠를 **요구**하고 있어서 메뉴에서 고른 길(145)이 먹통이었다 (빌드 46).
+            let selection = view.selectedRange
+            let edit: Formatting.Edit
+            let hadTrigger: Bool
+            if let found = NoteLinking.query(in: view.textStorage.string,
+                                             caret: selection.location) {
+                edit = NoteLinking.link(to: title, path: path, from: noteFolder, replacing: found)
+                hadTrigger = true
+            } else {
+                edit = NoteLinking.link(to: title, path: path, from: noteFolder,
+                                        start: selection.location, length: selection.length)
+                hadTrigger = false
+            }
+            let done = apply(edit, in: view)
+            if done, hadTrigger { lastLinkQuery = nil; onLinkQuery(nil) }
             return done
         }
 

@@ -923,13 +923,6 @@ private struct NoteDetail: View {
         } label: {
             Label("이미 있는 파일 연결", systemImage: "link")
         }
-        // **안 열리는 링크를 한 번에 모아 본다** (146). 읽기 모드의 네모는 그 자리까지
-        // 내려가야 보인다 — 긴 노트에서는 있는 줄도 모른다.
-        Button {
-            library.showBrokenLinks()
-        } label: {
-            Label("안 열리는 링크 찾기", systemImage: "link.badge.plus")
-        }
     }
 
     @ToolbarContentBuilder
@@ -989,6 +982,14 @@ private struct NoteDetail: View {
                     } header: {
                         Text("넣기")
                     }
+                }
+                // **안 열리는 링크를 한 번에 모아 본다** (146). 읽기 모드의 네모는 그
+                // 자리까지 내려가야 보인다 — 긴 노트에서는 있는 줄도 모른다.
+                // **넣기가 아니라 살펴보기다** — 읽기 모드에서도 쓸 수 있어야 한다.
+                Button {
+                    library.showBrokenLinks()
+                } label: {
+                    Label("안 열리는 링크 찾기", systemImage: "link.badge.exclamationmark")
                 }
                 Button {
                     library.beginRename(note)

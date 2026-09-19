@@ -2383,6 +2383,8 @@
       "applied": null,
       "caret": 9,
       "edit": null,
+      "menuApplied": null,
+      "menuEdit": null,
       "name": "꺾쇠 둘 — 글 한복판에서",
       "noteFolder": "",
       "pick": null,
@@ -2397,6 +2399,14 @@
         "selectionLength": 0,
         "selectionStart": 30,
         "start": 3,
+        "text": "[9월 회의록](<../회의/9월 회의록.md>)"
+      },
+      "menuApplied": "어제 >>회의[9월 회의록](<../회의/9월 회의록.md>)",
+      "menuEdit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 36,
+        "start": 9,
         "text": "[9월 회의록](<../회의/9월 회의록.md>)"
       },
       "name": "꺾쇠 둘 — 찾는 말이 있다",
@@ -2417,6 +2427,8 @@
       "applied": null,
       "caret": 7,
       "edit": null,
+      "menuApplied": null,
+      "menuEdit": null,
       "name": "꺾쇠 둘 — 찾는 말이 아직 없다",
       "noteFolder": "",
       "pick": null,
@@ -2438,6 +2450,14 @@
         "start": 3,
         "text": "[9월 회의록](<회의/9월 회의록.md>)"
       },
+      "menuApplied": "어제 >>9월 회의[9월 회의록](<회의/9월 회의록.md>)",
+      "menuEdit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 36,
+        "start": 12,
+        "text": "[9월 회의록](<회의/9월 회의록.md>)"
+      },
       "name": "꺾쇠 둘 — 빈칸이 든 제목을 찾는 중",
       "noteFolder": "",
       "pick": {
@@ -2456,6 +2476,8 @@
       "applied": null,
       "caret": 9,
       "edit": null,
+      "menuApplied": null,
+      "menuEdit": null,
       "name": "꺾쇠 둘 — 줄 맨 앞은 인용이라 방아쇠가 아니다",
       "noteFolder": "",
       "pick": null,
@@ -2466,6 +2488,8 @@
       "applied": null,
       "caret": 7,
       "edit": null,
+      "menuApplied": null,
+      "menuEdit": null,
       "name": "꺾쇠 둘 — 앞 빈칸 뒤 줄머리도 인용이다",
       "noteFolder": "",
       "pick": null,
@@ -2480,6 +2504,14 @@
         "selectionLength": 0,
         "selectionStart": 26,
         "start": 7,
+        "text": "[회의록](../../회의록.md)"
+      },
+      "menuApplied": "첫 줄\n메모 >>회의[회의록](../../회의록.md)",
+      "menuEdit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 33,
+        "start": 14,
         "text": "[회의록](../../회의록.md)"
       },
       "name": "꺾쇠 둘 — 둘째 줄 한복판",
@@ -2506,6 +2538,14 @@
         "start": 0,
         "text": "[회의록](회의록.md)"
       },
+      "menuApplied": "[[회의[회의록](회의록.md)",
+      "menuEdit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 17,
+        "start": 4,
+        "text": "[회의록](회의록.md)"
+      },
       "name": "대괄호 둘 — 줄 맨 앞에서도 된다",
       "noteFolder": "",
       "pick": {
@@ -2530,6 +2570,14 @@
         "start": 3,
         "text": "[회의록](../회의/회의록.md)"
       },
+      "menuApplied": "어제 [[회의[회의록](../회의/회의록.md)",
+      "menuEdit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 26,
+        "start": 7,
+        "text": "[회의록](../회의/회의록.md)"
+      },
       "name": "대괄호 둘 — 글 한복판",
       "noteFolder": "일지",
       "pick": {
@@ -2548,6 +2596,8 @@
       "applied": null,
       "caret": 8,
       "edit": null,
+      "menuApplied": null,
+      "menuEdit": null,
       "name": "대괄호 둘 — 닫는 대괄호가 끼면 그만둔다",
       "noteFolder": "",
       "pick": null,
@@ -2558,6 +2608,8 @@
       "applied": null,
       "caret": 12,
       "edit": null,
+      "menuApplied": null,
+      "menuEdit": null,
       "name": "커서에 가장 가까운 방아쇠를 고른다",
       "noteFolder": "",
       "pick": null,
@@ -2573,6 +2625,8 @@
       "applied": null,
       "caret": 7,
       "edit": null,
+      "menuApplied": null,
+      "menuEdit": null,
       "name": "방아쇠가 아예 없다",
       "noteFolder": "",
       "pick": null,
@@ -2583,6 +2637,8 @@
       "applied": null,
       "caret": 65,
       "edit": null,
+      "menuApplied": null,
+      "menuEdit": null,
       "name": "찾는 말이 너무 길면 그만둔다",
       "noteFolder": "",
       "pick": null,
@@ -2597,6 +2653,14 @@
         "selectionLength": 0,
         "selectionStart": 25,
         "start": 3,
+        "text": "[목돈 배치](<자료/목돈 배치.md>)"
+      },
+      "menuApplied": "자료 >>목돈[목돈 배치](<자료/목돈 배치.md>)",
+      "menuEdit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 29,
+        "start": 7,
         "text": "[목돈 배치](<자료/목돈 배치.md>)"
       },
       "name": "제목에 빈칸이 있는 노트 — 경로는 꺾쇠로",
@@ -2623,6 +2687,14 @@
         "start": 3,
         "text": "[체크리스트](../../자료/체크리스트.md)"
       },
+      "menuApplied": "본문 [[체크[체크리스트](../../자료/체크리스트.md)",
+      "menuEdit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 34,
+        "start": 8,
+        "text": "[체크리스트](../../자료/체크리스트.md)"
+      },
       "name": "위 폴더의 노트로",
       "noteFolder": "일지/9월",
       "pick": {
@@ -2641,6 +2713,8 @@
       "applied": null,
       "caret": 3,
       "edit": null,
+      "menuApplied": null,
+      "menuEdit": null,
       "name": "커서가 방아쇠 앞에 있으면 아니다",
       "noteFolder": "",
       "pick": null,

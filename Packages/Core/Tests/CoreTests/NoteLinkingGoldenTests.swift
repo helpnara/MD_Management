@@ -34,6 +34,9 @@ final class NoteLinkingGoldenTests: XCTestCase {
             let query: Query?
             let edit: Edit?
             let applied: String?
+            /// 방아쇠 없이 **커서 자리에** 넣었을 때 (145 — 메뉴에서 고르는 길).
+            let menuEdit: Edit?
+            let menuApplied: String?
         }
         let linkTriggerCases: [Case]
     }
@@ -99,6 +102,36 @@ final class NoteLinkingGoldenTests: XCTestCase {
     func testSpacesStayInTheQuery() throws {
         let found = try XCTUnwrap(NoteLinking.query(in: "메모 >>9월 회의", caret: 11))
         XCTAssertEqual(found.text, "9월 회의")
+    }
+
+    /// **방아쇠가 없어도 넣을 수 있다** (145, 사용자 · 빌드 46 —
+    /// *파일을 선택해도 링크가 들어가지 않는다*).
+    ///
+    /// 넣는 길이 `>>` · `[[` 를 **요구**하고 있어서, 메뉴에서 고르는 길이 통째로 먹통이었다.
+    /// 타이핑으로 부르면 친 글자를 덮고, 메뉴에서 고르면 **덮을 것이 없다** — 그때는 커서
+    /// 자리에 그냥 넣는다.
+    func testInsertsWithoutATrigger() throws {
+        for item in try Self.load().linkTriggerCases {
+            guard let pick = item.pick, let golden = item.menuEdit else { continue }
+            let made = NoteLinking.link(to: pick.title, path: pick.path,
+                                        from: item.noteFolder, start: item.caret, length: 0)
+            let where_ = "[\(item.name)]"
+            XCTAssertEqual(made.start, golden.start, "넣을 자리 — \(where_)")
+            XCTAssertEqual(made.length, golden.length, "덮을 길이 — \(where_)")
+            XCTAssertEqual(made.text, golden.text, "넣을 링크 — \(where_)")
+            XCTAssertEqual(apply(made, to: item.text), item.menuApplied, "넣은 뒤 글 — \(where_)")
+        }
+    }
+
+    /// **덮을 것이 없으면 아무 글자도 지우지 않는다.** 길이 0 이면 순수하게 끼워 넣는다.
+    func testInsertingKeepsEveryLetter() throws {
+        for item in try Self.load().linkTriggerCases {
+            guard let pick = item.pick, let menu = item.menuApplied else { continue }
+            let made = NoteLinking.link(to: pick.title, path: pick.path,
+                                        from: item.noteFolder, start: item.caret, length: 0)
+            XCTAssertEqual(menu.utf16.count, item.text.utf16.count + made.text.utf16.count,
+                           "글자가 사라지거나 늘었다 — [\(item.name)]")
+        }
     }
 
     private func apply(_ edit: Formatting.Edit, to text: String) -> String {
