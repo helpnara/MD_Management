@@ -70,20 +70,40 @@ final class WrapLinkGoldenTests: XCTestCase {
     }
 
     /// **줄을 넘어 고르면 한 글자도 안 지운다.** 줄바꿈이 든 이름은 링크를 깨뜨린다.
-    func testMultilineSelectionDeletesNothing() {
+    func testMultilineSelectionDeletesNothing() throws {
         let text = "첫 줄\n둘째 줄"
+        let picked = try range(of: "줄\n둘째", in: text)
         let made = NoteLinking.link(to: "회의록", path: "회의록.md", from: "",
-                                    wrapping: 1, length: 6, in: text)
+                                    wrapping: picked.location, length: picked.length, in: text)
         XCTAssertEqual(made.length, 0, "지우면 안 된다")
-        XCTAssertTrue(apply(made, to: text).contains("첫"), "앞 글자가 남아야 한다")
+        XCTAssertTrue(apply(made, to: text).contains("첫 줄"), "앞줄이 남아야 한다")
         XCTAssertTrue(apply(made, to: text).contains("둘째 줄"), "뒷줄이 남아야 한다")
     }
 
     /// **고른 것이 빈칸뿐이면 파일 이름을 쓴다.**
-    func testBlankSelectionFallsBackToTheTitle() {
+    func testBlankSelectionFallsBackToTheTitle() throws {
+        let text = "이 문서는 체크리스트 입니다"
+        let picked = try range(of: " ", in: text, after: "이 문서는")
         let made = NoteLinking.link(to: "목돈 배치", path: "자료/목돈 배치.md", from: "",
-                                    wrapping: 4, length: 1, in: "이 문서는 체크리스트 입니다")
+                                    wrapping: picked.location, length: picked.length, in: text)
         XCTAssertTrue(made.text.hasPrefix("[목돈 배치]"), "파일 이름이 아니다 — \(made.text)")
+    }
+
+    /// **자리를 손으로 세지 않는다.** 글에서 찾는다 — 손으로 센 값이 세 번 틀렸고,
+    /// 그중 한 번은 *손으로 세지 말자* 는 이 시험 자신이었다 (152).
+    private func range(of needle: String, in text: String,
+                       after head: String = "") throws -> NSRange {
+        let whole = text as NSString
+        var from = 0
+        if !head.isEmpty {
+            let lead = whole.range(of: head)
+            try XCTSkipIf(lead.location == NSNotFound, "앞말이 글에 없다 — \(head)")
+            from = NSMaxRange(lead)
+        }
+        let found = whole.range(of: needle, options: [],
+                                range: NSRange(location: from, length: whole.length - from))
+        try XCTSkipIf(found.location == NSNotFound, "찾는 글이 없다 — \(needle)")
+        return found
     }
 
     private func apply(_ edit: Formatting.Edit, to text: String) -> String {
