@@ -1,0 +1,21 @@
+{
+  "_왜": "153 — 폴더 화면의 노트 개수. 목록에 보이는 것과 숫자가 같아야 한다. 기댓값은 generate.py 가 정한다.",
+  "cases": [
+    { "name": "보통 노트", "entry": "회의록.md", "isDirectory": false },
+    { "name": "markdown 확장자", "entry": "메모.markdown", "isDirectory": false },
+    { "name": "txt 도 노트다", "entry": "쪽지.txt", "isDirectory": false },
+    { "name": "대문자 확장자", "entry": "회의록.MD", "isDirectory": false },
+    { "name": "점이 여럿", "entry": "회의.2026.md", "isDirectory": false },
+    { "name": "확장자 없음", "entry": "README", "isDirectory": false },
+    { "name": "사진은 아니다", "entry": "표.png", "isDirectory": false },
+    { "name": "PDF 는 아니다", "entry": "자료.pdf", "isDirectory": false },
+    { "name": "숨김 노트", "entry": ".초안.md", "isDirectory": false },
+    { "name": "맥이 남긴 것", "entry": ".DS_Store", "isDirectory": false },
+    { "name": "iCloud 자리표시", "entry": ".회의록.md.icloud", "isDirectory": false },
+    { "name": "md 로 끝나는 폴더", "entry": "자료.md", "isDirectory": true },
+    { "name": "보통 폴더", "entry": "개인문서", "isDirectory": true },
+    { "name": "휴지통 폴더", "entry": ".trash", "isDirectory": true },
+    { "name": "첨부 폴더", "entry": "assets", "isDirectory": true },
+    { "name": "한글 NFD 이름", "entry": "회의록.md", "isDirectory": false, "nfd": true }
+  ]
+}

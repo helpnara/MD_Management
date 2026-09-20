@@ -84,9 +84,11 @@ actor FolderStore {
 
             for entry in entries {
                 let name = Paths.normalized(entry.lastPathComponent)
-                guard !name.hasPrefix("."), Paths.isNoteFile(name) else { continue }
                 let values = try? entry.resourceValues(forKeys: Set(keys))
-                if values?.isDirectory == true { continue }
+                // **세는 쪽과 같은 거름망을 쓴다** (153). 예전에는 이 조건을 여기서 손으로
+                // 풀고, 폴더 화면의 숫자는 따로 셌다 — 둘이 갈라져 개수가 안 맞았다.
+                guard Paths.countsAsNote(name: name, isDirectory: values?.isDirectory == true)
+                else { continue }
 
                 let relative = relativeFolder.isEmpty ? name : "\(relativeFolder)/\(name)"
                 result.append(NoteSummary(
@@ -123,10 +125,38 @@ actor FolderStore {
         return result
     }
 
+    /// **폴더에 바로 든 노트가 몇 개인가** (153).
+    ///
+    /// 하위 폴더 **안**은 세지 않는다 — 폴더 화면의 숫자는 그 폴더를 열었을 때 보이는
+    /// 목록의 길이와 **같아야** 하고, 그 목록도 하위 폴더 안은 안 보여 준다.
+    ///
+    /// **`notes(in:)` 과 같은 거름망 · 같은 조정 읽기를 쓴다.** 예전에는 여기서 확장자만
+    /// 보고 따로 셌다 — 숨김 파일과 `자료.md` 라는 폴더를 세어 **목록에 없는 것이
+    /// 숫자에는 있었다** (사용자 · 2026-09-19).
+    func noteCount(in relativeFolder: String) -> Int {
+        openScopeIfNeeded()
+        let folder = relativeFolder.isEmpty ? root : root.appendingPathComponent(relativeFolder)
+        var count = 0
+        coordinateRead(folder) { url in
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+            ) else { return }
+            for entry in entries {
+                let isDirectory = (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?
+                    .isDirectory == true
+                if Paths.countsAsNote(name: Paths.normalized(entry.lastPathComponent),
+                                      isDirectory: isDirectory) { count += 1 }
+            }
+        }
+        return count
+    }
+
     /// 하위 폴더 목록 (사이드바용). 숨김 폴더는 뺀다 — 옵시디언 볼트의 `.obsidian/` (A6).
     func folders() -> [FolderSummary] {
         openScopeIfNeeded()
-        var result: [FolderSummary] = []
+        // **이름만 먼저 모으고 조정 밖에서 센다** (153). 조정 읽기 **안에서** 또 조정
+        // 읽기를 부르면 겹친다 — 읽기끼리는 막지 않지만 겹쳐 부를 까닭이 없다.
+        var names: [String] = []
         coordinateRead(root) { url in
             guard let entries = try? FileManager.default.contentsOfDirectory(
                 at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
@@ -135,12 +165,12 @@ actor FolderStore {
                 let name = Paths.normalized(entry.lastPathComponent)
                 guard !name.hasPrefix("."), name != "assets" else { continue }
                 guard (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { continue }
-                let count = (try? FileManager.default.contentsOfDirectory(atPath: entry.path))?
-                    .filter { Paths.isNoteFile($0) }.count ?? 0
-                result.append(FolderSummary(relativePath: name, name: name, noteCount: count))
+                names.append(name)
             }
         }
-        return result.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        return names
+            .map { FolderSummary(relativePath: $0, name: $0, noteCount: noteCount(in: $0)) }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     // MARK: - 읽기 · 쓰기

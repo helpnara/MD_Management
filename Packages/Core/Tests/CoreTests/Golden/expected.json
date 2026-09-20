@@ -1019,6 +1019,104 @@
       "title": "표와 코드가 든 노트"
     }
   ],
+  "countCases": [
+    {
+      "countsAsNote": true,
+      "entry": "회의록.md",
+      "isDirectory": false,
+      "name": "보통 노트"
+    },
+    {
+      "countsAsNote": true,
+      "entry": "메모.markdown",
+      "isDirectory": false,
+      "name": "markdown 확장자"
+    },
+    {
+      "countsAsNote": true,
+      "entry": "쪽지.txt",
+      "isDirectory": false,
+      "name": "txt 도 노트다"
+    },
+    {
+      "countsAsNote": true,
+      "entry": "회의록.MD",
+      "isDirectory": false,
+      "name": "대문자 확장자"
+    },
+    {
+      "countsAsNote": true,
+      "entry": "회의.2026.md",
+      "isDirectory": false,
+      "name": "점이 여럿"
+    },
+    {
+      "countsAsNote": false,
+      "entry": "README",
+      "isDirectory": false,
+      "name": "확장자 없음"
+    },
+    {
+      "countsAsNote": false,
+      "entry": "표.png",
+      "isDirectory": false,
+      "name": "사진은 아니다"
+    },
+    {
+      "countsAsNote": false,
+      "entry": "자료.pdf",
+      "isDirectory": false,
+      "name": "PDF 는 아니다"
+    },
+    {
+      "countsAsNote": false,
+      "entry": ".초안.md",
+      "isDirectory": false,
+      "name": "숨김 노트"
+    },
+    {
+      "countsAsNote": false,
+      "entry": ".DS_Store",
+      "isDirectory": false,
+      "name": "맥이 남긴 것"
+    },
+    {
+      "countsAsNote": false,
+      "entry": ".회의록.md.icloud",
+      "isDirectory": false,
+      "name": "iCloud 자리표시"
+    },
+    {
+      "countsAsNote": false,
+      "entry": "자료.md",
+      "isDirectory": true,
+      "name": "md 로 끝나는 폴더"
+    },
+    {
+      "countsAsNote": false,
+      "entry": "개인문서",
+      "isDirectory": true,
+      "name": "보통 폴더"
+    },
+    {
+      "countsAsNote": false,
+      "entry": ".trash",
+      "isDirectory": true,
+      "name": "휴지통 폴더"
+    },
+    {
+      "countsAsNote": false,
+      "entry": "assets",
+      "isDirectory": true,
+      "name": "첨부 폴더"
+    },
+    {
+      "countsAsNote": true,
+      "entry": "회의록.md",
+      "isDirectory": false,
+      "name": "한글 NFD 이름"
+    }
+  ],
   "depthCases": [
     {
       "depths": [
@@ -1981,6 +2079,80 @@
       "op": "table",
       "start": 1,
       "text": "앞 글\n뒷 글"
+    }
+  ],
+  "hangingCases": [
+    {
+      "contentStart": 2,
+      "measured": "- ",
+      "name": "글머리 — 앞 빈칸 없음",
+      "text": "- 글이 길어서 다음 줄까지 넘어가는 항목"
+    },
+    {
+      "contentStart": 3,
+      "measured": "1. ",
+      "name": "번호 — 앞 빈칸 없음",
+      "text": "1. 글이 길어서 다음 줄까지 넘어가는 항목"
+    },
+    {
+      "contentStart": 4,
+      "measured": "10. ",
+      "name": "번호 두 자리",
+      "text": "10. 글이 길어서 다음 줄까지 넘어가는 항목"
+    },
+    {
+      "contentStart": 4,
+      "measured": "1.  ",
+      "name": "번호 뒤 빈칸 둘",
+      "text": "1.  글이 길어서 다음 줄까지 넘어가는 항목"
+    },
+    {
+      "contentStart": 3,
+      "measured": "1) ",
+      "name": "닫는 괄호 마커",
+      "text": "1) 글이 길어서 다음 줄까지 넘어가는 항목"
+    },
+    {
+      "contentStart": 5,
+      "measured": "  2. ",
+      "name": "겹친 번호 — 한 단계",
+      "text": "  2. 문제정의-데이터확보-방법론검증-현장적용-운영이관"
+    },
+    {
+      "contentStart": 7,
+      "measured": "    3. ",
+      "name": "겹친 번호 — 두 단계",
+      "text": "    3. 문제정의-데이터확보-방법론검증-현장적용-운영이관"
+    },
+    {
+      "contentStart": 4,
+      "measured": "  - ",
+      "name": "겹친 글머리 — 한 단계",
+      "text": "  - 글이 길어서 다음 줄까지 넘어가는 항목"
+    },
+    {
+      "contentStart": 6,
+      "measured": "- [ ] ",
+      "name": "체크상자",
+      "text": "- [ ] 글이 길어서 다음 줄까지 넘어가는 항목"
+    },
+    {
+      "contentStart": 8,
+      "measured": "  - [x] ",
+      "name": "겹친 체크상자",
+      "text": "  - [x] 글이 길어서 다음 줄까지 넘어가는 항목"
+    },
+    {
+      "contentStart": 3,
+      "measured": "    - ",
+      "name": "탭으로 겹친 글머리",
+      "text": "\t- 글이 길어서 다음 줄까지 넘어가는 항목"
+    },
+    {
+      "contentStart": 4,
+      "measured": "  * ",
+      "name": "별표 마커",
+      "text": "  * 글이 길어서 다음 줄까지 넘어가는 항목"
     }
   ],
   "indentCases": [

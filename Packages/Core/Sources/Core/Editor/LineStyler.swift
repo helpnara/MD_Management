@@ -85,6 +85,19 @@ public struct ParagraphStyle: Equatable, Sendable {
 /// 1.0 라이브에서 표와 코드는 고정폭 원문 그대로 둔다 (ADR-0005).
 public enum LineStyler {
 
+    /// **재려고 탭을 빈칸으로 편다** (155).
+    ///
+    /// 화면의 **매달린 들여쓰기**(글이 길어 접힌 줄이 서는 자리)는 줄 앞머리가 그려지는
+    /// 폭을 재서 정한다. 그런데 탭은 글자 폭이 아니라 **탭 자리**로 그려져 글자처럼 잴 수가
+    /// 없다. 탭 하나를 빈칸 넷으로 보고 잰다 — `ListEditing` 이 앞칸을 세는 셈과 같다.
+    ///
+    /// **우리 앱이 쓰는 들여쓰기는 빈칸이다** (`ListEditing.step`). 탭은 다른 앱에서 온
+    /// 파일에만 있다. 그래서 이 셈은 우리 파일에서는 정확하고, 탭 파일에서는 **탭 자리와
+    /// 어긋날 수 있다** — 실기기에서 걸리면 그때 탭 자리를 문단에 박는다.
+    public static func expandingTabs(_ text: String) -> String {
+        text.contains("\t") ? text.replacingOccurrences(of: "\t", with: "    ") : text
+    }
+
     public static func style(paragraph: String) -> ParagraphStyle {
         guard !paragraph.isEmpty else { return .plain }
 

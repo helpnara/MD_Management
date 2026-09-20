@@ -49,6 +49,8 @@ OUTLINE_CASES = ROOT / "Tools" / "golden" / "outline-cases.json"
 PASTE_CASES = ROOT / "Tools" / "golden" / "paste-cases.json"
 BROKEN_CASES = ROOT / "Tools" / "golden" / "broken-link-cases.json"
 WRAP_CASES = ROOT / "Tools" / "golden" / "wrap-link-cases.json"
+HANGING_CASES = ROOT / "Tools" / "golden" / "hanging-cases.json"
+COUNT_CASES = ROOT / "Tools" / "golden" / "count-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -1521,6 +1523,123 @@ def build_wrap_cases() -> list[dict]:
     return out
 
 
+# ── 매달린 들여쓰기 — 접힌 줄이 설 자리 (155) ────────────────────────────────
+#
+# **스위프트의 `LineStyler.blockPrefix` 를 파이썬으로 다시 적는다.** 화면이 재는 것은
+# `줄 맨 앞 ~ contentStart` 의 폭이다. 폭은 UIKit 이라 여기서 못 재지만, **어디까지
+# 재는지**는 여기서 못 박을 수 있다 — 그 자리가 틀려서 155 가 났다.
+
+
+def content_start(line: str):
+    """목록 줄이면 글이 시작하는 UTF-16 자리, 목록이 아니면 None."""
+    cursor = 0
+    leading = 0
+    while cursor < len(line) and line[cursor] in " \t":
+        leading += 4 if line[cursor] == "\t" else 1
+        cursor += 1
+    if cursor >= len(line):
+        return None
+
+    after = None
+    if line[cursor].isdigit() and line[cursor].isascii():
+        digits = cursor
+        while digits < len(line) and line[digits].isdigit() and line[digits].isascii() \
+                and digits - cursor < 9:
+            digits += 1
+        if digits < len(line) and line[digits] in ".)" \
+                and digits + 1 < len(line) and line[digits + 1] == " ":
+            after = digits + 1
+    if after is None and line[cursor] in "-*+" \
+            and cursor + 1 < len(line) and line[cursor + 1] == " ":
+        after = cursor + 1
+    if after is None:
+        return None
+    # 수평선(`---`)은 목록이 아니다.
+    trimmed = line.strip()
+    if trimmed and trimmed[0] in "-*_" \
+            and all(c == trimmed[0] or c == " " for c in trimmed) \
+            and sum(1 for c in trimmed if c == trimmed[0]) >= 3:
+        return None
+
+    while after < len(line) and line[after] == " ":
+        after += 1
+    # `[ ]` · `[x]` 는 마커로 먹는다 — 화면에 그리려고 여기까지가 앞머리다.
+    if after + 2 < len(line) and line[after] == "[" and line[after + 1] in " xX" \
+            and line[after + 2] == "]":
+        after += 3
+        while after < len(line) and line[after] == " ":
+            after += 1
+    return u16len(line[:after])
+
+
+def expanding_tabs(text: str) -> str:
+    """탭은 탭 자리로 그려져 글자처럼 못 잰다 — 빈칸 넷으로 펴서 잰다."""
+    return text.replace("\t", "    ") if "\t" in text else text
+
+
+def build_hanging_cases() -> list[dict]:
+    spec = json.loads(HANGING_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        line = case["text"]
+        start = content_start(line)
+        if start is None:
+            raise SystemExit(f"::error::[{case['name']}] 목록 줄이 아니다: {line!r}")
+        # **심판 하나 더.** 앞 빈칸이 있으면 반드시 재는 자리에 들어가야 한다 —
+        # 155 는 바로 이것을 빠뜨려서 났다.
+        leading = len(line) - len(line.lstrip(" \t"))
+        if leading and start <= u16len(line[:leading]):
+            raise SystemExit(f"::error::[{case['name']}] 앞 빈칸이 빠졌다: {line!r}")
+        # 잰 앞머리는 **글자 하나도 남기지 않고** 글 앞까지다.
+        prefix = line[:start]
+        if line[start:start + 1] == " ":
+            raise SystemExit(f"::error::[{case['name']}] 앞머리 뒤에 빈칸이 남았다: {line!r}")
+        out.append({"name": case["name"], "text": line,
+                    "contentStart": start, "measured": expanding_tabs(prefix)})
+    return out
+
+
+# ── 폴더의 노트 개수 — 목록과 숫자가 같은 거름망을 쓴다 (153) ─────────────────
+#
+# 세는 길이 둘이라 갈라졌다. 목록은 숨김과 폴더를 걸렀는데 숫자는 확장자만 봤다.
+# 여기서 **하나의 규칙**을 파이썬으로 다시 적어 스위프트와 맞춘다.
+
+NOTE_EXTENSIONS = ("md", "markdown", "txt")
+
+
+def counts_as_note(name: str, is_directory: bool) -> bool:
+    if is_directory:
+        return False
+    name = nfc(name)
+    if name.startswith("."):
+        return False
+    base = name.rsplit("/", 1)[-1]
+    if "." not in base[1:]:
+        return False
+    return base.rsplit(".", 1)[-1].lower() in NOTE_EXTENSIONS
+
+
+def build_count_cases() -> list[dict]:
+    spec = json.loads(COUNT_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        entry = case["entry"]
+        # 한글 파일명은 iCloud · 옵시디언 사이에서 NFD 로 오간다 — 세는 값이 달라지면 안 된다.
+        if case.get("nfd"):
+            entry = unicodedata.normalize("NFD", entry)
+        counts = counts_as_note(entry, case["isDirectory"])
+        # **숨김과 폴더는 무슨 일이 있어도 세지 않는다.** 이것이 153 의 뿌리다.
+        if counts and (case["isDirectory"] or nfc(entry).startswith(".")):
+            raise SystemExit(f"::error::[{case['name']}] 숨김이나 폴더를 셌다: {entry!r}")
+        out.append({"name": case["name"], "entry": entry,
+                    "isDirectory": case["isDirectory"], "countsAsNote": counts})
+    # 사례가 한쪽으로만 쏠리면 심판이 아니다.
+    yes = sum(1 for c in out if c["countsAsNote"])
+    if yes == 0 or yes == len(out):
+        raise SystemExit("::error::세는 사례와 안 세는 사례가 둘 다 있어야 한다")
+    return out
+
+
 def build_broken_cases() -> list[dict]:
     spec = json.loads(BROKEN_CASES.read_text(encoding="utf-8"))
     out = []
@@ -1676,6 +1795,8 @@ def build() -> dict:
         "pasteCases": build_paste_cases(),
         "brokenCases": build_broken_cases(),
         "wrapCases": build_wrap_cases(),
+        "hangingCases": build_hanging_cases(),
+        "countCases": build_count_cases(),
         "renumberCases": build_renumber_cases(),
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
@@ -1895,7 +2016,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"),
-        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     return " · ".join(f"{name} {len(loaded[key])}건" for name, key in parts)
 

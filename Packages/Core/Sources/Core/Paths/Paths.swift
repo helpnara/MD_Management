@@ -55,6 +55,26 @@ public enum Paths {
         ["md", "markdown", "txt"].contains(fileExtension(path))
     }
 
+    /// **폴더 목록에서 노트 하나로 세는가** (153, 사용자 · 2026-09-19 — *노트 개수가
+    /// 안 맞을 때가 있어*).
+    ///
+    /// 세는 길이 **둘**이었다. 목록을 만드는 쪽은 숨김 파일과 폴더를 걸렀는데, 폴더
+    /// 화면의 숫자는 확장자만 보고 세고 있었다 — `자료.md` 라는 **폴더**나 `.초안.md`
+    /// 같은 숨김 파일이 있으면 **보이지 않는 것을 셌다.** `CLAUDE.md` §1 의 *값의
+    /// 출입구는 하나다* 를 어기고 있었다.
+    ///
+    /// 이제 **세는 쪽과 보여 주는 쪽이 이 함수 하나**를 쓴다.
+    ///
+    /// - `name`: 폴더 안의 이름 하나 (경로가 아니다).
+    /// - `isDirectory`: 그것이 폴더인가. **폴더는 세지 않는다** — 이름이 `.md` 로
+    ///   끝나도 마찬가지다.
+    public static func countsAsNote(name: String, isDirectory: Bool) -> Bool {
+        guard !isDirectory else { return false }
+        let name = normalized(name)
+        guard !name.hasPrefix(".") else { return false }   // 숨김은 목록에도 안 나온다
+        return isNoteFile(name)
+    }
+
     /// 공유할 때 **한 단계만** 따라가는 대상인가 (`.txt` 는 제외).
     public static func isMarkdownFile(_ path: String) -> Bool {
         ["md", "markdown"].contains(fileExtension(path))

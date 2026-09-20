@@ -80,8 +80,14 @@ targets:
         # 앱 코드에 암호화 호출이 없다 — 화면의 선택지로는 "둘 다 아님" 이다.
         ITSAppUsesNonExemptEncryption: false
 
+        # **아이폰도 가로로 돈다** (154, 2026-09-19 사용자 결정). 1주차 뼈대에 세로만
+        # 적어 두고 까닭을 안 남겼는데, 까닭이 없었다 — 그냥 기본값이었다.
+        # 거꾸로 세로는 안 넣는다: 아이폰에서 쓰는 앱이 거의 없고, 넣으면 손에 쥔 채
+        # 화면이 뒤집힌다.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
         # 아이패드는 네 방향 전부. 다 지원해야 멀티태스킹 · Stage Manager 에 들어간다.
         UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait

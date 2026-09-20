@@ -306,7 +306,9 @@ private struct FolderSidebar: View {
     var body: some View {
         List(selection: $selection) {
             Section {
-                row(name: library.folderName, path: "", count: library.notes.count, isRoot: true)
+                // **맨 윗줄도 아래 폴더들과 같은 셈법으로 센다** (153). 예전에는
+                // `library.notes.count` — 지금 **고른 폴더**의 노트였다.
+                row(name: library.folderName, path: "", count: library.rootNoteCount, isRoot: true)
                     // 최상위로도 끌어다 놓을 수 있다 (T1).
                     .dropDestination(for: String.self) { paths, _ in drop(paths, into: "") }
                 ForEach(library.folders) { folder in

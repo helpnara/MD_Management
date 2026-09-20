@@ -210,21 +210,27 @@ enum MarkdownStyler {
         let style = LineStyler.style(paragraph: text.substring(with: line))
 
         // 목록: 겹친 단계는 **부른 쪽이 재어 준다** (141 — 마크다운과 같은 셈이라야
-        // 화면과 파일이 안 갈린다). 매달린 들여쓰기는 **실제 마커 폭**으로 — `- ` ·
-        // `1. ` · `- [ ] ` 가 다 달라서 고정값이면 어긋난다 (빌드 8 · 10번).
-        var markerWidth: CGFloat = 0
-        if style.block == .listItem || style.block == .orderedItem,
-           let marker = style.markers.first {
-            let prefix = text.substring(with: NSRange(location: line.location + marker.start,
-                                                      length: style.contentStart - marker.start))
-            markerWidth = (prefix as NSString).size(withAttributes: [.font: sheet.body]).width
+        // 화면과 파일이 안 갈린다). 매달린 들여쓰기는 **실제 폭**으로 — `- ` · `1. ` ·
+        // `- [ ] ` 가 다 달라서 고정값이면 어긋난다 (빌드 8 · 10번).
+        //
+        // **줄 맨 앞부터 잰다** (155). 예전에는 마커(`2. `)부터 쟀는데, `LineStyler` 는
+        // 줄 앞 빈칸을 **다 지나온 뒤에** 마커를 적는다. 그 빈칸은 화면에 글자로 그려지므로
+        // 첫 줄은 그만큼 밀리고 접힌 줄은 안 밀려 **겹칠수록 벌어졌다** (사용자 · 2026-09-20).
+        // `contentStart` 가 이미 맞는 자리를 들고 있었다 — 따로 더해 올라갈 까닭이 없었다.
+        var contentInset: CGFloat = 0
+        if style.block == .listItem || style.block == .orderedItem, style.contentStart > 0 {
+            let prefix = text.substring(with: NSRange(location: line.location,
+                                                      length: min(style.contentStart, line.length)))
+            // 탭은 탭 자리로 그려져 글자처럼 못 잰다 — 빈칸 넷으로 펴서 잰다.
+            let measured = LineStyler.expandingTabs(prefix)
+            contentInset = (measured as NSString).size(withAttributes: [.font: sheet.body]).width
         }
         // 목록이 아닌 줄은 단계가 없다.
         let depth = (style.block == .listItem || style.block == .orderedItem) ? max(0, depth - 1) : 0
         // 첫 글줄이고 **아직 아무 블록도 아니면** 제목처럼 그린다 (133). 이미 `#` 이
         // 붙었거나 목록 · 인용이면 그 모습을 그대로 둔다 — 글은 한 글자도 안 바뀐다.
         let block = (isTitle && style.block == nil) ? StyleToken.heading(level: 1) : style.block
-        storage.setAttributes(sheet.base(for: block, depth: depth, markerWidth: markerWidth),
+        storage.setAttributes(sheet.base(for: block, depth: depth, contentInset: contentInset),
                               range: paragraph)
 
         for span in style.inlineSpans {

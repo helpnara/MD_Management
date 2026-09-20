@@ -7,6 +7,13 @@ import Core
 final class LibraryModel: ObservableObject {
 
     @Published private(set) var folders: [FolderSummary] = []
+    /// **최상위 폴더에 바로 든 노트 수** (153).
+    ///
+    /// 예전에는 폴더 화면의 맨 윗줄이 `notes.count` 를 썼다. 그것은 **지금 고른 폴더**의
+    /// 노트라서, 하위 폴더를 열었다 뒤로 나오면 그 폴더의 개수가 맨 윗줄에 떴다
+    /// (사용자 · 2026-09-19 — *느린 여백 폴더에 노트 개수가 안 맞을 때가 있어*).
+    /// 이제 아래 폴더들과 **같은 셈법**으로 따로 센다.
+    @Published private(set) var rootNoteCount = 0
     @Published private(set) var notes: [NoteSummary] = []
     @Published private(set) var kind: FolderKind = .localDocuments
     /// iCloud 컨테이너를 잡을 수 있었나. `false` 인데 `kind == .localDocuments` 면
@@ -1691,12 +1698,35 @@ final class LibraryModel: ObservableObject {
         log("오류: \(message)")
     }
 
+    /// **방금 읽은 목록으로 그 폴더의 숫자를 맞춘다** (153).
+    ///
+    /// 목록과 숫자가 **한 번 읽은 것**에서 같이 나오므로 둘이 갈라질 수 없다. 노트를
+    /// 만들거나 지우는 길은 하나같이 `reloadNotes()` 를 부르므로, 길마다
+    /// `reloadFolders()` 를 손으로 덧붙이는 것보다 **여기 한 자리**가 낫다 — 덧붙이는
+    /// 쪽은 다음에 길이 하나 늘면 또 잊는다.
+    ///
+    /// `notes(in:)` 과 `noteCount(in:)` 이 **같은 거름망**(`Paths.countsAsNote`)을 쓰므로
+    /// 여기서 넣는 값과 폴더를 다시 읽어 센 값이 어긋나지 않는다.
+    private func syncCount(of folder: String, to count: Int) {
+        if folder.isEmpty {
+            if rootNoteCount != count { rootNoteCount = count }
+            return
+        }
+        guard let at = folders.firstIndex(where: { $0.relativePath == folder }),
+              folders[at].noteCount != count else { return }
+        folders[at] = FolderSummary(relativePath: folders[at].relativePath,
+                                    name: folders[at].name, noteCount: count)
+    }
+
     /// **값이 같으면 갈아 끼우지 않는다.** 지켜보기가 이따금 부르는 길이라,
     /// 같은 목록을 다시 넣으면 화면이 까닭 없이 다시 그려진다.
     func reloadFolders() async {
         guard let store else { return }
         let loaded = await store.folders()
         if loaded != folders { folders = loaded }
+        // 맨 윗줄도 아래 폴더들과 **같은 셈법**으로 센다 (153).
+        let root = await store.noteCount(in: "")
+        if root != rootNoteCount { rootNoteCount = root }
         rootStamp = await store.stamp(of: "")
         lastFolderSweep = Date()
     }
@@ -1715,6 +1745,7 @@ final class LibraryModel: ObservableObject {
             log("목록 \(loaded.count)개 — \(String(format: "%.2f", listSeconds))초 · \(where_)")
         }
         notes = Self.withPreviews(loaded, from: previews)
+        syncCount(of: selectedFolder, to: loaded.count)
         scheduleIndexRefresh()
         // 링크를 따라온 노트는 목록에 없는 것이 맞다 — 지우지 않는다 (T7).
         if let current = selectedNoteID, current != linkedNote?.relativePath,

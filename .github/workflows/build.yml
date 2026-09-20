@@ -124,6 +124,45 @@ jobs:
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "선택한 시뮬레이터: $NAME ($UDID)"
 
+      # **가로용으로 제일 큰 아이폰을 따로 고른다** (154).
+      # 아이폰 가로에서 위험한 자리는 Pro Max · Plus 다 — 그 폭에서는 iOS 가
+      # 아이패드와 같은 `regular` 로 쳐서 **3단 화면**으로 들어간다. 위에서 고른
+      # 기본형으로는 그 길을 못 본다.
+      - name: 가로용 큰 아이폰 고르기
+        id: wide
+        run: |
+          read -r UDID NAME <<< "$(xcrun simctl list devices available -j | python3 -c "
+          import json, re, sys
+          data = json.load(sys.stdin)['devices']
+          # 큰 것이 먼저다 — 위 기본형 고르기와 순위가 **거꾸로**다.
+          rank = {' Pro Max': 3, ' Plus': 2, ' Pro': 1, '': 0}
+          best = None
+          for runtime, devices in data.items():
+              if 'iOS' not in runtime:
+                  continue
+              m = re.search(r'iOS-(\d+)-(\d+)', runtime)
+              version = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+              for d in devices:
+                  name = d.get('name', '')
+                  if not d.get('isAvailable') or not name.startswith('iPhone'):
+                      continue
+                  if 'SE' in name or 'mini' in name:
+                      continue
+                  n = re.match(r'iPhone (\d+)(.*)\$', name)
+                  if not n:
+                      continue
+                  key = (version, rank.get(n.group(2), 0), int(n.group(1)))
+                  if best is None or key > best[0]:
+                      best = (key, d['udid'], name)
+          if best is None:
+              print('')
+          else:
+              print(best[1], best[2])
+          ")"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "가로용 아이폰: ${NAME:-없음} ($UDID)"
+
       # **iPad 도 한 대 고른다.** 3단 분할이 실제로 펼쳐지는지는 그림으로만 안다
       # (가정 A8). 큰 것이 좋다 — 늘어진 자리가 제일 잘 드러난다.
       - name: iPad 시뮬레이터 고르기
@@ -342,6 +381,59 @@ jobs:
           # 웹뷰의 색 토큰이 앱과 같이 어두워지는지 (설계서 §8)
           shoot dark/03-reading.png -sampleFolder -readingMode
           xcrun simctl ui "$UDID" appearance light
+
+          # ── 아이폰 가로 (154) ──
+          #
+          # **`simctl` 에는 화면을 돌리는 명령이 없다.** 그래서 Simulator 앱을 띄우고
+          # 메뉴(회전)를 `osascript` 로 누른다. 러너 · 권한에 따라 막히므로 **안 되면
+          # 경고만 남기고 지나간다** — 이 칸은 심판이 아니라 **덤**이다.
+          # 가로보기의 진짜 심판은 실기기의 사람이다 (CLAUDE.md §2 의 마지막 칸).
+          #
+          # 큰 아이폰을 쓰는 까닭: 그 폭에서만 `regular` 로 바뀌어 3단 화면이 나온다.
+          WIDE="${{ steps.wide.outputs.udid }}"
+          if [ -n "$WIDE" ]; then
+            echo "── 아이폰 가로: ${{ steps.wide.outputs.name }} ──"
+            if [ "$WIDE" != "$UDID" ]; then
+              xcrun simctl boot "$WIDE" || true
+              xcrun simctl bootstatus "$WIDE" -b || true
+              status_bar "$WIDE"
+              xcrun simctl install "$WIDE" "$APP" || true
+            fi
+            open -a Simulator --args -CurrentDeviceUDID "$WIDE" || true
+            sleep 12
+            rotated=0
+            if osascript -e 'tell application "System Events" to tell process "Simulator" to keystroke (ASCII character 28) using command down' 2>/dev/null; then
+              sleep 4
+              rotated=1
+            fi
+            if [ "$rotated" = "1" ]; then
+              # **`shoot` 를 쓰지 않는다.** 그쪽은 못 찍으면 실패 목록에 적어 CI 를
+              # 막는다 — 덤인 칸이 본 심판을 막으면 안 된다. 여기서는 그냥 찍고
+              # 안 되면 경고만 남긴다.
+              mkdir -p screenshots/landscape
+              for pair in "landscape/01-list.png:" "landscape/02-note.png:-openFirstNote"; do
+                file="${pair%%:*}"; extra="${pair#*:}"
+                xcrun simctl terminate "$WIDE" "$BUNDLE_ID" >/dev/null 2>&1 || true
+                # shellcheck disable=SC2086
+                xcrun simctl launch "$WIDE" "$BUNDLE_ID" -sampleFolder $extra >/dev/null 2>&1 || true
+                sleep 12
+                if xcrun simctl io "$WIDE" screenshot "screenshots/$file" >/dev/null 2>&1; then
+                  echo "찍음: $file ($(stat -f%z "screenshots/$file") 바이트 · 가로)"
+                else
+                  echo "::warning::$file — 가로 스크린샷을 못 찍었습니다"
+                fi
+              done
+              xcrun simctl terminate "$WIDE" "$BUNDLE_ID" >/dev/null 2>&1 || true
+            else
+              echo "::warning::아이폰을 가로로 돌리지 못했습니다 — 가로 스크린샷을 건너뜁니다 (154, 사람이 실기기에서 봅니다)"
+            fi
+            osascript -e 'tell application "Simulator" to quit' 2>/dev/null || true
+            if [ "$WIDE" != "$UDID" ]; then
+              xcrun simctl shutdown "$WIDE" || true
+            fi
+          else
+            echo "::warning::가로용 큰 아이폰 시뮬레이터가 없어 가로 스크린샷을 건너뜁니다"
+          fi
 
           # ── iPad (가정 A8 — 3단 분할이 정말 펼쳐지는가) ──
           IPAD="${{ steps.ipad.outputs.udid }}"

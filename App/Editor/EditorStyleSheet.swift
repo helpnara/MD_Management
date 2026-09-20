@@ -103,9 +103,14 @@ struct EditorStyleSheet {
         }
     }
 
-    /// `depth` 는 목록이 겹친 단계 (`  - 안쪽` 이면 1), `markerWidth` 는 `- ` 같은
-    /// 마커의 실제 폭 — 접힌 둘째 줄이 그만큼 더 들어가 글에 맞춰진다.
-    func paragraphStyle(for block: StyleToken?, depth: Int = 0, markerWidth: CGFloat = 0) -> NSParagraphStyle {
+    /// `depth` 는 목록이 겹친 단계 (`  - 안쪽` 이면 1), `contentInset` 은 **줄 맨 앞부터
+    /// 글이 시작하는 자리까지**의 실제 폭 — 접힌 둘째 줄이 그만큼 들어가 글에 맞춰진다.
+    ///
+    /// **앞 빈칸까지 들어간 값이라야 한다** (155). 예전 이름은 `markerWidth` 였고 `- ` ·
+    /// `1. ` 만 재고 있었다 — 그래서 `  2. 긴 글` 처럼 **겹친 항목에서 앞 빈칸 둘만큼**
+    /// 접힌 줄이 왼쪽으로 어긋났다 (사용자 · 2026-09-20). 이름이 마커만 가리키고 있어서
+    /// 빠진 토막이 안 보였다.
+    func paragraphStyle(for block: StyleToken?, depth: Int = 0, contentInset: CGFloat = 0) -> NSParagraphStyle {
         switch block {
         case .heading1, .heading2, .heading3, .heading4, .heading5, .heading6: return headingParagraph
         case .listItem, .orderedItem:
@@ -114,7 +119,7 @@ struct EditorStyleSheet {
             style.paragraphSpacing = paragraphSpacing
             let start = listIndent + nestStep * CGFloat(max(0, depth))
             style.firstLineHeadIndent = start
-            style.headIndent = start + markerWidth
+            style.headIndent = start + contentInset
             return style
         case .quote: return quoteParagraph
         case .codeBlock, .tableRow: return monoParagraph
@@ -123,11 +128,11 @@ struct EditorStyleSheet {
     }
 
     /// 문단 전체에 먼저 까는 것. 그 위에 강조 구간과 마커가 덮인다.
-    func base(for block: StyleToken?, depth: Int = 0, markerWidth: CGFloat = 0) -> [NSAttributedString.Key: Any] {
+    func base(for block: StyleToken?, depth: Int = 0, contentInset: CGFloat = 0) -> [NSAttributedString.Key: Any] {
         [
             .font: font(for: block),
             .foregroundColor: block == .quote ? quoteInk : ink,
-            .paragraphStyle: paragraphStyle(for: block, depth: depth, markerWidth: markerWidth),
+            .paragraphStyle: paragraphStyle(for: block, depth: depth, contentInset: contentInset),
         ]
     }
 
