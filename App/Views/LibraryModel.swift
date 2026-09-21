@@ -32,6 +32,18 @@ final class LibraryModel: ObservableObject {
     /// 이 노트를 **iCloud 에서 받는 중인가.** 화면이 가만히 있으면 이상하므로 내용 자리에
     /// 도는 표시를 띄운다 (86 · 사용자). 다 오면 지켜보기가 다시 열어 준다.
     @Published private(set) var noteIsDownloading = false
+    /// **앱이 받기를 시킨 노트들** (156).
+    ///
+    /// 목록의 딱지가 `받는 중` 인지 `안 받음` 인지를 가른다. 아이클라우드의 상태만으로는
+    /// **안 받았다**는 것밖에 모른다 — *받고 있다* 는 뜻이 아니다. 목록을 그리면서
+    /// 내려받기를 시키지는 않으므로, 아무도 받고 있지 않은 파일에 *받는 중* 이라고
+    /// 적혀 있었다 (사용자 · 2026-09-21).
+    ///
+    /// 다 받아지면 `reloadNotes()` 가 여기서 뺀다.
+    @Published private(set) var downloading: Set<String> = []
+
+    /// 이 노트를 앱이 받으라고 시켰나 — 목록의 딱지가 이것을 본다.
+    func isDownloading(_ relativePath: String) -> Bool { downloading.contains(relativePath) }
     /// 읽기 모드에 넘길 완전한 HTML 문서 (ADR-0004).
     @Published private(set) var pageHTML = ""
     @Published private(set) var attachmentCount = 0
@@ -1264,8 +1276,11 @@ final class LibraryModel: ObservableObject {
     private var indexTask: Task<Void, Never>?
 
     /// 목록이 같은가 — 경로 · 시각 · 크기로 본다. 같은 값이면 화면을 안 건드린다.
-    private static func fingerprint(_ notes: [NoteSummary]) -> [String] {
-        notes.map { "\($0.relativePath)|\(Int($0.modifiedAt.timeIntervalSince1970))|\($0.size)" }.sorted()
+    /// **줄 자체를 견딘다** (156). 값을 골라 이어 붙인 지문을 쓰지 않는다 —
+    /// 고르는 순간 빠뜨릴 수 있고, 실제로 `isDownloaded` 를 빠뜨려
+    /// **`받는 중` 딱지가 안 사라졌다.** 규칙은 `NoteSummary.forComparing` 에 있다.
+    private static func fingerprint(_ notes: [NoteSummary]) -> [NoteSummary] {
+        notes.map(\.forComparing).sorted { $0.relativePath < $1.relativePath }
     }
 
     private static func withPreviews(_ notes: [NoteSummary], from previews: [String: String]) -> [NoteSummary] {
@@ -1745,6 +1760,9 @@ final class LibraryModel: ObservableObject {
             log("목록 \(loaded.count)개 — \(String(format: "%.2f", listSeconds))초 · \(where_)")
         }
         notes = Self.withPreviews(loaded, from: previews)
+        // 다 받아진 것은 `받는 중` 에서 뺀다 (156).
+        let arrived = Set(loaded.filter(\.isDownloaded).map(\.relativePath))
+        if !arrived.isDisjoint(with: downloading) { downloading.subtract(arrived) }
         syncCount(of: selectedFolder, to: loaded.count)
         scheduleIndexRefresh()
         // 링크를 따라온 노트는 목록에 없는 것이 맞다 — 지우지 않는다 (T7).
@@ -1839,6 +1857,9 @@ final class LibraryModel: ObservableObject {
             // 띠 대신 **내용 자리에 도는 표시**를 띄운다 — 띠는 잠깐 떴다 사라져 못 보고 지나친다.
             clearNote()
             noteIsDownloading = true
+            // **받으라고 시킨 것을 적어 둔다** (156). `readText` 가 이 자리에서
+            // `startDownloadingUbiquitousItem` 을 불렀으므로, 이제는 정말 받는 중이다.
+            downloading.insert(note.relativePath)
             log("아직 내려받는 중: \(note.relativePath)")
         } catch CocoaError.fileReadInapplicableStringEncoding {
             clearNote()

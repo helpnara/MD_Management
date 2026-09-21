@@ -585,7 +585,14 @@ private struct NoteList: View {
                             // iCloud 에 있지만 아직 안 내려온 파일 (설계서 §7.1).
                             // **글자를 함께 둔다** — 아이콘만으로는 눈에 안 띈다. 아이폰은 상세가
                             // 밀려 올라온 뒤에야 도는 표시가 보이므로, 목록에 선 채로 알아야 한다 (90).
-                            Label("받는 중", systemImage: "icloud.and.arrow.down")
+                            //
+                            // **받는 중과 안 받음은 다르다** (156). 아이클라우드의 상태는
+                            // *안 받았다* 는 것까지만 말해 준다. 목록은 내려받기를 시키지
+                            // 않으므로, 아무도 받고 있지 않은 파일에 *받는 중* 이라고
+                            // 적혀 있었다 — 눌러서 열면 그때 받기 시작한다.
+                            let asked = library.isDownloading(note.relativePath)
+                            Label(asked ? "받는 중" : "아직 안 받음",
+                                  systemImage: asked ? "icloud.and.arrow.down" : "icloud")
                                 .font(.scaled(.caption))
                                 .foregroundStyle(Palette.inkFaint)
                         }

@@ -15,6 +15,25 @@ struct NoteSummary: Identifiable, Hashable, Sendable {
 
     var id: String { relativePath }
 
+    /// **목록이 달라졌나를 견줄 때 쓰는 모습** (156).
+    ///
+    /// 예전에는 `경로|시각|크기` 를 이어 붙인 **지문**을 따로 적어 견줬다. 거기
+    /// `isDownloaded` 가 빠져 있어서, 파일이 **다 내려와도 지문이 같았다** — 훑기가
+    /// *달라진 것이 없다* 고 보고 목록을 안 읽었고, `받는 중` 딱지가 그대로 남았다
+    /// (사용자 · 2026-09-21).
+    ///
+    /// **이제 지문을 따로 적지 않고 줄 자체를 견딘다.** 화면에 보이는 값이 하나 늘어도
+    /// 자동으로 따라오고, 값을 더하면 아래 초기화가 **컴파일 오류**로 알려 준다 —
+    /// 컴파일러가 심판이다 (`CLAUDE.md` §1 — 같은 것을 재는 곳이 둘이면 갈린다).
+    ///
+    /// 미리보기만 뺀다. 그것은 색인이 **나중에** 채우는 값이라, 넣어 두면 색인이 도는
+    /// 사이에 목록이 끝없이 다시 읽힌다.
+    var forComparing: NoteSummary {
+        guard !preview.isEmpty else { return self }
+        return NoteSummary(relativePath: relativePath, title: title, preview: "",
+                           modifiedAt: modifiedAt, size: size, isDownloaded: isDownloaded)
+    }
+
     var fileName: String {
         relativePath.split(separator: "/").last.map(String.init) ?? relativePath
     }
