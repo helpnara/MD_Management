@@ -9,21 +9,81 @@ import Core
 final class MarkdownTextView: UITextView {
     /// `true` 면 들여쓰기, `false` 면 내어쓰기.
     var onTab: (@MainActor (Bool) -> Void)?
-    /// **붙여넣을 글을 한 번 손볼 기회** (144). 고칠 것이 없으면 `nil` 을 돌려준다.
-    var onPaste: (@MainActor (String) -> String?)?
+    /// **붙여넣을 것을 한 번 손볼 기회** (144 · 157 · 158 · 159).
+    /// 고칠 것이 없으면 `nil` 을 돌려준다.
+    var onPaste: (@MainActor (PastedItem) -> String?)?
 
-    /// **붙여넣기** — 다른 폴더에서 온 상대 링크를 이 노트 기준으로 고친다 (144).
+    /// **클립보드가 실어 온 것** — 갈래를 읽는 길은 **여기 하나**다.
+    ///
+    /// 예전에는 `UIPasteboard.general.string` **평문 한 갈래**만 봤다. 사파리 · 클로드 ·
+    /// 쳇GPT 가 같이 보내는 **HTML · 주소 갈래를 버리고 있었다** — 157 과 159 가 바로
+    /// 그 자료를 쓰는 일이다. 셋이 같은 자리에서 시작하므로 읽는 길을 하나로 둔다
+    /// (`CLAUDE.md` §1 — 같은 것을 재는 곳이 둘이면 갈린다).
+    struct PastedItem {
+        /// 평문 갈래. 없으면 빈 글자.
+        let plain: String
+        /// `public.html` 갈래 — 표가 여기 온다.
+        let html: String?
+        /// 주소 갈래와 그 이름.
+        let url: String?
+        let urlName: String?
+        /// 커서가 선 줄에서 **커서 앞까지**. 158 이 겹친 마커를 보는 데 쓴다.
+        let lineBefore: String
+        /// 고른 글 — 있으면 링크의 이름이 된다 (152 와 같은 규칙).
+        let selection: String
+    }
+
+    /// **붙여넣기** — 갈래를 읽어 모델에 넘기고, 모델이 바꾼 글을 한 번에 넣는다.
     ///
     /// `replace(_:withText:)` 한 번으로 끝낸다 — **되돌리기가 한 번에 걸린다.** 그래야
     /// 사람이 고침을 무를 수 있다 (앱이 본문을 고치는 자리라 무를 수 있어야 한다).
     override func paste(_ sender: Any?) {
-        guard let string = UIPasteboard.general.string,
-              let repaired = onPaste?(string), repaired != string,
-              let target = selectedTextRange else {
+        let board = UIPasteboard.general
+        let plain = board.string ?? ""
+        guard let target = selectedTextRange else {
             super.paste(sender)
             return
         }
-        replace(target, withText: repaired)
+        let item = PastedItem(plain: plain,
+                              html: Self.html(from: board),
+                              url: board.url?.absoluteString,
+                              urlName: Self.urlName(from: board),
+                              lineBefore: lineBeforeCaret(),
+                              selection: text(in: target) ?? "")
+        guard let made = onPaste?(item), made != plain else {
+            super.paste(sender)
+            return
+        }
+        replace(target, withText: made)
+    }
+
+    /// 커서가 선 줄에서 **커서 앞까지**의 글자.
+    private func lineBeforeCaret() -> String {
+        let caret = selectedRange.location
+        let whole = textStorage.string as NSString
+        guard caret <= whole.length else { return "" }
+        var start = caret
+        while start > 0, whole.character(at: start - 1) != 0x0A { start -= 1 }
+        return whole.substring(with: NSRange(location: start, length: caret - start))
+    }
+
+    /// `public.html` 갈래. **글자로 못 읽으면 없는 것으로 본다** — 모르면 안 건드린다.
+    private static func html(from board: UIPasteboard) -> String? {
+        guard let value = board.value(forPasteboardType: "public.html") else { return nil }
+        if let text = value as? String { return text }
+        if let data = value as? Data { return String(data: data, encoding: .utf8) }
+        return nil
+    }
+
+    /// 주소와 함께 오는 **페이지 이름**. 사파리가 이 갈래로 제목을 실어 준다.
+    private static func urlName(from board: UIPasteboard) -> String? {
+        for type in ["public.url-name", "public.title"] {
+            if let text = board.value(forPasteboardType: type) as? String,
+               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return text
+            }
+        }
+        return nil
     }
 
     override var keyCommands: [UIKeyCommand]? {
@@ -73,7 +133,8 @@ struct MarkdownEditor: UIViewRepresentable {
     /// 커서 앞에 `>>` · `[[` 가 있나 (147). `nil` 이면 목록을 닫으라는 뜻이다.
     var onLinkQueryChanged: @MainActor (NoteLinking.Query?) -> Void = { _ in }
     /// 붙여넣을 글을 이 노트 기준으로 고친다 (144). 고칠 것이 없으면 `nil`.
-    var onPasteLinks: @MainActor (String) -> String? = { _ in nil }
+    /// 붙여넣을 것을 바꿔 준다 (144 · 157 · 158 · 159). 규칙은 모델과 Core 가 정한다.
+    var onPasteLinks: @MainActor (MarkdownTextView.PastedItem) -> String? = { _ in nil }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
@@ -113,7 +174,7 @@ struct MarkdownEditor: UIViewRepresentable {
             coordinator?.shiftIndent(deeper)
         }
         view.onPaste = { [weak coordinator = context.coordinator] pasted in
-            coordinator?.repairPastedLinks(pasted)
+            coordinator?.convertPasted(pasted)
         }
         return view
     }
@@ -143,7 +204,7 @@ struct MarkdownEditor: UIViewRepresentable {
         var onImageLine: @MainActor (String?) -> Void
         var onActive: @MainActor (Formatting.Active) -> Void
         var onLinkQuery: @MainActor (NoteLinking.Query?) -> Void
-        var onPasteLinks: @MainActor (String) -> String?
+        var onPasteLinks: @MainActor (MarkdownTextView.PastedItem) -> String?
         /// 마지막으로 알린 표시 상태 (128). 바뀔 때만 알린다 — 커서가 움직일 때마다
         /// 화면을 다시 그리면 값도 없이 비싸다.
         private var lastActive: Formatting.Active?
@@ -184,7 +245,7 @@ struct MarkdownEditor: UIViewRepresentable {
              onImageLine: @escaping @MainActor (String?) -> Void,
              onActive: @escaping @MainActor (Formatting.Active) -> Void,
              onLinkQuery: @escaping @MainActor (NoteLinking.Query?) -> Void,
-             onPasteLinks: @escaping @MainActor (String) -> String?) {
+             onPasteLinks: @escaping @MainActor (MarkdownTextView.PastedItem) -> String?) {
             self.onEdit = onEdit
             self.onTitleLine = onTitleLine
             self.onFocus = onFocus
@@ -194,8 +255,8 @@ struct MarkdownEditor: UIViewRepresentable {
             self.onPasteLinks = onPasteLinks
         }
 
-        /// 붙여넣을 글의 링크를 이 노트 기준으로 (144). 규칙은 Core 가 정한다.
-        func repairPastedLinks(_ pasted: String) -> String? { onPasteLinks(pasted) }
+        /// 붙여넣을 것을 바꿔 준다 (144 · 157 · 158 · 159). 규칙은 모델과 Core 가 정한다.
+        func convertPasted(_ pasted: MarkdownTextView.PastedItem) -> String? { onPasteLinks(pasted) }
 
         /// **커서 앞에 방아쇠가 있나** (147). 규칙은 Core 의 `NoteLinking.query` 가 정한다.
         ///

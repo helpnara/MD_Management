@@ -253,12 +253,49 @@ final class LibraryModel: ObservableObject {
     ///
     /// 앱이 본문을 고치는 자리이므로 **고쳤다고 알리고**, 되돌리기 한 번으로 무를 수 있다
     /// (편집기가 한 번의 바꾸기로 넣는다).
-    func repairPastedLinks(_ pasted: String) -> String? {
-        let repair = MarkdownLinks.repaired(pasted: pasted, noteFolder: noteFolderForLink,
+    /// **붙여넣을 것을 이 자리에 맞게 바꾼다** (144 · 157 · 158 · 159).
+    ///
+    /// 순서가 뜻을 정한다.
+    ///
+    /// 1. **표** (159) — HTML 에 표가 있으면 그것이 붙을 것이다. 평문 갈래에는 칸 구분이
+    ///    뭉개진 글자만 오므로, 표가 있으면 평문을 볼 까닭이 없다.
+    /// 2. **주소** (157) — 붙일 것이 주소 하나면 링크로 만든다. 글이 섞여 있으면 아니다 —
+    ///    글 속의 주소까지 건드리면 **무엇을 할지 모르는 자리**가 된다.
+    /// 3. **번호 겹침** (158) 과 **링크 고치기** (144) — 둘 다 평문에 건다. 서로 다른
+    ///    자리를 만지므로 겹치지 않는다.
+    ///
+    /// **바꿨으면 알린다.** 사람이 모르게 본문이 달라지지 않는다. 되돌리기는 한 번이다.
+    func repairPastedLinks(_ pasted: MarkdownTextView.PastedItem) -> String? {
+        // 1. 표
+        if let html = pasted.html, let table = HTMLTable.markdown(from: html) {
+            report("표를 마크다운 표로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
+            return table
+        }
+        // 2. 주소 하나
+        let address = pasted.url ?? pasted.plain
+        if Pasting.isWebAddress(pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines))
+            || (pasted.url != nil && pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty),
+           let link = Pasting.webLink(url: address, name: pasted.urlName,
+                                      selection: pasted.selection) {
+            report("주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다.")
+            return link
+        }
+        // 3. 평문 — 번호 겹침과 링크 고치기
+        var text = pasted.plain
+        var notes: [String] = []
+        if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) {
+            text = fixed.text
+            notes.append("겹친 번호를 지웠습니다")
+        }
+        let repair = MarkdownLinks.repaired(pasted: text, noteFolder: noteFolderForLink,
                                             files: vaultPaths)
-        guard repair.fixed > 0 else { return nil }
-        report("링크 \(repair.fixed)개를 이 노트에서 열리도록 고쳤습니다. 되돌리기로 무를 수 있습니다.")
-        return repair.text
+        if repair.fixed > 0 {
+            text = repair.text
+            notes.append("링크 \(repair.fixed)개를 이 노트에서 열리도록 고쳤습니다")
+        }
+        guard !notes.isEmpty, text != pasted.plain else { return nil }
+        report(notes.joined(separator: ". ") + ". 되돌리기로 무를 수 있습니다.")
+        return text
     }
 
     /// 지금 노트가 든 폴더 — 링크는 여기서 보는 상대 경로다.

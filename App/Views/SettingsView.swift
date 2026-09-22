@@ -14,6 +14,9 @@ struct SettingsView: View {
     @State private var showsTrash = false
     /// 폴더 고르기 창 (b). `fileImporter` 는 시트 위에 문서 선택 창을 띄운다.
     @State private var pickingFolder = false
+    /// **`첫 줄을 파일명으로` 를 켤 때 한 번 물어본다** (메뉴 검토 4). 여는 것만으로
+    /// 파일을 고치는 유일한 스위치다 — 끄는 것은 안 묻는다.
+    @State private var confirmsFileNameSync = false
 
     var body: some View {
         NavigationStack {
@@ -44,8 +47,6 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("첫 줄을 파일명으로", isOn: $library.syncsFileName)
-                        .font(.scaled(.body))
                     // **노트를 열 때 읽기 모드로** (124, 사용자 — 평소에는 읽기 모드로 보고
                     // 편집은 회의 뒤나 자료를 쓸 때만 쓴다). 기본은 꺼짐이다.
                     Toggle("노트를 열 때 읽기 모드로", isOn: $library.opensInReadingMode)
@@ -53,7 +54,30 @@ struct SettingsView: View {
                 } header: {
                     Text("편집")
                 } footer: {
-                    Text("노트를 열 때 첫 줄 `# 제목` 이 파일명과 다르면 **파일명으로** 맞춥니다. 제목이 없으면 넣고, 다른 제목이면 `##` 로 한 단계 내립니다. 앱 안에서 제목을 고치면 파일명이 따라갑니다. 다른 앱과 같이 쓰는 폴더라면 끄세요 — 여는 것만으로 파일이 바뀝니다.\n\n**노트를 열 때 읽기 모드로** 를 켜면 노트를 고를 때마다 읽기 모드로 시작합니다. 위 도구 줄에서 언제든 편집으로 넘어갈 수 있고, 새 노트를 만들 때는 그대로 편집 모드입니다.")
+                    Text("켜면 노트를 고를 때마다 읽기 모드로 시작합니다. 위 도구 줄에서 언제든 편집으로 넘어갈 수 있고, 새 노트를 만들 때는 그대로 편집 모드입니다.")
+                }
+
+                // **이 스위치만 따로 세운다** (메뉴 검토 4, 2026-09-22 사용자).
+                //
+                // **여는 것만으로 파일을 고치는** 유일한 스위치다. 지난 자료 사고가
+                // 모두 이 코드에서 났다 (빌드 20 · 30 · 32). 그런데 화면에서는 다른
+                // 스위치와 똑같이 생겨서, 무엇이 위험한지 알 길이 없었다.
+                //
+                // 켤 때 한 번 물어본다 — **모든 삭제에 확인** (`CLAUDE.md` §1)과 같은
+                // 결이다. 본문을 바꾸는 일이니까. **끄는 것은 안 묻는다** (안전한 쪽이다).
+                Section {
+                    Toggle("첫 줄을 파일명으로", isOn: Binding(
+                        get: { library.syncsFileName },
+                        set: { wants in
+                            if wants { confirmsFileNameSync = true }
+                            else { library.syncsFileName = false }
+                        }))
+                        .font(.scaled(.body))
+                } header: {
+                    Label("파일을 바꾸는 설정", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                } footer: {
+                    Text("켜면 노트를 **열기만 해도** 파일이 바뀔 수 있습니다. 첫 줄 `# 제목` 이 파일명과 다르면 파일명으로 맞추고, 제목이 없으면 넣고, 다른 제목이면 `##` 로 한 단계 내립니다. 앱 안에서 제목을 고치면 파일명이 따라갑니다.\n\n**옵시디언처럼 다른 앱과 같이 쓰는 폴더라면 끄세요.**")
                 }
 
                 Section {
@@ -112,6 +136,12 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("설정")
+            .alert("노트를 열기만 해도 파일이 바뀝니다", isPresented: $confirmsFileNameSync) {
+                Button("켜기") { library.syncsFileName = true }
+                Button("취소", role: .cancel) { }
+            } message: {
+                Text("이 설정을 켜면 노트를 열 때 첫 줄과 파일명을 맞춥니다. 고치지 않아도 파일이 달라질 수 있습니다.\n\n옵시디언처럼 다른 앱과 같이 쓰는 폴더라면 켜지 마세요.")
+            }
             .navigationBarTitleDisplayMode(.inline)
             // CI 가 휴지통을 찍으려고 `-trash` 로 연다. 사람은 위의 링크로 들어간다.
             .navigationDestination(isPresented: $showsTrash) {

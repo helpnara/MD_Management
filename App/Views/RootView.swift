@@ -992,28 +992,40 @@ private struct NoteDetail: View {
                         Text("넣기")
                     }
                 }
-                // **안 열리는 링크를 한 번에 모아 본다** (146). 읽기 모드의 네모는 그
-                // 자리까지 내려가야 보인다 — 긴 노트에서는 있는 줄도 모른다.
-                // **넣기가 아니라 살펴보기다** — 읽기 모드에서도 쓸 수 있어야 한다.
-                Button {
-                    library.showBrokenLinks()
-                } label: {
-                    Label("안 열리는 링크 찾기", systemImage: "link.badge.exclamationmark")
+                // **세 성격을 선으로 가른다** (메뉴 검토 1 · 2, 2026-09-22 사용자).
+                // 넣기는 **본문에 더하는** 일, 살펴보기는 **보는** 일, 아래는 **노트 파일
+                // 자체**를 다루는 일이다. 한 줄로 늘어서 있어서 빌드 47 · 4번에서
+                // 사용자가 무슨 말인지 모르겠다고 한 항목이 이 메뉴의 것이었다.
+                //
+                // **안 열리는 링크 찾기는 살펴보기다** — 읽기 모드에서도 쓸 수 있어야
+                // 해서 설정으로 내리지 않고 여기 두되, 제 묶음에 세운다 (146).
+                Section {
+                    Button {
+                        library.showBrokenLinks()
+                    } label: {
+                        Label("안 열리는 링크 찾기", systemImage: "link.badge.exclamationmark")
+                    }
+                } header: {
+                    Text("살펴보기")
                 }
-                Button {
-                    library.beginRename(note)
-                } label: {
-                    Label("이름 바꾸기", systemImage: "pencil.line")
-                }
-                Button {
-                    Task { await library.share(note) }
-                } label: {
-                    Label("공유", systemImage: "square.and.arrow.up")
-                }
-                Button(role: .destructive) {
-                    library.trashing = note
-                } label: {
-                    Label("지우기", systemImage: "trash")
+                Section {
+                    Button {
+                        library.beginRename(note)
+                    } label: {
+                        Label("이름 바꾸기", systemImage: "pencil.line")
+                    }
+                    Button {
+                        Task { await library.share(note) }
+                    } label: {
+                        Label("공유", systemImage: "square.and.arrow.up")
+                    }
+                    Button(role: .destructive) {
+                        library.trashing = note
+                    } label: {
+                        Label("지우기", systemImage: "trash")
+                    }
+                } header: {
+                    Text("이 노트")
                 }
             } label: {
                 Label("더 보기", systemImage: "ellipsis.circle")
@@ -1213,6 +1225,10 @@ private struct FormatBar: View {
                 button("취소선", "strikethrough", .wrap(.strikethrough),
                        on: library.activeFormats.strikethrough)
                 rule
+                // **링크** (메뉴 검토 3, 2026-09-22 사용자). 띠에 굵게 · 기울임은 있는데
+                // 링크가 없었다 — 메모 앱에서 링크는 굵게만큼 자주 쓴다. 누르면 지금
+                // 쓰던 **파일 고르기**가 그대로 뜬다 (145) — 길을 새로 만들지 않는다.
+                button("링크", "link") { library.startLinkingExistingFile() }
                 button("인용", "text.quote", .quote, on: library.activeFormats.quote)
                 button("표 넣기", "tablecells", .table)
                 rule
@@ -1246,9 +1262,14 @@ private struct FormatBar: View {
     private func button(_ name: String, _ symbol: String,
                         _ kind: LibraryModel.FormatRequest.Kind,
                         on isOn: Bool = false) -> some View {
-        Button {
-            library.format(kind)
-        } label: {
+        button(name, symbol, on: isOn) { library.format(kind) }
+    }
+
+    /// **모양은 한 자리에만 적는다.** 링크 단추를 더하면서 크기 · 색을 옆에 또 적었다가
+    /// 곧 갈릴 뻔했다 (`CLAUDE.md` §1 — 같은 것을 재는 곳이 둘이면 갈린다).
+    private func button(_ name: String, _ symbol: String, on isOn: Bool = false,
+                        action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             Label(name, systemImage: symbol)
                 .labelStyle(.iconOnly)
                 .font(.scaled(.body))

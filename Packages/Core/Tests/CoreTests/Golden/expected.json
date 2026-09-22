@@ -3294,6 +3294,269 @@
       "text": "그냥 붙여넣은 글이다"
     }
   ],
+  "pasteConvertCases": {
+    "htmlTable": [
+      {
+        "html": "<table><tr><th>이름</th><th>값</th></tr><tr><td>가</td><td>1</td></tr></table>",
+        "name": "머리줄이 있는 표",
+        "result": "| 이름 | 값 |\n| --- | --- |\n| 가 | 1 |"
+      },
+      {
+        "html": "<table><thead><tr><th>가</th><th>나</th></tr></thead><tbody><tr><td>1</td><td>2</td></tr><tbody></table>",
+        "name": "thead 와 tbody",
+        "result": "| 가 | 나 |\n| --- | --- |\n| 1 | 2 |"
+      },
+      {
+        "html": "<table><tr><td>가</td><td>나</td></tr><tr><td>1</td><td>2</td></tr></table>",
+        "name": "머리줄이 없다 — 빈 머리줄을 세운다",
+        "result": "|   |   |\n| --- | --- |\n| 가 | 나 |\n| 1 | 2 |"
+      },
+      {
+        "html": "<table><tr><th>식</th></tr><tr><td>가 | 나</td></tr></table>",
+        "name": "칸 안의 세로줄은 피한다",
+        "result": "| 식 |\n| --- |\n| 가 \\| 나 |"
+      },
+      {
+        "html": "<table><tr><th>글</th></tr><tr><td>첫 줄<br>둘째 줄</td></tr></table>",
+        "name": "칸 안의 줄바꿈은 br 로",
+        "result": "| 글 |\n| --- |\n| 첫 줄<br>둘째 줄 |"
+      },
+      {
+        "html": "<table><tr><th>말</th></tr><tr><td><strong>굵게</strong> 와 <em>기울임</em></td></tr></table>",
+        "name": "굵게와 기울임을 살린다",
+        "result": "| 말 |\n| --- |\n| **굵게** 와 *기울임* |"
+      },
+      {
+        "html": "<table><tr><th>기호</th></tr><tr><td>&lt;가&gt; &amp; &quot;나&quot;</td></tr></table>",
+        "name": "실체 참조를 푼다",
+        "result": "| 기호 |\n| --- |\n| <가> & \"나\" |"
+      },
+      {
+        "html": "<table><tr><th>가</th><th>나</th><th>다</th></tr><tr><td>1</td></tr></table>",
+        "name": "줄마다 칸 수가 다르면 채운다",
+        "result": "| 가 | 나 | 다 |\n| --- | --- | --- |\n| 1 |   |   |"
+      },
+      {
+        "html": "<table class=\"md\"><tr><th scope=\"col\">가</th></tr><tr><td style=\"x\">1</td></tr></table>",
+        "name": "속성이 붙은 태그",
+        "result": "| 가 |\n| --- |\n| 1 |"
+      },
+      {
+        "html": "<p>표가 아닙니다</p>",
+        "name": "표가 없으면 nil",
+        "result": null
+      },
+      {
+        "html": "<table></table>",
+        "name": "빈 표는 nil",
+        "result": null
+      },
+      {
+        "html": "<p>앞말</p><table><tr><th>가</th></tr><tr><td>1</td></tr></table><p>뒷말</p>",
+        "name": "표 밖의 글은 안 가져온다",
+        "result": "| 가 |\n| --- |\n| 1 |"
+      },
+      {
+        "html": "<table><tr><th>겉</th></tr><tr><td><table><tr><td>속</td></tr></table></td></tr><tr><td>뒤</td></tr></table>",
+        "name": "표 안에 표가 있어도 짝을 센다",
+        "result": "| 겉 |\n| --- |\n| 속 |\n| 뒤 |"
+      },
+      {
+        "html": "<TABLE><TR><TH>가</TH></TR><TR><TD>1</TD></TR></TABLE>",
+        "name": "대문자 태그",
+        "result": "| 가 |\n| --- |\n| 1 |"
+      },
+      {
+        "html": "<table><tr><td>가</td></tr>",
+        "name": "닫는 태그가 없으면 nil",
+        "result": null
+      },
+      {
+        "html": "<table><tr><th>İstanbul</th></tr><tr><td>ß</td></tr></table>",
+        "name": "소문자로 바꾸면 길이가 달라지는 글자",
+        "result": "| İstanbul |\n| --- |\n| ß |"
+      }
+    ],
+    "numbering": [
+      {
+        "line": "1. ",
+        "name": "번호가 겹친다",
+        "pasted": "1. 첫째\n2. 둘째",
+        "result": {
+          "removed": "1. ",
+          "text": "첫째\n2. 둘째"
+        }
+      },
+      {
+        "line": "1) ",
+        "name": "닫는 괄호",
+        "pasted": "1. 첫째",
+        "result": {
+          "removed": "1. ",
+          "text": "첫째"
+        }
+      },
+      {
+        "line": "- ",
+        "name": "글머리가 겹친다",
+        "pasted": "- 첫째\n- 둘째",
+        "result": {
+          "removed": "- ",
+          "text": "첫째\n- 둘째"
+        }
+      },
+      {
+        "line": "  1. ",
+        "name": "겹친 단계 — 뒤따르는 줄도 따라간다",
+        "pasted": "1. 첫째\n2. 둘째",
+        "result": {
+          "removed": "1. ",
+          "text": "첫째\n  2. 둘째"
+        }
+      },
+      {
+        "line": "- ",
+        "name": "체크상자는 글이다",
+        "pasted": "- [ ] 할 일",
+        "result": {
+          "removed": "- ",
+          "text": "[ ] 할 일"
+        }
+      },
+      {
+        "line": "1. 이미 쓴 글",
+        "name": "이미 글이 있으면 안 건드린다",
+        "pasted": "1. 첫째",
+        "result": null
+      },
+      {
+        "line": "- ",
+        "name": "갈래가 다르면 안 건드린다",
+        "pasted": "1. 첫째",
+        "result": null
+      },
+      {
+        "line": "1. ",
+        "name": "번호 줄에 글머리도 안 건드린다",
+        "pasted": "- 첫째",
+        "result": null
+      },
+      {
+        "line": "",
+        "name": "빈 줄에는 안 건드린다",
+        "pasted": "1. 첫째",
+        "result": null
+      },
+      {
+        "line": "그냥 글 ",
+        "name": "목록이 아닌 글에는 안 건드린다",
+        "pasted": "1. 첫째",
+        "result": null
+      },
+      {
+        "line": "1. ",
+        "name": "붙이는 글이 목록이 아니면 안 건드린다",
+        "pasted": "그냥 글",
+        "result": null
+      },
+      {
+        "line": "--- ",
+        "name": "수평선은 목록이 아니다",
+        "pasted": "- 첫째",
+        "result": null
+      },
+      {
+        "line": "1. ",
+        "name": "번호가 3부터여도 그대로 둔다",
+        "pasted": "3. 셋째\n4. 넷째",
+        "result": {
+          "removed": "3. ",
+          "text": "셋째\n4. 넷째"
+        }
+      },
+      {
+        "line": "1. ",
+        "name": "두 자리 번호",
+        "pasted": "10. 열째",
+        "result": {
+          "removed": "10. ",
+          "text": "열째"
+        }
+      }
+    ],
+    "webLink": [
+      {
+        "name": "이름이 같이 왔다",
+        "pageName": "보기 좋은 제목",
+        "result": "[보기 좋은 제목](https://example.com/a)",
+        "selection": "",
+        "url": "https://example.com/a"
+      },
+      {
+        "name": "이름이 없다 — 자동 링크",
+        "pageName": null,
+        "result": "<https://example.com/a>",
+        "selection": "",
+        "url": "https://example.com/a"
+      },
+      {
+        "name": "고른 글이 이름이 된다",
+        "pageName": "페이지 이름",
+        "result": "[이 글](https://example.com/a)",
+        "selection": "이 글",
+        "url": "https://example.com/a"
+      },
+      {
+        "name": "퍼센트로 인코딩된 주소",
+        "pageName": "자료",
+        "result": "[자료](https://example.com/%EB%82%B4%20%EC%9E%90%EB%A3%8C)",
+        "selection": "",
+        "url": "https://example.com/%EB%82%B4%20%EC%9E%90%EB%A3%8C"
+      },
+      {
+        "name": "날 빈칸이 있으면 안 한다",
+        "pageName": "자료",
+        "result": null,
+        "selection": "",
+        "url": "https://example.com/내 자료"
+      },
+      {
+        "name": "대괄호가 든 이름",
+        "pageName": "[초안] 회의",
+        "result": "[\\[초안\\] 회의](https://example.com/a)",
+        "selection": "",
+        "url": "https://example.com/a"
+      },
+      {
+        "name": "http 도 된다",
+        "pageName": "예시",
+        "result": "[예시](http://example.com)",
+        "selection": "",
+        "url": "http://example.com"
+      },
+      {
+        "name": "주소가 아니면 안 한다",
+        "pageName": null,
+        "result": null,
+        "selection": "",
+        "url": "그냥 글자"
+      },
+      {
+        "name": "자바스크립트는 안 한다",
+        "pageName": "눌러 보세요",
+        "result": null,
+        "selection": "",
+        "url": "javascript:alert(1)"
+      },
+      {
+        "name": "스킴만 있으면 안 한다",
+        "pageName": null,
+        "result": null,
+        "selection": "",
+        "url": "https://"
+      }
+    ]
+  },
   "pinCases": [
     {
       "followed": [

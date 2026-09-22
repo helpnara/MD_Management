@@ -51,6 +51,7 @@ BROKEN_CASES = ROOT / "Tools" / "golden" / "broken-link-cases.json"
 WRAP_CASES = ROOT / "Tools" / "golden" / "wrap-link-cases.json"
 HANGING_CASES = ROOT / "Tools" / "golden" / "hanging-cases.json"
 COUNT_CASES = ROOT / "Tools" / "golden" / "count-cases.json"
+PASTE_CONVERT_CASES = ROOT / "Tools" / "golden" / "paste-convert-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -1640,6 +1641,309 @@ def build_count_cases() -> list[dict]:
     return out
 
 
+# ── 붙여넣을 때 바꿔 주기 (157 · 158 · 159) ──────────────────────────────────
+#
+# **스위프트와 따로 적는다.** 같은 규칙을 두 번 적어 서로를 잡게 하는 것이 이 심판의
+# 전부다. 표는 만든 뒤 **두 파서에 먹여** 정말 표로 읽히는지까지 본다.
+
+BULLETS = "-*+"
+
+
+def leading_marker(line: str):
+    """줄 앞머리의 목록 마커 — 앞칸까지 통째로. (marker, kind) 또는 None."""
+    cursor = 0
+    while cursor < len(line) and line[cursor] in " \t":
+        cursor += 1
+    if cursor >= len(line):
+        return None
+    trimmed = line.strip()
+    if trimmed and trimmed[0] in "-*_" and len(trimmed) >= 3 \
+            and all(c == trimmed[0] or c == " " for c in trimmed):
+        return None                       # 수평선은 목록이 아니다
+
+    after, kind = None, "bullet"
+    if line[cursor].isdigit() and line[cursor].isascii():
+        digits = cursor
+        while digits < len(line) and line[digits].isdigit() and line[digits].isascii() \
+                and digits - cursor < 9:
+            digits += 1
+        if digits < len(line) and line[digits] in ".)" \
+                and digits + 1 < len(line) and line[digits + 1] == " ":
+            after, kind = digits + 1, "ordered"
+    if after is None and line[cursor] in BULLETS \
+            and cursor + 1 < len(line) and line[cursor + 1] == " ":
+        after, kind = cursor + 1, "bullet"
+    if after is None:
+        return None
+    while after < len(line) and line[after] == " ":
+        after += 1
+    return line[:after], kind
+
+
+def only_marker(line: str):
+    found = leading_marker(line)
+    if found is None or len(found[0]) != len(line):
+        return None
+    return line[:len(line) - len(line.lstrip(" \t"))], found[1]
+
+
+def paste_numbering(pasted: str, line_before: str):
+    here = only_marker(line_before)
+    if here is None:
+        return None
+    leading, kind = here
+    lines = pasted.split("\n")
+    there = leading_marker(lines[0])
+    if there is None or there[1] != kind:
+        return None
+    lines[0] = lines[0][len(there[0]):]
+    if leading:
+        for i in range(1, len(lines)):
+            if lines[i]:
+                lines[i] = leading + lines[i]
+    text = "\n".join(lines)
+    return None if text == pasted else {"text": text, "removed": there[0]}
+
+
+def is_web_address(text: str) -> bool:
+    if not text or " " in text or "\n" in text:
+        return False
+    lower = text.lower()
+    if not (lower.startswith("http://") or lower.startswith("https://")):
+        return False
+    return len(text) > (8 if lower.startswith("https://") else 7)
+
+
+def paste_web_link(url: str, name: str | None = None, selection: str = ""):
+    address = url.strip()
+    if not is_web_address(address):
+        return None
+    picked = selection.strip()
+    title = picked if picked else (name or "").strip()
+    if not title or "\n" in title:
+        return "<" + address + ">"
+    return markdown_link(title, address)
+
+
+# ── 159 · HTML 표 ──
+
+
+def html_unescape(text: str) -> str:
+    if "&" not in text:
+        return text
+    for old, new in (("&lt;", "<"), ("&gt;", ">"), ("&quot;", '"'),
+                     ("&#39;", "'"), ("&nbsp;", " "), ("&amp;", "&")):
+        text = text.replace(old, new)
+    return text
+
+
+def html_cell_text(html: str) -> str:
+    units, out, at = list(html), "", 0
+    while at < len(units):
+        if units[at] != "<":
+            out += units[at]
+            at += 1
+            continue
+        close = _index_of(">", units, at)
+        if close is None:
+            break
+        name = _tag_name(units, at + 1, close)
+        out += {"b": "**", "strong": "**", "/b": "**", "/strong": "**",
+                "i": "*", "em": "*", "/i": "*", "/em": "*",
+                "br": "\n", "br/": "\n", "code": "`", "/code": "`"}.get(name, "")
+        at = close + 1
+    return html_unescape(out).strip()
+
+
+def escape_table_cell(text: str) -> str:
+    return text.replace("|", "\\|").replace("\r\n", "\n").replace("\n", "<br>")
+
+
+def _tag_name(units: list[str], start: int, end: int) -> str:
+    """`<` 다음부터 `>` 앞까지에서 태그 이름만 (소문자로)."""
+    name = ""
+    at = start
+    while at < end and units[at] not in " \n\t":
+        name += units[at]
+        at += 1
+    return name.lower()
+
+
+def _index_of(character: str, units: list[str], start: int):
+    at = max(start, 0)
+    while at < len(units):
+        if units[at] == character:
+            return at
+        at += 1
+    return None
+
+
+def _tag_start(name: str, units: list[str], start: int):
+    """이름이 정확히 맞는 여는 태그의 자리. <table> 을 <ta 로 안 잡는다."""
+    at = max(start, 0)
+    while True:
+        open_at = _index_of("<", units, at)
+        if open_at is None:
+            return None
+        close = _index_of(">", units, open_at)
+        if close is not None and _tag_name(units, open_at + 1, close) == name.lower():
+            return open_at
+        at = open_at + 1
+
+
+def _closing_tag(name: str, units: list[str], start: int):
+    """짝이 맞는 </이름> 의 자리. 같은 이름이 겹쳐 들어가도 짝을 센다."""
+    wanted, depth, at = name.lower(), 0, start
+    while True:
+        open_at = _index_of("<", units, at)
+        if open_at is None:
+            return None
+        close = _index_of(">", units, open_at)
+        if close is None:
+            return None
+        found = _tag_name(units, open_at + 1, close)
+        if found == wanted:
+            depth += 1
+        elif found == "/" + wanted:
+            if depth == 0:
+                return open_at
+            depth -= 1
+        at = close + 1
+
+
+def html_element(name: str, html: str):
+    """(안쪽, 닫는 태그 뒤) 또는 None. **글자 배열과 숫자 자리로만 훑는다** —
+    소문자 사본의 인덱스를 원본에 쓰면 길이가 달라지는 글자에서 어긋난다."""
+    units = list(html)
+    open_at = _tag_start(name, units, 0)
+    if open_at is None:
+        return None
+    open_end = _index_of(">", units, open_at)
+    if open_end is None:
+        return None
+    body_start = open_end + 1
+    close = _closing_tag(name, units, body_start)
+    if close is None:
+        return None
+    close_end = _index_of(">", units, close)
+    if close_end is None:
+        return None
+    return "".join(units[body_start:close]), "".join(units[close_end + 1:])
+
+
+def html_next_cell(html: str):
+    units = list(html)
+    data = _tag_start("td", units, 0)
+    head = _tag_start("th", units, 0)
+    if data is None and head is None:
+        return None
+    use_head = data is None or (head is not None and head < data)
+    found = html_element("th" if use_head else "td", html)
+    if found is None:
+        return None
+    return found[0], found[1], use_head
+
+
+def html_table_markdown(html: str):
+    table = html_element("table", html)
+    if table is None:
+        return None
+    rows, rest = [], table[0]
+    while True:
+        row = html_element("tr", rest)
+        if row is None:
+            break
+        inner, rest = row[0], row[1]
+        cells, headers = [], 0
+        while True:
+            cell = html_next_cell(inner)
+            if cell is None:
+                break
+            cells.append(escape_table_cell(html_cell_text(cell[0])))
+            headers += 1 if cell[2] else 0
+            inner = cell[1]
+        if cells:
+            rows.append({"cells": cells, "isHeader": headers == len(cells)})
+    if not rows:
+        return None
+    width = max(len(r["cells"]) for r in rows)
+    if width == 0:
+        return None
+
+    head, body = rows[0], rows[1:]
+    if not head["isHeader"]:
+        body.insert(0, head)
+        head = {"cells": [""] * width, "isHeader": True}
+
+    def line(cells):
+        padded = cells + [""] * (width - len(cells))
+        return "| " + " | ".join(c if c else " " for c in padded) + " |"
+
+    out = [line(head["cells"]), "|" + " --- |" * width]
+    out += [line(r["cells"]) for r in body]
+    return "\n".join(out)
+
+
+def html_cells_of(markdown_table: str) -> list[str]:
+    """만든 표에서 **칸의 알맹이**만 꺼낸다 — 살아남았는지 견주려고."""
+    out = []
+    for line in markdown_table.split("\n")[2:]:          # 머리줄과 구분줄은 건너뛴다
+        body = line.strip().strip("|")
+        # 피해 둔 세로줄은 되돌리고, `<br>` 과 강조 기호는 떼고 본다.
+        for cell in re.split(r"(?<!\\)\|", body):
+            text = cell.replace("\\|", "|").replace("<br>", "")
+            text = text.replace("**", "").replace("*", "").replace("`", "").strip()
+            out.append(text)
+    return out
+
+
+def build_paste_convert_cases() -> dict:
+    spec = json.loads(PASTE_CONVERT_CASES.read_text(encoding="utf-8"))
+
+    numbering = []
+    for case in spec["numbering"]:
+        got = paste_numbering(case["pasted"], case["line"])
+        # **글자가 사라지면 안 된다** — 마커를 뗀 것 말고는 그대로여야 한다.
+        if got is not None:
+            shrunk = case["pasted"].replace(got["removed"], "", 1)
+            bare = got["text"].replace(" ", "").replace("\t", "")
+            if bare != shrunk.replace(" ", "").replace("\t", ""):
+                raise SystemExit(f"::error::[{case['name']}] 마커 말고 다른 글자가 달라졌다:\n{got['text']}")
+        numbering.append({"name": case["name"], "line": case["line"],
+                          "pasted": case["pasted"], "result": got})
+
+    links = []
+    for case in spec["webLink"]:
+        got = paste_web_link(case["url"], case.get("pageName"), case.get("selection", ""))
+        if got is not None:
+            html = make_parser().render(got)
+            if "<a href=" not in html:
+                raise SystemExit(f"::error::[{case['name']}] 링크로 안 읽힌다: {got}")
+        links.append({"name": case["name"], "url": case["url"],
+                      "pageName": case.get("pageName"),
+                      "selection": case.get("selection", ""), "result": got})
+
+    tables = []
+    for case in spec["htmlTable"]:
+        got = html_table_markdown(case["html"])
+        if got is not None:
+            # **두 파서 모두 표로 읽어야 한다.** 하나만 읽으면 화면과 파일이 갈린다.
+            for rendered in (make_parser().render(got), cmark_html(got)):
+                if "<table>" not in rendered:
+                    raise SystemExit(f"::error::[{case['name']}] 표로 안 읽힌다:\n{got}")
+                # **표가 생겼는지가 아니라 칸의 글자가 살아남았는지를 본다.**
+                # 세로줄을 안 피하면 표는 그대로 서고 **칸만 쪼개진다** — 생겼는지만
+                # 보면 그것을 놓친다.
+                plain = html_unescape(re.sub(r"<[^>]*>", "", rendered))
+                for cell in html_cells_of(got):
+                    if cell and cell not in plain:
+                        raise SystemExit(
+                            f"::error::[{case['name']}] 칸의 글자가 사라졌다: {cell!r}\n{got}")
+        tables.append({"name": case["name"], "html": case["html"], "result": got})
+
+    return {"numbering": numbering, "webLink": links, "htmlTable": tables}
+
+
 def build_broken_cases() -> list[dict]:
     spec = json.loads(BROKEN_CASES.read_text(encoding="utf-8"))
     out = []
@@ -1797,6 +2101,7 @@ def build() -> dict:
         "wrapCases": build_wrap_cases(),
         "hangingCases": build_hanging_cases(),
         "countCases": build_count_cases(),
+        "pasteConvertCases": build_paste_convert_cases(),
         "renumberCases": build_renumber_cases(),
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
@@ -2018,7 +2323,14 @@ def tally(loaded: dict) -> str:
         ("고정", "pinCases"), ("편집 도구", "formatCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
-    return " · ".join(f"{name} {len(loaded[key])}건" for name, key in parts)
+    counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
+    # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.
+    convert = loaded.get("pasteConvertCases")
+    if convert:
+        counted.append("바꿔 붙이기 "
+                       + "·".join(str(len(convert[key]))
+                                  for key in ("numbering", "webLink", "htmlTable")) + "건")
+    return " · ".join(counted)
 
 
 def main() -> int:
