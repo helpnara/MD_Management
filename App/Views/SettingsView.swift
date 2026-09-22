@@ -25,7 +25,11 @@ struct SettingsView: View {
                     row("쓰는 곳", library.kind.label)
                     row("폴더 이름", library.folderName)
                     row("노트", "\(library.notes.count)개")
-                    // (b) 임의 폴더 — 옵시디언 볼트 · iCloud Drive 의 다른 폴더 (ADR-0002).
+                    // (b) 임의 폴더 — 남이 만든 볼트 · iCloud Drive 의 다른 폴더 (ADR-0002).
+                    //
+                    // **사용자가 보는 글에는 다른 앱 이름을 쓰지 않는다** (2026-09-22 사용자
+                    // — *이슈가 될만한 것은 사전에 제거하자*). 남의 상표는 심사에서 걸리는
+                    // 자리다. 뜻은 그대로 두고 **하는 일**로 적는다.
                     Button {
                         pickingFolder = true
                     } label: {
@@ -43,7 +47,7 @@ struct SettingsView: View {
                 } footer: {
                     Text(library.kind == .userChosen
                          ? "고른 폴더를 쓰고 있습니다. 앱을 지워도 그 폴더는 그대로 남습니다. 돌아가기를 눌러도 파일은 지워지지 않습니다 — 앱이 보는 곳만 바뀝니다."
-                         : "옵시디언 볼트처럼 **이미 있는 폴더**를 열 수 있습니다. 숨김 폴더(`.obsidian` 등)는 목록에 보이지 않습니다. 고른 폴더는 다른 앱과 같이 쓰는 곳이므로, 아래 **편집** 의 `첫 줄을 파일명으로` 를 끄는 편이 안전합니다.")
+                         : "**이미 마크다운을 모아 둔 폴더**가 있다면 그대로 열 수 있습니다. 점으로 시작하는 숨김 폴더는 목록에 보이지 않습니다. 고른 폴더는 다른 앱과 같이 쓰는 곳이므로, 아래 **파일을 바꾸는 설정** 을 끄는 편이 안전합니다.")
                 }
 
                 Section {
@@ -77,7 +81,7 @@ struct SettingsView: View {
                     Label("파일을 바꾸는 설정", systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.orange)
                 } footer: {
-                    Text("켜면 노트를 **열기만 해도** 파일이 바뀔 수 있습니다. 첫 줄 `# 제목` 이 파일명과 다르면 파일명으로 맞추고, 제목이 없으면 넣고, 다른 제목이면 `##` 로 한 단계 내립니다. 앱 안에서 제목을 고치면 파일명이 따라갑니다.\n\n**옵시디언처럼 다른 앱과 같이 쓰는 폴더라면 끄세요.**")
+                    Text("켜면 노트를 **열기만 해도** 파일이 바뀔 수 있습니다. 첫 줄 `# 제목` 이 파일명과 다르면 파일명으로 맞추고, 제목이 없으면 넣고, 다른 제목이면 `##` 로 한 단계 내립니다. 앱 안에서 제목을 고치면 파일명이 따라갑니다.\n\n**다른 앱과 같이 쓰는 폴더라면 끄세요.**")
                 }
 
                 Section {
@@ -140,7 +144,7 @@ struct SettingsView: View {
                 Button("켜기") { library.syncsFileName = true }
                 Button("취소", role: .cancel) { }
             } message: {
-                Text("이 설정을 켜면 노트를 열 때 첫 줄과 파일명을 맞춥니다. 고치지 않아도 파일이 달라질 수 있습니다.\n\n옵시디언처럼 다른 앱과 같이 쓰는 폴더라면 켜지 마세요.")
+                Text("이 설정을 켜면 노트를 열 때 첫 줄과 파일명을 맞춥니다. 고치지 않아도 파일이 달라질 수 있습니다.\n\n다른 앱과 같이 쓰는 폴더라면 켜지 마세요.")
             }
             .navigationBarTitleDisplayMode(.inline)
             // CI 가 휴지통을 찍으려고 `-trash` 로 연다. 사람은 위의 링크로 들어간다.
