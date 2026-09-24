@@ -238,19 +238,32 @@ enum MarkdownStyler {
             guard NSMaxRange(range) <= NSMaxRange(line) else { continue }
             sheet.apply(span.token, to: storage, range: range)
         }
-        // L2 — 커서가 없는 문단은 마커를 숨긴다. 다만:
-        //  · 목록 마커(`- ` `1. ` `[ ]`)와 수평선은 **안 숨긴다** — 번호가 사라지면 정보가
-        //    사라진다. 그 자리는 L3 가 기호로 바꾼다.
-        //  · 대체 글자 없는 그림(`![](…)`)이 있는 문단도 안 숨긴다 — 줄이 통째로 사라진다.
+        // L2 — 커서가 없는 문단은 **읽기 모드에 가깝게** (163, 2026-09-25 사용자).
+        // 규칙 하나: **숨길 수 있는 마커는 숨긴다. 숨길 수 없는 마커는 본문 색으로 둔다.
+        // 회색은 커서 줄에서만.** 예전에는 *안 숨긴다* 와 *회색으로 칠한다* 가 한 갈래라
+        // 커서 없는 줄의 번호까지 원문 줄처럼 회색이었다 — 읽기 모드와 어긋났다.
+        //
+        // 숨길 수 없는 것과 그 까닭:
+        //  · 목록 마커(`- ` `1. ` `[ ]`) — 번호가 사라지면 정보가 사라진다 → **본문 색**,
+        //    `[x]` 만 강조색 (읽기 모드의 켜진 체크상자처럼)
+        //  · 표의 세로줄 `|` — 숨기면 칸이 어디서 나뉘는지 모른다 → **회색** (164)
+        //  · 코드 울타리 · 수평선 — 줄 전체가 마커라 숨기면 줄이 사라진다 → **회색** (165)
+        //  · 대체 글자 없는 그림(`![](…)`)이 있는 문단 — 줄이 통째로 사라진다 → 회색
         let isList = style.block == .listItem || style.block == .orderedItem
-        let keepsAll = hasCursor || style.block == .thematicBreak
+        let isTable = style.block == .tableRow
+        let keepsAll = hasCursor || style.block == .thematicBreak || style.block == .codeBlock
             || style.inlineSpans.contains { $0.token == .image && $0.length == 0 }
         for mark in style.markers {
             let range = NSRange(location: line.location + mark.start, length: mark.length)
             guard NSMaxRange(range) <= NSMaxRange(line) else { continue }
             let isBlockMarker = mark.start < style.contentStart
-            if keepsAll || (isList && isBlockMarker) {
+            if keepsAll || isTable {
                 sheet.dimMarker(in: storage, range: range)
+            } else if isList && isBlockMarker {
+                // 본문 색은 이미 문단 바탕에 깔려 있다 — 켜진 체크상자만 따로 칠한다.
+                if text.substring(with: range).hasPrefix("[x") || text.substring(with: range).hasPrefix("[X") {
+                    sheet.checkedMarker(in: storage, range: range)
+                }
             } else {
                 sheet.hideMarker(in: storage, range: range)
             }

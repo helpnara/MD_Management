@@ -171,6 +171,12 @@ struct EditorStyleSheet {
         text.addAttribute(.foregroundColor, value: markerInk, range: range)
     }
 
+    /// 켜진 체크상자 `[x]` — 커서가 없는 문단에서 강조색 (163). 읽기 모드의 켜진 체크상자처럼
+    /// **글자는 그대로**고 색만 다르다.
+    func checkedMarker(in text: NSMutableAttributedString, range: NSRange) {
+        text.addAttribute(.foregroundColor, value: linkInk, range: range)
+    }
+
     /// 마커를 숨긴다 — 커서가 없는 문단 (L2). **글자는 그대로 있다.** 0.01pt · 투명이라
     /// 자리를 안 차지할 뿐이다. 선택 · 복사 · 저장은 원문이다 (ADR-0005).
     func hideMarker(in text: NSMutableAttributedString, range: NSRange) {

@@ -4205,6 +4205,7 @@
     {
       "block": "codeBlock",
       "content": "",
+      "markerMask": "········",
       "name": "코드 울타리",
       "spans": [],
       "text": "```swift"
@@ -4219,6 +4220,7 @@
     {
       "block": "tableRow",
       "content": "",
+      "markerMask": "· 이름 · 값 ·",
       "name": "표 줄",
       "spans": [],
       "text": "| 이름 | 값 |"
@@ -4577,6 +4579,62 @@
       "name": "개요-깊은체크박스",
       "spans": [],
       "text": "    - [ ] 깊은 할 일"
+    },
+    {
+      "block": "tableRow",
+      "content": "",
+      "markerMask": "· 날 · 어디 · 메모 ·",
+      "name": "표 머리 줄",
+      "spans": [],
+      "text": "| 날 | 어디 | 메모 |"
+    },
+    {
+      "block": "tableRow",
+      "content": "",
+      "markerMask": "·---·---·---·",
+      "name": "표 구분 줄",
+      "spans": [],
+      "text": "|---|---|---|"
+    },
+    {
+      "block": "tableRow",
+      "content": "",
+      "markerMask": "· a \\| b · c ·",
+      "name": "표 칸 안의 피한 세로줄",
+      "spans": [],
+      "text": "| a \\| b | c |"
+    },
+    {
+      "block": "tableRow",
+      "content": "",
+      "markerMask": "  · 앞 · 뒤 ·",
+      "name": "표 줄 앞 빈칸",
+      "spans": [],
+      "text": "  | 앞 | 뒤 |"
+    },
+    {
+      "block": "codeBlock",
+      "content": "",
+      "markerMask": "········",
+      "name": "코드 울타리 여는 줄",
+      "spans": [],
+      "text": "```swift"
+    },
+    {
+      "block": "codeBlock",
+      "content": "",
+      "markerMask": "···",
+      "name": "코드 울타리 닫는 줄",
+      "spans": [],
+      "text": "```"
+    },
+    {
+      "block": "codeBlock",
+      "content": "",
+      "markerMask": "···",
+      "name": "물결 울타리",
+      "spans": [],
+      "text": "~~~"
     }
   ],
   "tagCases": [

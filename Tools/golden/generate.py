@@ -497,12 +497,24 @@ def indent_width(line: str) -> int:
     return sum(4 if ch == "\t" else 1 for ch in line[:len(line) - len(line.lstrip(" \t"))])
 
 
+def marker_mask(line: str, positions) -> str:
+    """마커 자리를 `·` 로 가린 문자열. 파이썬 문자 단위다 — 사례에 BMP 밖 글자를 안 둔다."""
+    out = list(line)
+    for i in positions:
+        out[i] = "·"
+    return "".join(out)
+
+
 def style_facts(line: str) -> dict:
     """한 줄의 블록 종류 · 마커 뗀 내용 · 강조 구간."""
     # 표는 여러 줄이라 한 줄만으로는 markdown-it 이 표로 읽지 않는다. 편집기는 줄
     # 단위라서 `|` 로 시작하면 표 줄로 보고 고정폭 원문 그대로 둔다 (ADR-0005).
     if line.strip().startswith("|"):
-        return {"block": "tableRow", "content": "", "spans": []}
+        # 세로줄이 마커다 (164). `\\|` 는 칸 안의 글자라 뺀다. 마커 자리를 오프셋이 아니라
+        # **가림 문자열**로 낸다 — 마커 자리는 `·`, 나머지는 원문. 오프셋이 하나라도 틀리면
+        # 다른 글자가 가려진다.
+        return {"block": "tableRow", "content": "", "spans": [],
+                "markerMask": marker_mask(line, [m.start() for m in re.finditer(r"(?<!\\)\|", line)])}
 
     # **깊이 들여쓴 목록 줄은 문맥째로 물어본다** (T4). 한 줄만 주면 markdown-it 도
     # 네 칸 이상을 코드로 읽는다 — 그것이 CommonMark 다. 하지만 파일에서는 앞 줄이
@@ -523,6 +535,10 @@ def style_facts(line: str) -> dict:
     else:
         raise SystemExit(f"모르는 블록 토큰 {first!r} — {line!r}")
 
+    if block == "codeBlock" and line.strip()[:3] in ("```", "~~~"):
+        # 울타리 줄은 통째로 마커다 (165) — 수평선과 같다.
+        return {"block": block, "content": "", "spans": [],
+                "markerMask": marker_mask(line, range(len(line)))}
     if block in ("codeBlock", "thematicBreak"):
         return {"block": block, "content": "", "spans": []}
 

@@ -23,6 +23,8 @@ final class LineStylerGoldenTests: XCTestCase {
             let block: String?
             let content: String
             let spans: [Span]
+            /// 마커 자리를 `·` 로 가린 원문 (164 · 165). 표 줄과 울타리 줄에만 있다.
+            let markerMask: String?
         }
         let styleCases: [Case]
     }
@@ -57,6 +59,18 @@ final class LineStylerGoldenTests: XCTestCase {
             }
             let expected = item.spans.map { "\($0.token):\($0.text)" }
             XCTAssertEqual(actual, expected, "강조 구간이 다르다 — \(where_)")
+
+            // **마커 자리** — 오프셋 대신 마커 자리를 `·` 로 가린 원문을 견준다 (164 · 165).
+            // 한 칸이라도 틀리면 다른 글자가 가려진다.
+            if let mask = item.markerMask {
+                var units = Array(item.text.utf16)
+                let dot = Array("·".utf16)[0]
+                for marker in style.markers {
+                    for offset in marker.start..<min(marker.end, units.count) { units[offset] = dot }
+                }
+                XCTAssertEqual(String(decoding: units, as: UTF16.self), mask,
+                               "마커 자리가 다르다 — \(where_)")
+            }
         }
     }
 

@@ -124,11 +124,24 @@ public enum LineStyler {
             markers.append(span(text, text.startIndex, text.endIndex, .marker))
             return (.thematicBreak, text.endIndex)
         }
-        // 코드 울타리 · 표 줄 — 원문 그대로 둔다.
+        // 코드 울타리 — 원문 그대로 두되 **줄 전체가 마커다** (165). 읽기 모드에서는 울타리가
+        // 안 보인다. 편집기에서 숨기면 줄이 사라지므로 흐리게만 한다 (수평선과 같다).
         if trimmed.hasPrefix("```") || trimmed.hasPrefix("~~~") {
+            markers.append(span(text, text.startIndex, text.endIndex, .marker))
             return (.codeBlock, text.endIndex)
         }
+        // 표 줄 — 원문 그대로 두되 **세로줄 `|` 만 마커다** (164). 한 줄짜리 문자열로는 표를
+        // 못 그린다 (ADR-0005). 칸 나눔이 눈에 덜 걸리게 세로줄만 흐리게 한다.
+        // `\|` 는 칸 안의 글자다 (159 가 그렇게 피한다) — 마커가 아니다.
         if trimmed.hasPrefix("|") {
+            var previous: Character? = nil
+            for index in text.indices {
+                let character = text[index]
+                if character == "|", previous != "\\" {
+                    markers.append(span(text, index, text.index(after: index), .marker))
+                }
+                previous = character
+            }
             return (.tableRow, text.endIndex)
         }
 
