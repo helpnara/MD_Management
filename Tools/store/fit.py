@@ -19,9 +19,19 @@ from collections import Counter
 from PIL import Image
 
 # 애플이 요구하는 칸 (App Store Connect 의 업로드 칸에 적힌 숫자가 최종이다).
+#
+# **칸마다 받는 크기가 다르다.** 우리 앱의 아이폰 칸은 6.5인치였다 (2026-09-24 사용자
+# 실측 — 1242x2688 · 2688x1242 · 1284x2778 · 2778x1284 중 하나). 6.9인치 칸을 미리
+# 짐작해 맞췄다가 한 바퀴를 버렸다. **올리는 칸에 적힌 숫자를 먼저 읽는다.**
 TARGETS = {
+    "iphone-6.5-portrait": (1242, 2688),
+    "iphone-6.5-landscape": (2688, 1242),
+    "iphone-6.5-portrait-alt": (1284, 2778),
+    "iphone-6.5-landscape-alt": (2778, 1284),
     "iphone-6.9-portrait": (1320, 2868),
     "iphone-6.9-landscape": (2868, 1320),
+    "ipad-12.9-portrait": (2048, 2732),
+    "ipad-12.9-landscape": (2732, 2048),
     "ipad-13-portrait": (2064, 2752),
     "ipad-13-landscape": (2752, 2064),
 }
