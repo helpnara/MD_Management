@@ -354,6 +354,7 @@ struct MarkdownEditor: UIViewRepresentable {
                 loadedNoteID = noteID
                 loadedText = text
                 view.text = text
+                refreshFocus(view)
                 return
             }
             // 편집기와 파일이 이미 같다 (방금 저장했다).
@@ -366,6 +367,9 @@ struct MarkdownEditor: UIViewRepresentable {
             guard view.text == loadedText else { return }
             loadedText = text
             view.text = text
+            // **갈아 끼운 뒤에 한 번 맞춘다** (162). 글을 통째로 넣으면 저장소 대리자가
+            // 첫 문단을 드러낸 채 칠하는데, 초점이 없으면 그 뒤에 아무도 정리를 안 부른다.
+            refreshFocus(view)
         }
 
         private var lastInsertionID: UUID?
