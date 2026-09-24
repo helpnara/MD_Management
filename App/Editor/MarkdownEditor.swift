@@ -225,13 +225,12 @@ struct MarkdownEditor: UIViewRepresentable {
         private var isStyling = false
         /// 지난번 머리말 길이. 바뀌면 그 구간을 통째로 다시 칠한다 (`MarkdownStyler.restyle`).
         private var headerLength = 0
-        /// 지난번 커서 문단. 커서가 다른 문단으로 가면 **둘만** 다시 칠한다 (S11).
-        /// `noParagraph` 면 아직 모른다는 뜻 — 다음 선택 변화가 반드시 다시 칠한다.
-        private var cursorParagraph = NSRange(location: NSNotFound, length: 0)
+        /// **지금 어느 줄이 원문을 드러내고 있나** (162). 무엇을 지우고 무엇을 드러낼지는
+        /// `Core` 의 `MarkerFocus` 가 정한다 — 여기서는 커서 자리와 *지금 칠해도 되나* 만
+        /// 말하고 그 결과를 옮긴다. 예전에는 대리자 셋이 각자 판단했고, **화면은 안 지운 채
+        /// 기억만 지우는 길**이 있어 드러난 줄이 쌓였다.
+        private var focus = MarkerFocus.State()
 
-        /// 커서 자리. 그 문단만 마커를 흐리게(L1) 두고 나머지는 숨긴다(L2).
-        /// VoiceOver 후퇴는 두지 않는다 — 사용자 결정 (빌드 14 · 13번, A10).
-        private var cursorHint: Int? { view?.selectedRange.location }
         /// 한글 조합 중에는 속성을 건드리지 않는다 — 조합이 끊겨 자음과 모음이
         /// 따로 찍힌다 (안정화 기준 S10).
         private var isComposing = false
@@ -440,10 +439,18 @@ struct MarkdownEditor: UIViewRepresentable {
             guard traits.preferredContentSizeCategory != sizeCategory else { return }
             sizeCategory = traits.preferredContentSizeCategory
             sheet = EditorStyleSheet()
-            guard let storage = view?.textStorage, let sheet else { return }
+            guard let view, let sheet else { return }
+            let storage = view.textStorage
+            let text = storage.string as NSString
+            // 초점이 없으면 드러낼 줄도 없다. 예전에는 초점과 상관없이 커서 자리를 넘겨
+            // **초점이 없는데도 한 줄이 드러난 채** 칠해졌다 (162).
+            let caret = view.isFirstResponder
+                ? min(max(view.selectedRange.location, 0), text.length) : nil
             isStyling = true
-            headerLength = MarkdownStyler.restyleAll(storage, with: sheet, cursor: cursorHint)
+            headerLength = MarkdownStyler.restyleAll(storage, with: sheet,
+                                                     cursor: caret ?? MarkdownStyler.noCursor)
             isStyling = false
+            focus = MarkerFocus.afterWholeRepaint(cursor: caret.map { paragraph(at: $0, in: text) })
         }
 
         // MARK: - NSTextStorageDelegate
@@ -472,6 +479,10 @@ struct MarkdownEditor: UIViewRepresentable {
                 headerLength = MarkdownStyler.restyle(storage, touching: edited, with: sheet,
                                                       previousHeader: headerLength, cursor: cursor)
                 isStyling = false
+                // **여기서도 문단 하나가 드러난다.** 적어 두지 않으면 아무도 그것을 못 지운다
+                // (162). *갚을 것이 있다* 고 함께 적어, 선택이 자리를 잡으면 반드시 맞춘다.
+                focus = MarkerFocus.State(
+                    dressed: paragraph(at: cursor, in: storage.string as NSString), owes: true)
             }
         }
 
@@ -820,32 +831,79 @@ struct MarkdownEditor: UIViewRepresentable {
         }
 
         /// **커서가 다른 문단으로 갔다.** 떠난 문단은 마커를 숨기고, 온 문단은 드러낸다 (L2).
-        /// 조합 중에는 건드리지 않는다 — 조합이 끊긴다 (S10).
+        /// 조합 중에는 건드리지 않는다 — 조합이 끊긴다 (S10). 그때는 `MarkerFocus` 가
+        /// **갚을 것을 적어 두고** 조합이 끝나는 자리에서 갚는다 (162).
         func textViewDidChangeSelection(_ textView: UITextView) {
             reportTitleLine(textView)
             reportImageLine(textView)
             reportActiveFormats(textView)
             reportLinkQuery(textView)
             keepSelectionEdgeVisible(textView)
-            guard !isStyling, !isComposing, textView.markedTextRange == nil, let sheet else { return }
-            let text = textView.textStorage.string as NSString
-            guard text.length > 0 else { return }
-            let location = min(textView.selectedRange.location, text.length)
-            let current = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
-            guard current != cursorParagraph else { return }
-            let previous = cursorParagraph
-            cursorParagraph = current
+            refreshFocus(textView)
+        }
 
+        // MARK: - 원문을 드러낸 줄 (162)
+
+        /// **커서가 여기 있다 · 지금 칠할 수 있다** 만 말하고 나머지는 `MarkerFocus` 에 맡긴다.
+        ///
+        /// 커서가 든 문단만 마커를 흐리게(L1) 두고 나머지는 숨긴다(L2).
+        /// VoiceOver 후퇴는 두지 않는다 — 사용자 결정 (빌드 14 · 13번, A10).
+        ///
+        /// 칠하는 길이 이 하나뿐이라야 **화면과 기억이 안 갈린다.** 조합 중이라 못 칠했으면
+        /// `MarkerFocus` 가 *갚을 것이 있다* 고 적어 두고, 다음에 여기 들어올 때 갚는다.
+        private func refreshFocus(_ textView: UITextView, focused: Bool? = nil) {
+            let text = textView.textStorage.string as NSString
+            guard text.length > 0 else {
+                focus = MarkerFocus.State()
+                return
+            }
+            let hasFocus = focused ?? textView.isFirstResponder
+            let canPaint = !isStyling && !isRenumbering && !isComposing
+                && textView.markedTextRange == nil && sheet != nil
+            let caret = min(max(textView.selectedRange.location, 0), text.length)
+            let line = hasFocus ? paragraph(at: caret, in: text) : nil
+            let plan = MarkerFocus.plan(from: focus, cursor: line, canPaint: canPaint)
+            apply(plan, in: textView, caret: hasFocus ? caret : nil)
+        }
+
+        /// 계획대로 칠하고 **칠한 것만** 기억에 남긴다.
+        private func apply(_ plan: MarkerFocus.Plan, in textView: UITextView, caret: Int?) {
+            defer { focus = plan.state }
+            guard !plan.isEmpty, let sheet else { return }
+            let text = textView.textStorage.string as NSString
+            // 커서가 사라지는 자리라 화면이 움직일 까닭이 없다 — 속성 때문에 딸려
+            // 움직이지 않도록 스크롤 자리를 붙들었다 놓는다 (빌드 29 · 2번).
+            let offset = textView.contentOffset
             isStyling = true
             textView.textStorage.beginEditing()
-            if previous.length > 0, NSMaxRange(previous) <= text.length {
-                MarkdownStyler.restyle(textView.textStorage, touching: previous, with: sheet,
-                                       previousHeader: headerLength, cursor: cursorHint)
+            if let hide = plan.hide, let range = live(hide, in: text) {
+                headerLength = MarkdownStyler.restyle(textView.textStorage, touching: range, with: sheet,
+                                                      previousHeader: headerLength,
+                                                      cursor: MarkdownStyler.noCursor)
             }
-            headerLength = MarkdownStyler.restyle(textView.textStorage, touching: current, with: sheet,
-                                                  previousHeader: headerLength, cursor: cursorHint)
+            if let show = plan.show, let range = live(show, in: text) {
+                headerLength = MarkdownStyler.restyle(textView.textStorage, touching: range, with: sheet,
+                                                      previousHeader: headerLength,
+                                                      cursor: caret ?? MarkdownStyler.noCursor)
+            }
             textView.textStorage.endEditing()
             isStyling = false
+            if plan.show == nil { textView.setContentOffset(offset, animated: false) }
+        }
+
+        /// 글 안의 자리를 문단으로.
+        private func paragraph(at location: Int, in text: NSString) -> MarkerFocus.Span {
+            let safe = min(max(location, 0), max(text.length - 1, 0))
+            let range = text.paragraphRange(for: NSRange(location: safe, length: 0))
+            return MarkerFocus.Span(start: range.location, length: range.length)
+        }
+
+        /// **적어 둔 자리가 아직 글 안에 있나.** 글이 짧아졌으면 없는 자리를 칠하려다 죽는다.
+        private func live(_ span: MarkerFocus.Span, in text: NSString) -> NSRange? {
+            guard span.length > 0, span.start >= 0, span.start + span.length <= text.length else {
+                return nil
+            }
+            return NSRange(location: span.start, length: span.length)
         }
 
         /// **편집이 끝났다** — 키보드가 내려갔거나 다른 곳으로 초점이 갔다 (빌드 29 · 2번).
@@ -855,9 +913,19 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 자리에서 둘 다 갚는다 — 커서가 없는 것처럼 다시 칠하고, 제목을 확정한다.
         func textViewDidEndEditing(_ textView: UITextView) {
             onFocus(false)
-            hideMarkersOnCursorLine(textView)
-            // 다음에 커서가 오면 **그 줄이 어디든** 다시 칠하게 한다 (아래 참고).
-            cursorParagraph = Self.noParagraph
+            // **초점이 떠났으면 조합도 끝났다.** 한글을 치던 중에 다른 곳을 누르면 여기로
+            // 오는데, 예전에는 조합 중이라는 이유로 숨기기를 건너뛰고 **기억까지 지워**
+            // 그 줄이 드러난 채 남았다 (162).
+            isComposing = false
+            refreshFocus(textView, focused: false)
+            // 그래도 이 순간에는 `markedTextRange` 가 아직 안 비어 못 칠했을 수 있다.
+            // 한 바퀴 뒤면 UIKit 이 정리를 마쳤다 — 남은 줄을 거기서 갚는다.
+            if focus.dressed != nil {
+                DispatchQueue.main.async { [weak self, weak textView] in
+                    guard let self, let textView, !textView.isFirstResponder else { return }
+                    self.refreshFocus(textView, focused: false)
+                }
+            }
             guard wasOnTitleLine else { return }
             wasOnTitleLine = false
             onTitleLine(false)
@@ -868,60 +936,21 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 이 대리자는 **커서 자리가 정해지기 전에** 불린다 (빌드 31 · 2번 — 탭하면 화면이
         /// 맨 아래로 끌려가고 커서가 글 끝으로 갔다). 여기서 속성을 바꾸면 TextKit 이
         /// **아직 옛 선택**을 보고 그 자리로 화면을 옮긴다. 칠하는 일은 커서가 실제로 놓인
-        /// 뒤에 오는 `textViewDidChangeSelection` 에 맡기고, 여기서는 **지난 문단만 지워**
-        /// 그쪽이 반드시 다시 칠하게 한다.
+        /// 뒤로 미루고, 여기서는 *다음에는 반드시 다시 칠하라* 고만 적어 둔다.
         func textViewDidBeginEditing(_ textView: UITextView) {
             onFocus(true)
-            cursorParagraph = Self.noParagraph
+            // **기억을 지우지 않는다.** 드러난 줄이 남아 있으면 그것을 지울 근거가 사라진다
+            // (162). 대신 *다음에는 같은 자리라도 반드시 다시 칠하라* 고만 적어 둔다.
+            focus = MarkerFocus.nudged(focus)
             // **한 바퀴 뒤에 칠한다.** 지금은 커서 자리가 아직 안 정해졌다(100).
             // 한 바퀴 뒤면 커서가 제자리에 있고, **선택이 안 바뀌어 `…DidChangeSelection`
             // 이 아예 안 불리는 경우**(같은 자리를 다시 탭했을 때)도 여기서 갚는다 —
             // 그때 기호가 안 나타나 다른 줄에 갔다 와야 보였다 (빌드 32 · 3번).
             DispatchQueue.main.async { [weak self, weak textView] in
                 guard let self, let textView, textView.isFirstResponder else { return }
-                self.showMarkersOnCursorLine(textView)
+                self.refreshFocus(textView, focused: true)
                 self.reportImageLine(textView)
             }
-        }
-
-        /// **커서가 온 줄의 기호를 드러낸다** (L1). 커서가 이미 제자리에 있을 때만 부른다.
-        private func showMarkersOnCursorLine(_ textView: UITextView) {
-            guard !isStyling, !isRenumbering, !isComposing,
-                  textView.markedTextRange == nil, let sheet else { return }
-            let text = textView.textStorage.string as NSString
-            guard text.length > 0 else { return }
-            let location = min(textView.selectedRange.location, text.length)
-            let line = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
-            isStyling = true
-            textView.textStorage.beginEditing()
-            headerLength = MarkdownStyler.restyle(textView.textStorage, touching: line, with: sheet,
-                                                  previousHeader: headerLength, cursor: location)
-            textView.textStorage.endEditing()
-            isStyling = false
-            cursorParagraph = line
-        }
-
-        /// 어떤 문단과도 같지 않은 값. 이것이 들어 있으면 다음 선택 변화가 반드시 다시 칠한다.
-        private static let noParagraph = NSRange(location: NSNotFound, length: 0)
-
-        /// **커서가 떠났으니 그 줄의 마커도 숨긴다** (빌드 29 · 2번 — 마지막 줄은 떠날 자리가 없다).
-        /// 커서가 사라지는 자리라 화면이 움직일 까닭이 없다 — 속성 때문에 딸려 움직이지 않도록
-        /// 스크롤 자리를 붙들었다 놓는다.
-        private func hideMarkersOnCursorLine(_ textView: UITextView) {
-            guard !isStyling, !isComposing, textView.markedTextRange == nil, let sheet else { return }
-            let text = textView.textStorage.string as NSString
-            guard text.length > 0 else { return }
-            let location = min(textView.selectedRange.location, text.length)
-            let line = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
-            let offset = textView.contentOffset
-            isStyling = true
-            textView.textStorage.beginEditing()
-            headerLength = MarkdownStyler.restyle(textView.textStorage, touching: line, with: sheet,
-                                                  previousHeader: headerLength,
-                                                  cursor: MarkdownStyler.noCursor)
-            textView.textStorage.endEditing()
-            isStyling = false
-            textView.setContentOffset(offset, animated: false)
         }
 
         func textViewDidChange(_ textView: UITextView) {
@@ -931,13 +960,10 @@ struct MarkdownEditor: UIViewRepresentable {
             // 글자가 바뀔 때마다 방아쇠를 다시 본다 (147) — 조합 중에도 목록이 따라오게.
             reportLinkQuery(textView)
 
-            // 조합이 끝났다. 건너뛴 재칠을 여기서 갚는다.
-            if wasComposing, !composing, let sheet {
-                isStyling = true
-                headerLength = MarkdownStyler.restyle(textView.textStorage,
-                                                      touching: textView.selectedRange, with: sheet,
-                                                      previousHeader: headerLength, cursor: cursorHint)
-                isStyling = false
+            // 조합이 끝났다. 건너뛴 재칠을 여기서 갚는다 — **드러난 채 남은 줄까지** (162).
+            if wasComposing, !composing {
+                focus = MarkerFocus.nudged(focus)
+                refreshFocus(textView)
             }
             // 줄이 없어졌으면 이제 번호를 맞춘다 (104).
             if let location = pendingRenumber {

@@ -48,6 +48,15 @@ jobs:
             exit 1
           }
 
+      # **규칙 자체를 먼저 따진다** (162). 원문이 드러난 줄과 기억이 갈리지 않는가를
+      # 모든 갈래로 걸어 본다. Swift 쪽 `MarkerFocusTests` 가 같은 갈래를 실제 구현으로 본다.
+      - name: 드러난 줄과 기억이 갈리지 않는가
+        run: |
+          .venv/bin/python Tools/golden/marker_focus.py || {
+            echo "::error::MarkerFocus 규칙이 갈렸습니다 — Tools/golden/marker_focus.py 를 보세요."
+            exit 1
+          }
+
   swift:
     name: swift test
     needs: golden
