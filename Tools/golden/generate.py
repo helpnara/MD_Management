@@ -2133,8 +2133,9 @@ def build() -> dict:
 # 전부다 — 한쪽만 있으면 테스트가 버그를 승인한다 (CLAUDE.md §2).
 # 게다가 결과가 **정말 그 마크다운이 되는지**는 markdown-it 이 한 번 더 본다.
 
-WRAPS = {"bold": "**", "italic": "*", "strikethrough": "~~"}
-WRAP_TAG = {"bold": "strong", "italic": "em", "strikethrough": "s"}
+WRAPS = {"bold": "**", "italic": "*", "strikethrough": "~~", "code": "`"}
+WRAP_TAG = {"bold": "strong", "italic": "em", "strikethrough": "s", "code": "code"}
+WRAP_WIDTH = {"bold": 2, "italic": 1, "strikethrough": 2, "code": 1}
 
 
 def to_units(text: str) -> list[int]:
@@ -2153,7 +2154,7 @@ def u16len(text: str) -> int:
 def scan_wrap(op: str, units: list[int], start: int, length: int) -> dict:
     """양옆의 표시 개수를 센다. `toggle_wrap` 과 `active_at` 이 같이 쓴다."""
     mark = to_units(WRAPS[op])[0]
-    need = 1 if op == "italic" else 2
+    need = WRAP_WIDTH[op]
     blanks = {0x20, 0x09, 0x0A}
 
     begin = max(0, min(start, len(units)))
@@ -2197,7 +2198,7 @@ def toggle_wrap(op: str, text: str, start: int, length: int) -> dict:
     """
     units = to_units(text)
     mark = to_units(WRAPS[op])[0]
-    need = 1 if op == "italic" else 2
+    need = WRAP_WIDTH[op]
     scan = scan_wrap(op, units, start, length)
     begin, finish = scan["from"], scan["to"]
     left, right, is_on = scan["left"], scan["right"], scan["on"]
@@ -2224,6 +2225,35 @@ def line_range(units: list[int], start: int, length: int) -> tuple[int, int]:
     if finish > begin and length > 0 and units[finish - 1] == newline:
         finish -= 1
     return begin, finish
+
+
+def toggle_code(text: str, start: int, length: int) -> dict:
+    """코드 단추 (166) — 한 줄 안이면 역따옴표, 여러 줄이면 울타리, 빈 줄에 커서만이면
+    울타리를 세우고 가운데에 커서."""
+    units = to_units(text)
+    newline = to_units("\n")[0]
+    begin = max(0, min(start, len(units)))
+    finish = max(begin, min(start + length, len(units)))
+    spans_lines = newline in units[begin:finish]
+    l_begin, l_end = line_range(units, start, 0)
+    line_blank = not from_units(units[l_begin:l_end]).strip()
+    fence = "```"
+    if length == 0 and line_blank:
+        return {"start": l_begin, "length": l_end - l_begin, "text": fence + "\n\n" + fence,
+                "selectionStart": l_begin + 4, "selectionLength": 0}
+    if not spans_lines:
+        return toggle_wrap("code", text, start, length)
+    b_begin, b_end = line_range(units, start, length)
+    lines = from_units(units[b_begin:b_end]).split("\n")
+    opens = lines[0].strip().startswith(fence)
+    closes = len(lines) >= 2 and lines[-1].strip() == fence
+    if opens and closes:
+        inner = "\n".join(lines[1:-1])
+        return {"start": b_begin, "length": b_end - b_begin, "text": inner,
+                "selectionStart": b_begin, "selectionLength": u16len(inner)}
+    body = from_units(units[b_begin:b_end])
+    return {"start": b_begin, "length": b_end - b_begin, "text": fence + "\n" + body + "\n" + fence,
+            "selectionStart": b_begin + 4, "selectionLength": u16len(body)}
 
 
 def unquote(line: str) -> str:
@@ -2309,7 +2339,9 @@ def build_format_cases() -> list[dict]:
     for case in spec["cases"]:
         op, text = case["op"], case["text"]
         start, length = case["start"], case.get("length", 0)
-        if op in WRAPS:
+        if op == "code":
+            edit = toggle_code(text, start, length)
+        elif op in WRAPS:
             edit = toggle_wrap(op, text, start, length)
         elif op == "quote":
             edit = toggle_quote(text, start, length)

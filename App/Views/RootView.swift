@@ -1224,6 +1224,11 @@ private struct FormatBar: View {
                 button("기울임", "italic", .wrap(.italic), on: library.activeFormats.italic)
                 button("취소선", "strikethrough", .wrap(.strikethrough),
                        on: library.activeFormats.strikethrough)
+                // **코드** (166, 2026-09-25 사용자 — *입력하는게 너무 불편해*). 역따옴표는
+                // 아이폰 자판에서 세 번 파고 들어가야 나온다. 한 줄이면 감싸고, 여러 줄이면
+                // 울타리로, 빈 줄이면 울타리를 세워 그 안에 커서를 둔다.
+                button("코드", "chevron.left.forwardslash.chevron.right", .code,
+                       on: library.activeFormats.code)
                 rule
                 // **링크** (메뉴 검토 3, 2026-09-22 사용자). 띠에 굵게 · 기울임은 있는데
                 // 링크가 없었다 — 메모 앱에서 링크는 굵게만큼 자주 쓴다. 누르면 지금

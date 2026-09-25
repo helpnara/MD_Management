@@ -412,6 +412,11 @@ struct MarkdownEditor: UIViewRepresentable {
                 return apply(Formatting.toggle(wrap, in: view.textStorage.string,
                                                start: selection.location,
                                                length: selection.length), in: view)
+            case .code:
+                let selection = view.selectedRange
+                return apply(Formatting.toggleCode(in: view.textStorage.string,
+                                                   start: selection.location,
+                                                   length: selection.length), in: view)
             case .quote:
                 let selection = view.selectedRange
                 return apply(Formatting.toggleQuote(in: view.textStorage.string,

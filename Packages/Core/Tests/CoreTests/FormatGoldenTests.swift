@@ -21,6 +21,7 @@ final class FormatGoldenTests: XCTestCase {
             let italic: Bool
             let strikethrough: Bool
             let quote: Bool
+            let code: Bool
         }
         struct Case: Decodable {
             let name: String
@@ -90,9 +91,13 @@ final class FormatGoldenTests: XCTestCase {
             let first = try edit(for: item)
             guard first.selectionLength > 0 else { continue }
             let applied = apply(first, to: item.text)
-            let second = Formatting.toggle(wrap, in: applied,
-                                           start: first.selectionStart,
-                                           length: first.selectionLength)
+            // 코드는 **같은 단추**로 다시 누른다 — 울타리는 `toggle` 이 아니라 `toggleCode` 가 푼다.
+            let second = item.op == "code"
+                ? Formatting.toggleCode(in: applied, start: first.selectionStart,
+                                        length: first.selectionLength)
+                : Formatting.toggle(wrap, in: applied,
+                                    start: first.selectionStart,
+                                    length: first.selectionLength)
             XCTAssertEqual(apply(second, to: applied), item.text,
                            "되돌아오지 않는다 — [\(item.name)]")
         }
@@ -105,6 +110,8 @@ final class FormatGoldenTests: XCTestCase {
         case "bold", "italic", "strikethrough":
             let wrap = try XCTUnwrap(Formatting.Wrap(rawValue: marker(item.op)))
             return Formatting.toggle(wrap, in: item.text, start: item.start, length: item.length)
+        case "code":
+            return Formatting.toggleCode(in: item.text, start: item.start, length: item.length)
         case "quote":
             return Formatting.toggleQuote(in: item.text, start: item.start, length: item.length)
         case "table":
@@ -121,6 +128,7 @@ final class FormatGoldenTests: XCTestCase {
         case "bold": return "**"
         case "italic": return "*"
         case "strikethrough": return "~~"
+        case "code": return "`"
         default: return ""
         }
     }
@@ -128,6 +136,7 @@ final class FormatGoldenTests: XCTestCase {
     private func assertSame(_ made: Formatting.Active, _ golden: Golden.Active, _ where_: String) {
         XCTAssertEqual(made.bold, golden.bold, "굵게 — \(where_)")
         XCTAssertEqual(made.italic, golden.italic, "기울임 — \(where_)")
+        XCTAssertEqual(made.code, golden.code, "코드 — \(where_)")
         XCTAssertEqual(made.strikethrough, golden.strikethrough, "취소선 — \(where_)")
         XCTAssertEqual(made.quote, golden.quote, "인용 — \(where_)")
     }

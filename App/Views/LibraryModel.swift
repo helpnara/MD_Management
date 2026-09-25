@@ -138,6 +138,8 @@ final class LibraryModel: ObservableObject {
         enum Kind: Equatable {
             case wrap(Formatting.Wrap)
             case quote
+            /// 코드 단추 (166) — 한 줄이면 역따옴표, 여러 줄이면 울타리. `Formatting.toggleCode`.
+            case code
             case table
             /// 들여쓰기 · 내어쓰기는 탭 · 시프트 탭과 **같은 길**을 쓴다 (112).
             case shift(deeper: Bool)

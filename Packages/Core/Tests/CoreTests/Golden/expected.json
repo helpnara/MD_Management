@@ -1489,12 +1489,14 @@
     {
       "activeAfter": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1516,12 +1518,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1543,12 +1547,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1570,12 +1576,14 @@
     {
       "activeAfter": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1597,12 +1605,14 @@
     {
       "activeAfter": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1624,12 +1634,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": true,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1651,12 +1663,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": true,
         "quote": false,
         "strikethrough": false
@@ -1678,12 +1692,14 @@
     {
       "activeAfter": {
         "bold": true,
+        "code": false,
         "italic": true,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1705,12 +1721,14 @@
     {
       "activeAfter": {
         "bold": true,
+        "code": false,
         "italic": true,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1732,12 +1750,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": true
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1759,12 +1779,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": true
@@ -1786,12 +1808,14 @@
     {
       "activeAfter": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1813,12 +1837,14 @@
     {
       "activeAfter": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1840,12 +1866,14 @@
     {
       "activeAfter": {
         "bold": true,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1867,12 +1895,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": true,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1894,12 +1924,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": true,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -1921,12 +1953,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": true,
         "strikethrough": false
@@ -1948,12 +1982,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": true,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": true,
         "strikethrough": false
@@ -1975,12 +2011,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": true,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -2002,12 +2040,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -2029,12 +2069,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -2056,12 +2098,14 @@
     {
       "activeAfter": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
       },
       "activeBefore": {
         "bold": false,
+        "code": false,
         "italic": false,
         "quote": false,
         "strikethrough": false
@@ -2079,6 +2123,238 @@
       "op": "table",
       "start": 1,
       "text": "앞 글\n뒷 글"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": true,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "오늘 `회의` 정리",
+      "edit": {
+        "length": 2,
+        "selectionLength": 2,
+        "selectionStart": 4,
+        "start": 3,
+        "text": "`회의`"
+      },
+      "length": 2,
+      "name": "코드 — 고른 글을 감싼다",
+      "op": "code",
+      "start": 3,
+      "text": "오늘 회의 정리"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": true,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "오늘 회의 정리",
+      "edit": {
+        "length": 4,
+        "selectionLength": 2,
+        "selectionStart": 3,
+        "start": 3,
+        "text": "회의"
+      },
+      "length": 2,
+      "name": "코드 — 이미 코드면 푼다 (안쪽만 골랐다)",
+      "op": "code",
+      "start": 4,
+      "text": "오늘 `회의` 정리"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": true,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "오늘 회의 정리",
+      "edit": {
+        "length": 4,
+        "selectionLength": 2,
+        "selectionStart": 3,
+        "start": 3,
+        "text": "회의"
+      },
+      "length": 4,
+      "name": "코드 — 이미 코드면 푼다 (표시까지 골랐다)",
+      "op": "code",
+      "start": 3,
+      "text": "오늘 `회의` 정리"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": true,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "오늘 회의``",
+      "edit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 6,
+        "start": 5,
+        "text": "``"
+      },
+      "length": 0,
+      "name": "코드 — 고른 것이 없으면 표시만 넣는다",
+      "op": "code",
+      "start": 5,
+      "text": "오늘 회의"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "앞 글\n```\n\n```\n뒷 글",
+      "edit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 8,
+        "start": 4,
+        "text": "```\n\n```"
+      },
+      "length": 0,
+      "name": "코드 — 빈 줄에 커서만 있으면 울타리를 세운다",
+      "op": "code",
+      "start": 4,
+      "text": "앞 글\n\n뒷 글"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "```\nlet a = 1\nlet b = 2\n```",
+      "edit": {
+        "length": 19,
+        "selectionLength": 19,
+        "selectionStart": 4,
+        "start": 0,
+        "text": "```\nlet a = 1\nlet b = 2\n```"
+      },
+      "length": 19,
+      "name": "코드 — 여러 줄을 골랐으면 울타리로 감싼다",
+      "op": "code",
+      "start": 0,
+      "text": "let a = 1\nlet b = 2"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "let a = 1",
+      "edit": {
+        "length": 17,
+        "selectionLength": 9,
+        "selectionStart": 0,
+        "start": 0,
+        "text": "let a = 1"
+      },
+      "length": 17,
+      "name": "코드 — 이미 울타리면 푼다",
+      "op": "code",
+      "start": 0,
+      "text": "```\nlet a = 1\n```"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": true,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "오늘 `회의` 정리",
+      "edit": {
+        "length": 2,
+        "selectionLength": 2,
+        "selectionStart": 4,
+        "start": 3,
+        "text": "`회의`"
+      },
+      "length": 3,
+      "name": "코드 — 빈칸이 딸려 온 선택은 물러나서 감싼다",
+      "op": "code",
+      "start": 3,
+      "text": "오늘 회의 정리"
     }
   ],
   "hangingCases": [

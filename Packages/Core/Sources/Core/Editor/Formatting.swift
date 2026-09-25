@@ -15,6 +15,12 @@ public enum Formatting {
         case bold = "**"
         case italic = "*"
         case strikethrough = "~~"
+        /// 줄 안의 코드 (166). 역따옴표 하나씩 — 아이폰 자판에서 세 번 파고 들어가야
+        /// 나오는 글자라 단추를 두었다 (2026-09-25 사용자 — *입력하는게 너무 불편해*).
+        case code = "`"
+
+        /// 한쪽에 몇 개를 두나.
+        var width: Int { (self == .italic || self == .code) ? 1 : 2 }
     }
 
     /// 무엇을 어디로 바꾸고, 바꾼 뒤 어디를 고르고 있을 것인가.
@@ -60,7 +66,7 @@ public enum Formatting {
     /// 바깥 개수에 함께 센다.
     public static func toggle(_ wrap: Wrap, in text: String, start: Int, length: Int) -> Edit {
         let units = Array(text.utf16)
-        let need = wrap == .italic ? 1 : 2
+        let need = wrap.width
         let scan = scan(wrap, units, start: start, length: length)
         let (from, to, left, right, isOn) = (scan.from, scan.to, scan.left, scan.right, scan.isOn)
 
@@ -88,13 +94,16 @@ public enum Formatting {
         public var italic = false
         public var strikethrough = false
         public var quote = false
+        /// 줄 안의 코드만 본다 — 울타리 안인지는 문단 하나로는 모른다 (166).
+        public var code = false
 
         public init(bold: Bool = false, italic: Bool = false,
-                    strikethrough: Bool = false, quote: Bool = false) {
+                    strikethrough: Bool = false, quote: Bool = false, code: Bool = false) {
             self.bold = bold
             self.italic = italic
             self.strikethrough = strikethrough
             self.quote = quote
+            self.code = code
         }
     }
 
@@ -107,6 +116,7 @@ public enum Formatting {
             case .bold: active.bold = isOn
             case .italic: active.italic = isOn
             case .strikethrough: active.strikethrough = isOn
+            case .code: active.code = isOn
             }
         }
         // 인용은 줄 이야기다 — **커서가 선 줄**이 `>` 로 시작하나.
@@ -122,7 +132,7 @@ public enum Formatting {
                              start: Int,
                              length: Int) -> (from: Int, to: Int, left: Int, right: Int, isOn: Bool) {
         let mark = Array(wrap.rawValue.utf16)[0]
-        let need = wrap == .italic ? 1 : 2
+        let need = wrap.width
         var from = clamp(start, 0, units.count)
         var to = clamp(start + length, from, units.count)
 
@@ -142,6 +152,53 @@ public enum Formatting {
         let both = min(left, right)
         let isOn = wrap == .italic ? (both % 2 == 1) : (both >= need)
         return (from, to, left, right, isOn)
+    }
+
+    // MARK: - 코드 (166)
+
+    /// **코드 단추 하나로 셋을 한다.** 고른 것이 한 줄 안이면 역따옴표로 감싸고, 여러 줄이면
+    /// 울타리(```` ``` ````)로 감싸고, **빈 줄에 커서만 있으면** 울타리를 만들어 그 안에 커서를
+    /// 둔다 — 아이폰에서 역따옴표 셋을 연달아 치는 것이 이 단추를 만든 까닭이다.
+    ///
+    /// 감싸는 쪽은 `toggle(.code…)` 과 같은 훑기라 걸었다 풀면 제자리로 돌아온다.
+    /// 울타리도 **첫 줄과 끝 줄이 울타리면 푼다.**
+    public static func toggleCode(in text: String, start: Int, length: Int) -> Edit {
+        let units = Array(text.utf16)
+        let newline = Array("\n".utf16)[0]
+        let from = clamp(start, 0, units.count)
+        let to = clamp(start + length, from, units.count)
+        let spansLines = units[from..<to].contains(newline)
+        let line = lineRange(units, start: start, length: 0)
+        let lineIsBlank = string(units, line.start, line.end)
+            .trimmingCharacters(in: .whitespaces).isEmpty
+
+        // 빈 줄에 커서만 — 울타리를 세우고 가운데 줄에 커서를 둔다.
+        if length == 0, lineIsBlank {
+            let fence = "```\n\n```"
+            return Edit(start: line.start, length: line.end - line.start, text: fence,
+                        selectionStart: line.start + 4, selectionLength: 0)
+        }
+        guard spansLines else {
+            return toggle(.code, in: text, start: start, length: length)
+        }
+
+        // 여러 줄 — 울타리로 감싸거나 푼다.
+        let block = lineRange(units, start: start, length: length)
+        var lines = string(units, block.start, block.end).components(separatedBy: "\n")
+        let opens = lines.first.map { $0.trimmingCharacters(in: .whitespaces).hasPrefix("```") } ?? false
+        let closes = lines.count >= 2
+            && (lines.last.map { $0.trimmingCharacters(in: .whitespaces) == "```" } ?? false)
+        if opens, closes {
+            lines.removeFirst()
+            lines.removeLast()
+            let inner = lines.joined(separator: "\n")
+            return Edit(start: block.start, length: block.end - block.start, text: inner,
+                        selectionStart: block.start, selectionLength: (inner as NSString).length)
+        }
+        let body = string(units, block.start, block.end)
+        let piece = "```\n" + body + "\n```"
+        return Edit(start: block.start, length: block.end - block.start, text: piece,
+                    selectionStart: block.start + 4, selectionLength: (body as NSString).length)
     }
 
     // MARK: - 인용

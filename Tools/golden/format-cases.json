@@ -1,27 +1,215 @@
 {
   "_note": "편집 도구 띠 (T13 1차). 파이썬이 같은 규칙을 따로 구현해 기댓값을 만든다. 오프셋은 UTF-16.",
   "cases": [
-    {"name": "굵게 — 고른 글을 감싼다", "op": "bold", "text": "오늘 회의 정리", "start": 3, "length": 2},
-    {"name": "굵게 — 이미 굵으면 푼다 (표시까지 골랐다)", "op": "bold", "text": "오늘 **회의** 정리", "start": 3, "length": 6},
-    {"name": "굵게 — 이미 굵으면 푼다 (안쪽만 골랐다)", "op": "bold", "text": "오늘 **회의** 정리", "start": 5, "length": 2},
-    {"name": "굵게 — 고른 것이 없으면 표시만 넣는다", "op": "bold", "text": "오늘 회의", "start": 5, "length": 0},
-    {"name": "굵게 — 글 끝에서", "op": "bold", "text": "회의", "start": 0, "length": 2},
-    {"name": "기울임 — 감싼다", "op": "italic", "text": "오늘 회의 정리", "start": 3, "length": 2},
-    {"name": "기울임 — 이미 기울이면 푼다", "op": "italic", "text": "오늘 *회의* 정리", "start": 3, "length": 4},
-    {"name": "기울임 — 굵은 글에 겹쳐 건다 (별을 벗기지 않는다)", "op": "italic", "text": "오늘 **회의** 정리", "start": 3, "length": 6},
-    {"name": "기울임 — 안쪽만 골라도 굵은 것을 안 건드린다", "op": "italic", "text": "오늘 **회의** 정리", "start": 5, "length": 2},
-    {"name": "취소선 — 감싼다", "op": "strikethrough", "text": "오늘 회의 정리", "start": 3, "length": 2},
-    {"name": "취소선 — 푼다", "op": "strikethrough", "text": "오늘 ~~회의~~ 정리", "start": 3, "length": 6},
-    {"name": "굵게 — 한글과 이모지가 섞인 줄", "op": "bold", "text": "정리 🙂 회의 끝", "start": 6, "length": 2},
-    {"name": "굵게 — 뒤 빈칸이 딸려 왔다 (물러나서 감싼다)", "op": "bold", "text": "오늘 회의 정리", "start": 3, "length": 3},
-    {"name": "굵게 — 빈칸만 골랐다", "op": "bold", "text": "오늘 회의", "start": 2, "length": 1},
-    {"name": "인용 — 한 줄에 건다", "op": "quote", "text": "첫 줄\n둘째 줄\n셋째 줄", "start": 6, "length": 0},
-    {"name": "인용 — 여러 줄에 건다", "op": "quote", "text": "첫 줄\n둘째 줄\n셋째 줄", "start": 0, "length": 10},
-    {"name": "인용 — 이미 다 인용이면 푼다", "op": "quote", "text": "> 첫 줄\n> 둘째 줄", "start": 0, "length": 12},
-    {"name": "인용 — 하나만 인용이면 마저 건다", "op": "quote", "text": "> 첫 줄\n둘째 줄", "start": 0, "length": 11},
-    {"name": "인용 — 사이의 빈 줄에는 표시만", "op": "quote", "text": "첫 줄\n\n셋째 줄", "start": 0, "length": 9},
-    {"name": "표 — 빈 줄에 넣는다", "op": "table", "text": "앞 글\n\n", "start": 5, "length": 0},
-    {"name": "표 — 글이 있는 줄 다음에 넣는다", "op": "table", "text": "앞 글", "start": 2, "length": 0},
-    {"name": "표 — 글 한복판에서", "op": "table", "text": "앞 글\n뒷 글", "start": 1, "length": 0}
+    {
+      "name": "굵게 — 고른 글을 감싼다",
+      "op": "bold",
+      "text": "오늘 회의 정리",
+      "start": 3,
+      "length": 2
+    },
+    {
+      "name": "굵게 — 이미 굵으면 푼다 (표시까지 골랐다)",
+      "op": "bold",
+      "text": "오늘 **회의** 정리",
+      "start": 3,
+      "length": 6
+    },
+    {
+      "name": "굵게 — 이미 굵으면 푼다 (안쪽만 골랐다)",
+      "op": "bold",
+      "text": "오늘 **회의** 정리",
+      "start": 5,
+      "length": 2
+    },
+    {
+      "name": "굵게 — 고른 것이 없으면 표시만 넣는다",
+      "op": "bold",
+      "text": "오늘 회의",
+      "start": 5,
+      "length": 0
+    },
+    {
+      "name": "굵게 — 글 끝에서",
+      "op": "bold",
+      "text": "회의",
+      "start": 0,
+      "length": 2
+    },
+    {
+      "name": "기울임 — 감싼다",
+      "op": "italic",
+      "text": "오늘 회의 정리",
+      "start": 3,
+      "length": 2
+    },
+    {
+      "name": "기울임 — 이미 기울이면 푼다",
+      "op": "italic",
+      "text": "오늘 *회의* 정리",
+      "start": 3,
+      "length": 4
+    },
+    {
+      "name": "기울임 — 굵은 글에 겹쳐 건다 (별을 벗기지 않는다)",
+      "op": "italic",
+      "text": "오늘 **회의** 정리",
+      "start": 3,
+      "length": 6
+    },
+    {
+      "name": "기울임 — 안쪽만 골라도 굵은 것을 안 건드린다",
+      "op": "italic",
+      "text": "오늘 **회의** 정리",
+      "start": 5,
+      "length": 2
+    },
+    {
+      "name": "취소선 — 감싼다",
+      "op": "strikethrough",
+      "text": "오늘 회의 정리",
+      "start": 3,
+      "length": 2
+    },
+    {
+      "name": "취소선 — 푼다",
+      "op": "strikethrough",
+      "text": "오늘 ~~회의~~ 정리",
+      "start": 3,
+      "length": 6
+    },
+    {
+      "name": "굵게 — 한글과 이모지가 섞인 줄",
+      "op": "bold",
+      "text": "정리 🙂 회의 끝",
+      "start": 6,
+      "length": 2
+    },
+    {
+      "name": "굵게 — 뒤 빈칸이 딸려 왔다 (물러나서 감싼다)",
+      "op": "bold",
+      "text": "오늘 회의 정리",
+      "start": 3,
+      "length": 3
+    },
+    {
+      "name": "굵게 — 빈칸만 골랐다",
+      "op": "bold",
+      "text": "오늘 회의",
+      "start": 2,
+      "length": 1
+    },
+    {
+      "name": "인용 — 한 줄에 건다",
+      "op": "quote",
+      "text": "첫 줄\n둘째 줄\n셋째 줄",
+      "start": 6,
+      "length": 0
+    },
+    {
+      "name": "인용 — 여러 줄에 건다",
+      "op": "quote",
+      "text": "첫 줄\n둘째 줄\n셋째 줄",
+      "start": 0,
+      "length": 10
+    },
+    {
+      "name": "인용 — 이미 다 인용이면 푼다",
+      "op": "quote",
+      "text": "> 첫 줄\n> 둘째 줄",
+      "start": 0,
+      "length": 12
+    },
+    {
+      "name": "인용 — 하나만 인용이면 마저 건다",
+      "op": "quote",
+      "text": "> 첫 줄\n둘째 줄",
+      "start": 0,
+      "length": 11
+    },
+    {
+      "name": "인용 — 사이의 빈 줄에는 표시만",
+      "op": "quote",
+      "text": "첫 줄\n\n셋째 줄",
+      "start": 0,
+      "length": 9
+    },
+    {
+      "name": "표 — 빈 줄에 넣는다",
+      "op": "table",
+      "text": "앞 글\n\n",
+      "start": 5,
+      "length": 0
+    },
+    {
+      "name": "표 — 글이 있는 줄 다음에 넣는다",
+      "op": "table",
+      "text": "앞 글",
+      "start": 2,
+      "length": 0
+    },
+    {
+      "name": "표 — 글 한복판에서",
+      "op": "table",
+      "text": "앞 글\n뒷 글",
+      "start": 1,
+      "length": 0
+    },
+    {
+      "name": "코드 — 고른 글을 감싼다",
+      "op": "code",
+      "text": "오늘 회의 정리",
+      "start": 3,
+      "length": 2
+    },
+    {
+      "name": "코드 — 이미 코드면 푼다 (안쪽만 골랐다)",
+      "op": "code",
+      "text": "오늘 `회의` 정리",
+      "start": 4,
+      "length": 2
+    },
+    {
+      "name": "코드 — 이미 코드면 푼다 (표시까지 골랐다)",
+      "op": "code",
+      "text": "오늘 `회의` 정리",
+      "start": 3,
+      "length": 4
+    },
+    {
+      "name": "코드 — 고른 것이 없으면 표시만 넣는다",
+      "op": "code",
+      "text": "오늘 회의",
+      "start": 5,
+      "length": 0
+    },
+    {
+      "name": "코드 — 빈 줄에 커서만 있으면 울타리를 세운다",
+      "op": "code",
+      "text": "앞 글\n\n뒷 글",
+      "start": 4,
+      "length": 0
+    },
+    {
+      "name": "코드 — 여러 줄을 골랐으면 울타리로 감싼다",
+      "op": "code",
+      "text": "let a = 1\nlet b = 2",
+      "start": 0,
+      "length": 19
+    },
+    {
+      "name": "코드 — 이미 울타리면 푼다",
+      "op": "code",
+      "text": "```\nlet a = 1\n```",
+      "start": 0,
+      "length": 17
+    },
+    {
+      "name": "코드 — 빈칸이 딸려 온 선택은 물러나서 감싼다",
+      "op": "code",
+      "text": "오늘 회의 정리",
+      "start": 3,
+      "length": 3
+    }
   ]
 }
