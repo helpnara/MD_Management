@@ -195,6 +195,21 @@ public enum Formatting {
             return Edit(start: block.start, length: block.end - block.start, text: inner,
                         selectionStart: block.start, selectionLength: (inner as NSString).length)
         }
+        // **울타리 안쪽만 골랐다** — 감싼 직후가 이 모습이다. 위아래 줄이 울타리면 그 둘을 걷어낸다.
+        // CI 의 되돌아오기 시험이 잡았다: 감싼 뒤 다시 누르면 울타리 속에 울타리를 또 세웠다.
+        if block.start >= 1, block.end < units.count {
+            var aboveStart = block.start - 1
+            while aboveStart > 0, units[aboveStart - 1] != newline { aboveStart -= 1 }
+            var belowEnd = block.end + 1
+            while belowEnd < units.count, units[belowEnd] != newline { belowEnd += 1 }
+            let above = string(units, aboveStart, block.start - 1).trimmingCharacters(in: .whitespaces)
+            let below = string(units, block.end + 1, belowEnd).trimmingCharacters(in: .whitespaces)
+            if above.hasPrefix("```"), below == "```" {
+                let inner = string(units, block.start, block.end)
+                return Edit(start: aboveStart, length: belowEnd - aboveStart, text: inner,
+                            selectionStart: aboveStart, selectionLength: (inner as NSString).length)
+            }
+        }
         let body = string(units, block.start, block.end)
         let piece = "```\n" + body + "\n```"
         return Edit(start: block.start, length: block.end - block.start, text: piece,

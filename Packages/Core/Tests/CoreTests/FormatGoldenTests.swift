@@ -90,6 +90,10 @@ final class FormatGoldenTests: XCTestCase {
             guard let wrap = Formatting.Wrap(rawValue: marker(item.op)) else { continue }
             let first = try edit(for: item)
             guard first.selectionLength > 0 else { continue }
+            // 코드 단추가 약속하는 되돌아오기는 **감싼 것을 풀면 제자리** 다. 푼 쪽에서 다시
+            // 누르면 한 줄짜리 안쪽은 울타리가 아니라 역따옴표로 감싸인다 — 그것이 맞는
+            // 동작이므로, 첫 누르기가 **글자를 뺀** 코드 사례는 여기서 안 본다.
+            if item.op == "code", (first.text as NSString).length < first.length { continue }
             let applied = apply(first, to: item.text)
             // 코드는 **같은 단추**로 다시 누른다 — 울타리는 `toggle` 이 아니라 `toggleCode` 가 푼다.
             let second = item.op == "code"

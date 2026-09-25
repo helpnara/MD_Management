@@ -314,6 +314,9 @@ private struct FolderSidebar: View {
                 ForEach(library.folders) { folder in
                     row(name: folder.name, path: folder.relativePath, count: folder.noteCount, isRoot: false)
                         .swipeActions(edge: .trailing) { folderSwipeActions(for: folder) }
+                        // **길게 눌러도 나온다** (167, 2026-09-25 사용자 — 이름 바꾸기가 있는 줄
+                        // 몰랐다). 줄 밀기(55)는 있어도 **찾는 사람이 없으면 없는 기능**이다.
+                        .contextMenu { folderContextMenu(for: folder) }
                         .dropDestination(for: String.self) { paths, _ in
                             drop(paths, into: folder.relativePath)
                         }
@@ -385,6 +388,21 @@ private struct FolderSidebar: View {
     }
 
     @ViewBuilder
+    /// 줄 밀기와 **같은 두 가지** — 하는 일이 갈리지 않게 같은 모델 함수를 부른다.
+    @ViewBuilder
+    private func folderContextMenu(for folder: FolderSummary) -> some View {
+        Button {
+            library.beginRenameFolder(folder)
+        } label: {
+            Label("이름 바꾸기", systemImage: "pencil.line")
+        }
+        Button(role: .destructive) {
+            library.trashingFolder = folder
+        } label: {
+            Label("지우기", systemImage: "trash")
+        }
+    }
+
     private func folderSwipeActions(for folder: FolderSummary) -> some View {
         // 노트 줄과 같은 이유로 `role: .destructive` 를 안 쓴다 (위 `swipeActions` 주석).
         Button {

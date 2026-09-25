@@ -2251,6 +2251,20 @@ def toggle_code(text: str, start: int, length: int) -> dict:
         inner = "\n".join(lines[1:-1])
         return {"start": b_begin, "length": b_end - b_begin, "text": inner,
                 "selectionStart": b_begin, "selectionLength": u16len(inner)}
+    # 울타리 안쪽만 골랐다 — 위아래 줄이 울타리면 그 둘을 걷어낸다.
+    if b_begin >= 1 and b_end < len(units):
+        above_start = b_begin - 1
+        while above_start > 0 and units[above_start - 1] != newline:
+            above_start -= 1
+        below_end = b_end + 1
+        while below_end < len(units) and units[below_end] != newline:
+            below_end += 1
+        above = from_units(units[above_start:b_begin - 1]).strip()
+        below = from_units(units[b_end + 1:below_end]).strip()
+        if above.startswith(fence) and below == fence:
+            inner = from_units(units[b_begin:b_end])
+            return {"start": above_start, "length": below_end - above_start, "text": inner,
+                    "selectionStart": above_start, "selectionLength": u16len(inner)}
     body = from_units(units[b_begin:b_end])
     return {"start": b_begin, "length": b_end - b_begin, "text": fence + "\n" + body + "\n" + fence,
             "selectionStart": b_begin + 4, "selectionLength": u16len(body)}

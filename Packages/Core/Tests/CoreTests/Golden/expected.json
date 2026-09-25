@@ -2355,6 +2355,35 @@
       "op": "code",
       "start": 3,
       "text": "오늘 회의 정리"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "let a = 1\nlet b = 2",
+      "edit": {
+        "length": 32,
+        "selectionLength": 19,
+        "selectionStart": 0,
+        "start": 0,
+        "text": "let a = 1\nlet b = 2"
+      },
+      "length": 19,
+      "name": "코드 — 울타리 안쪽만 골라도 푼다",
+      "op": "code",
+      "start": 9,
+      "text": "```swift\nlet a = 1\nlet b = 2\n```"
     }
   ],
   "hangingCases": [

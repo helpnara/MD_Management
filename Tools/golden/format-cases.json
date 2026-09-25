@@ -210,6 +210,13 @@
       "text": "오늘 회의 정리",
       "start": 3,
       "length": 3
+    },
+    {
+      "name": "코드 — 울타리 안쪽만 골라도 푼다",
+      "op": "code",
+      "text": "```swift\nlet a = 1\nlet b = 2\n```",
+      "start": 9,
+      "length": 19
     }
   ]
 }
