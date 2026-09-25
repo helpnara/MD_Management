@@ -387,7 +387,6 @@ private struct FolderSidebar: View {
         return true
     }
 
-    @ViewBuilder
     /// 줄 밀기와 **같은 두 가지** — 하는 일이 갈리지 않게 같은 모델 함수를 부른다.
     @ViewBuilder
     private func folderContextMenu(for folder: FolderSummary) -> some View {
@@ -403,6 +402,7 @@ private struct FolderSidebar: View {
         }
     }
 
+    @ViewBuilder
     private func folderSwipeActions(for folder: FolderSummary) -> some View {
         // 노트 줄과 같은 이유로 `role: .destructive` 를 안 쓴다 (위 `swipeActions` 주석).
         Button {
