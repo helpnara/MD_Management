@@ -77,6 +77,24 @@ final class LibraryModel: ObservableObject {
         return notes.filter { !set.contains($0.relativePath) }
     }
 
+    // MARK: - 노트 수 (169)
+    //
+    // **새로 세지 않는다.** 폴더 화면의 숫자(`rootNoteCount` · `folders[].noteCount`)가
+    // 이미 있고, 그것은 목록을 읽을 때마다 `syncCount` 가 맞춘다 (153). 여기서 따로 세면
+    // 세는 길이 둘이 되어 언젠가 갈린다 — 153 이 바로 그것이었다 (CLAUDE.md §1).
+
+    /// 폴더 하나의 노트 수 — 폴더 화면 그 줄의 숫자와 **같은 값**.
+    func noteCount(of folder: String) -> Int {
+        folder.isEmpty ? rootNoteCount
+            : (folders.first { $0.relativePath == folder }?.noteCount ?? 0)
+    }
+
+    /// 전체 노트 수 — 폴더 화면에 보이는 숫자들의 **합**이다. 합과 다르면 사람이 더해 보고
+    /// 어긋난 것을 찾는다. 앱이 보여 주는 폴더는 최상위와 그 바로 아래 한 단계뿐이다 (52).
+    var totalNoteCount: Int {
+        folders.reduce(rootNoteCount) { $0 + $1.noteCount }
+    }
+
     /// **목록에 없는데 상세 칸에 떠 있는 노트** (T7). 링크를 따라온 것 — `assets/` 안의
     /// `.md` 처럼 폴더 목록에 안 보이는 자리에 있을 수 있다.
     @Published private(set) var linkedNote: NoteSummary?

@@ -322,9 +322,14 @@ private struct FolderSidebar: View {
                         }
                 }
             } footer: {
-                Label(library.kind.label, systemImage: icon(for: library.kind))
-                    .font(.scaled(.caption))
-                    .foregroundStyle(Palette.inkFaint)
+                // **전체 노트 수** (169, 2026-09-26 사용자). 머리글이 아니라 바닥글에 둔다 —
+                // 아이패드 사이드바에서 머리글은 접히는 단추가 되어 폴더 줄이 숨을 수 있다.
+                VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
+                    Text("전체 노트 \(library.totalNoteCount)개")
+                    Label(library.kind.label, systemImage: icon(for: library.kind))
+                }
+                .font(.scaled(.caption))
+                .foregroundStyle(Palette.inkFaint)
             }
         }
         .navigationTitle("폴더")
@@ -547,8 +552,28 @@ private struct NoteList: View {
                     description: Text("이 폴더에 마크다운 파일이 없습니다."))
             }
         }
-        .navigationTitle(library.selectedFolder.isEmpty ? library.folderName : library.selectedFolder)
+        .navigationTitle(listTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // **제목 아래 작은 글씨로 노트 수** (169, 2026-09-26 사용자). 제목은 그대로
+            // `navigationTitle` 에도 둔다 — 아이폰의 뒤로 단추 이름이 그것을 쓴다.
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 0) {
+                    Text(listTitle)
+                        .font(.scaled(.headline))
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
+                    Text("노트 \(library.noteCount(of: library.selectedFolder))개")
+                        .font(.scaled(.caption))
+                        .foregroundStyle(Palette.inkFaint)
+                        .lineLimit(1)
+                }
+            }
+        }
+    }
+
+    private var listTitle: String {
+        library.selectedFolder.isEmpty ? library.folderName : library.selectedFolder
     }
 
     @ViewBuilder
