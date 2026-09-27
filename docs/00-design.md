@@ -30,7 +30,7 @@
 | Xcode 타깃 · 스킴 | `Notebook` | 사용자에게 안 보인다. 이름이 바뀌어도 안 바꾼다 |
 | 화면 상단 제목 | **사용자 폴더 이름** (예: `내 기록`) | 앱 이름과 분리. 폴더 이름이 곧 제목 `[L§1]` |
 | iCloud 컨테이너 | `iCloud.com.helpnara.markdown` | `Files` 앱에 보이는 폴더 이름은 `NSUbiquitousContainerName` (이름 바뀌면 여기도) |
-| 지원 메일 | ✅ 정했다 (2026-09-13) · App Store Connect 에 넣었다 (2026-09-24) | **주소는 문서에 안 적는다** — 저장소가 public (08-feedback 4번). ⚠️ 처리방침 페이지의 문의 칸은 아직 자리표시자다 (171) |
+| 지원 메일 | ✅ 정했다 (2026-09-13) · App Store Connect 에 넣었다 (2026-09-24) | **주소는 문서에 안 적는다** — 저장소가 public (08-feedback 4번). 처리방침 페이지의 문의 칸은 게시할 때 저장소 변수로 채운다 (171 · 2026-09-27) |
 | 개인정보 처리방침 URL | `helpnara.github.io/MD_Management/privacy/` | `site.yml` 이 `docs/privacy.md` 한 장만 낸다 `[L§7]` |
 
 ---
