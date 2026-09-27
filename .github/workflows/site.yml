@@ -27,7 +27,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # **문의 메일은 저장소 변수에서** (171). 문서에는 안 적는다 — 저장소가 public 이다.
+      # 변수가 없으면 build.py 가 실패해 게시하지 않는다 — 가짜 주소가 나가는 것보다 낫다.
       - name: 페이지 만들기
+        env:
+          SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
         run: python3 Tools/site/build.py _site
       - uses: actions/upload-pages-artifact@v3
         with:
