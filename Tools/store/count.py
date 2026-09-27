@@ -14,6 +14,10 @@ import sys
 from pathlib import Path
 
 SOURCE = Path("docs/12-submission.md")
+# 심사 답변 (2.1 Information Needed) — Notes 칸에도 붙이는 글. 한도는 4000 으로 알고 있다
+# (여기서 애플 문서를 못 연다 — 칸에 적힌 숫자가 최종이다).
+REPLY = Path("docs/13-review-reply.md")
+REPLY_LIMIT = 4000
 
 # 칸 이름 → 한도. App Store Connect 의 칸에 적힌 숫자가 최종이다.
 LIMITS = {
@@ -56,6 +60,14 @@ def main():
         print(f"{name:<{width}}  {length:>5} / {limit:<5} {mark}")
     for name in missing:
         print(f"{name:<{width}}  {'—':>5}   못 찾음")
+    if REPLY.exists():
+        block = re.search(r"```\n(Hello App Review.*?)\n```", REPLY.read_text(encoding="utf-8"), re.S)
+        if block:
+            length = len(block.group(1).strip())
+            mark = "OK" if length <= REPLY_LIMIT else "넘침"
+            if length > REPLY_LIMIT:
+                bad.append("심사 답변")
+            print(f"{'심사 답변':<{width}}  {length:>5} / {REPLY_LIMIT:<5} {mark}")
     if missing or bad:
         print()
         if missing:

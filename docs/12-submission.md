@@ -249,6 +249,7 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-09-27 | **2.1 Information Needed** — 반려가 아니라 정보 요청 (*limited App Review history*). 실기기 녹화 + 여섯 물음. **새 빌드 없이** 답장 · Notes 칸 · 녹화로 답한다 → `docs/13-review-reply.md` |
 | 2026-09-26 | **심사 접수** — 애플 메일 *We've received your app for review* (빌드 56). 안내: 50% 가 24시간, 90% 가 48시간 안에 끝난다. 고치려고 **심사에서 빼면 48시간이 다시 시작**된다 — 급하지 않은 것은 빼지 않고 다음 판에 싣는다 |
 
 - ☐ 심사 결과를 기다린다. 반려되면 **사유를 그대로 여기 적는다** — 다음에 같은 자리에
