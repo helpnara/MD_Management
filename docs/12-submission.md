@@ -253,6 +253,7 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-09-28 | ✅ **출시** — 개발자 출시 대기 → 사용자가 **이 버전 출시** → *배포 준비됨*. 앱 스토어 검색에 뜨기까지 최대 24시간 |
 | 2026-09-28 | ✅ **승인** — 애플 메일 *Review of your 느린 여백 (iOS) submission is complete* · *Welcome to the App Store* (1.0 for iOS · 한국 시각 19:57). 반려 없이 2.1 정보 요청 한 번으로 끝났다. 공개까지 최대 24시간 |
 | 2026-09-27 | **답장 · 녹화 보냄** (사용자 — *이미 영상하고 모두 제출했고 심사 대기중*). 다시 심사를 기다린다 |
 | 2026-09-27 | **2.1 Information Needed** — 반려가 아니라 정보 요청 (*limited App Review history*). 실기기 녹화 + 여섯 물음. **새 빌드 없이** 답장 · Notes 칸 · 녹화로 답한다 → `docs/13-review-reply.md` |
