@@ -102,7 +102,11 @@ public enum LineMap {
         let body = FrontMatterParser.parse(markdown).body
         let offset = markdown.components(separatedBy: "\n").count - body.components(separatedBy: "\n").count
         let lines = body.components(separatedBy: "\n")
-        let document = Document(parsing: body, options: [.disableSmartOpts])
+        // **`\r\n` 을 `\n` 으로 맞춘 뒤 판다.** cmark 는 CRLF 파일에서 문단의 끝 줄을 한 줄 짧게
+        // 말했다(윈도에서 쓴 파일 · 정답표가 잡았다 · 빌드 57 CI). 줄 수는 그대로라 번호가 안 밀린다.
+        // 블록 순서도 그대로다 — 읽기 HTML(CRLF 그대로 판 것)과 짝이 맞는다.
+        let document = Document(parsing: body.replacingOccurrences(of: "\r\n", with: "\n"),
+                                options: [.disableSmartOpts])
         var walker = Walker(offset: offset, lines: lines)
         walker.visit(document)
         return Parsed(entries: walker.entries)
