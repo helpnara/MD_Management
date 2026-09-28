@@ -52,6 +52,8 @@ WRAP_CASES = ROOT / "Tools" / "golden" / "wrap-link-cases.json"
 HANGING_CASES = ROOT / "Tools" / "golden" / "hanging-cases.json"
 COUNT_CASES = ROOT / "Tools" / "golden" / "count-cases.json"
 PASTE_CONVERT_CASES = ROOT / "Tools" / "golden" / "paste-convert-cases.json"
+LINE_MAP_CASES = ROOT / "Tools" / "golden" / "line-map-cases.json"
+ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "attachment-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -2124,7 +2126,257 @@ def build() -> dict:
         "rebaseCases": build_rebase_cases(),
         "pinCases": build_pin_cases(),
         "formatCases": build_format_cases(),
+        "lineMapCases": build_line_map_cases(),
+        "attachmentCases": build_attachment_cases(),
     }
+
+
+# ── 읽기 ↔ 쓰기 자리 잇기 — 줄 지도 (176) ──────────────────────────────────────
+#
+# 읽기 화면의 블록마다 **원문 몇째 줄부터 몇째 줄까지인가**를 붙인다. 편집기의 글은 원문
+# 그대로라 줄 번호가 곧 편집기 자리다 (ADR-0005) — 두 화면을 잇는 값은 이것 하나다.
+#
+# 줄 번호는 **원문 기준 0 부터.** 머리말은 본문만 파싱하므로 그 줄 수를 더한다.
+# 끝 줄은 **비지 않은 마지막 줄**로 맞춘다 — markdown-it 은 목록 항목 뒤 빈 줄을 범위에
+# 넣고 cmark 는 안 넣는다. 그 차이는 뜻이 없다.
+#
+# 표를 붙이는 블록: 제목 · 문단(느슨한 목록 안의 것 포함, 빽빽한 목록의 숨은 문단은 빼고 —
+# HTML 에 `<p>` 가 안 나온다) · 목록 항목 · 인용 · 코드 상자 · 표 · 표의 줄 · 가로줄.
+# 날 HTML 블록은 빼다 — 우리가 속성을 붙일 수 없다.
+
+LINE_MAP_TAGS = {
+    "heading_open": None, "paragraph_open": "p", "list_item_open": "li",
+    "blockquote_open": "blockquote", "fence": "pre", "code_block": "pre",
+    "table_open": "table", "tr_open": "tr", "hr": "hr",
+}
+
+
+def front_matter_lines(text: str) -> int:
+    """본문이 원문 몇째 줄에서 시작하나 — `split_front_matter` 와 같은 규칙."""
+    source = text[1:] if text.startswith("﻿") else text
+    lines = source.split("\n")
+    if not lines or lines[0].strip() != "---":
+        return 0
+    for i in range(1, len(lines)):
+        if lines[i].strip() in ("---", "..."):
+            return i + 1
+    return 0
+
+
+def line_map(text: str) -> list[dict]:
+    offset = front_matter_lines(text)
+    _, body = split_front_matter(text)
+    body_lines = body.split("\n")
+    blocks = []
+    for token in make_parser().parse(body):
+        if token.type not in LINE_MAP_TAGS or not token.map or token.hidden:
+            continue
+        tag = token.tag if token.type == "heading_open" else LINE_MAP_TAGS[token.type]
+        start, end = token.map
+        last = end - 1
+        while last > start and not body_lines[last].strip():
+            last -= 1
+        blocks.append({"tag": tag, "line": start + offset, "lineEnd": last + offset})
+    return blocks
+
+
+def line_to_anchor(blocks: list[dict], line: int):
+    """편집기 맨 위 줄 → 읽기 화면의 블록 · 그 안에서 얼마나 내려왔나.
+    품은 블록이 여럿이면 **가장 안쪽**(문서 순서로 마지막)."""
+    inside = [i for i, b in enumerate(blocks) if b["line"] <= line <= b["lineEnd"]]
+    if inside:
+        b = blocks[inside[-1]]
+        return {"index": inside[-1],
+                "fraction": (line - b["line"]) / (b["lineEnd"] - b["line"] + 1)}
+    after = [i for i, b in enumerate(blocks) if b["line"] > line]
+    if after:
+        return {"index": after[0], "fraction": 0.0}
+    if blocks:
+        return {"index": len(blocks) - 1, "fraction": 1.0}
+    return None
+
+
+def anchor_to_line(blocks: list[dict], index: int, fraction: float) -> int:
+    """읽기 화면 맨 위 블록 · 비율 → 편집기 맨 위에 둘 줄."""
+    b = blocks[index]
+    span = b["lineEnd"] - b["line"] + 1
+    step = int(fraction * span + 1e-9)
+    return b["line"] + min(max(step, 0), span - 1)
+
+
+def build_line_map_cases() -> list[dict]:
+    spec = json.loads(LINE_MAP_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        text = "\n".join(case["lines"])
+        if case.get("crlf"):
+            text = text.replace("\n", "\r\n")
+        blocks = line_map(text)
+        total = len(text.split("\n"))
+        anchors = [line_to_anchor(blocks, n) for n in range(total)]
+        # **오간 뒤 같은 줄로 돌아와야 한다** — 블록 안의 줄은 전부.
+        for n, anchor in enumerate(anchors):
+            if anchor is None:
+                continue
+            b = blocks[anchor["index"]]
+            if b["line"] <= n <= b["lineEnd"]:
+                back = anchor_to_line(blocks, anchor["index"], anchor["fraction"])
+                if back != n:
+                    raise SystemExit(f"::error::[{case['name']}] {n}줄 → {anchor} → {back}줄")
+        # 순서가 원문 순서여야 웹뷰의 **문서 순서**와 맞는다.
+        if [b["line"] for b in blocks] != sorted(b["line"] for b in blocks):
+            raise SystemExit(f"::error::[{case['name']}] 블록이 원문 순서가 아니다")
+        out.append({"name": case["name"], "text": text, "blocks": blocks, "anchors": anchors})
+    if not any(c["blocks"] for c in out) or all(c["blocks"] for c in out):
+        raise SystemExit("::error::블록이 있는 사례와 없는 사례가 둘 다 있어야 한다")
+    return out
+
+
+# ── 첨부 셈 — 누가 무엇을 쓰나 (172 · 173 · 174) ──────────────────────────────
+#
+# **셈은 하나다.** 노트를 지울 때 같이 보낼 첨부(172) · 휴지통에서 영구 삭제할 때 같이 지울
+# 첨부(173) · 설정의 안 쓰는 첨부(174)가 모두 이것을 부른다 (CLAUDE.md §1 — 재는 곳이 둘이면 갈린다).
+#
+# **의심스러우면 쓰는 것이다.** 잘못 남기면 용량이지만 잘못 치우면 사진이 깨진다.
+#   - 폴더 **전체**의 노트를 본다 — 같은 폴더만 보던 것이 172 다.
+#   - 표준 링크가 아니어도 **파일 이름이 본문에 있으면** 쓰는 것 (`![[a.png]]` · `<img src>` ·
+#     머리말의 표지). 대소문자는 가리지 않는다 — 기기의 파일 시스템이 안 가린다.
+#   - **못 읽은 노트**(아직 안 내려받음)가 하나라도 있으면 판정하지 않는다.
+#   - 휴지통의 노트가 쓰는 것도 쓰는 것이다 — 되돌리면 같이 돌아와야 한다 (56).
+
+def is_attachment_path(path: str) -> bool:
+    parts = path.split("/")
+    return not path.startswith(".trash/") and "assets" in parts[:-1]
+
+
+def precise_refs(note_path: str, text: str) -> set[str]:
+    refs = set()
+    for link in extract_links(text):
+        r = resolve(link["destination"], note_path)
+        if r["kind"] == "relative" and file_extension(r["value"]) not in NOTE_EXTS:
+            refs.add(r["value"])
+    return refs
+
+
+def mentions(text: str, path: str) -> bool:
+    name = nfc(path.rsplit("/", 1)[-1]).lower()
+    body = nfc(text).lower()
+    return name in body or urllib.parse.quote(name).lower() in body
+
+
+def uses(note_path: str, text: str, path: str) -> bool:
+    return path in precise_refs(note_path, text) or mentions(text, path)
+
+
+def original_of(path: str) -> str:
+    return path[len(".trash/"):] if path.startswith(".trash/") else path
+
+
+def unused_attachments(notes: dict, trashed: dict, files: set[str]):
+    if any(text is None for text in notes.values()):
+        return None
+    everyone = {**notes, **{k: v for k, v in trashed.items() if v is not None}}
+    result = []
+    for path in sorted(files):
+        if not is_attachment_path(path):
+            continue
+        used = any(uses(n, t, path) for n, t in everyone.items())
+        # 휴지통 노트는 **원래 자리**로 되돌아가 거기서 링크를 푼다.
+        used = used or any(path in precise_refs(original_of(n), t)
+                           for n, t in trashed.items() if t is not None)
+        if not used:
+            result.append(path)
+    return result
+
+
+def trashing_with(note: str, notes: dict, trashed: dict, files: set[str]) -> list[str]:
+    text = notes.get(note)
+    if text is None:
+        return []
+    others = {n: t for n, t in notes.items() if n != note}
+    if any(t is None for t in others.values()):
+        return []
+    everyone = {**others, **{k: v for k, v in trashed.items() if v is not None}}
+    result = []
+    for path in sorted(precise_refs(note, text)):
+        if path not in files or path.startswith(".trash/"):
+            continue
+        if any(uses(n, t, path) for n, t in everyone.items()):
+            continue
+        if any(path in precise_refs(original_of(n), t) for n, t in trashed.items() if t is not None):
+            continue
+        result.append(path)
+    return result
+
+
+def purging_with(note: str, notes: dict, trashed: dict, files: set[str]) -> list[str]:
+    text = trashed.get(note)
+    if text is None or any(t is None for t in notes.values()):
+        return []
+    others = {n: t for n, t in trashed.items() if n != note and t is not None}
+    result = []
+    for path in sorted(precise_refs(note, text)):
+        if path not in files or not path.startswith(".trash/"):
+            continue
+        if any(uses(n, t, path) or uses(original_of(n), t, original_of(path))
+               for n, t in others.items()):
+            continue
+        # 살아 있는 노트가 **원래 자리**를 가리키는데 거기 파일이 없으면 — 이것이 그 파일이다.
+        home = original_of(path)
+        if home not in files and any(uses(n, t, home) for n, t in notes.items()):
+            continue
+        result.append(path)
+    return result
+
+
+def build_attachment_cases() -> list[dict]:
+    spec = json.loads(ATTACHMENT_CASES.read_text(encoding="utf-8"))
+    out = []
+
+    def texts(raw: dict) -> dict:
+        return {nfc(k): (None if v is None else "\n".join(v) if isinstance(v, list) else v)
+                for k, v in raw.items()}
+
+    for case in spec["cases"]:
+        notes = texts(case.get("notes", {}))
+        trashed = texts(case.get("trashed", {}))
+        files = {nfc(f) for f in case.get("files", [])}
+        entry = {"name": case["name"], "notes": notes, "trashed": trashed,
+                 "files": sorted(files),
+                 "unused": unused_attachments(notes, trashed, files)}
+        if "delete" in case:
+            entry["delete"] = nfc(case["delete"])
+            entry["trashing"] = trashing_with(entry["delete"], notes, trashed, files)
+        if "purge" in case:
+            entry["purge"] = nfc(case["purge"])
+            entry["purging"] = purging_with(entry["purge"], notes, trashed, files)
+        for key in ("unused", "trashing", "purging"):
+            want = case.get("expect", {}).get(key, "없음")
+            if want != "없음" and want != entry.get(key):
+                # 사람이 적은 것은 **뜻**(이 사례가 무엇을 지키나)이고, 값은 위 셈이 낸다.
+                # 둘이 다르면 셈이나 사례 중 하나가 틀렸다 — 여기서 멈춘다.
+                raise SystemExit(f"::error::[{case['name']}] {key}: 뜻 {want} · 셈 {entry.get(key)}")
+        out.append(entry)
+
+    # **옛 규칙이 걸리는 것을 본다** (빌드 56 까지 — 같은 폴더의 노트만 봤다). 무는 것을 못 본
+    # 심판은 통과해도 아무 말을 안 한 것이다 (marker_focus.py 와 같은 까닭).
+    def old_rule(note, notes, files):
+        text = notes.get(note)
+        if text is None:
+            return []
+        folder = directory_of(note)
+        mine = [p for p in sorted(precise_refs(note, text)) if p in files]
+        used = set()
+        for n, t in notes.items():
+            if n != note and t is not None and directory_of(n) == folder:
+                used |= precise_refs(n, t)
+        return [p for p in mine if p not in used]
+
+    bitten = [c["name"] for c in out if "delete" in c
+              and old_rule(c["delete"], c["notes"], set(c["files"])) != c["trashing"]]
+    if not bitten:
+        raise SystemExit("::error::옛 규칙(같은 폴더만)이 한 사례에도 안 걸렸다 — 172 를 표현 못 하는 사례들이다")
+    return out
 
 
 # ── 편집 도구 띠 — 굵게 · 기울임 · 취소선 · 인용 · 표 (T13 1차) ────────────────
@@ -2382,7 +2634,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]

@@ -1,0 +1,131 @@
+{
+  "_왜": "172 · 173 · 174 — 누가 무엇을 쓰나. 노트를 지울 때 같이 보낼 첨부(trashing) · 휴지통에서 영구 삭제할 때 같이 지울 첨부(purging) · 설정의 안 쓰는 첨부(unused). 값은 generate.py 가 계산한다. expect 는 사례가 지키려는 뜻이고, 셈과 다르면 generate.py 가 멈춘다.",
+  "cases": [
+    { "name": "혼자 쓰는 사진 — 같이 휴지통으로",
+      "notes": { "회의/B.md": "![](assets/a.png)" },
+      "files": ["회의/assets/a.png"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": ["회의/assets/a.png"], "unused": [] } },
+
+    { "name": "같은 폴더 다른 노트도 씀 — 남긴다",
+      "notes": { "회의/B.md": "![](assets/a.png)", "회의/C.md": "![](assets/a.png)" },
+      "files": ["회의/assets/a.png"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": [] } },
+
+    { "name": "172 — 옮긴 노트가 다른 폴더에서 씀 · 원래 폴더 노트를 지운다",
+      "notes": { "회의/B.md": "![](assets/a.png)", "아이디어/노트.md": "![](../회의/assets/a.png)" },
+      "files": ["회의/assets/a.png"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": [] } },
+
+    { "name": "172 — 거꾸로 · 옮긴 노트를 지운다",
+      "notes": { "회의/B.md": "![](assets/a.png)", "아이디어/노트.md": "![](../회의/assets/a.png)" },
+      "files": ["회의/assets/a.png"],
+      "delete": "아이디어/노트.md",
+      "expect": { "trashing": [] } },
+
+    { "name": "172 — 붙여넣은 문서 링크 · 최상위 노트가 폴더의 첨부를 씀",
+      "notes": { "A/원본.md": "[계약서](assets/계약.pdf)", "메모.md": "[계약서](A/assets/계약.pdf)" },
+      "files": ["A/assets/계약.pdf"],
+      "delete": "A/원본.md",
+      "expect": { "trashing": [] } },
+
+    { "name": "옮긴 노트 혼자 씀 — 같이 휴지통으로",
+      "notes": { "아이디어/노트.md": "![](../회의/assets/a.png)", "회의/B.md": "글만 있다" },
+      "files": ["회의/assets/a.png"],
+      "delete": "아이디어/노트.md",
+      "expect": { "trashing": ["회의/assets/a.png"] } },
+
+    { "name": "다른 앱의 이중 대괄호로 씀 — 남긴다",
+      "notes": { "회의/B.md": "![](assets/a.png)", "회의/C.md": "![[a.png]]" },
+      "files": ["회의/assets/a.png"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": [] } },
+
+    { "name": "날 HTML 로 씀 — 남긴다",
+      "notes": { "회의/B.md": "![](assets/a.png)", "기록.md": "<img src=\"회의/assets/a.png\" width=\"200\">" },
+      "files": ["회의/assets/a.png"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": [] } },
+
+    { "name": "대소문자만 다른 이름 — 남긴다",
+      "notes": { "회의/B.md": "![](assets/a.png)", "회의/C.md": "표지: A.PNG" },
+      "files": ["회의/assets/a.png"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": [] } },
+
+    { "name": "아직 안 내려받은 노트가 있다 — 아무것도 안 보낸다 · 판정 안 함",
+      "notes": { "회의/B.md": "![](assets/a.png)", "여행/먼곳.md": null },
+      "files": ["회의/assets/a.png", "회의/assets/옛것.png"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": [], "unused": null } },
+
+    { "name": "노트로 가는 링크는 첨부가 아니다",
+      "notes": { "회의/B.md": "[다음](assets/부록.md) ![](assets/a.png)" },
+      "files": ["회의/assets/a.png", "회의/assets/부록.md"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": ["회의/assets/a.png"] } },
+
+    { "name": "퍼센트 인코딩 · 한글 이름",
+      "notes": { "회의/B.md": "![](assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg)" },
+      "files": ["회의/assets/내 사진.jpg"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": ["회의/assets/내 사진.jpg"] } },
+
+    { "name": "없는 파일을 가리키는 링크 — 보낼 것이 없다",
+      "notes": { "회의/B.md": "![](assets/사라짐.png)" },
+      "files": [],
+      "delete": "회의/B.md",
+      "expect": { "trashing": [] } },
+
+    { "name": "바깥 주소 사진 — 보낼 첨부는 없고, 이름이 같으면 안 쓰는 것으로도 안 친다",
+      "notes": { "회의/B.md": "![](https://example.org/a.png)" },
+      "files": ["회의/assets/a.png", "회의/assets/b.png"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": [], "unused": ["회의/assets/b.png"] } },
+
+    { "name": "휴지통의 노트가 쓰는 첨부 — 되돌리면 필요하다",
+      "notes": { "회의/B.md": "![](assets/a.png)" },
+      "trashed": { ".trash/회의/C.md": "![](assets/a.png)" },
+      "files": ["회의/assets/a.png"],
+      "delete": "회의/B.md",
+      "expect": { "trashing": [], "unused": [] } },
+
+    { "name": "174 — 줄을 지운 사진은 안 쓰는 첨부",
+      "notes": { "회의/B.md": "사진 줄을 지웠다", "회의/C.md": "![](assets/b.png)" },
+      "files": ["회의/assets/a.png", "회의/assets/b.png"],
+      "expect": { "unused": ["회의/assets/a.png"] } },
+
+    { "name": "174 — assets 밖의 파일 · 휴지통 안의 파일은 후보가 아니다",
+      "notes": { "회의/B.md": "글" },
+      "files": ["회의/사진.png", ".trash/회의/assets/c.png", "회의/assets/그림/깊은.png"],
+      "expect": { "unused": ["회의/assets/그림/깊은.png"] } },
+
+    { "name": "173 — 휴지통 노트 하나를 영구 삭제 · 딸려 간 첨부도",
+      "notes": { "회의/B.md": "글" },
+      "trashed": { ".trash/회의/C.md": "![](assets/c.png)" },
+      "files": [".trash/회의/assets/c.png"],
+      "purge": ".trash/회의/C.md",
+      "expect": { "purging": [".trash/회의/assets/c.png"] } },
+
+    { "name": "173 — 휴지통의 다른 노트도 쓰면 남긴다",
+      "trashed": { ".trash/회의/C.md": "![](assets/c.png)", ".trash/회의/D.md": "![](assets/c.png)" },
+      "files": [".trash/회의/assets/c.png"],
+      "purge": ".trash/회의/C.md",
+      "expect": { "purging": [] } },
+
+    { "name": "173 — 살아 있는 노트가 원래 자리를 가리키는데 거기 없다 · 남긴다",
+      "notes": { "회의/B.md": "![](assets/c.png)" },
+      "trashed": { ".trash/회의/C.md": "![](assets/c.png)" },
+      "files": [".trash/회의/assets/c.png"],
+      "purge": ".trash/회의/C.md",
+      "expect": { "purging": [] } },
+
+    { "name": "173 — 폴더째 지운 뒤 · 다른 폴더에서 옮겨 온 링크",
+      "trashed": { ".trash/아이디어/노트.md": "![](../회의/assets/a.png)" },
+      "files": [".trash/회의/assets/a.png"],
+      "purge": ".trash/아이디어/노트.md",
+      "expect": { "purging": [".trash/회의/assets/a.png"] } }
+  ]
+}

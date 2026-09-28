@@ -1,6 +1,316 @@
 {
   "_generator": "Tools/golden/generate.py (markdown-it-py + PyYAML)",
   "_warning": "손으로 고치지 마세요. generate.py 를 다시 돌리세요.",
+  "attachmentCases": [
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "name": "혼자 쓰는 사진 — 같이 휴지통으로",
+      "notes": {
+        "회의/B.md": "![](assets/a.png)"
+      },
+      "trashed": {},
+      "trashing": [
+        "회의/assets/a.png"
+      ],
+      "unused": []
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "name": "같은 폴더 다른 노트도 씀 — 남긴다",
+      "notes": {
+        "회의/B.md": "![](assets/a.png)",
+        "회의/C.md": "![](assets/a.png)"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": []
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "name": "172 — 옮긴 노트가 다른 폴더에서 씀 · 원래 폴더 노트를 지운다",
+      "notes": {
+        "아이디어/노트.md": "![](../회의/assets/a.png)",
+        "회의/B.md": "![](assets/a.png)"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": []
+    },
+    {
+      "delete": "아이디어/노트.md",
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "name": "172 — 거꾸로 · 옮긴 노트를 지운다",
+      "notes": {
+        "아이디어/노트.md": "![](../회의/assets/a.png)",
+        "회의/B.md": "![](assets/a.png)"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": []
+    },
+    {
+      "delete": "A/원본.md",
+      "files": [
+        "A/assets/계약.pdf"
+      ],
+      "name": "172 — 붙여넣은 문서 링크 · 최상위 노트가 폴더의 첨부를 씀",
+      "notes": {
+        "A/원본.md": "[계약서](assets/계약.pdf)",
+        "메모.md": "[계약서](A/assets/계약.pdf)"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": []
+    },
+    {
+      "delete": "아이디어/노트.md",
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "name": "옮긴 노트 혼자 씀 — 같이 휴지통으로",
+      "notes": {
+        "아이디어/노트.md": "![](../회의/assets/a.png)",
+        "회의/B.md": "글만 있다"
+      },
+      "trashed": {},
+      "trashing": [
+        "회의/assets/a.png"
+      ],
+      "unused": []
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "name": "다른 앱의 이중 대괄호로 씀 — 남긴다",
+      "notes": {
+        "회의/B.md": "![](assets/a.png)",
+        "회의/C.md": "![[a.png]]"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": []
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "name": "날 HTML 로 씀 — 남긴다",
+      "notes": {
+        "기록.md": "<img src=\"회의/assets/a.png\" width=\"200\">",
+        "회의/B.md": "![](assets/a.png)"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": []
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "name": "대소문자만 다른 이름 — 남긴다",
+      "notes": {
+        "회의/B.md": "![](assets/a.png)",
+        "회의/C.md": "표지: A.PNG"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": []
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png",
+        "회의/assets/옛것.png"
+      ],
+      "name": "아직 안 내려받은 노트가 있다 — 아무것도 안 보낸다 · 판정 안 함",
+      "notes": {
+        "여행/먼곳.md": null,
+        "회의/B.md": "![](assets/a.png)"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": null
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png",
+        "회의/assets/부록.md"
+      ],
+      "name": "노트로 가는 링크는 첨부가 아니다",
+      "notes": {
+        "회의/B.md": "[다음](assets/부록.md) ![](assets/a.png)"
+      },
+      "trashed": {},
+      "trashing": [
+        "회의/assets/a.png"
+      ],
+      "unused": []
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/내 사진.jpg"
+      ],
+      "name": "퍼센트 인코딩 · 한글 이름",
+      "notes": {
+        "회의/B.md": "![](assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.jpg)"
+      },
+      "trashed": {},
+      "trashing": [
+        "회의/assets/내 사진.jpg"
+      ],
+      "unused": []
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [],
+      "name": "없는 파일을 가리키는 링크 — 보낼 것이 없다",
+      "notes": {
+        "회의/B.md": "![](assets/사라짐.png)"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": []
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png",
+        "회의/assets/b.png"
+      ],
+      "name": "바깥 주소 사진 — 보낼 첨부는 없고, 이름이 같으면 안 쓰는 것으로도 안 친다",
+      "notes": {
+        "회의/B.md": "![](https://example.org/a.png)"
+      },
+      "trashed": {},
+      "trashing": [],
+      "unused": [
+        "회의/assets/b.png"
+      ]
+    },
+    {
+      "delete": "회의/B.md",
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "name": "휴지통의 노트가 쓰는 첨부 — 되돌리면 필요하다",
+      "notes": {
+        "회의/B.md": "![](assets/a.png)"
+      },
+      "trashed": {
+        ".trash/회의/C.md": "![](assets/a.png)"
+      },
+      "trashing": [],
+      "unused": []
+    },
+    {
+      "files": [
+        "회의/assets/a.png",
+        "회의/assets/b.png"
+      ],
+      "name": "174 — 줄을 지운 사진은 안 쓰는 첨부",
+      "notes": {
+        "회의/B.md": "사진 줄을 지웠다",
+        "회의/C.md": "![](assets/b.png)"
+      },
+      "trashed": {},
+      "unused": [
+        "회의/assets/a.png"
+      ]
+    },
+    {
+      "files": [
+        ".trash/회의/assets/c.png",
+        "회의/assets/그림/깊은.png",
+        "회의/사진.png"
+      ],
+      "name": "174 — assets 밖의 파일 · 휴지통 안의 파일은 후보가 아니다",
+      "notes": {
+        "회의/B.md": "글"
+      },
+      "trashed": {},
+      "unused": [
+        "회의/assets/그림/깊은.png"
+      ]
+    },
+    {
+      "files": [
+        ".trash/회의/assets/c.png"
+      ],
+      "name": "173 — 휴지통 노트 하나를 영구 삭제 · 딸려 간 첨부도",
+      "notes": {
+        "회의/B.md": "글"
+      },
+      "purge": ".trash/회의/C.md",
+      "purging": [
+        ".trash/회의/assets/c.png"
+      ],
+      "trashed": {
+        ".trash/회의/C.md": "![](assets/c.png)"
+      },
+      "unused": []
+    },
+    {
+      "files": [
+        ".trash/회의/assets/c.png"
+      ],
+      "name": "173 — 휴지통의 다른 노트도 쓰면 남긴다",
+      "notes": {},
+      "purge": ".trash/회의/C.md",
+      "purging": [],
+      "trashed": {
+        ".trash/회의/C.md": "![](assets/c.png)",
+        ".trash/회의/D.md": "![](assets/c.png)"
+      },
+      "unused": []
+    },
+    {
+      "files": [
+        ".trash/회의/assets/c.png"
+      ],
+      "name": "173 — 살아 있는 노트가 원래 자리를 가리키는데 거기 없다 · 남긴다",
+      "notes": {
+        "회의/B.md": "![](assets/c.png)"
+      },
+      "purge": ".trash/회의/C.md",
+      "purging": [],
+      "trashed": {
+        ".trash/회의/C.md": "![](assets/c.png)"
+      },
+      "unused": []
+    },
+    {
+      "files": [
+        ".trash/회의/assets/a.png"
+      ],
+      "name": "173 — 폴더째 지운 뒤 · 다른 폴더에서 옮겨 온 링크",
+      "notes": {},
+      "purge": ".trash/아이디어/노트.md",
+      "purging": [
+        ".trash/회의/assets/a.png"
+      ],
+      "trashed": {
+        ".trash/아이디어/노트.md": "![](../회의/assets/a.png)"
+      },
+      "unused": []
+    }
+  ],
   "brokenCases": [
     {
       "broken": [
@@ -2781,6 +3091,697 @@
       "shallower": "1. ",
       "text": "- 자식",
       "under": "1. "
+    }
+  ],
+  "lineMapCases": [
+    {
+      "anchors": [
+        null
+      ],
+      "blocks": [],
+      "name": "빈 글",
+      "text": ""
+    },
+    {
+      "anchors": [
+        null,
+        null,
+        null,
+        null
+      ],
+      "blocks": [],
+      "name": "머리말만",
+      "text": "---\ntitle: 비었다\n---\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.3333333333333333,
+          "index": 1
+        },
+        {
+          "fraction": 0.6666666666666666,
+          "index": 1
+        },
+        {
+          "fraction": 1.0,
+          "index": 1
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "h1"
+        },
+        {
+          "line": 2,
+          "lineEnd": 4,
+          "tag": "p"
+        }
+      ],
+      "name": "제목과 여러 줄 문단",
+      "text": "# 제목\n\n첫 문단\n이어진 줄\n셋째 줄\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.5,
+          "index": 1
+        },
+        {
+          "fraction": 1.0,
+          "index": 1
+        }
+      ],
+      "blocks": [
+        {
+          "line": 4,
+          "lineEnd": 4,
+          "tag": "h1"
+        },
+        {
+          "line": 6,
+          "lineEnd": 7,
+          "tag": "p"
+        }
+      ],
+      "name": "머리말 뒤 — 줄 수를 더한다",
+      "text": "---\ntitle: 회의\ntags: [일]\n---\n# 회의\n\n본문 한 줄\n본문 두 줄\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 1.0,
+          "index": 2
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "li"
+        },
+        {
+          "line": 1,
+          "lineEnd": 1,
+          "tag": "li"
+        },
+        {
+          "line": 2,
+          "lineEnd": 2,
+          "tag": "li"
+        }
+      ],
+      "name": "빽빽한 목록 — 숨은 문단은 뺀다",
+      "text": "- 하나\n- 둘\n- 셋\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 3
+        },
+        {
+          "fraction": 0.25,
+          "index": 2
+        },
+        {
+          "fraction": 0.0,
+          "index": 4
+        },
+        {
+          "fraction": 0.0,
+          "index": 5
+        },
+        {
+          "fraction": 0.0,
+          "index": 6
+        },
+        {
+          "fraction": 0.0,
+          "index": 7
+        },
+        {
+          "fraction": 1.0,
+          "index": 7
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "li"
+        },
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "p"
+        },
+        {
+          "line": 1,
+          "lineEnd": 4,
+          "tag": "li"
+        },
+        {
+          "line": 1,
+          "lineEnd": 1,
+          "tag": "p"
+        },
+        {
+          "line": 3,
+          "lineEnd": 3,
+          "tag": "p"
+        },
+        {
+          "line": 4,
+          "lineEnd": 4,
+          "tag": "li"
+        },
+        {
+          "line": 6,
+          "lineEnd": 6,
+          "tag": "li"
+        },
+        {
+          "line": 6,
+          "lineEnd": 6,
+          "tag": "p"
+        }
+      ],
+      "name": "느슨한 목록과 안쪽 목록",
+      "text": "- 하나\n- 둘\n\n  둘의 둘째 문단\n  - 안쪽\n\n- 셋\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 0.0,
+          "index": 3
+        },
+        {
+          "fraction": 1.0,
+          "index": 3
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "li"
+        },
+        {
+          "line": 1,
+          "lineEnd": 1,
+          "tag": "li"
+        },
+        {
+          "line": 3,
+          "lineEnd": 3,
+          "tag": "li"
+        },
+        {
+          "line": 4,
+          "lineEnd": 4,
+          "tag": "li"
+        }
+      ],
+      "name": "번호 목록 · 체크상자",
+      "text": "1. 첫째\n2. 둘째\n\n- [ ] 할 일\n- [x] 한 일\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.14285714285714285,
+          "index": 1
+        },
+        {
+          "fraction": 0.2857142857142857,
+          "index": 1
+        },
+        {
+          "fraction": 0.42857142857142855,
+          "index": 1
+        },
+        {
+          "fraction": 0.5714285714285714,
+          "index": 1
+        },
+        {
+          "fraction": 0.7142857142857143,
+          "index": 1
+        },
+        {
+          "fraction": 0.8571428571428571,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 1.0,
+          "index": 2
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "p"
+        },
+        {
+          "line": 2,
+          "lineEnd": 8,
+          "tag": "pre"
+        },
+        {
+          "line": 10,
+          "lineEnd": 10,
+          "tag": "p"
+        }
+      ],
+      "name": "긴 코드 상자 한가운데",
+      "text": "앞 문단\n\n```swift\nlet a = 1\nlet b = 2\nlet c = 3\nlet d = 4\nlet e = 5\n```\n\n뒤 문단\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.2,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 0.0,
+          "index": 3
+        },
+        {
+          "fraction": 0.0,
+          "index": 4
+        },
+        {
+          "fraction": 1.0,
+          "index": 4
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 4,
+          "tag": "table"
+        },
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "tr"
+        },
+        {
+          "line": 2,
+          "lineEnd": 2,
+          "tag": "tr"
+        },
+        {
+          "line": 3,
+          "lineEnd": 3,
+          "tag": "tr"
+        },
+        {
+          "line": 4,
+          "lineEnd": 4,
+          "tag": "tr"
+        }
+      ],
+      "name": "표",
+      "text": "| 이름 | 값 |\n|---|---|\n| 가 | 1 |\n| 나 | 2 |\n| 다 | 3 |\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.5,
+          "index": 1
+        },
+        {
+          "fraction": 0.5,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 1.0,
+          "index": 2
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 3,
+          "tag": "blockquote"
+        },
+        {
+          "line": 0,
+          "lineEnd": 1,
+          "tag": "p"
+        },
+        {
+          "line": 3,
+          "lineEnd": 3,
+          "tag": "p"
+        }
+      ],
+      "name": "인용 안의 두 문단",
+      "text": "> 인용 첫째\n> 이어서\n>\n> 인용 둘째\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 1.0,
+          "index": 2
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "p"
+        },
+        {
+          "line": 2,
+          "lineEnd": 2,
+          "tag": "hr"
+        },
+        {
+          "line": 6,
+          "lineEnd": 6,
+          "tag": "p"
+        }
+      ],
+      "name": "가로줄 · 날 HTML 은 뺀다",
+      "text": "위\n\n---\n\n<div>날 HTML</div>\n\n아래\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 1.0,
+          "index": 1
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "p"
+        },
+        {
+          "line": 2,
+          "lineEnd": 2,
+          "tag": "p"
+        }
+      ],
+      "name": "사진만 있는 문단이 맨 위",
+      "text": "![](assets/2026-09-28-1.jpg)\n\n사진 설명\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.5,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.5,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 0.0,
+          "index": 2
+        },
+        {
+          "fraction": 1.0,
+          "index": 2
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 1,
+          "tag": "h1"
+        },
+        {
+          "line": 3,
+          "lineEnd": 4,
+          "tag": "pre"
+        },
+        {
+          "line": 6,
+          "lineEnd": 6,
+          "tag": "p"
+        }
+      ],
+      "name": "들여쓴 코드 · 밑줄 제목",
+      "text": "설정\n===\n\n    들여쓴 코드\n    둘째 줄\n\n끝\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 1.0,
+          "index": 1
+        },
+        {
+          "fraction": 1.0,
+          "index": 1
+        },
+        {
+          "fraction": 1.0,
+          "index": 1
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "p"
+        },
+        {
+          "line": 4,
+          "lineEnd": 4,
+          "tag": "p"
+        }
+      ],
+      "name": "빈 줄이 여럿 — 블록 사이 줄은 다음 블록으로",
+      "text": "첫 문단\n\n\n\n둘째 문단\n\n\n"
+    },
+    {
+      "anchors": [
+        {
+          "fraction": 0.0,
+          "index": 0
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.0,
+          "index": 1
+        },
+        {
+          "fraction": 0.5,
+          "index": 1
+        },
+        {
+          "fraction": 1.0,
+          "index": 1
+        }
+      ],
+      "blocks": [
+        {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "h1"
+        },
+        {
+          "line": 2,
+          "lineEnd": 3,
+          "tag": "p"
+        }
+      ],
+      "name": "CRLF 파일",
+      "text": "# 윈도에서 쓴 글\r\n\r\n첫 문단\r\n둘째 줄\r\n"
     }
   ],
   "linkCases": [
