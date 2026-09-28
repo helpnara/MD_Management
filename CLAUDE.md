@@ -109,6 +109,10 @@
 빌드를 아끼려고 검사를 빼지 않는다. 대신 `docs/` 가 전부 공개되므로 **실제 지원
 메일 · 시크릿 · 개인 정보를 문서에 적지 않는다.**
 
+**private 로 바꾸면 처리방침 페이지가 꺼진다** (2026-09-28 시험 · 175) — 무료 요금제의 GitHub Pages 는
+public 저장소만 된다. 심사에 낸 처리방침 · 지원 URL 이 그 페이지다. public 으로 되돌려도 Pages 는
+저절로 안 켜진다 — Settings → Pages → Source 를 **GitHub Actions** 로 다시 켠다.
+
 
 - `paths-ignore` 로 문서만 고친 푸시는 건너뛴다.
 - `concurrency` + `cancel-in-progress`.
