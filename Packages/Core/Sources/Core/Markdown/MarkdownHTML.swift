@@ -80,8 +80,10 @@ public enum MarkdownHTML {
         var rewriter = NoteRewriter(notePath: Paths.normalized(notePath), existing: existing)
         let rewritten = rewriter.visit(document) ?? document
 
+        // 블록마다 원문 줄 범위를 붙인다 — 읽기 ↔ 쓰기를 오가도 보던 자리를 잇는다 (176).
+        // 짝이 안 맞으면 `LineMap` 이 손대지 않고 돌려준다.
         return RenderedNote(
-            bodyHTML: HTMLFormatter.format(rewritten),
+            bodyHTML: LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown),
             missingAttachments: rewriter.missing
         )
     }
@@ -243,12 +245,15 @@ public enum MarkdownHTML {
       padding: 0.8em;
       border-radius: 0.5em;
       overflow-x: auto;
+      /* 긴 줄은 화면 폭에서 접는다 — 좌우로 밀지 않고 위아래로만 읽는다 (170). 줄바꿈 · 들여쓰기는 그대로. */
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
-    pre code { background: none; padding: 0; font-size: 0.85em; }
+    pre code { background: none; padding: 0; font-size: 0.85em; white-space: inherit; }
     hr { border: none; border-top: 1px solid var(--yb-rule); margin: 2em 0; }
     img { max-width: 100%; height: auto; border-radius: 0.4em; display: block; margin: 1em auto; }
     table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1em 0; }
-    th, td { border: 1px solid var(--yb-rule); padding: 0.4em 0.6em; text-align: left; }
+    th, td { border: 1px solid var(--yb-rule); padding: 0.4em 0.6em; text-align: left; overflow-wrap: anywhere; }
     th { background: var(--yb-paper-raised); }
     /* 참조했는데 없는 첨부 — 회색 상자에 경로를 적는다 (안정화 기준 S5) */
     .yb-missing {

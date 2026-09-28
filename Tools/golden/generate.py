@@ -2140,9 +2140,10 @@ def build() -> dict:
 # 끝 줄은 **비지 않은 마지막 줄**로 맞춘다 — markdown-it 은 목록 항목 뒤 빈 줄을 범위에
 # 넣고 cmark 는 안 넣는다. 그 차이는 뜻이 없다.
 #
-# 표를 붙이는 블록: 제목 · 문단(느슨한 목록 안의 것 포함, 빽빽한 목록의 숨은 문단은 빼고 —
-# HTML 에 `<p>` 가 안 나온다) · 목록 항목 · 인용 · 코드 상자 · 표 · 표의 줄 · 가로줄.
-# 날 HTML 블록은 빼다 — 우리가 속성을 붙일 수 없다.
+# 표를 붙이는 블록: 제목 · 문단 · 목록 항목 · 인용 · 코드 상자 · 표 · 표의 줄 · 가로줄.
+# **빽빽한 목록 안의 문단도 넣는다** — markdown-it 은 숨기지만 앱의 `HTMLFormatter` 는 빽빽한
+# 목록에도 `<p>` 를 낸다(2026-09-28 swift-markdown 소스를 읽었다). 속성이 붙는 곳은 앱의 HTML 이다.
+# 날 HTML 블록은 뺀다 — 앱은 그것을 글자로 바꿔 `<p>` 하나로 내지만 원문 범위를 붙이지 않는다.
 
 LINE_MAP_TAGS = {
     "heading_open": None, "paragraph_open": "p", "list_item_open": "li",
@@ -2169,7 +2170,7 @@ def line_map(text: str) -> list[dict]:
     body_lines = body.split("\n")
     blocks = []
     for token in make_parser().parse(body):
-        if token.type not in LINE_MAP_TAGS or not token.map or token.hidden:
+        if token.type not in LINE_MAP_TAGS or not token.map:
             continue
         tag = token.tag if token.type == "heading_open" else LINE_MAP_TAGS[token.type]
         start, end = token.map

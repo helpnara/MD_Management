@@ -1301,6 +1301,98 @@ final class LibraryModel: ObservableObject {
         }
     }
 
+    // MARK: - 읽기 ↔ 쓰기 자리 (176)
+
+    /// 지금 화면이 말한 **보던 자리.** 편집기는 줄(`line`)을, 웹뷰는 맨 위 블록의 순번(`block`)과 그 안의
+    /// 비율(`fraction`)을 말한다. 둘 다 못 재면 전체 길이 대비 비율(`ratio`)만.
+    struct Spot: Equatable {
+        var line: Int?
+        var block: Int?
+        var fraction: Double = 0
+        var ratio: Double = 0
+    }
+
+    /// 새 화면이 가야 할 자리. 한 번 쓰면 화면이 `spotRestored()` 로 지운다.
+    struct SpotRestore: Equatable, Identifiable {
+        let id = UUID()
+        let spot: Spot
+    }
+
+    /// **지금 화면에 자리를 묻는 중.** 화면이 `reportSpot` 으로 답하면 모드를 바꾼다.
+    @Published private(set) var spotRequest: UUID?
+    @Published private(set) var spotToRestore: SpotRestore?
+    /// 이미 답을 받은 물음. 저장하는 동안 `spotRequest` 를 쥐고 있으므로, 늦게 온 답이나
+    /// 기다림 끝의 물러서기가 **두 번 바꾸지 않게** 따로 적는다.
+    private var spotAnswered: UUID?
+
+    /// 위 도구 줄의 **읽기 · 쓰기** 단추 (⌘E). 바꾸기 전에 보던 자리를 묻는다 (176).
+    /// 화면이 답을 못 하면(아직 안 떴다 등) 0.4초 뒤에 그냥 바꾼다 — 예전처럼 맨 위로.
+    func toggleReading() {
+        guard spotRequest == nil else { return }
+        let id = UUID()
+        spotRequest = id
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard let self, self.spotRequest == id, self.spotAnswered != id else { return }
+            self.spotAnswered = id
+            self.log("자리 잇기: 화면이 답하지 않아 그냥 바꿈")
+            self.finishToggle(nil)
+        }
+    }
+
+    /// 지금 화면이 보던 자리를 알려 왔다.
+    func reportSpot(_ spot: Spot?) {
+        guard let id = spotRequest, spotAnswered != id else { return }
+        spotAnswered = id
+        finishToggle(spot)
+    }
+
+    func spotRestored() {
+        spotToRestore = nil
+    }
+
+    private func finishToggle(_ spot: Spot?) {
+        let toReading = !isReading
+        let restore = spot.map { SpotRestore(spot: translate($0, toReading: toReading)) }
+        guard toReading else {
+            spotToRestore = restore
+            isReading = false
+            spotRequest = nil
+            return
+        }
+        // **읽기로 넘기기 전에 쓰고, 다 쓴 뒤에 넘긴다.** 읽기 화면은 쓴 글로 다시 렌더한다 —
+        // 먼저 넘기면 옛 페이지가 떠서 자리를 잡은 뒤 새 페이지가 다시 떠 맨 위로 간다.
+        // 그동안 `spotRequest` 를 쥐고 있어 단추를 또 눌러도 겹치지 않는다.
+        Task {
+            await save()
+            spotToRestore = restore
+            isReading = true
+            spotRequest = nil
+        }
+    }
+
+    /// 한쪽 화면의 자리를 다른 쪽 화면의 말로 옮긴다. **줄 번호 하나로 잇는다** — 블록 표는
+    /// 편집기의 글에서 새로 만든다(읽기 HTML 에 붙은 것과 같은 셈 · `LineMap`).
+    private func translate(_ spot: Spot, toReading: Bool) -> Spot {
+        let text = draft.isEmpty ? noteText : draft
+        let blocks = LineMap.blocks(markdown: text)
+        var out = Spot(ratio: spot.ratio)
+        if toReading {
+            if let line = spot.line, let anchor = LineMap.anchor(forLine: line, in: blocks) {
+                out.block = anchor.index
+                out.fraction = anchor.fraction
+            }
+        } else if let block = spot.block {
+            out.line = LineMap.line(forBlock: block, fraction: spot.fraction, in: blocks)
+        }
+        let way = toReading ? "쓰기 → 읽기" : "읽기 → 쓰기"
+        let line = (toReading ? spot.line : out.line).map(String.init) ?? "없음"
+        let block = (toReading ? out.block : spot.block).map(String.init) ?? "없음"
+        let percent = Int((spot.ratio * 100).rounded())
+        log("자리 잇기: \(way) · 줄 \(line) · 블록 \(block) · 전체의 \(percent)%")
+        return out
+    }
+
     // MARK: - 안 쓰는 첨부 (174)
 
     enum UnusedAttachments: Equatable {

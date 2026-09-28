@@ -135,6 +135,12 @@ struct MarkdownEditor: UIViewRepresentable {
     /// 붙여넣을 글을 이 노트 기준으로 고친다 (144). 고칠 것이 없으면 `nil`.
     /// 붙여넣을 것을 바꿔 준다 (144 · 157 · 158 · 159). 규칙은 모델과 Core 가 정한다.
     var onPasteLinks: @MainActor (MarkdownTextView.PastedItem) -> String? = { _ in nil }
+    /// **보던 자리를 묻는다** (176). 새 값이 오면 화면 맨 위 줄을 재서 `onSpot` 으로 답한다.
+    var spotRequest: UUID? = nil
+    var onSpot: @MainActor (LibraryModel.Spot?) -> Void = { _ in }
+    /// 읽기에서 넘어왔을 때 **맨 위에 둘 줄.** 키보드는 올리지 않는다.
+    var restore: LibraryModel.SpotRestore? = nil
+    var onRestored: @MainActor () -> Void = {}
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
@@ -194,6 +200,12 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
         if let format, coordinator.apply(format) { onFormatted() }
+        coordinator.onRestored = onRestored
+        if let restore { coordinator.restore(restore, in: view) }
+        if let spotRequest, coordinator.answeredSpot != spotRequest {
+            coordinator.answeredSpot = spotRequest
+            onSpot(coordinator.spot(of: view))
+        }
     }
 
     @MainActor
@@ -370,6 +382,99 @@ struct MarkdownEditor: UIViewRepresentable {
             // **갈아 끼운 뒤에 한 번 맞춘다** (162). 글을 통째로 넣으면 저장소 대리자가
             // 첫 문단을 드러낸 채 칠하는데, 초점이 없으면 그 뒤에 아무도 정리를 안 부른다.
             refreshFocus(view)
+        }
+
+        // MARK: 보던 자리 (176)
+
+        var answeredSpot: UUID?
+        var onRestored: @MainActor () -> Void = {}
+        private var restoredID: UUID?
+
+        /// 화면 맨 위 줄(원문 줄 번호, 0 부터)과 전체 비율. 편집기의 글은 원문 그대로라
+        /// 글자 자리에서 줄바꿈을 세면 곧 줄 번호다 (ADR-0005).
+        func spot(of view: UITextView) -> LibraryModel.Spot {
+            let top = view.contentOffset.y + view.adjustedContentInset.top
+            let point = CGPoint(x: view.textContainerInset.left + 2, y: top + view.textContainerInset.top + 2)
+            var spot = LibraryModel.Spot(ratio: Self.ratio(of: view))
+            if let position = view.closestPosition(to: point) {
+                let offset = view.offset(from: view.beginningOfDocument, to: position)
+                spot.line = Self.line(atUTF16: offset, in: view.textStorage.string as NSString)
+            }
+            return spot
+        }
+
+        /// 넘어온 자리로 간다. 화면 크기가 잡히고 글이 들어온 뒤라야 한다 — 새로 만든 편집기는
+        /// 첫 `updateUIView` 에서 아직 크기가 0 이다. 한 바퀴 뒤에 가고, 레이아웃이 어림값일 수
+        /// 있어(TextKit 2) 조금 뒤에 한 번 더 맞춘다.
+        func restore(_ request: LibraryModel.SpotRestore, in view: UITextView) {
+            guard restoredID != request.id else { return }
+            restoredID = request.id
+            let spot = request.spot
+            DispatchQueue.main.async { [weak self, weak view] in
+                guard let view else { return }
+                self?.scroll(view, to: spot)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self, weak view] in
+                    guard let view else { return }
+                    self?.scroll(view, to: spot)
+                    self?.onRestored()
+                }
+            }
+        }
+
+        private func scroll(_ view: UITextView, to spot: LibraryModel.Spot) {
+            view.layoutIfNeeded()
+            let whole = view.textStorage.string as NSString
+            let minY = -view.adjustedContentInset.top
+            let maxY = max(minY, view.contentSize.height - view.bounds.height + view.adjustedContentInset.bottom)
+            var target = minY + CGFloat(spot.ratio) * (maxY - minY)
+            if let line = spot.line,
+               let position = view.position(from: view.beginningOfDocument,
+                                            offset: Self.utf16Offset(ofLine: line, in: whole)) {
+                if let layout = view.textLayoutManager {
+                    layout.ensureLayout(for: layout.documentRange)
+                }
+                let rect = view.caretRect(for: position)
+                if rect.minY.isFinite {
+                    target = rect.minY - view.textContainerInset.top - view.adjustedContentInset.top
+                }
+            }
+            view.setContentOffset(CGPoint(x: view.contentOffset.x, y: min(max(target, minY), maxY)),
+                                  animated: false)
+        }
+
+        static func ratio(of view: UIScrollView) -> Double {
+            let top = view.contentOffset.y + view.adjustedContentInset.top
+            let range = view.contentSize.height - view.bounds.height
+                + view.adjustedContentInset.top + view.adjustedContentInset.bottom
+            guard range > 0 else { return 0 }
+            return min(1, max(0, Double(top / range)))
+        }
+
+        /// 글자 자리(UTF-16) 앞의 줄바꿈 수 = 줄 번호.
+        static func line(atUTF16 offset: Int, in text: NSString) -> Int {
+            let end = min(max(offset, 0), text.length)
+            var count = 0
+            var index = 0
+            while index < end {
+                if text.character(at: index) == 0x0A { count += 1 }
+                index += 1
+            }
+            return count
+        }
+
+        /// 줄 번호 → 그 줄 첫 글자의 자리(UTF-16). 줄이 모자라면 글 끝.
+        static func utf16Offset(ofLine line: Int, in text: NSString) -> Int {
+            guard line > 0 else { return 0 }
+            var seen = 0
+            var index = 0
+            while index < text.length {
+                if text.character(at: index) == 0x0A {
+                    seen += 1
+                    if seen == line { return index + 1 }
+                }
+                index += 1
+            }
+            return text.length
         }
 
         private var lastInsertionID: UUID?

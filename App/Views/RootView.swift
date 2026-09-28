@@ -872,7 +872,11 @@ private struct NoteDetail: View {
             NoteWebView(
                 html: library.pageHTML,
                 assets: library.assetProvider ?? EmptyAssetProvider(),
-                onOpen: handle)
+                onOpen: handle,
+                spotRequest: library.spotRequest,
+                onSpot: library.reportSpot,
+                restore: library.spotToRestore,
+                onRestored: library.spotRestored)
         } else {
             // 쓰기 — 라이브 편집기 L1 (ADR-0005). 원문은 그대로 두고 속성만 바뀐다.
             //
@@ -896,7 +900,11 @@ private struct NoteDetail: View {
                     onImageLineChanged: library.cursorImageLineChanged,
                     onActiveChanged: { library.activeFormats = $0 },
                     onLinkQueryChanged: library.linkQueryChanged,
-                    onPasteLinks: library.repairPastedLinks)
+                    onPasteLinks: library.repairPastedLinks,
+                    spotRequest: library.spotRequest,
+                    onSpot: library.reportSpot,
+                    restore: library.spotToRestore,
+                    onRestored: library.spotRestored)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
                 // **`>>` · `[[` 를 치면 노트 목록이 여기 뜬다** (147).
@@ -1084,9 +1092,8 @@ private struct NoteDetail: View {
         ToolbarItem(placement: .topBarTrailing) {
             // 위 토글: 읽기(WKWebView 완전 렌더) ↔ 쓰기(원문). 쓰기가 기본이다.
             Button {
-                // 읽기로 넘기기 전에 쓴다 — 읽기 화면은 파일을 다시 렌더한다.
-                if !library.isReading { Task { await library.save() } }
-                library.isReading.toggle()
+                // 보던 자리를 물은 뒤 바꾼다 (176). 저장도 거기서 한다.
+                library.toggleReading()
             } label: {
                 Label(library.isReading ? "쓰기" : "읽기",
                       systemImage: library.isReading ? "pencil" : "book")

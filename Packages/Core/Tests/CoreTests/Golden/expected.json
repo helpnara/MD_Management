@@ -3243,19 +3243,19 @@
       "anchors": [
         {
           "fraction": 0.0,
-          "index": 0
-        },
-        {
-          "fraction": 0.0,
           "index": 1
         },
         {
           "fraction": 0.0,
-          "index": 2
+          "index": 3
+        },
+        {
+          "fraction": 0.0,
+          "index": 5
         },
         {
           "fraction": 1.0,
-          "index": 2
+          "index": 5
         }
       ],
       "blocks": [
@@ -3265,17 +3265,32 @@
           "tag": "li"
         },
         {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "p"
+        },
+        {
           "line": 1,
           "lineEnd": 1,
           "tag": "li"
         },
         {
+          "line": 1,
+          "lineEnd": 1,
+          "tag": "p"
+        },
+        {
           "line": 2,
           "lineEnd": 2,
           "tag": "li"
+        },
+        {
+          "line": 2,
+          "lineEnd": 2,
+          "tag": "p"
         }
       ],
-      "name": "빽빽한 목록 — 숨은 문단은 뺀다",
+      "name": "빽빽한 목록 — 앱의 HTML 처럼 문단도 센다",
       "text": "- 하나\n- 둘\n- 셋\n"
     },
     {
@@ -3298,10 +3313,6 @@
         },
         {
           "fraction": 0.0,
-          "index": 5
-        },
-        {
-          "fraction": 0.0,
           "index": 6
         },
         {
@@ -3309,8 +3320,12 @@
           "index": 7
         },
         {
+          "fraction": 0.0,
+          "index": 8
+        },
+        {
           "fraction": 1.0,
-          "index": 7
+          "index": 8
         }
       ],
       "blocks": [
@@ -3343,6 +3358,11 @@
           "line": 4,
           "lineEnd": 4,
           "tag": "li"
+        },
+        {
+          "line": 4,
+          "lineEnd": 4,
+          "tag": "p"
         },
         {
           "line": 6,
@@ -3362,27 +3382,27 @@
       "anchors": [
         {
           "fraction": 0.0,
-          "index": 0
-        },
-        {
-          "fraction": 0.0,
           "index": 1
         },
         {
           "fraction": 0.0,
-          "index": 2
-        },
-        {
-          "fraction": 0.0,
-          "index": 2
-        },
-        {
-          "fraction": 0.0,
           "index": 3
+        },
+        {
+          "fraction": 0.0,
+          "index": 4
+        },
+        {
+          "fraction": 0.0,
+          "index": 5
+        },
+        {
+          "fraction": 0.0,
+          "index": 7
         },
         {
           "fraction": 1.0,
-          "index": 3
+          "index": 7
         }
       ],
       "blocks": [
@@ -3392,9 +3412,19 @@
           "tag": "li"
         },
         {
+          "line": 0,
+          "lineEnd": 0,
+          "tag": "p"
+        },
+        {
           "line": 1,
           "lineEnd": 1,
           "tag": "li"
+        },
+        {
+          "line": 1,
+          "lineEnd": 1,
+          "tag": "p"
         },
         {
           "line": 3,
@@ -3402,9 +3432,19 @@
           "tag": "li"
         },
         {
+          "line": 3,
+          "lineEnd": 3,
+          "tag": "p"
+        },
+        {
           "line": 4,
           "lineEnd": 4,
           "tag": "li"
+        },
+        {
+          "line": 4,
+          "lineEnd": 4,
+          "tag": "p"
         }
       ],
       "name": "번호 목록 · 체크상자",

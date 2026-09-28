@@ -118,6 +118,7 @@ enum SampleFolder {
     ```swift
     // 코드 블록은 고정폭 그대로 보여 준다
     let note = try store.readText(at: "2026-09-13 회의.md")
+    let summary = note.split(separator: "\\n").filter { !$0.isEmpty }.prefix(3).joined(separator: " / ") // 긴 줄은 화면 폭에서 접힌다
     ```
     """
 
