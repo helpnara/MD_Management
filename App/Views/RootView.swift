@@ -901,6 +901,7 @@ private struct NoteDetail: View {
                     onActiveChanged: { library.activeFormats = $0 },
                     onLinkQueryChanged: library.linkQueryChanged,
                     onPasteLinks: library.repairPastedLinks,
+                    notePath: library.selectedNote?.relativePath,
                     spotRequest: library.spotRequest,
                     onSpot: library.reportSpot,
                     restore: library.spotToRestore,

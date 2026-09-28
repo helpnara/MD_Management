@@ -84,6 +84,26 @@ public enum MarkdownLinks {
         }
     }
 
+    /// **어디서 복사했는지 알 때** — 원래 노트의 폴더에서 이 폴더로 링크를 옮겨 적는다 (177 둘째).
+    ///
+    /// 앱 안에서 복사하면 편집기가 클립보드에 **원래 노트의 경로**를 함께 싣는다. 그러면 이름으로
+    /// 찾을 필요가 없다 — 노트를 옮길 때(T1)와 **같은 셈**(`rebased`)으로 정확히 옮긴다.
+    ///
+    /// 이름으로 찾기(`repaired`)는 이 앱의 사진 이름에서 무너진다: 사진은 폴더마다
+    /// `2026-09-28-1.jpg` 부터 다시 센다. 같은 날 두 폴더에 사진을 넣으면 **이름이 겹쳐**
+    /// 어느 것인지 몰라 안 고쳤고(깨진 링크), 붙이는 폴더에 같은 이름이 있으면 **그 폴더의
+    /// 다른 사진**을 가리킨 채로 두었다. 빌드 58 에서 사용자가 두 번째로 걸린 자리다.
+    public static func moved(pasted text: String, fromNote source: String, toFolder folder: String) -> Repair {
+        let from = Paths.directory(of: source)
+        guard from != folder, text.contains("](") else { return Repair(text: text, fixed: 0) }
+        let out = rebased(text, from: from, to: folder)
+        guard out != text else { return Repair(text: text, fixed: 0) }
+        let before = extract(from: text).map(\.destination)
+        let after = extract(from: out).map(\.destination)
+        let fixed = zip(before, after).filter { $0 != $1 }.count
+        return Repair(text: out, fixed: fixed)
+    }
+
     public static func repaired(pasted text: String, noteFolder: String,
                                 files: [String]) -> Repair {
         guard !files.isEmpty, text.contains("](") else { return Repair(text: text, fixed: 0) }

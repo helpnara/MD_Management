@@ -23,6 +23,29 @@ final class RebaseGoldenTests: XCTestCase {
         return try JSONDecoder().decode(Golden.self, from: try Data(contentsOf: url))
     }
 
+    /// **앱 안에서 복사해 다른 폴더에 붙이면 옮기기와 같은 셈이다** (177 둘째). 원래 노트의 경로를
+    /// 알면 이름으로 찾지 않는다 — 이름이 겹치는 사진(`2026-09-28-1.jpg`)에서도 정확하다.
+    func testPasteFromKnownNoteMovesLikeRebase() throws {
+        for item in try Self.load().rebaseCases {
+            let source = item.from.isEmpty ? "원래.md" : item.from + "/원래.md"
+            let pasted = MarkdownLinks.moved(pasted: item.text, fromNote: source, toFolder: item.to)
+            XCTAssertEqual(pasted.text, item.rebased, "[\(item.name)]")
+            let changed = zip(MarkdownLinks.extract(from: item.text), MarkdownLinks.extract(from: item.rebased))
+                .filter { $0.destination != $1.destination }.count
+            XCTAssertEqual(pasted.fixed, changed, "고친 수 — [\(item.name)]")
+        }
+    }
+
+    /// 같은 폴더에서 복사해 붙이면 **아무것도 안 고친다** — 이미 맞다.
+    func testPasteWithinTheSameFolderChangesNothing() throws {
+        for item in try Self.load().rebaseCases {
+            let source = item.from.isEmpty ? "원래.md" : item.from + "/원래.md"
+            let pasted = MarkdownLinks.moved(pasted: item.text, fromNote: source, toFolder: item.from)
+            XCTAssertEqual(pasted.text, item.text, "[\(item.name)]")
+            XCTAssertEqual(pasted.fixed, 0, "[\(item.name)]")
+        }
+    }
+
     func testMatchesGolden() throws {
         for item in try Self.load().rebaseCases {
             XCTAssertEqual(MarkdownLinks.rebased(item.text, from: item.from, to: item.to),

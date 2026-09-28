@@ -322,8 +322,12 @@ final class LibraryModel: ObservableObject {
             text = fixed.text
             notes.append("겹친 번호를 지웠습니다")
         }
-        let repair = MarkdownLinks.repaired(pasted: text, noteFolder: noteFolderForLink,
-                                            files: vaultPaths)
+        // **어디서 복사했는지 알면 그 셈으로** (177 둘째) — 원래 폴더에서 이 폴더로 정확히 옮긴다.
+        // 모를 때만(다른 앱 · 다른 곳) 이름으로 찾는다. 사진 이름은 폴더마다 `날짜-1` 부터라
+        // 이름으로는 겹쳐서 못 고치거나 **엉뚱한 사진**을 가리켰다.
+        let repair = pasted.sourceNote.map {
+            MarkdownLinks.moved(pasted: text, fromNote: $0, toFolder: noteFolderForLink)
+        } ?? MarkdownLinks.repaired(pasted: text, noteFolder: noteFolderForLink, files: vaultPaths)
         if repair.fixed > 0 {
             text = repair.text
             notes.append("링크 \(repair.fixed)개를 이 노트에서 열리도록 고쳤습니다")

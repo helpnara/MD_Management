@@ -12,6 +12,11 @@ final class MarkdownTextView: UITextView {
     /// **붙여넣을 것을 한 번 손볼 기회** (144 · 157 · 158 · 159).
     /// 고칠 것이 없으면 `nil` 을 돌려준다.
     var onPaste: (@MainActor (PastedItem) -> String?)?
+    /// **이 편집기가 보여 주는 노트** (177 둘째). 복사할 때 클립보드에 함께 싣는다 — 붙이는 쪽이
+    /// 링크를 **이름으로 짐작하지 않고** 원래 폴더에서 정확히 옮겨 적게.
+    var notePath: String?
+    /// 클립보드에 싣는 우리 갈래. 다른 앱은 모르는 이름이라 무시한다.
+    static let sourceType = "com.helpnara.markdown.source"
 
     /// **클립보드가 실어 온 것** — 갈래를 읽는 길은 **여기 하나**다.
     ///
@@ -31,6 +36,41 @@ final class MarkdownTextView: UITextView {
         let lineBefore: String
         /// 고른 글 — 있으면 링크의 이름이 된다 (152 와 같은 규칙).
         let selection: String
+        /// **이 앱에서 복사한 글이면 원래 노트의 경로** (177 둘째). 다른 곳에서 왔거나, 복사한 뒤
+        /// 클립보드가 바뀌었으면 `nil` — 그때는 이름으로 찾는다(144).
+        let sourceNote: String?
+    }
+
+    // MARK: 복사 — 원래 노트를 함께 싣는다 (177 둘째)
+
+    override func copy(_ sender: Any?) {
+        super.copy(sender)
+        tagClipboard()
+    }
+
+    override func cut(_ sender: Any?) {
+        super.cut(sender)
+        tagClipboard()
+    }
+
+    /// 방금 복사한 글과 **원래 노트의 경로**를 첫 항목에 더한다. 글도 같이 적어 두는 까닭:
+    /// 붙일 때 클립보드의 글이 이것과 같을 때만 믿는다 — 그 사이 다른 앱에서 복사했으면 안 믿는다.
+    private func tagClipboard() {
+        let board = UIPasteboard.general
+        guard let notePath, let copied = board.string else { return }
+        let record: [String: String] = ["note": notePath, "text": copied]
+        guard let data = try? JSONSerialization.data(withJSONObject: record) else { return }
+        var items = board.items
+        guard !items.isEmpty else { return }
+        items[0][Self.sourceType] = data
+        board.setItems(items)
+    }
+
+    private static func sourceNote(from board: UIPasteboard, plain: String) -> String? {
+        guard let data = board.data(forPasteboardType: sourceType),
+              let record = try? JSONSerialization.jsonObject(with: data) as? [String: String],
+              record["text"] == plain else { return nil }
+        return record["note"]
     }
 
     /// **붙여넣기** — 갈래를 읽어 모델에 넘기고, 모델이 바꾼 글을 한 번에 넣는다.
@@ -49,7 +89,8 @@ final class MarkdownTextView: UITextView {
                               url: board.url?.absoluteString,
                               urlName: Self.urlName(from: board),
                               lineBefore: lineBeforeCaret(),
-                              selection: text(in: target) ?? "")
+                              selection: text(in: target) ?? "",
+                              sourceNote: Self.sourceNote(from: board, plain: plain))
         guard let made = onPaste?(item), made != plain else {
             super.paste(sender)
             return
@@ -135,6 +176,8 @@ struct MarkdownEditor: UIViewRepresentable {
     /// 붙여넣을 글을 이 노트 기준으로 고친다 (144). 고칠 것이 없으면 `nil`.
     /// 붙여넣을 것을 바꿔 준다 (144 · 157 · 158 · 159). 규칙은 모델과 Core 가 정한다.
     var onPasteLinks: @MainActor (MarkdownTextView.PastedItem) -> String? = { _ in nil }
+    /// 이 편집기가 보여 주는 노트의 경로 — 복사할 때 클립보드에 싣는다 (177 둘째).
+    var notePath: String? = nil
     /// **보던 자리를 묻는다** (176). 새 값이 오면 화면 맨 위 줄을 재서 `onSpot` 으로 답한다.
     var spotRequest: UUID? = nil
     var onSpot: @MainActor (LibraryModel.Spot?) -> Void = { _ in }
@@ -196,6 +239,7 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.onActive = onActiveChanged
         coordinator.onLinkQuery = onLinkQueryChanged
         coordinator.onPasteLinks = onPasteLinks
+        (view as? MarkdownTextView)?.notePath = notePath
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
