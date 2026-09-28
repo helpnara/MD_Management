@@ -99,17 +99,23 @@ public enum LineMap {
     }
 
     static func parse(_ markdown: String) -> Parsed {
-        let body = FrontMatterParser.parse(markdown).body
-        let offset = markdown.components(separatedBy: "\n").count - body.components(separatedBy: "\n").count
-        let lines = body.components(separatedBy: "\n")
-        // **`\r\n` 을 `\n` 으로 맞춘 뒤 판다.** cmark 는 CRLF 파일에서 문단의 끝 줄을 한 줄 짧게
-        // 말했다(윈도에서 쓴 파일 · 정답표가 잡았다 · 빌드 57 CI). 줄 수는 그대로라 번호가 안 밀린다.
-        // 블록 순서도 그대로다 — 읽기 HTML(CRLF 그대로 판 것)과 짝이 맞는다.
-        let document = Document(parsing: body.replacingOccurrences(of: "\r\n", with: "\n"),
-                                options: [.disableSmartOpts])
+        // **`\r` 을 먼저 뺀다 — 글자가 아니라 코드 포인트로.** Swift 는 `\r\n` 을 글자 **하나**로
+        // 본다. 리눅스 Foundation 의 `components(separatedBy: "\n")` 은 그 안의 `\n` 을 못 찾아
+        // CRLF 파일이 **한 줄**이 됐다 — 끝 줄이 시작 줄에 묶였다(빌드 57 CI 에서 같은 자리 두 번).
+        // 기기(애플 Foundation)에서는 갈렸으니 **기기마다 답이 다를 뻔한 자리**다. 줄 번호는 `\n` 만
+        // 세므로 `\r` 을 빼도 번호가 안 밀린다 — 편집기도 `\n` 만 센다.
+        let source = String(String.UnicodeScalarView(markdown.unicodeScalars.filter { $0 != "\r" }))
+        let body = FrontMatterParser.parse(source).body
+        let offset = newlines(in: source) - newlines(in: body)
+        let lines = body.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        let document = Document(parsing: body, options: [.disableSmartOpts])
         var walker = Walker(offset: offset, lines: lines)
         walker.visit(document)
         return Parsed(entries: walker.entries)
+    }
+
+    private static func newlines(in text: String) -> Int {
+        text.unicodeScalars.reduce(0) { $0 + ($1 == "\n" ? 1 : 0) }
     }
 
     private struct Walker: MarkupWalker {
