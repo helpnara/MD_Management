@@ -256,16 +256,31 @@ final class LibraryModel: ObservableObject {
     ///
     /// **비어 있으면 아무것도 안 고친다.** 아직 못 읽었을 때 안전한 쪽이다.
     private(set) var vaultPaths: [String] = []
-    private var vaultPathsReadAt: Date?
+    /// 읽는 중인가 · 읽는 동안 또 부탁이 왔나. 겹치면 끝난 뒤 **한 번 더** 읽는다.
+    private var vaultPathsReading = false
+    private var vaultPathsStale = false
 
-    /// 노트를 열 때 한 번 (너무 자주는 안 읽는다).
-    func refreshVaultPathsIfNeeded() {
-        if let at = vaultPathsReadAt, Date().timeIntervalSince(at) < 60 { return }
-        vaultPathsReadAt = Date()
+    /// **파일이 생기거나 바뀔 때마다 다시 읽는다** (177, 사용자 — *빠르게 테스트하면 동작하지 않아*).
+    ///
+    /// 예전에는 노트를 열 때 **60초에 한 번만** 읽었다. 방금 만든 노트 · 방금 넣은 사진의 링크를 곧바로
+    /// 다른 폴더에 붙이면 목록에 아직 없어 못 고치고(못 찾으면 그대로 둔다), 다른 폴더에서는 깨진 링크가
+    /// 됐다 — 일정 시간이 지나야 맞았다. 이제 목록 · 폴더를 다시 읽을 때와 첨부를 넣은 뒤에 부른다.
+    /// 금고를 한 번 훑는 일이라 가볍다 (파일 2천 개 한도). 읽는 중에 또 오면 끝난 뒤 한 번만 더.
+    func refreshVaultPaths() {
+        guard !vaultPathsReading else {
+            vaultPathsStale = true
+            return
+        }
+        vaultPathsReading = true
         Task { [weak self] in
             guard let self, let store = self.store else { return }
             let files = await store.linkableFiles()
             self.vaultPaths = files.map(\.relativePath)
+            self.vaultPathsReading = false
+            if self.vaultPathsStale {
+                self.vaultPathsStale = false
+                self.refreshVaultPaths()
+            }
         }
     }
 
@@ -1131,7 +1146,10 @@ final class LibraryModel: ObservableObject {
                 failed += 1
             }
         }
-        if !lines.isEmpty { insertion = Insertion(text: lines.joined(separator: "\n")) }
+        if !lines.isEmpty {
+            insertion = Insertion(text: lines.joined(separator: "\n"))
+            refreshVaultPaths()   // 방금 넣은 사진 줄을 곧바로 다른 폴더에 붙여도 고쳐지게 (177)
+        }
         lastError = failed == 0 ? nil : "사진 \(failed)장을 넣지 못했습니다"
     }
 
@@ -1963,6 +1981,7 @@ final class LibraryModel: ObservableObject {
         if root != rootNoteCount { rootNoteCount = root }
         rootStamp = await store.stamp(of: "")
         lastFolderSweep = Date()
+        refreshVaultPaths()   // 폴더가 생기고 · 바뀌고 · 지워졌을 수 있다 (177)
     }
 
     func reloadNotes() async {
@@ -1984,6 +2003,7 @@ final class LibraryModel: ObservableObject {
         if !arrived.isDisjoint(with: downloading) { downloading.subtract(arrived) }
         syncCount(of: selectedFolder, to: loaded.count)
         scheduleIndexRefresh()
+        refreshVaultPaths()   // 노트가 생기고 · 이름이 바뀌고 · 옮겨졌을 수 있다 (177)
         // 링크를 따라온 노트는 목록에 없는 것이 맞다 — 지우지 않는다 (T7).
         if let current = selectedNoteID, current != linkedNote?.relativePath,
            !loaded.contains(where: { $0.id == current }) {
@@ -1999,8 +2019,8 @@ final class LibraryModel: ObservableObject {
     func loadSelectedText() async {
         // 노트를 떠난다 — 제목 줄에 커서가 있었어도 여기서 확정한다 (89).
         cursorOnTitleLine = false
-        // 붙여넣을 때 쓸 금고 목록을 뒤에서 읽어 둔다 (144).
-        refreshVaultPathsIfNeeded()
+        // 붙여넣을 때 쓸 금고 목록을 뒤에서 읽어 둔다 (144 · 177).
+        refreshVaultPaths()
         // **읽기 전에 쓴다.** 노트를 바꾸는 길목이 여기다 — 남은 글을 먼저 파일에
         // 넣지 않으면 그대로 사라진다.
         await save()
