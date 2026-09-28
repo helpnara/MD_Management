@@ -4914,3 +4914,9 @@ support@example.com <!-- TODO: 첫 빌드 전 실주소로 교체 (docs/08-feedb
 **CLAUDE.md §5 의 전제가 바뀐다** — *public 이라 macOS 러너가 무료 · 빌드를 아끼려고 검사를 빼지 않는다.*
 길을 정하면 §5 를 고친다.
 
+
+### 175 — 다시 public (2026-09-28 사용자 · *특별한 이유 없이 시험해 봤다*)
+
+되돌린 뒤 `site.yml` 8번도 `deploy` ❌ 같은 404 (`Ensure GitHub Pages has been enabled`). **private 로 가는 순간 Pages 가 꺼졌고,
+public 으로 돌아와도 저절로 켜지지 않는다.** 사용자가 Settings → Pages → Source 를 **GitHub Actions** 로 다시 켜고,
+Environments → `github-pages` 의 Deployment branches 에 `claude/*` 가 남아 있는지 본다 (171 에서 더한 규칙).
