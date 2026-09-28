@@ -738,6 +738,39 @@ actor FolderStore {
         return chosen
     }
 
+    /// 폴더 이름을 바꾸고 **그 폴더 안을 가리키던 링크를 따라 고친다** (179, 사용자 — 남은 할 일을
+    /// 반영해 제출하자). 168 은 알리기만 해서, 이름을 바꾸면 다른 폴더 노트의 사진이 깨졌다.
+    ///
+    /// 바꾸기 **전에** 폴더 전체를 읽는다 — 옛 자리로 링크를 풀어야 하기 때문이다. 고치는 셈은
+    /// `MarkdownLinks.retargeted` 하나다. 안의 노트는 새 자리에 쓴다. 쓸 때 **읽은 글과 같을 때만**
+    /// 쓴다(`expecting`) — 그 사이 다른 기기에서 고쳤으면 건드리지 않고 못 고친 수로 센다.
+    /// 아직 안 내려온 노트는 읽을 수 없어 못 본 수로 센다.
+    func renameFolderFixingLinks(_ relativePath: String, to newName: String) throws -> FolderRename {
+        let census = attachmentCensus()
+        let moved = try renameFolder(relativePath, to: newName)
+        guard moved != relativePath else { return FolderRename(path: moved) }
+        var result = FolderRename(path: moved)
+        for (path, text) in census.notes {
+            guard let text else {
+                result.unread += 1
+                continue
+            }
+            let repair = MarkdownLinks.retargeted(text, notePath: path,
+                                                  fromFolder: relativePath, toFolder: moved)
+            guard repair.fixed > 0 else { continue }
+            let now = path.hasPrefix(relativePath + "/")
+                ? moved + String(path.dropFirst(relativePath.count)) : path
+            do {
+                try writeText(repair.text, to: now, expecting: text)
+                result.fixed += repair.fixed
+                result.notes += 1
+            } catch {
+                result.failed += 1
+            }
+        }
+        return result
+    }
+
     /// 하위 폴더를 **통째로 휴지통으로.** 안의 파일을 하나씩 `.trash/<원래 경로>` 로 옮기고
     /// 빈 폴더를 지운다. 그래서 휴지통에는 노트 하나하나가 폴더 이름과 함께 보이고,
     /// 되돌리면 폴더가 다시 생긴다. 숨김 파일은 옮기지 않는다 (폴더와 함께 사라진다).
@@ -880,15 +913,24 @@ actor FolderStore {
     ///
     /// **빈칸으로 비켜 가지 않는다.** `이름 2.jpg` 는 마크다운 링크에서 `<>` 없이는
     /// 깨진다 (빌드 11 · 9번). `stem` 과 `ext` 를 받아 `stem-1.jpg` · `stem-2.jpg` 로 센다.
+    ///
+    /// **이름을 금고 전체에서 겹치지 않게 짓는다** (178). 예전에는 폴더마다 `2026-09-28-1.jpg` 부터 다시
+    /// 세서, 같은 날 두 폴더에 사진을 넣으면 이름이 겹쳤다 — 붙여넣기의 링크 고치기(144)가 이름으로
+    /// 찾다가 어느 것인지 몰라 못 고치거나 **다른 폴더의 사진**을 가리켰다(177). 이미 있는 파일의 이름은
+    /// 바꾸지 않는다 — 파일이 원본이다. 새로 넣는 것부터 겹치지 않는다. 휴지통 안의 이름도 피한다
+    /// (되돌리면 다시 나란히 선다).
     func writeAsset(_ data: Data, stem: String, ext: String, besideNoteIn folder: String) throws -> String {
         openScopeIfNeeded()
         let assets = folder.isEmpty ? "assets" : folder + "/assets"
         try createFolder(assets)
+        let taken = assetNamesInVault()
 
         var path = ""
-        for sequence in 1...999 {
-            let candidate = assets + "/" + stem + "-\(sequence)." + ext
-            if !FileManager.default.fileExists(atPath: root.appendingPathComponent(candidate).path) {
+        for sequence in 1...9999 {
+            let name = stem + "-\(sequence)." + ext
+            let candidate = assets + "/" + name
+            if !taken.contains(Paths.normalized(name).lowercased()),
+               !FileManager.default.fileExists(atPath: root.appendingPathComponent(candidate).path) {
                 path = candidate
                 break
             }
@@ -898,6 +940,30 @@ actor FolderStore {
         }
         try writeData(data, to: path)
         return String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))
+    }
+
+    /// 금고 안 **모든 `assets/` 폴더의 파일 이름** (휴지통 포함 · 소문자 · NFC). 사진 이름을 겹치지 않게
+    /// 짓는 데만 쓴다 (178). 다른 숨김 폴더는 들어가지 않는다.
+    private func assetNamesInVault() -> Set<String> {
+        var names: Set<String> = []
+        var pending = [""]
+        while let folder = pending.popLast() {
+            let url = folder.isEmpty ? root : root.appendingPathComponent(folder)
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: []
+            ) else { continue }
+            let inAssets = folder.split(separator: "/").last == "assets"
+            for entry in entries {
+                let name = Paths.normalized(entry.lastPathComponent)
+                if (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                    if name.hasPrefix(".") && !(folder.isEmpty && name == ".trash") { continue }
+                    pending.append(folder.isEmpty ? name : folder + "/" + name)
+                } else if inAssets {
+                    names.insert(name.lowercased())
+                }
+            }
+        }
+        return names
     }
 
     /// 같은 이름이 있으면 `이름 2.md` · `이름 3.md`. 파일 시스템을 직접 본다 —

@@ -127,3 +127,13 @@ struct TrashedFile: Identifiable, Hashable, Sendable {
     let size: Int
     var id: String { relativePath }
 }
+
+/// 폴더 이름 바꾸기의 결과 (179) — 새 경로와 **고친 링크 · 노트 수**, 못 고친 · 못 본 노트 수.
+struct FolderRename: Sendable {
+    let path: String
+    var fixed = 0
+    var notes = 0
+    var failed = 0
+    var unread = 0
+}
+

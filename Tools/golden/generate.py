@@ -54,6 +54,7 @@ COUNT_CASES = ROOT / "Tools" / "golden" / "count-cases.json"
 PASTE_CONVERT_CASES = ROOT / "Tools" / "golden" / "paste-convert-cases.json"
 LINE_MAP_CASES = ROOT / "Tools" / "golden" / "line-map-cases.json"
 ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "attachment-cases.json"
+RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -2128,6 +2129,7 @@ def build() -> dict:
         "formatCases": build_format_cases(),
         "lineMapCases": build_line_map_cases(),
         "attachmentCases": build_attachment_cases(),
+        "retargetCases": build_retarget_cases(),
     }
 
 
@@ -2400,6 +2402,84 @@ def build_attachment_cases() -> list[dict]:
     return out
 
 
+# ── 폴더 이름을 바꿀 때 링크를 따라 고친다 (179) ────────────────────────────────
+#
+# 폴더 `old` 가 `new` 가 된다. 노트 하나의 링크 가운데 **old 안을 가리키던 것**만 new 안으로 옮겨 적는다.
+# 노트 자신이 old 안에 있었으면 노트의 자리도 new 로 옮긴 뒤 상대 링크를 다시 계산한다 —
+# 안에서 안을 가리키던 `x.png` 는 그대로 남고, 안에서 `../old/x.png` 로 돌아 들어오던 것은 고쳐진다.
+# 바깥 주소 · 폴더 밖 · 다른 폴더를 가리키는 링크는 손대지 않는다 (옮기기 T1 과 같은 규칙으로 적는다).
+
+def retarget_one(raw: str, note_old: str, note_new: str, old: str, new: str):
+    wrapped = len(raw) >= 2 and raw.startswith("<") and raw.endswith(">")
+    inner = raw[1:-1] if wrapped else raw
+    anchor = ""
+    target = inner
+    hash_at = inner.find("#")
+    if hash_at > 0:
+        anchor = inner[hash_at:]
+        target = inner[:hash_at]
+    got = resolve(target, note_old)
+    if got["kind"] != "relative" or not got["value"].startswith(old + "/"):
+        return raw
+    moved = new + got["value"][len(old):]
+    link = relative_link(directory_of(note_new), moved) + anchor
+    if link == inner:
+        return raw
+    return "<" + link + ">" if (wrapped or " " in link) else link
+
+
+def retarget_links(text: str, note_path: str, old: str, new: str) -> dict:
+    old, new, note_path = nfc(old), nfc(new), nfc(note_path)
+    if not old or old == new or "](" not in text:
+        return {"text": text, "fixed": 0}
+    note_new = new + note_path[len(old):] if note_path.startswith(old + "/") else note_path
+    out = []
+    cursor = 0
+    fixed = 0
+    while True:
+        bracket = text.find("](", cursor)
+        if bracket < 0:
+            break
+        out.append(text[cursor:bracket + 2])
+        cursor = bracket + 2
+        piece = read_destination(text, cursor)
+        if piece is None:
+            continue
+        raw, end = piece
+        rewritten = retarget_one(raw, note_path, note_new, old, new)
+        if rewritten != raw:
+            fixed += 1
+        out.append(rewritten)
+        out.append(text[end])
+        cursor = end + 1
+    out.append(text[cursor:])
+    return {"text": "".join(out), "fixed": fixed}
+
+
+def build_retarget_cases() -> list[dict]:
+    spec = json.loads(RETARGET_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        got = retarget_links(case["text"], case["note"], case["old"], case["new"])
+        want = case.get("expectFixed")
+        if want is not None and want != got["fixed"]:
+            raise SystemExit(f"::error::[{case['name']}] 고친 수: 뜻 {want} · 셈 {got['fixed']}")
+        # **고친 링크는 새 자리의 같은 파일에 닿는다** — 폴더 이름만 바뀌었다.
+        note_new = (nfc(case["new"]) + nfc(case["note"])[len(nfc(case["old"])):]
+                    if nfc(case["note"]).startswith(nfc(case["old"]) + "/") else nfc(case["note"]))
+        for before, after in zip(extract_links(case["text"]), extract_links(got["text"])):
+            was = resolve(before["destination"], case["note"])
+            now = resolve(after["destination"], note_new)
+            if was["kind"] == "relative" and was["value"].startswith(nfc(case["old"]) + "/"):
+                expected = nfc(case["new"]) + was["value"][len(nfc(case["old"])):]
+                if now.get("value") != expected:
+                    raise SystemExit(f"::error::[{case['name']}] {before} → {after} 가 {expected} 에 안 닿는다")
+        out.append({"name": case["name"], "text": case["text"], "note": case["note"],
+                    "old": case["old"], "new": case["new"],
+                    "retargeted": got["text"], "fixed": got["fixed"]})
+    return out
+
+
 # ── 편집 도구 띠 — 굵게 · 기울임 · 취소선 · 인용 · 표 (T13 1차) ────────────────
 #
 # **스위프트와 따로 구현한다.** 같은 규칙을 두 번 적어 서로를 잡게 하는 것이 이 심판의
@@ -2655,7 +2735,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]

@@ -158,6 +158,53 @@ public enum MarkdownLinks {
         return (wrapped || link.contains(" ")) ? "<" + link + ">" : link
     }
 
+    /// **폴더 이름을 바꿀 때 그 폴더 안을 가리키던 링크를 새 이름으로** (179, 사용자 — 남은 할 일을
+    /// 반영해 제출하자). 168 은 알리기만 했다 — 이름을 바꾸면 링크가 열리지 않았다.
+    ///
+    /// 노트 하나의 링크 가운데 `old` 안을 가리키던 것만 `new` 안으로 옮겨 적는다. 노트 자신이 `old`
+    /// 안에 있었으면 **노트의 자리도 옮긴 뒤** 상대 링크를 다시 계산한다 — 안에서 안을 가리키는 보통
+    /// 링크는 그대로 남는다. 바깥 주소 · 앵커 · 다른 폴더는 손대지 않는다. 옮기기(T1)와 같은 글쓰기다.
+    public static func retargeted(_ text: String, notePath: String,
+                                  fromFolder oldFolder: String, toFolder newFolder: String) -> Repair {
+        let old = Paths.normalized(oldFolder), new = Paths.normalized(newFolder)
+        let noteOld = Paths.normalized(notePath)
+        guard !old.isEmpty, old != new, text.contains("](") else { return Repair(text: text, fixed: 0) }
+        let noteNew = noteOld.hasPrefix(old + "/") ? new + String(noteOld.dropFirst(old.count)) : noteOld
+        var out = ""
+        var cursor = text.startIndex
+        var fixed = 0
+        while let bracket = text.range(of: "](", range: cursor..<text.endIndex) {
+            out += text[cursor..<bracket.upperBound]
+            cursor = bracket.upperBound
+            guard let piece = destination(in: text, from: cursor) else { continue }
+            let rewritten = retarget(piece.raw, noteOld: noteOld, noteNew: noteNew, old: old, new: new)
+            if rewritten != piece.raw { fixed += 1 }
+            out += rewritten
+            out += text[piece.end..<text.index(after: piece.end)]   // 닫는 `)`
+            cursor = text.index(after: piece.end)
+        }
+        out += text[cursor...]
+        return Repair(text: out, fixed: fixed)
+    }
+
+    private static func retarget(_ raw: String, noteOld: String, noteNew: String,
+                                 old: String, new: String) -> String {
+        let wrapped = raw.hasPrefix("<") && raw.hasSuffix(">") && raw.count >= 2
+        let inner = wrapped ? String(raw.dropFirst().dropLast()) : raw
+        var anchor = ""
+        var target = inner
+        if let hash = inner.firstIndex(of: "#"), hash != inner.startIndex {
+            anchor = String(inner[hash...])
+            target = String(inner[inner.startIndex..<hash])
+        }
+        guard case .relative(let resolved) = Paths.resolve(link: target, fromNoteAt: noteOld),
+              resolved.hasPrefix(old + "/") else { return raw }
+        let moved = new + String(resolved.dropFirst(old.count))
+        let link = Paths.relativeLink(from: Paths.directory(of: noteNew), to: moved) + anchor
+        guard link != inner else { return raw }
+        return (wrapped || link.contains(" ")) ? "<" + link + ">" : link
+    }
+
     /// 링크 하나를 새 폴더 기준으로. 폴더 안을 가리키지 않으면 그대로 둔다.
     private static func rebase(_ raw: String, note: String, to newFolder: String) -> String {
         let wrapped = raw.hasPrefix("<") && raw.hasSuffix(">") && raw.count >= 2

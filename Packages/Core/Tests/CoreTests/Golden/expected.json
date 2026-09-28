@@ -5420,6 +5420,107 @@
       "text": "1. 하나\n  2. 안쪽 하나\n  3. 안쪽 둘\n2. 둘"
     }
   ],
+  "retargetCases": [
+    {
+      "fixed": 1,
+      "name": "다른 폴더 노트의 사진",
+      "new": "회의록",
+      "note": "아이디어/노트.md",
+      "old": "회의",
+      "retargeted": "![스케치](../회의록/assets/a.png)",
+      "text": "![스케치](../회의/assets/a.png)"
+    },
+    {
+      "fixed": 1,
+      "name": "최상위 노트의 노트 링크 · 앵커",
+      "new": "회의록",
+      "note": "메모.md",
+      "old": "회의",
+      "retargeted": "[지난 회의](회의록/2026-09-13.md#정한-것) 를 본다",
+      "text": "[지난 회의](회의/2026-09-13.md#정한-것) 를 본다"
+    },
+    {
+      "fixed": 1,
+      "name": "새 이름에 빈칸 — 꺾쇠로 감싼다",
+      "new": "회의 기록",
+      "note": "메모.md",
+      "old": "회의",
+      "retargeted": "![](<회의 기록/assets/a.png>)",
+      "text": "![](회의/assets/a.png)"
+    },
+    {
+      "fixed": 2,
+      "name": "원래 꺾쇠 · 퍼센트 한글",
+      "new": "여행 2026",
+      "note": "메모.md",
+      "old": "여행",
+      "retargeted": "[계획](<여행 2026/첫날 계획.md>) ![](<여행 2026/assets/사진.jpg>)",
+      "text": "[계획](<여행/첫날 계획.md>) ![](%EC%97%AC%ED%96%89/assets/%EC%82%AC%EC%A7%84.jpg)"
+    },
+    {
+      "fixed": 0,
+      "name": "비슷한 이름의 다른 폴더는 안 건드린다",
+      "new": "회의록",
+      "note": "메모.md",
+      "old": "회의",
+      "retargeted": "![](회의실/assets/a.png) [x](회의2/b.md)",
+      "text": "![](회의실/assets/a.png) [x](회의2/b.md)"
+    },
+    {
+      "fixed": 0,
+      "name": "바깥 주소 · 앵커만 · 다른 폴더",
+      "new": "회의록",
+      "note": "메모.md",
+      "old": "회의",
+      "retargeted": "[사이트](https://example.org/회의/a) [절](#회의) [다른](아이디어/x.md)",
+      "text": "[사이트](https://example.org/회의/a) [절](#회의) [다른](아이디어/x.md)"
+    },
+    {
+      "fixed": 0,
+      "name": "안의 노트 — 안을 가리키는 보통 링크는 그대로",
+      "new": "회의록",
+      "note": "회의/B.md",
+      "old": "회의",
+      "retargeted": "![](assets/a.png) [옆](C.md)",
+      "text": "![](assets/a.png) [옆](C.md)"
+    },
+    {
+      "fixed": 1,
+      "name": "안의 노트 — 밖으로 나갔다 돌아오는 링크는 고친다",
+      "new": "회의록",
+      "note": "회의/B.md",
+      "old": "회의",
+      "retargeted": "![](assets/a.png)",
+      "text": "![](../회의/assets/a.png)"
+    },
+    {
+      "fixed": 0,
+      "name": "안의 노트 — 바깥을 가리키는 링크는 그대로",
+      "new": "회의록",
+      "note": "회의/B.md",
+      "old": "회의",
+      "retargeted": "[메모](../메모.md) ![](../아이디어/assets/b.png)",
+      "text": "[메모](../메모.md) ![](../아이디어/assets/b.png)"
+    },
+    {
+      "fixed": 2,
+      "name": "한 노트에 여럿 · 섞여서",
+      "new": "회의록",
+      "note": "아이디어/노트.md",
+      "old": "회의",
+      "retargeted": "![](../회의록/assets/a.png) 와 [기록](../회의록/B.md) 그리고 [내 것](assets/c.png)",
+      "text": "![](../회의/assets/a.png) 와 [기록](../회의/B.md) 그리고 [내 것](assets/c.png)"
+    },
+    {
+      "fixed": 0,
+      "name": "이름이 그대로면 아무것도 안 한다",
+      "new": "회의",
+      "note": "메모.md",
+      "old": "회의",
+      "retargeted": "![](회의/assets/a.png)",
+      "text": "![](회의/assets/a.png)"
+    }
+  ],
   "styleCases": [
     {
       "block": null,

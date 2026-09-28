@@ -950,13 +950,24 @@ final class LibraryModel: ObservableObject {
         guard !name.isEmpty, name != folder.name else { return }
         await save()
         do {
-            let moved = try await store.renameFolder(folder.relativePath, to: name)
+            // **이 폴더를 가리키던 링크도 같이 고친다** (179). 확인창이 몇 개인지 먼저 알렸다(168).
+            let renamed = try await store.renameFolderFixingLinks(folder.relativePath, to: name)
+            let moved = renamed.path
             pinned = await store.followPins(from: folder.relativePath, to: moved)
             let wasViewing = selectedFolder == folder.relativePath
             if wasViewing { selectedNoteID = nil }
             await reloadFolders()
             if wasViewing { selectedFolder = moved }
-            lastError = nil
+            // 고친 노트가 지금 열려 있을 수 있다 — 목록과 글을 다시 읽는다.
+            if renamed.notes > 0 { await reloadNotes() }
+            log("폴더 이름: \(folder.relativePath) → \(moved) · 링크 \(renamed.fixed)개(노트 \(renamed.notes)) · 못 고침 \(renamed.failed) · 못 봄 \(renamed.unread)")
+            var said: [String] = []
+            if renamed.fixed > 0 { said.append("링크 \(renamed.fixed)개를 새 이름에 맞게 고쳤습니다") }
+            if renamed.failed > 0 { said.append("노트 \(renamed.failed)개는 그 사이 바뀌어 고치지 못했습니다") }
+            if renamed.unread > 0, renamed.fixed + renamed.failed > 0 || folderLinkNotice > 0 {
+                said.append("아직 받지 않은 노트 \(renamed.unread)개는 확인하지 못했습니다")
+            }
+            if said.isEmpty { lastError = nil } else { report(said.joined(separator: ". ") + ".") }
         } catch {
             lastError = "폴더 이름을 바꾸지 못했습니다: \(error.localizedDescription)"
         }

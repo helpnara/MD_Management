@@ -201,7 +201,14 @@ private struct FolderActionAlerts: ViewModifier {
     }
 
     private func renameMessage(_ folder: FolderSummary) -> some View {
-        Text("\(folder.name) 폴더의 새 이름입니다. 안의 노트는 그대로 따라갑니다.\(linkNotice(verb: "이름을 바꾸면"))")
+        Text("\(folder.name) 폴더의 새 이름입니다. 안의 노트는 그대로 따라갑니다.\(renameLinkNotice)")
+    }
+
+    /// 이름을 바꾸면 **링크도 따라 고친다** (179) — 몇 개인지 먼저 말한다.
+    private var renameLinkNotice: String {
+        let count = library.folderLinkNotice
+        guard count > 0 else { return "" }
+        return "\n\n다른 폴더의 노트에 이 폴더 안을 가리키는 링크가 \(count)개 있습니다. 이름을 바꾸면서 함께 고칩니다."
     }
 
     /// 폴더 밖 노트가 이 폴더를 가리키는 링크 (168). 없으면 아무 말도 안 붙인다.
