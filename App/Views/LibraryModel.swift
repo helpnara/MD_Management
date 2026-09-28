@@ -907,9 +907,20 @@ final class LibraryModel: ObservableObject {
         }
     }
 
-    func beginRenameFolder(_ folder: FolderSummary) {
+    /// 폴더 확인창이 알릴 것 — **폴더 밖 노트가 이 폴더 안을 가리키는 링크 수** (168).
+    /// 이름을 바꾸거나 지우면 그 링크가 깨진다. 창을 띄우기 **전에** 센다 — 창이 뜬 뒤에
+    /// 숫자가 바뀌면 사용자가 이미 읽은 뒤일 수 있다.
+    @Published private(set) var folderLinkNotice = 0
+
+    func beginRenameFolder(_ folder: FolderSummary) async {
+        folderLinkNotice = await store?.incomingLinkCount(toFolder: folder.relativePath) ?? 0
         folderRenameText = folder.name
         renamingFolder = folder
+    }
+
+    func beginTrashFolder(_ folder: FolderSummary) async {
+        folderLinkNotice = await store?.incomingLinkCount(toFolder: folder.relativePath) ?? 0
+        trashingFolder = folder
     }
 
     /// 하위 폴더 이름 바꾸기. 그 폴더를 보고 있었으면 새 이름으로 따라간다.
@@ -1268,9 +1279,68 @@ final class LibraryModel: ObservableObject {
     /// `.trash/` 안의 노트. 설정 → 휴지통이 보여 준다.
     @Published private(set) var trashed: [NoteSummary] = []
 
+    /// `.trash/` 안의 첨부(노트가 아닌 파일) — 휴지통 화면이 개수 · 용량과 함께 보여 준다 (173).
+    @Published private(set) var trashedFiles: [TrashedFile] = []
+
     func reloadTrash() async {
         guard let store else { return }
         trashed = await store.trashedNotes()
+        trashedFiles = await store.trashedAttachments()
+    }
+
+    /// 휴지통의 첨부 하나를 원래 자리로 (173).
+    func restoreAttachment(_ file: TrashedFile) async {
+        guard let store else { return }
+        do {
+            let restored = try await store.restoreAttachment(file.relativePath)
+            log("첨부 되돌림: \(restored)")
+            await reloadTrash()
+            lastError = nil
+        } catch {
+            lastError = "첨부를 되돌리지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - 안 쓰는 첨부 (174)
+
+    enum UnusedAttachments: Equatable {
+        case counting
+        /// 아직 안 내려온 노트가 있어 셀 수 없다 — 그 노트가 쓸 수도 있다.
+        case cannotJudge
+        case ready([TrashedFile])
+    }
+
+    @Published private(set) var unusedAttachments: UnusedAttachments = .counting
+
+    /// 폴더 전체를 읽어 **어느 노트도 쓰지 않는 첨부**를 센다. 셈은 노트 지우기(172)와 같은 것 —
+    /// `AttachmentLedger` 하나다.
+    func countUnusedAttachments() async {
+        guard let store else { return }
+        unusedAttachments = .counting
+        let census = await store.attachmentCensus()
+        guard let paths = AttachmentLedger.unused(notes: census.notes, trashed: census.trashed,
+                                                  files: census.files) else {
+            unusedAttachments = .cannotJudge
+            return
+        }
+        unusedAttachments = .ready(paths.map { TrashedFile(relativePath: $0, size: census.sizes[$0] ?? 0) })
+    }
+
+    /// 안 쓰는 첨부를 **휴지통으로.** 확인은 화면이 받았다. 휴지통 화면에서 되돌릴 수 있다.
+    func trashUnusedAttachments(_ files: [TrashedFile]) async {
+        guard let store else { return }
+        let moved = await store.trashAttachments(files.map(\.relativePath))
+        log("안 쓰는 첨부 휴지통으로: \(moved)/\(files.count)")
+        if moved < files.count {
+            lastError = "첨부 \(files.count - moved)개를 옮기지 못했습니다."
+        }
+        await reloadTrash()
+        await countUnusedAttachments()
+    }
+
+    /// 폴더 안 파일의 주소 — 미리보기(QuickLook)에 넘긴다.
+    func fileURL(_ relativePath: String) -> URL? {
+        store?.root.appendingPathComponent(relativePath)
     }
 
     /// 원래 폴더로 되돌린다. 폴더 수와 목록을 함께 새로 읽는다 — 보고 있는 폴더가

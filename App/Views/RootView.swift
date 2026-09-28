@@ -201,7 +201,14 @@ private struct FolderActionAlerts: ViewModifier {
     }
 
     private func renameMessage(_ folder: FolderSummary) -> some View {
-        Text("\(folder.name) 폴더의 새 이름입니다. 안의 노트는 그대로 따라갑니다.")
+        Text("\(folder.name) 폴더의 새 이름입니다. 안의 노트는 그대로 따라갑니다.\(linkNotice(verb: "이름을 바꾸면"))")
+    }
+
+    /// 폴더 밖 노트가 이 폴더를 가리키는 링크 (168). 없으면 아무 말도 안 붙인다.
+    private func linkNotice(verb: String) -> String {
+        let count = library.folderLinkNotice
+        guard count > 0 else { return "" }
+        return "\n\n다른 폴더의 노트에 이 폴더 안을 가리키는 링크가 \(count)개 있습니다. \(verb) 그 링크는 열리지 않습니다."
     }
 
     @ViewBuilder
@@ -211,7 +218,7 @@ private struct FolderActionAlerts: ViewModifier {
     }
 
     private func trashMessage(_ folder: FolderSummary) -> some View {
-        Text("\(folder.name) 폴더와 안의 노트 \(folder.noteCount)개를 폴더 안 .trash 로 옮깁니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.")
+        Text("\(folder.name) 폴더와 안의 노트 \(folder.noteCount)개를 폴더 안 .trash 로 옮깁니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.\(linkNotice(verb: "지우면"))")
     }
 }
 
@@ -396,12 +403,12 @@ private struct FolderSidebar: View {
     @ViewBuilder
     private func folderContextMenu(for folder: FolderSummary) -> some View {
         Button {
-            library.beginRenameFolder(folder)
+            Task { await library.beginRenameFolder(folder) }
         } label: {
             Label("이름 바꾸기", systemImage: "pencil.line")
         }
         Button(role: .destructive) {
-            library.trashingFolder = folder
+            Task { await library.beginTrashFolder(folder) }
         } label: {
             Label("지우기", systemImage: "trash")
         }
@@ -411,13 +418,13 @@ private struct FolderSidebar: View {
     private func folderSwipeActions(for folder: FolderSummary) -> some View {
         // 노트 줄과 같은 이유로 `role: .destructive` 를 안 쓴다 (위 `swipeActions` 주석).
         Button {
-            library.trashingFolder = folder
+            Task { await library.beginTrashFolder(folder) }
         } label: {
             Label("지우기", systemImage: "trash")
         }
         .tint(.red)
         Button {
-            library.beginRenameFolder(folder)
+            Task { await library.beginRenameFolder(folder) }
         } label: {
             Label("이름", systemImage: "pencil.line")
         }

@@ -2329,6 +2329,23 @@ def purging_with(note: str, notes: dict, trashed: dict, files: set[str]) -> list
     return result
 
 
+def incoming_links(folder: str, notes: dict) -> int:
+    """폴더 밖 노트가 이 폴더 안을 가리키는 링크 수 (168). 노트로 가는 링크도 센다."""
+    folder = nfc(folder)
+    if not folder:
+        return 0
+    inside = folder + "/"
+    count = 0
+    for path, text in notes.items():
+        if text is None or path.startswith(inside):
+            continue
+        for link in extract_links(text):
+            r = resolve(link["destination"], path)
+            if r["kind"] == "relative" and r["value"].startswith(inside):
+                count += 1
+    return count
+
+
 def build_attachment_cases() -> list[dict]:
     spec = json.loads(ATTACHMENT_CASES.read_text(encoding="utf-8"))
     out = []
@@ -2347,10 +2364,13 @@ def build_attachment_cases() -> list[dict]:
         if "delete" in case:
             entry["delete"] = nfc(case["delete"])
             entry["trashing"] = trashing_with(entry["delete"], notes, trashed, files)
+        if "folder" in case:
+            entry["folder"] = nfc(case["folder"])
+            entry["incoming"] = incoming_links(entry["folder"], notes)
         if "purge" in case:
             entry["purge"] = nfc(case["purge"])
             entry["purging"] = purging_with(entry["purge"], notes, trashed, files)
-        for key in ("unused", "trashing", "purging"):
+        for key in ("unused", "trashing", "purging", "incoming"):
             want = case.get("expect", {}).get(key, "없음")
             if want != "없음" and want != entry.get(key):
                 # 사람이 적은 것은 **뜻**(이 사례가 무엇을 지키나)이고, 값은 위 셈이 낸다.

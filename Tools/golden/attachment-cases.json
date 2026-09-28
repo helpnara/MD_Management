@@ -102,6 +102,22 @@
       "files": ["회의/사진.png", ".trash/회의/assets/c.png", "회의/assets/그림/깊은.png"],
       "expect": { "unused": ["회의/assets/그림/깊은.png"] } },
 
+    { "name": "168 — 다른 폴더에서 이 폴더를 가리키는 링크 · 노트 링크도 센다 · 안에서 가리키는 것은 안 센다",
+      "notes": {
+        "회의/B.md": "![](assets/a.png) [다음](C.md)",
+        "아이디어/노트.md": "![](../회의/assets/a.png) [회의](../회의/B.md)",
+        "메모.md": "[계약](회의/assets/계약.pdf) [바깥](https://example.org) [같은 이름 폴더 아님](회의록/x.md)"
+      },
+      "files": ["회의/assets/a.png", "회의/assets/계약.pdf"],
+      "folder": "회의",
+      "expect": { "incoming": 3 } },
+
+    { "name": "168 — 가리키는 링크가 없다 · 못 읽은 노트는 셀 수 없어 뺀다",
+      "notes": { "회의/B.md": "![](assets/a.png)", "여행/먼곳.md": null },
+      "files": ["회의/assets/a.png"],
+      "folder": "회의",
+      "expect": { "incoming": 0, "unused": null } },
+
     { "name": "173 — 휴지통 노트 하나를 영구 삭제 · 딸려 간 첨부도",
       "notes": { "회의/B.md": "글" },
       "trashed": { ".trash/회의/C.md": "![](assets/c.png)" },

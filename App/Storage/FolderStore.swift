@@ -589,21 +589,69 @@ actor FolderStore {
         return target
     }
 
-    /// 이 노트가 가리키는 첨부 가운데 **같은 폴더의 다른 노트는 안 쓰는 것** (60).
+    /// 이 노트가 가리키는 첨부 가운데 **폴더 안의 다른 노트가 안 쓰는 것** (60 · 172).
     /// 노트로 가는 링크(`docs/a.md`)는 첨부가 아니다 — 지우면 남의 노트가 사라진다.
-    /// 다른 폴더의 노트가 쓰는지는 보지 않는다 — `assets/` 는 폴더마다 따로 두는 약속이다.
+    ///
+    /// **폴더 전체를 본다** (172). 빌드 56 까지는 같은 폴더의 노트만 봤다 — `assets/` 는 폴더마다
+    /// 따로 두는 약속이었는데, 옮기기(T1)와 붙여넣기(144)가 `../회의/assets/a.png` 같은 **폴더 밖
+    /// 링크**를 만들면서 그 약속이 깨졌다. 다른 폴더 노트의 사진이 휴지통으로 가던 자리다.
+    /// 셈은 `AttachmentLedger` 하나다 — 정리 화면(174) · 영구 삭제(173)와 같은 셈.
     private func exclusiveAttachments(of notePath: String) -> [String] {
-        guard let text = try? readText(at: notePath) else { return [] }
-        let mine = MarkdownHTML.referencedPaths(markdown: text, notePath: notePath).filter {
-            !Paths.isNoteFile($0) && FileManager.default.fileExists(atPath: root.appendingPathComponent($0).path)
+        let census = attachmentCensus()
+        return AttachmentLedger.trashing(notePath, notes: census.notes,
+                                         trashed: census.trashed, files: census.files)
+    }
+
+    /// **첨부 셈에 넘길 것** (172 · 173 · 174). 폴더 전체를 한 번 훑는다 — 휴지통은 넣고,
+    /// 다른 숨김 폴더(다른 앱의 설정 폴더 등)는 뺀다.
+    ///
+    /// 노트는 본문을 읽는다. **아직 안 내려온 노트는 `nil`** — 셈이 판정을 멈춘다(못 읽은 노트가
+    /// 그 사진을 쓸 수 있다). 옛 iCloud 자리표시자(`.이름.icloud`)도 안 내려온 노트로 센다.
+    /// 노트가 아닌 파일은 경로와 크기만.
+    func attachmentCensus() -> AttachmentCensus {
+        openScopeIfNeeded()
+        var census = AttachmentCensus()
+        let keys: Set<URLResourceKey> = [
+            .isDirectoryKey, .fileSizeKey, .isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey
+        ]
+        var pending = [""]
+        while let folder = pending.popLast() {
+            let url = folder.isEmpty ? root : root.appendingPathComponent(folder)
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: url, includingPropertiesForKeys: Array(keys), options: []
+            ) else { continue }
+            for entry in entries {
+                var name = Paths.normalized(entry.lastPathComponent)
+                let values = try? entry.resourceValues(forKeys: keys)
+                if values?.isDirectory == true {
+                    let isTrash = folder.isEmpty && name == ".trash"
+                    if name.hasPrefix(".") && !isTrash { continue }
+                    pending.append(folder.isEmpty ? name : folder + "/" + name)
+                    continue
+                }
+                var placeholder = false
+                if name.hasPrefix(".") {
+                    guard name.hasSuffix(".icloud"), name.count > ".icloud".count + 1 else { continue }
+                    name = String(name.dropFirst().dropLast(".icloud".count))
+                    placeholder = true
+                }
+                let path = folder.isEmpty ? name : folder + "/" + name
+                if Paths.isNoteFile(path) {
+                    var text: String?
+                    if !placeholder, Self.isDownloaded(values) { text = try? readText(at: path) }
+                    // `사전[키] = nil` 은 키를 지운다 — 못 읽은 노트를 **nil 로 남기려고** updateValue.
+                    if path.hasPrefix(".trash/") {
+                        census.trashed.updateValue(text, forKey: path)
+                    } else {
+                        census.notes.updateValue(text, forKey: path)
+                    }
+                } else if !placeholder {
+                    census.files.insert(path)
+                    census.sizes[path] = values?.fileSize ?? 0
+                }
+            }
         }
-        guard !mine.isEmpty else { return [] }
-        var used: Set<String> = []
-        for other in notes(in: Paths.directory(of: notePath)) where other.relativePath != notePath {
-            guard let otherText = try? readText(at: other.relativePath) else { continue }
-            used.formUnion(MarkdownHTML.referencedPaths(markdown: otherText, notePath: other.relativePath))
-        }
-        return mine.filter { !used.contains($0) }
+        return census
     }
 
     /// `.trash/` 안의 노트 — 하위 폴더까지. `notes(in:)` 는 숨김 폴더를 건너뛰므로 따로 있다.
@@ -735,10 +783,88 @@ actor FolderStore {
 
     /// **되돌릴 수 없는 유일한 삭제.** `.trash/` 안의 것만 지운다 — 다른 경로가
     /// 오면 아무것도 안 한다. 확인(타이핑)은 화면이 받았다 (설계서 §7.1).
+    ///
+    /// **이 노트만 쓰던 첨부도 같이 지운다** (173). 예전에는 노트만 지워 첨부가 `.trash/` 에
+    /// 안 보이게 영원히 남았다. 휴지통의 다른 노트가 쓰거나, 살아 있는 노트가 원래 자리를
+    /// 가리키는데 거기 파일이 없으면(그 휴지통 파일이 유일한 사본) 남긴다 — `AttachmentLedger.purging`.
     func deleteTrashed(_ relativePath: String) throws {
         guard relativePath.hasPrefix(".trash/") else { return }
         openScopeIfNeeded()
+        let census = attachmentCensus()
+        let attachments = AttachmentLedger.purging(relativePath, notes: census.notes,
+                                                   trashed: census.trashed, files: census.files)
         try remove(root.appendingPathComponent(relativePath))
+        for path in attachments where path.hasPrefix(".trash/") {
+            try? remove(root.appendingPathComponent(path))
+        }
+    }
+
+    /// 휴지통 안의 **첨부**(노트가 아닌 파일) — 휴지통 화면이 개수 · 용량을 보여 준다 (173).
+    /// 노트 본문은 안 읽는다 — 휴지통을 열 때마다 불리므로 가볍게.
+    func trashedAttachments() -> [TrashedFile] {
+        openScopeIfNeeded()
+        var sizes: [String: Int] = [:]
+        var pending = [".trash"]
+        while let folder = pending.popLast() {
+            guard let entries = try? FileManager.default.contentsOfDirectory(
+                at: root.appendingPathComponent(folder),
+                includingPropertiesForKeys: [.isDirectoryKey, .fileSizeKey], options: []
+            ) else { continue }
+            for entry in entries {
+                let name = Paths.normalized(entry.lastPathComponent)
+                let values = try? entry.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey])
+                let path = folder + "/" + name
+                if values?.isDirectory == true {
+                    pending.append(path)
+                    continue
+                }
+                guard !name.hasPrefix("."), !Paths.isNoteFile(path) else { continue }
+                sizes[path] = values?.fileSize ?? 0
+            }
+        }
+        return AttachmentLedger.ordered(sizes.keys).map { TrashedFile(relativePath: $0, size: sizes[$0] ?? 0) }
+    }
+
+    /// 휴지통의 첨부 하나를 **원래 자리로.** 원래 자리에 이미 파일이 있으면 번호를 붙인다
+    /// — 링크는 원래 이름을 가리키므로, 그런 일은 드물다.
+    func restoreAttachment(_ relativePath: String) throws -> String {
+        openScopeIfNeeded()
+        guard relativePath.hasPrefix(".trash/") else { return relativePath }
+        let original = Self.originalPath(ofTrashed: relativePath)
+        let name = original.split(separator: "/").last.map(String.init) ?? original
+        let folder = Paths.directory(of: original)
+        try createFolder(folder)
+        let target = uniqueRelativePath(name: name, in: folder)
+        try move(from: root.appendingPathComponent(relativePath),
+                 to: root.appendingPathComponent(target))
+        return target
+    }
+
+    /// **안 쓰는 첨부를 휴지통으로** (174). `.trash/<원래 경로>` 로 — 휴지통 화면에서 되돌릴 수 있다.
+    /// 옮긴 개수를 준다. 하나가 실패해도 나머지는 옮긴다.
+    func trashAttachments(_ paths: [String]) -> Int {
+        openScopeIfNeeded()
+        var moved = 0
+        for path in paths where AttachmentLedger.isAttachmentPath(path) {
+            let home = ".trash/" + Paths.directory(of: path)
+            let name = path.split(separator: "/").last.map(String.init) ?? path
+            do {
+                try createFolder(home)
+                try move(from: root.appendingPathComponent(path),
+                         to: root.appendingPathComponent(uniqueRelativePath(name: name, in: home)))
+                moved += 1
+            } catch {
+                continue
+            }
+        }
+        return moved
+    }
+
+    /// **폴더 밖 노트가 이 폴더 안을 가리키는 링크 수** (168). 폴더 이름을 바꾸거나 지우면
+    /// 그 링크가 깨진다 — 확인창이 먼저 알린다. 못 읽은 노트는 세지 못한다(`nil` 이 아니라 뺀 값).
+    func incomingLinkCount(toFolder folder: String) -> Int {
+        let census = attachmentCensus()
+        return AttachmentLedger.incomingLinks(to: folder, notes: census.notes)
     }
 
     /// `.trash/` 를 통째로 지운다. 다음 지우기가 다시 만든다.

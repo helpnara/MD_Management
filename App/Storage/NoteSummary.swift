@@ -108,3 +108,22 @@ struct SharePackage: Sendable {
     let bytes: Int
 }
 
+
+/// **첨부 셈에 넘길 것** (172 · 173 · 174) — `FolderStore.attachmentCensus` 가 폴더 전체를 한 번
+/// 훑어 만든다. 노트 본문은 **못 읽었으면 nil** — `AttachmentLedger` 가 판정을 멈춘다.
+struct AttachmentCensus: Sendable {
+    /// 살아 있는 노트 (휴지통 밖).
+    var notes: [String: String?] = [:]
+    /// `.trash/` 안의 노트.
+    var trashed: [String: String?] = [:]
+    /// 노트가 아닌 파일 전부 (휴지통 포함) · 그 크기.
+    var files: Set<String> = []
+    var sizes: [String: Int] = [:]
+}
+
+/// 휴지통 안의 첨부 하나 (173).
+struct TrashedFile: Identifiable, Hashable, Sendable {
+    let relativePath: String
+    let size: Int
+    var id: String { relativePath }
+}
