@@ -15,6 +15,25 @@ struct NoteSummary: Identifiable, Hashable, Sendable {
 
     var id: String { relativePath }
 
+    /// **목록이 달라졌나를 견줄 때 쓰는 모습** (156).
+    ///
+    /// 예전에는 `경로|시각|크기` 를 이어 붙인 **지문**을 따로 적어 견줬다. 거기
+    /// `isDownloaded` 가 빠져 있어서, 파일이 **다 내려와도 지문이 같았다** — 훑기가
+    /// *달라진 것이 없다* 고 보고 목록을 안 읽었고, `받는 중` 딱지가 그대로 남았다
+    /// (사용자 · 2026-09-21).
+    ///
+    /// **이제 지문을 따로 적지 않고 줄 자체를 견딘다.** 화면에 보이는 값이 하나 늘어도
+    /// 자동으로 따라오고, 값을 더하면 아래 초기화가 **컴파일 오류**로 알려 준다 —
+    /// 컴파일러가 심판이다 (`CLAUDE.md` §1 — 같은 것을 재는 곳이 둘이면 갈린다).
+    ///
+    /// 미리보기만 뺀다. 그것은 색인이 **나중에** 채우는 값이라, 넣어 두면 색인이 도는
+    /// 사이에 목록이 끝없이 다시 읽힌다.
+    var forComparing: NoteSummary {
+        guard !preview.isEmpty else { return self }
+        return NoteSummary(relativePath: relativePath, title: title, preview: "",
+                           modifiedAt: modifiedAt, size: size, isDownloaded: isDownloaded)
+    }
+
     var fileName: String {
         relativePath.split(separator: "/").last.map(String.init) ?? relativePath
     }
@@ -50,3 +69,71 @@ enum FolderKind: String, Sendable {
         }
     }
 }
+
+/// 파일의 수정 시각과 크기. 편집을 시작할 때 기억해 두고 저장 직전에 견준다 —
+/// 둘 중 하나가 바뀌었으면 다른 기기가 고친 것일 수 있다 (설계서 §7.2 · A15).
+struct FileStamp: Equatable, Sendable {
+    let modifiedAt: Date
+    let size: Int
+}
+
+/// iCloud 충돌 판본을 한 번 훑은 결과. `pending` 이 남았으면 아직 못 읽은 판본이 있다 —
+/// **그 판본은 그대로 살아 있다.** 다음 기회에 다시 훑는다 (빌드 21 · 4번).
+struct ConflictSweep: Sendable {
+    let made: [String]
+    let pending: Int
+}
+
+/// 쓰려는데 디스크의 글이 우리가 아는 것과 달랐다 — 다른 기기가 고쳤다. 덮지 않았다.
+enum WriteConflict: Error, Sendable {
+    /// 지금 디스크에 있는 글.
+    case changedOnDisk(String)
+}
+
+/// 파일을 아직 읽을 수 없다 — iCloud 가 이름만 주고 내용은 아직 안 준 상태.
+/// **잘린 글을 읽거나 쓰지 않으려고** 여기서 물러난다 (86).
+enum ReadError: Error {
+    case notDownloaded
+}
+
+/// 공유할 파일 하나와 그 딸림 정보 (설계서 §7.6).
+struct SharePackage: Sendable {
+    /// 공유 시트에 넘길 파일 — `.md` 하나이거나 `.zip` 하나.
+    let url: URL
+    /// 끝나면 지울 임시 폴더.
+    let directory: URL
+    let isZip: Bool
+    /// 본문이 가리키는데 폴더에 없던 것 — **조용히 빠뜨리지 않고 알린다.**
+    let missing: [String]
+    let bytes: Int
+}
+
+
+/// **첨부 셈에 넘길 것** (172 · 173 · 174) — `FolderStore.attachmentCensus` 가 폴더 전체를 한 번
+/// 훑어 만든다. 노트 본문은 **못 읽었으면 nil** — `AttachmentLedger` 가 판정을 멈춘다.
+struct AttachmentCensus: Sendable {
+    /// 살아 있는 노트 (휴지통 밖).
+    var notes: [String: String?] = [:]
+    /// `.trash/` 안의 노트.
+    var trashed: [String: String?] = [:]
+    /// 노트가 아닌 파일 전부 (휴지통 포함) · 그 크기.
+    var files: Set<String> = []
+    var sizes: [String: Int] = [:]
+}
+
+/// 휴지통 안의 첨부 하나 (173).
+struct TrashedFile: Identifiable, Hashable, Sendable {
+    let relativePath: String
+    let size: Int
+    var id: String { relativePath }
+}
+
+/// 폴더 이름 바꾸기의 결과 (179) — 새 경로와 **고친 링크 · 노트 수**, 못 고친 · 못 본 노트 수.
+struct FolderRename: Sendable {
+    let path: String
+    var fixed = 0
+    var notes = 0
+    var failed = 0
+    var unread = 0
+}
+

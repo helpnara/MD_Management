@@ -21,15 +21,15 @@ final class MarkdownHTMLTests: XCTestCase {
 
             for level in 1...6 {
                 XCTAssertEqual(
-                    count(of: "<h\(level)>", in: html),
+                    countTag("h\(level)", in: html),
                     expected.headings.filter { $0 == level }.count,
                     "[\(item.name)] h\(level) 개수")
             }
-            XCTAssertEqual(count(of: "<li>", in: html), expected.listItems,
+            XCTAssertEqual(countTag("li", in: html), expected.listItems,
                            "[\(item.name)] 목록 항목 개수")
-            XCTAssertEqual(count(of: "<table>", in: html), expected.tables,
+            XCTAssertEqual(countTag("table", in: html), expected.tables,
                            "[\(item.name)] 표 개수")
-            XCTAssertEqual(count(of: "<pre>", in: html), expected.codeBlocks,
+            XCTAssertEqual(countTag("pre", in: html), expected.codeBlocks,
                            "[\(item.name)] 코드 블록 개수")
             XCTAssertEqual(count(of: "type=\"checkbox\"", in: html),
                            expected.checkboxes.checked + expected.checkboxes.unchecked,
@@ -79,7 +79,7 @@ final class MarkdownHTMLTests: XCTestCase {
         // 코드로 안 보이고 **진짜 굵은 글씨**가 된다.
         let rendered = render("```html\n<b>x</b>\n```")
         XCTAssertTrue(rendered.bodyHTML.contains("&lt;b&gt;x&lt;/b&gt;"))
-        XCTAssertTrue(rendered.bodyHTML.contains("<pre><code class=\"language-html\">"))
+        XCTAssertTrue(rendered.bodyHTML.contains("<code class=\"language-html\">"))
     }
 
     func testInlineCodeAndTextAreEscaped() {
@@ -151,6 +151,19 @@ final class MarkdownHTMLTests: XCTestCase {
             notePath: "노트.md")
         XCTAssertEqual(paths, ["assets/a.png"],
             "외부 URL 과 폴더 밖은 빼고, 같은 것은 한 번만")
+    }
+
+    /// **코드 상자 · 표 칸의 긴 줄은 화면 폭에서 접는다** (170, 사용자 — 좌우 스크롤과 상하 스크롤을
+    /// 같이 해야 해서 불편하다). 규칙이 빠지면 다시 옆으로 흐른다.
+    func testLongLinesWrapInsteadOfScrollingSideways() {
+        let css = MarkdownHTML.baseCSS
+        XCTAssertTrue(css.contains("white-space: pre-wrap"), "코드 상자가 접히지 않는다")
+        XCTAssertTrue(css.contains("overflow-wrap: anywhere"), "긴 낱말이 접히지 않는다")
+    }
+
+    /// 여는 태그 수 — 속성이 붙어도 센다. 읽기 HTML 의 블록에는 줄 범위가 붙는다 (176).
+    private func countTag(_ name: String, in html: String) -> Int {
+        count(of: "<\(name)>", in: html) + count(of: "<\(name) ", in: html)
     }
 
     private func count(of needle: String, in haystack: String) -> Int {

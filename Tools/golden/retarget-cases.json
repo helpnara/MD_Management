@@ -1,0 +1,27 @@
+{
+  "_왜": "179 — 폴더 이름을 바꾸면 그 폴더 안을 가리키던 링크를 새 이름으로 고친다. 기댓값은 generate.py 가 계산한다. expectFixed 는 사례가 지키려는 뜻이다.",
+  "cases": [
+    { "name": "다른 폴더 노트의 사진", "note": "아이디어/노트.md", "old": "회의", "new": "회의록",
+      "text": "![스케치](../회의/assets/a.png)", "expectFixed": 1 },
+    { "name": "최상위 노트의 노트 링크 · 앵커", "note": "메모.md", "old": "회의", "new": "회의록",
+      "text": "[지난 회의](회의/2026-09-13.md#정한-것) 를 본다", "expectFixed": 1 },
+    { "name": "새 이름에 빈칸 — 꺾쇠로 감싼다", "note": "메모.md", "old": "회의", "new": "회의 기록",
+      "text": "![](회의/assets/a.png)", "expectFixed": 1 },
+    { "name": "원래 꺾쇠 · 퍼센트 한글", "note": "메모.md", "old": "여행", "new": "여행 2026",
+      "text": "[계획](<여행/첫날 계획.md>) ![](%EC%97%AC%ED%96%89/assets/%EC%82%AC%EC%A7%84.jpg)", "expectFixed": 2 },
+    { "name": "비슷한 이름의 다른 폴더는 안 건드린다", "note": "메모.md", "old": "회의", "new": "회의록",
+      "text": "![](회의실/assets/a.png) [x](회의2/b.md)", "expectFixed": 0 },
+    { "name": "바깥 주소 · 앵커만 · 다른 폴더", "note": "메모.md", "old": "회의", "new": "회의록",
+      "text": "[사이트](https://example.org/회의/a) [절](#회의) [다른](아이디어/x.md)", "expectFixed": 0 },
+    { "name": "안의 노트 — 안을 가리키는 보통 링크는 그대로", "note": "회의/B.md", "old": "회의", "new": "회의록",
+      "text": "![](assets/a.png) [옆](C.md)", "expectFixed": 0 },
+    { "name": "안의 노트 — 밖으로 나갔다 돌아오는 링크는 고친다", "note": "회의/B.md", "old": "회의", "new": "회의록",
+      "text": "![](../회의/assets/a.png)", "expectFixed": 1 },
+    { "name": "안의 노트 — 바깥을 가리키는 링크는 그대로", "note": "회의/B.md", "old": "회의", "new": "회의록",
+      "text": "[메모](../메모.md) ![](../아이디어/assets/b.png)", "expectFixed": 0 },
+    { "name": "한 노트에 여럿 · 섞여서", "note": "아이디어/노트.md", "old": "회의", "new": "회의록",
+      "text": "![](../회의/assets/a.png) 와 [기록](../회의/B.md) 그리고 [내 것](assets/c.png)", "expectFixed": 2 },
+    { "name": "이름이 그대로면 아무것도 안 한다", "note": "메모.md", "old": "회의", "new": "회의",
+      "text": "![](회의/assets/a.png)", "expectFixed": 0 }
+  ]
+}

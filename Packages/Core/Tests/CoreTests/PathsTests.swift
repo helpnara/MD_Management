@@ -120,4 +120,26 @@ extension PathsTests {
         XCTAssertEqual(Paths.baseName("확장자없음"), "확장자없음")
         XCTAssertEqual(Paths.baseName(".gitignore"), ".gitignore")
     }
+
+    /// `파일` 앱이 건넨 파일이 내 폴더의 것인가.
+    func testRelativeUnderRoot() {
+        let root = "/var/mobile/Containers/느린 여백/Documents"
+
+        XCTAssertEqual(Paths.relative(of: root + "/회의/2026.md", under: root), "회의/2026.md")
+        XCTAssertEqual(Paths.relative(of: root + "/첫 노트.md", under: root), "첫 노트.md")
+
+        // 끝의 빗금 · 겹친 빗금은 조각으로 자르면 사라진다.
+        XCTAssertEqual(Paths.relative(of: root + "//회의//2026.md", under: root + "/"), "회의/2026.md")
+
+        // **앞부분만 같은 남의 폴더.** 글자로 견주면 여기서 뚫린다.
+        XCTAssertNil(Paths.relative(of: "/a/bc/note.md", under: "/a/b"))
+        XCTAssertNil(Paths.relative(of: "/다른 곳/note.md", under: root))
+
+        // 폴더 자기 자신은 그 안의 파일이 아니다.
+        XCTAssertNil(Paths.relative(of: root, under: root))
+
+        // 한글 이름이 NFD 로 와도 같은 폴더로 본다 (A13).
+        let nfd = (root + "/회의/2026.md").decomposedStringWithCanonicalMapping
+        XCTAssertEqual(Paths.relative(of: nfd, under: root), "회의/2026.md")
+    }
 }

@@ -80,8 +80,10 @@ public enum MarkdownHTML {
         var rewriter = NoteRewriter(notePath: Paths.normalized(notePath), existing: existing)
         let rewritten = rewriter.visit(document) ?? document
 
+        // 블록마다 원문 줄 범위를 붙인다 — 읽기 ↔ 쓰기를 오가도 보던 자리를 잇는다 (176).
+        // 짝이 안 맞으면 `LineMap` 이 손대지 않고 돌려준다.
         return RenderedNote(
-            bodyHTML: HTMLFormatter.format(rewritten),
+            bodyHTML: LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown),
             missingAttachments: rewriter.missing
         )
     }
@@ -154,6 +156,27 @@ public enum MarkdownHTML {
         return out
     }
 
+    /// 글자를 이스케이프하면서 `#태그` 만 `<span class="yb-tag">` 으로 감싼다 (T2).
+    ///
+    /// **감싸는 껍데기는 우리가 쓴 것이고, 안의 글자는 이스케이프한 것이다.** 사용자 글이
+    /// HTML 이 되는 길은 열리지 않는다 (§안전 1겹).
+    public static func escapeMarkingTags(_ text: String) -> String {
+        let spans = Tags.scan(text)
+        guard !spans.isEmpty else { return escape(text) }
+        let utf16 = Array(text.utf16)
+        var out = ""
+        var cursor = 0
+        for span in spans {
+            guard span.start >= cursor, span.start + span.length <= utf16.count else { continue }
+            out += escape(String(decoding: utf16[cursor..<span.start], as: UTF16.self))
+            let tag = String(decoding: utf16[span.start..<(span.start + span.length)], as: UTF16.self)
+            out += "<span class=\"yb-tag\">" + escape(tag) + "</span>"
+            cursor = span.start + span.length
+        }
+        out += escape(String(decoding: utf16[cursor...], as: UTF16.self))
+        return out
+    }
+
     static func missingBox(label: String) -> String {
         "<span class=\"yb-missing\">\(escape(label))</span>"
     }
@@ -180,6 +203,14 @@ public enum MarkdownHTML {
     h3 { font-size: 1.12em; }
     h4, h5, h6 { font-size: 1em; }
     p { margin: 0.9em 0; }
+    /* **첫 줄은 `#` 이 없어도 제목이다** (133). 이 앱에서 첫 줄은 곧 파일명이므로(107)
+       제목으로 보이는 편이 맞다. **파일은 한 글자도 안 바뀐다** — 보이는 모습만 그렇다.
+       편집기도 같은 규칙으로 그린다 (`MarkdownStyler`) — 두 자리가 갈리면 93 이 된다. */
+    body > p:first-child { font-size: 1.55em; line-height: 1.3; font-weight: 700; }
+    /* **첫 덩이 위에는 빈 자리를 두지 않는다** (136, 사용자 — `# 제목` 을 쓰면 읽기 모드에서
+       제목 위로 한 줄이 비었다). 제목의 위 여백은 **글 사이**에서나 뜻이 있지 맨 처음에는
+       군더더기다. `#` 이 있든 없든 같은 자리에서 시작한다. */
+    body > :first-child { margin-top: 0; }
     a { color: var(--yb-accent); text-decoration: underline; text-underline-offset: 0.15em; }
     ul, ol { margin: 0.9em 0; padding-left: 1.4em; }
     li { margin: 0.25em 0; }
@@ -192,6 +223,10 @@ public enum MarkdownHTML {
        빌드 4 에서 점 · 체크박스가 한 줄, 글이 다음 줄로 갈라졌다. */
     li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.15em; }
     li:has(> input[type="checkbox"]) > p { display: inline; }
+    .yb-tag {
+      color: var(--yb-tag, #B88500);
+      font-weight: 600;
+    }
     blockquote {
       margin: 1em 0;
       padding: 0.1em 0 0.1em 0.9em;
@@ -210,12 +245,15 @@ public enum MarkdownHTML {
       padding: 0.8em;
       border-radius: 0.5em;
       overflow-x: auto;
+      /* 긴 줄은 화면 폭에서 접는다 — 좌우로 밀지 않고 위아래로만 읽는다 (170). 줄바꿈 · 들여쓰기는 그대로. */
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
-    pre code { background: none; padding: 0; font-size: 0.85em; }
+    pre code { background: none; padding: 0; font-size: 0.85em; white-space: inherit; }
     hr { border: none; border-top: 1px solid var(--yb-rule); margin: 2em 0; }
     img { max-width: 100%; height: auto; border-radius: 0.4em; display: block; margin: 1em auto; }
     table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1em 0; }
-    th, td { border: 1px solid var(--yb-rule); padding: 0.4em 0.6em; text-align: left; }
+    th, td { border: 1px solid var(--yb-rule); padding: 0.4em 0.6em; text-align: left; overflow-wrap: anywhere; }
     th { background: var(--yb-paper-raised); }
     /* 참조했는데 없는 첨부 — 회색 상자에 경로를 적는다 (안정화 기준 S5) */
     .yb-missing {
@@ -260,7 +298,9 @@ private struct NoteRewriter: MarkupRewriter {
     // MARK: 이스케이프 (안전 1겹)
 
     mutating func visitText(_ text: Text) -> Markup? {
-        Text(MarkdownHTML.escape(text.string))
+        // **`#태그` 를 같은 색으로** (T2). 편집기와 읽기 모드가 다르게 그리면 그것이 곧
+        // 버그 자리다 (93 에서 배웠다). 규칙은 한 군데 — `Tags.scan` 이다.
+        Text(MarkdownHTML.escapeMarkingTags(text.string))
     }
 
     mutating func visitInlineCode(_ inlineCode: InlineCode) -> Markup? {

@@ -64,3 +64,11 @@ CREATE VIRTUAL TABLE note_fts USING fts5(
 - **A5b** — 색인 파일 크기. trigram 인덱스 + 본문 사본은 원문의 3~5배다. 20MB → 100MB 안팎.
 - **A5c** — 2글자 LIKE 폴백이 0.5초 안인가. **이것이 이 결정의 유일한 약점이다.**
   파일이 수천 개로 늘면 먼저 느려지는 자리다.
+
+## 덧붙임 (2026-09-15) — 만들었다 (빌드 23)
+
+`App/Search/SearchIndex.swift` 하나에 SQLite 호출을 다 모았다. 스키마는 위 그대로에 `note.first_line`
+(목록 미리보기)만 더했다. 여는 순간 trigram 을 **probe** 해서(A4) 없으면 `unicode61` 로 만들고 모든 낱말을
+LIKE 로 보낸다. 스니펫은 `snippet()` 대신 본문에서 **낱말이 든 첫 줄**을 스위프트로 고른다 — 한글이 안 잘린다.
+색인은 `Application Support/Index/<폴더>-v1.sqlite`, 폴더를 바꾸면 다른 파일이다.
+

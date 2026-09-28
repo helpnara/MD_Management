@@ -4,18 +4,32 @@
 `/docs` 폴더를 통째로 GitHub Pages 에 올리면 설계 문서가 다 공개된다.
 그래서 이 스크립트가 `docs/privacy.md` 하나만 HTML 로 바꾼다.
 
-  python3 Tools/site/build.py _site
+  SUPPORT_EMAIL=… python3 Tools/site/build.py _site     # 게시용 (site.yml)
+  python3 Tools/site/build.py _site --preview            # 미리 보기 — 자리표시자 그대로
+
+**문의 메일은 문서에 적지 않는다** (저장소가 public · CLAUDE.md §5). `docs/privacy.md` 에는
+`{{SUPPORT_EMAIL}}` 만 있고, 게시할 때 저장소 변수 `SUPPORT_EMAIL` 로 바꿔 넣는다 (171).
+
+**자리표시자가 남은 채로는 게시하지 않는다.** 2026-09-27 까지 `support@example.com` 이
+심사에 낸 지원 URL 에 그대로 게시되고 있었다 — 규칙(주소를 안 적는다)은 지켰는데 **페이지를
+채우는 길이 없었다.** 그래서 게시하는 길을 막아 둔다: 주소가 없거나 가짜면 실패한다.
 """
 
 from __future__ import annotations
 
 import html
+import os
 import pathlib
 import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "docs" / "privacy.md"
+
+PLACEHOLDER = "{{SUPPORT_EMAIL}}"
+# 게시된 페이지에 **이것이 하나라도 남으면** 실패한다.
+LEFTOVERS = (PLACEHOLDER, "example.com", "TODO", "SUPPORT_EMAIL", "--&gt;")
+EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 PAGE = """<!doctype html>
 <html lang="ko">
@@ -80,11 +94,19 @@ def render(markdown: str) -> str:
             out.append("</table>")
             in_table = False
 
+    in_comment = False
     for raw in markdown.split("\n"):
         line = raw.rstrip()
         stripped = line.strip()
 
+        # **주석은 닫힐 때까지 통째로 건너뛴다.** 예전에는 첫 줄만 건너뛰어, 여러 줄 주석의
+        # 둘째 줄부터 본문으로 게시됐다 (171 을 고치다 시험이 잡았다).
+        if in_comment:
+            if "-->" in stripped:
+                in_comment = False
+            continue
         if stripped.startswith("<!--"):
+            in_comment = "-->" not in stripped
             continue
         if not stripped:
             close_blocks()
@@ -124,8 +146,28 @@ def render(markdown: str) -> str:
     return "\n".join(out)
 
 
+def fill_contact(page: str, preview: bool) -> str:
+    """문의 메일을 넣는다. 게시용인데 주소가 없거나 가짜면 **멈춘다**."""
+    if preview:
+        print("미리 보기 — 문의 칸은 자리표시자 그대로다. 게시용이 아니다.")
+        return page
+    email = os.environ.get("SUPPORT_EMAIL", "").strip()
+    if not EMAIL.match(email) or "example.com" in email:
+        print("::error::저장소 변수 SUPPORT_EMAIL 이 없거나 메일 주소가 아니다 — 게시하지 않는다. "
+              "Settings → Secrets and variables → Actions → Variables 에 넣는다 (171).")
+        sys.exit(1)
+    page = page.replace(PLACEHOLDER, html.escape(email, quote=True))
+    left = [bad for bad in LEFTOVERS if bad in page]
+    if left:
+        print(f"::error::게시할 페이지에 자리표시자가 남았다: {left} — 게시하지 않는다 (171).")
+        sys.exit(1)
+    return page
+
+
 def main() -> int:
-    destination = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "_site")
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    preview = "--preview" in sys.argv[1:]
+    destination = pathlib.Path(args[0] if args else "_site")
     meta, body = strip_front_matter(SOURCE.read_text(encoding="utf-8"))
 
     page = PAGE.format(
@@ -133,6 +175,7 @@ def main() -> int:
         body=render(body),
         updated=meta.get("updated", ""),
     )
+    page = fill_contact(page, preview)
 
     privacy = destination / "privacy"
     privacy.mkdir(parents=True, exist_ok=True)

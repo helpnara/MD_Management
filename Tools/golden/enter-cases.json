@@ -1,0 +1,17 @@
+{
+  "_note": "빈 항목에서 엔터를 쳤을 때 어디로 나오나 (141 뒷이야기). above 는 그 줄 위에 있는 줄들, shallower 는 위로 올라가며 만난 더 얕은 줄이다.",
+  "cases": [
+    {"name": "최상위 빈 항목 — 보통 글이 된다", "line": "- ", "above": [], "shallower": null},
+    {"name": "최상위 빈 번호 항목", "line": "1. ", "above": [], "shallower": null},
+    {"name": "최상위 빈 체크박스", "line": "- [ ] ", "above": [], "shallower": null},
+    {"name": "둘째 단계 — 첫째 단계로", "line": "  - ", "above": ["- 첫째"], "shallower": "- 첫째"},
+    {"name": "셋째 단계 — 둘째 단계로", "line": "    - ", "above": ["- 첫째", "  - 둘째"], "shallower": "  - 둘째"},
+    {"name": "숫자 셋째 단계 — 둘째 단계로", "line": "      1. ", "above": ["- 내용", "  1. 인식", "  2. 공유", "     1. 테스트"], "shallower": "  2. 공유"},
+    {"name": "마커 뒤 빈칸이 둘인 부모 밑에서", "line": "      1. ", "above": ["- 내용", "  1.  인식", "  2.  공유", "      1. 테스트"], "shallower": "  2.  공유"},
+    {"name": "두자리 번호 부모 밑에서", "line": "    - ", "above": ["10. 열", "    - 안쪽"], "shallower": "10. 열"},
+    {"name": "글이 있는 항목 — 다음 항목을 이어 준다", "line": "- 첫째", "above": [], "shallower": null},
+    {"name": "글이 있는 번호 항목", "line": "  2. 둘째", "above": ["  1. 첫째"], "shallower": null},
+    {"name": "체크한 항목 — 다음은 빈 칸으로", "line": "- [x] 한 일", "above": [], "shallower": null},
+    {"name": "목록이 아니면 아무 일도 없다", "line": "그냥 글", "above": [], "shallower": null}
+  ]
+}

@@ -155,6 +155,21 @@ final class GoldenTests: XCTestCase {
         }
     }
 
+    /// `headerLength` 로 자른 앞부분 뒤에 파이썬이 뗀 본문이 그대로 이어져야 한다.
+    func testHeaderLengthMatchesPythonBody() throws {
+        for item in try Self.loadGolden().cases {
+            let length = FrontMatterParser.headerLength(of: item.source)
+            if item.frontMatter == nil {
+                XCTAssertEqual(length, 0, "[\(item.name)] 머리말이 없는데 길이가 있다")
+                continue
+            }
+            XCTAssertGreaterThan(length, 0, "[\(item.name)] 머리말이 있는데 길이가 0 이다")
+            let rest = String(decoding: Array(item.source.utf16.dropFirst(length)), as: UTF16.self)
+            XCTAssertTrue(rest.isEmpty || rest == "\n" + item.body,
+                          "[\(item.name)] 머리말 뒤에 본문이 이어지지 않는다")
+        }
+    }
+
     func testTitleMatchesPython() throws {
         for item in try Self.loadGolden().cases {
             XCTAssertEqual(

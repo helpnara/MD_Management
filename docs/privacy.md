@@ -1,6 +1,6 @@
 ---
 title: 개인정보 처리방침
-updated: 2026-09-13
+updated: 2026-09-27
 ---
 
 # 개인정보 처리방침
@@ -32,4 +32,10 @@ updated: 2026-09-13
 
 ## 문의
 
-support@example.com <!-- TODO: 첫 빌드 전 실주소로 교체 (docs/08-feedback.md 4번) -->
+앱에 대한 문의 · 오류 신고는 아래 메일로 보내 주세요.
+
+[{{SUPPORT_EMAIL}}](mailto:{{SUPPORT_EMAIL}})
+
+<!-- 주소는 이 문서에 적지 않는다 — 저장소가 public 이다 (CLAUDE.md §5 · 08-feedback 4번).
+     게시할 때 Tools/site/build.py 가 저장소 변수 SUPPORT_EMAIL 로 바꿔 넣는다.
+     변수가 없거나 자리표시자가 남으면 게시하지 않는다 (171). -->

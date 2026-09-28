@@ -227,6 +227,21 @@ jobs:
           fi
           echo "APP_VERSION=$SHORT ($BUILD)" >> "$GITHUB_ENV"
 
+          echo "── iCloud 설정 (Files 앱 노출) ──"
+          plutil -convert json -o - "$APP/Info.plist" | python3 -c "
+          import json, sys
+          plist = json.load(sys.stdin)
+          want = 'iCloud.com.helpnara.markdown'
+          containers = plist.get('NSUbiquitousContainers')
+          if not containers:
+              sys.exit('::error::NSUbiquitousContainers 가 번들에 없습니다 — Files 앱에 폴더가 안 생깁니다')
+          print(json.dumps(containers, ensure_ascii=False, indent=2))
+          entry = containers.get(want) or {}
+          if entry.get('NSUbiquitousContainerIsDocumentScopePublic') is not True:
+              sys.exit('::error::NSUbiquitousContainerIsDocumentScopePublic 이 true 가 아닙니다')
+          print('iCloud 설정 정상:', entry.get('NSUbiquitousContainerName'))
+          "
+
           echo "── 개인정보 명세 ──"
           MANIFEST="$APP/PrivacyInfo.xcprivacy"
           if [ ! -f "$MANIFEST" ]; then

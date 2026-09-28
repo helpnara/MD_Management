@@ -55,6 +55,26 @@ public enum Paths {
         ["md", "markdown", "txt"].contains(fileExtension(path))
     }
 
+    /// **폴더 목록에서 노트 하나로 세는가** (153, 사용자 · 2026-09-19 — *노트 개수가
+    /// 안 맞을 때가 있어*).
+    ///
+    /// 세는 길이 **둘**이었다. 목록을 만드는 쪽은 숨김 파일과 폴더를 걸렀는데, 폴더
+    /// 화면의 숫자는 확장자만 보고 세고 있었다 — `자료.md` 라는 **폴더**나 `.초안.md`
+    /// 같은 숨김 파일이 있으면 **보이지 않는 것을 셌다.** `CLAUDE.md` §1 의 *값의
+    /// 출입구는 하나다* 를 어기고 있었다.
+    ///
+    /// 이제 **세는 쪽과 보여 주는 쪽이 이 함수 하나**를 쓴다.
+    ///
+    /// - `name`: 폴더 안의 이름 하나 (경로가 아니다).
+    /// - `isDirectory`: 그것이 폴더인가. **폴더는 세지 않는다** — 이름이 `.md` 로
+    ///   끝나도 마찬가지다.
+    public static func countsAsNote(name: String, isDirectory: Bool) -> Bool {
+        guard !isDirectory else { return false }
+        let name = normalized(name)
+        guard !name.hasPrefix(".") else { return false }   // 숨김은 목록에도 안 나온다
+        return isNoteFile(name)
+    }
+
     /// 공유할 때 **한 단계만** 따라가는 대상인가 (`.txt` 는 제외).
     public static func isMarkdownFile(_ path: String) -> Bool {
         ["md", "markdown"].contains(fileExtension(path))
@@ -72,6 +92,28 @@ public enum Paths {
         let p = normalized(relativePath)
         guard let slash = p.lastIndex(of: "/") else { return "" }
         return String(p[p.startIndex..<slash])
+    }
+
+    /// 절대 경로가 `root` **폴더 안**에 있으면 폴더 기준 상대경로를, 밖이면 `nil`.
+    ///
+    /// `파일` 앱이 건네주는 파일이 내 폴더의 것인지 가리는 데 쓴다. 안이면 그 노트를
+    /// 그냥 열면 되고, 밖이면 가져올지 물어야 한다.
+    ///
+    /// **글자 앞부분만 견주면 안 된다.** `/a/bc` 는 `/a/b` 안이 아닌데 앞부분은 같다.
+    /// 그래서 조각(`/` 로 자른 것) 단위로 견준다. 한글 이름이 iCloud 를 거치며 NFD 로
+    /// 올 수 있으므로 양쪽 다 NFC 로 맞춘 뒤에 본다 (A13).
+    public static func relative(of path: String, under root: String) -> String? {
+        let parts = segments(path)
+        let rootParts = segments(root)
+        guard parts.count > rootParts.count else { return nil }
+        guard Array(parts.prefix(rootParts.count)) == rootParts else { return nil }
+        return parts.dropFirst(rootParts.count).joined(separator: "/")
+    }
+
+    private static func segments(_ path: String) -> [String] {
+        normalized(path)
+            .split(separator: "/", omittingEmptySubsequences: true)
+            .map(String.init)
     }
 
     /// `base` 폴더 기준으로 `relative` 를 풀어 폴더 기준 상대경로를 만든다.
@@ -92,6 +134,28 @@ public enum Paths {
             stack.append(part)
         }
         return stack.isEmpty ? nil : stack.joined(separator: "/")
+    }
+
+    /// **노트 위치에서 목표 파일로 가는 상대 링크** (108 · 빌드 34).
+    ///
+    /// `join(base:relative:)` 의 반대다 — `join(base: noteFolder, relative: 결과) == target` 이 된다.
+    /// 겹치는 앞부분을 떼고, 남은 폴더 수만큼 `../` 를 붙인다.
+    ///
+    /// 같은 폴더면 파일 이름뿐이다 (`회의.md`). 한 단계 아래면 `assets/그림.png`,
+    /// 한 단계 위면 `../회의.md`.
+    public static func relativeLink(from noteFolder: String, to target: String) -> String {
+        let base = normalized(noteFolder).split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        var goal = normalized(target).split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard !goal.isEmpty else { return "" }
+
+        var shared = 0
+        // 목표의 **마지막 조각은 파일 이름**이라 폴더로 세지 않는다.
+        let goalFolders = goal.count - 1
+        while shared < base.count, shared < goalFolders, base[shared] == goal[shared] { shared += 1 }
+
+        let up = String(repeating: "../", count: base.count - shared)
+        goal.removeFirst(shared)
+        return up + goal.joined(separator: "/")
     }
 
     // MARK: - 링크 해석
