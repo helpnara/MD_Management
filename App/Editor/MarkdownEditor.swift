@@ -893,7 +893,8 @@ struct MarkdownEditor: UIViewRepresentable {
             // 데려갔다 (사용자 · 빌드 45 — *모델링은 따라오는데 시스템화는 못 따라온다*).
             var parent: String?
             var shallower: String?
-            if let run = listRun(in: text, around: block.location) {
+            let run = listRun(in: text, around: block.location)
+            if let run {
                 let runLines = text.substring(with: run).components(separatedBy: "\n")
                 let head = text.substring(with: NSRange(location: run.location,
                                                         length: block.location - run.location))
@@ -920,8 +921,11 @@ struct MarkdownEditor: UIViewRepresentable {
             guard let shifted = deeper
                     ? ListEditing.indent(moving, under: parent)
                     : ListEditing.outdent(moving, to: shallower) else {
-                // 목록이 아니다 — 탭은 빈칸 둘로, 시프트 탭은 아무 일도 없다.
-                if deeper { insertPlainIndent(in: view, at: selection) }
+                // 목록이 아니고 **고른 글이 없을 때만** 커서 자리에 빈칸 둘 (91). 시프트 탭은 아무 일도 없다.
+                // 예전에는 여기서 **고른 글을 빈칸 둘로 바꿨다** — 표를 넣으면 `제목 1` 이 골라진 채라
+                // 곧바로 들여쓰기를 누르면 그 글이 사라졌다 (185, 빌드 60 · 2번). 목록이 이미 천장에
+                // 닿았을 때도 글 한복판에 빈칸이 들어갔다 — `ListEditing.indent` 의 약속은 *아무 일도 없다* 다.
+                if deeper, run == nil, selection.length == 0 { insertPlainIndent(in: view, at: selection) }
                 return
             }
             guard let target = textRange(view, block) else { return }
