@@ -539,6 +539,73 @@
       "name": "링크가 없는 노트",
       "notePath": "노트.md",
       "text": "그냥 글만 있다"
+    },
+    {
+      "broken": [
+        {
+          "destination": "없는.md",
+          "kind": "link",
+          "line": 3,
+          "resolved": "없는.md",
+          "text": "[없는](없는.md) 를 보라"
+        },
+        {
+          "destination": "assets/없는그림.png",
+          "kind": "image",
+          "line": 5,
+          "resolved": "assets/없는그림.png",
+          "text": "![](assets/없는그림.png)"
+        }
+      ],
+      "files": [
+        "노트.md"
+      ],
+      "name": "CRLF 파일의 줄 번호",
+      "notePath": "노트.md",
+      "text": "# 제목\r\n\r\n[없는](없는.md) 를 보라\r\n\r\n![](assets/없는그림.png)\r\n끝"
+    },
+    {
+      "broken": [],
+      "files": [
+        "노트.md"
+      ],
+      "name": "CRLF 닫는 괄호가 다음 줄이면 링크가 아니다",
+      "notePath": "노트.md",
+      "text": "[a](없는.md 설명\r\n다음 줄 (괄호) 끝)\r\n"
+    },
+    {
+      "broken": [
+        {
+          "destination": "없는.md",
+          "kind": "link",
+          "line": 6,
+          "resolved": "없는.md",
+          "text": "[a](없는.md)"
+        }
+      ],
+      "files": [
+        "노트.md"
+      ],
+      "name": "CRLF 머리말 바로 뒤 링크",
+      "notePath": "노트.md",
+      "text": "---\r\ntitle: 메모\r\ntags: [가]\r\ncreated: 2026-09-29\r\n---\r\n[a](없는.md)\r\n"
+    },
+    {
+      "broken": [
+        {
+          "destination": "없는.md",
+          "kind": "link",
+          "line": 4,
+          "resolved": "없는.md",
+          "text": "[a](없는.md)"
+        }
+      ],
+      "files": [
+        "노트.md"
+      ],
+      "name": "그림 글자가 든 머리말 바로 뒤 링크",
+      "notePath": "노트.md",
+      "text": "---\ntitle: 🎉🎉🎉🎉🎉🎉\n---\n[a](없는.md)\n"
     }
   ],
   "cases": [
@@ -4270,6 +4337,127 @@
       "text": "어제 >>회의"
     }
   ],
+  "nestingCases": [
+    {
+      "cmark": 0,
+      "depth": 0,
+      "name": "빈 글",
+      "text": "",
+      "tooDeep": false
+    },
+    {
+      "cmark": 6,
+      "depth": 13,
+      "name": "보통 노트",
+      "text": "# 제목\n\n본문 **굵게** 와 *기울임* 과 [링크](a.md).\n\n- 하나\n  - 둘\n    - 셋\n\n> 인용\n",
+      "tooDeep": false
+    },
+    {
+      "cmark": 3,
+      "depth": 16,
+      "name": "굵게가 든 긴 목록 — 항목마다 새로 센다",
+      "text": "- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n- **항목** 과 _기울임_ 과 [링크](a.md)\n",
+      "tooDeep": false
+    },
+    {
+      "cmark": 3,
+      "depth": 17,
+      "name": "굵게가 든 긴 번호 목록",
+      "text": "1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n1. **굵게** 와 ~~지움~~\n",
+      "tooDeep": false
+    },
+    {
+      "cmark": 5,
+      "depth": 12,
+      "name": "굵게가 든 큰 표 — 줄마다 새로 센다",
+      "text": "| 이름 | 값 |\n|---|---|\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n| **a** | b_c *d* |\n",
+      "tooDeep": false
+    },
+    {
+      "cmark": 2,
+      "depth": 4,
+      "name": "코드 울타리 안은 줄 안 표시를 안 센다",
+      "text": "```\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\na_b * c [d] ~e\n```\n",
+      "tooDeep": false
+    },
+    {
+      "cmark": 1,
+      "depth": 6,
+      "name": "낱말 가운데 밑줄은 안 센다",
+      "text": "snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name snake_case_name ",
+      "tooDeep": false
+    },
+    {
+      "cmark": 21,
+      "depth": 46,
+      "name": "메일 답장 인용 20겹",
+      "text": "> > > > > > > > > > > > > > > > > > > > 답장\n",
+      "tooDeep": false
+    },
+    {
+      "cmark": 21,
+      "depth": 46,
+      "name": "CRLF 인용 20겹",
+      "text": "> > > > > > > > > > > > > > > > > > > > 답장\r\n두 줄\r\n",
+      "tooDeep": false
+    },
+    {
+      "cmark": 20,
+      "depth": 27,
+      "name": "들여쓴 목록 10단계",
+      "text": "- 1\n  - 2\n    - 3\n      - 4\n        - 5\n          - 6\n            - 7\n              - 8\n                - 9\n                  - 10\n",
+      "tooDeep": false
+    },
+    {
+      "cmark": 126,
+      "depth": 256,
+      "name": "경계 — 인용 125겹은 연다",
+      "text": "> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > x",
+      "tooDeep": false
+    },
+    {
+      "cmark": 127,
+      "depth": 258,
+      "name": "경계 — 인용 126겹은 막는다",
+      "text": "> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > x",
+      "tooDeep": true
+    },
+    {
+      "cmark": 301,
+      "depth": 606,
+      "name": "인용 300겹",
+      "text": "> > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > > x",
+      "tooDeep": true
+    },
+    {
+      "cmark": 198,
+      "depth": 606,
+      "name": "한 줄에 목록 표시 200겹",
+      "text": "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - x",
+      "tooDeep": true
+    },
+    {
+      "cmark": 151,
+      "depth": 306,
+      "name": "중첩 기울임 150겹",
+      "text": "*a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a *a b c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c*",
+      "tooDeep": true
+    },
+    {
+      "cmark": 1,
+      "depth": 306,
+      "name": "줄을 넘어 이어지는 기울임",
+      "text": "*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\n*a\nb",
+      "tooDeep": true
+    },
+    {
+      "cmark": 2,
+      "depth": 306,
+      "name": "대괄호 300겹",
+      "text": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[a](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)",
+      "tooDeep": true
+    }
+  ],
   "outlineCases": [
     {
       "applied": "- 내용 :\n  1. 문제가 뭐지?\n  2. 과제 착수\n     1. 데이터 수집\n     2. 데이터 검증\n     3. EDA",
@@ -5213,6 +5401,27 @@
       "rebased": "[그림](../assets/a(1).png)",
       "text": "[그림](assets/a(1).png)",
       "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "CRLF-줄마다-링크",
+      "rebased": "![a](../assets/a.png)\r\n[b](../기록.md)\r\n끝\r\n",
+      "text": "![a](assets/a.png)\r\n[b](기록.md)\r\n끝\r\n",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "CRLF-닫는괄호가-다음줄이면-안고친다",
+      "rebased": "[a](assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n![b](../assets/b.png)\r\n",
+      "text": "[a](assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n![b](assets/b.png)\r\n",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "LF-닫는괄호가-다음줄이면-안고친다",
+      "rebased": "[a](assets/a.png 설명\n다음 줄 (괄호) 끝)\n",
+      "text": "[a](assets/a.png 설명\n다음 줄 (괄호) 끝)\n",
+      "to": "회의"
     }
   ],
   "renumberCases": [
@@ -5519,6 +5728,24 @@
       "old": "회의",
       "retargeted": "![](회의/assets/a.png)",
       "text": "![](회의/assets/a.png)"
+    },
+    {
+      "fixed": 2,
+      "name": "CRLF 줄마다 링크",
+      "new": "회의록",
+      "note": "메모.md",
+      "old": "회의",
+      "retargeted": "![](회의록/assets/a.png)\r\n[기록](회의록/B.md)\r\n",
+      "text": "![](회의/assets/a.png)\r\n[기록](회의/B.md)\r\n"
+    },
+    {
+      "fixed": 0,
+      "name": "CRLF 닫는 괄호가 다음 줄이면 안 고친다",
+      "new": "회의록",
+      "note": "메모.md",
+      "old": "회의",
+      "retargeted": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n",
+      "text": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n"
     }
   ],
   "styleCases": [

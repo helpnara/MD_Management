@@ -920,6 +920,38 @@ actor FolderStore {
     /// 바꾸지 않는다 — 파일이 원본이다. 새로 넣는 것부터 겹치지 않는다. 휴지통 안의 이름도 피한다
     /// (되돌리면 다시 나란히 선다).
     func writeAsset(_ data: Data, stem: String, ext: String, besideNoteIn folder: String) throws -> String {
+        let path = try newAssetPath(stem: stem, ext: ext, besideNoteIn: folder)
+        try writeData(data, to: path)
+        return String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))
+    }
+
+    /// 문서 첨부를 **메모리에 올리지 않고 복사해** 넣는다 (181). 예전에는 파일을 통째로 `Data` 로
+    /// 읽었다 — 수 GB 영상이면 iOS 가 앱을 끈다. 이름 짓기는 `writeAsset` 과 같은 길이다.
+    /// 큰 파일이면 복사하는 동안 이 actor 의 다른 일(자동 저장)이 기다린다 — 글은 편집기에 있다.
+    func copyAsset(from source: URL, stem: String, ext: String, besideNoteIn folder: String) throws -> String {
+        let path = try newAssetPath(stem: stem, ext: ext, besideNoteIn: folder)
+        let target = root.appendingPathComponent(path)
+        let scoped = source.startAccessingSecurityScopedResource()
+        defer { if scoped { source.stopAccessingSecurityScopedResource() } }
+        try? FileManager.default.startDownloadingUbiquitousItem(at: source)
+
+        var thrown: Error?
+        var coordinationError: NSError?
+        NSFileCoordinator().coordinate(readingItemAt: source, options: [],
+                                       writingItemAt: target, options: .forReplacing,
+                                       error: &coordinationError) { readURL, writeURL in
+            do {
+                try FileManager.default.copyItem(at: readURL, to: writeURL)
+            } catch {
+                thrown = error
+            }
+        }
+        if let error = thrown ?? coordinationError { throw error }
+        return String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))
+    }
+
+    /// 새 첨부의 금고 기준 경로 — `assets/` 를 만들고, 금고 전체에서 겹치지 않는 이름을 고른다 (178).
+    private func newAssetPath(stem: String, ext: String, besideNoteIn folder: String) throws -> String {
         openScopeIfNeeded()
         let assets = folder.isEmpty ? "assets" : folder + "/assets"
         try createFolder(assets)
@@ -938,8 +970,7 @@ actor FolderStore {
         if path.isEmpty {
             path = assets + "/" + stem + "-\(Int(Date().timeIntervalSince1970))." + ext
         }
-        try writeData(data, to: path)
-        return String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))
+        return path
     }
 
     /// 금고 안 **모든 `assets/` 폴더의 파일 이름** (휴지통 포함 · 소문자 · NFC). 사진 이름을 겹치지 않게
@@ -1185,9 +1216,27 @@ extension FolderStore: AssetProvider {
         openScopeIfNeeded()
 
         let url = root.appendingPathComponent(path)
+        // **너무 큰 파일은 건네지 않는다** (181) — 통째로 메모리에 올리므로 수 GB 면 iOS 가 앱을 끈다.
+        // 웹뷰는 빈 그림을 받는다. 파일은 목록에서 눌러 따로 연다.
+        let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+        guard size <= Self.largestHandedToViewer else { return nil }
         var result: Data?
         coordinateRead(url) { readURL in
             result = try? Data(contentsOf: readURL)
+        }
+        return result
+    }
+
+    /// 읽기 화면에 건네는 파일의 상한 — 사진 한 장으로는 넉넉하다 (181).
+    static let largestHandedToViewer = 64 * 1024 * 1024
+
+    /// 폴더 안 사진의 **작은 그림** — 커서 줄 사진 띠 (181). 파일에서 바로 줄여 읽는다.
+    func thumbnail(forRelativePath path: String, maxPixel: CGFloat) -> Data? {
+        guard Paths.join(base: "", relative: path) == Paths.normalized(path) else { return nil }
+        openScopeIfNeeded()
+        var result: Data?
+        coordinateRead(root.appendingPathComponent(path)) { readURL in
+            result = ImageImport.thumbnailPNG(at: readURL, maxPixel: maxPixel)
         }
         return result
     }

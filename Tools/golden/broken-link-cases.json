@@ -34,6 +34,10 @@
     {"name": "금고를 모르면 아무것도 안 찾는다", "notePath": "노트.md",
      "text": "[표](assets/없는표.pdf)", "files": []},
     {"name": "링크가 없는 노트", "notePath": "노트.md",
-     "text": "그냥 글만 있다", "files": ["노트.md"]}
+     "text": "그냥 글만 있다", "files": ["노트.md"]},
+    {"name": "CRLF 파일의 줄 번호", "notePath": "노트.md", "text": "# 제목\r\n\r\n[없는](없는.md) 를 보라\r\n\r\n![](assets/없는그림.png)\r\n끝", "files": ["노트.md"]},
+    {"name": "CRLF 닫는 괄호가 다음 줄이면 링크가 아니다", "notePath": "노트.md", "text": "[a](없는.md 설명\r\n다음 줄 (괄호) 끝)\r\n", "files": ["노트.md"]},
+    {"name": "CRLF 머리말 바로 뒤 링크", "notePath": "노트.md", "text": "---\r\ntitle: 메모\r\ntags: [가]\r\ncreated: 2026-09-29\r\n---\r\n[a](없는.md)\r\n", "files": ["노트.md"]},
+    {"name": "그림 글자가 든 머리말 바로 뒤 링크", "notePath": "노트.md", "text": "---\ntitle: 🎉🎉🎉🎉🎉🎉\n---\n[a](없는.md)\n", "files": ["노트.md"]}
   ]
 }

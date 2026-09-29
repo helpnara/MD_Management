@@ -22,6 +22,8 @@
     { "name": "한 노트에 여럿 · 섞여서", "note": "아이디어/노트.md", "old": "회의", "new": "회의록",
       "text": "![](../회의/assets/a.png) 와 [기록](../회의/B.md) 그리고 [내 것](assets/c.png)", "expectFixed": 2 },
     { "name": "이름이 그대로면 아무것도 안 한다", "note": "메모.md", "old": "회의", "new": "회의",
-      "text": "![](회의/assets/a.png)", "expectFixed": 0 }
+      "text": "![](회의/assets/a.png)", "expectFixed": 0 },
+    {"name": "CRLF 줄마다 링크", "note": "메모.md", "old": "회의", "new": "회의록", "text": "![](회의/assets/a.png)\r\n[기록](회의/B.md)\r\n", "expectFixed": 2},
+    {"name": "CRLF 닫는 괄호가 다음 줄이면 안 고친다", "note": "메모.md", "old": "회의", "new": "회의록", "text": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n", "expectFixed": 0}
   ]
 }

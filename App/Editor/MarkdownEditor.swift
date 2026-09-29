@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 import Core
 
 /// 하드웨어 키보드의 **탭 · 시프트 탭**을 받으려고 둔 껍데기 (빌드 29 · 1번).
@@ -53,17 +54,21 @@ final class MarkdownTextView: UITextView {
         tagClipboard()
     }
 
-    /// 방금 복사한 글과 **원래 노트의 경로**를 첫 항목에 더한다. 글도 같이 적어 두는 까닭:
+    /// 방금 복사한 글과 **원래 노트의 경로**를 클립보드에 싣는다. 글도 같이 적어 두는 까닭:
     /// 붙일 때 클립보드의 글이 이것과 같을 때만 믿는다 — 그 사이 다른 앱에서 복사했으면 안 믿는다.
+    ///
+    /// **클립보드를 새 항목 하나로 갈아 끼운다** (184) — 마크다운 원문(글자)과 우리 기록뿐이다.
+    /// UIKit 이 넣어 둔 서식 있는 글에는 편집기의 **보기용 속성**(흐린 기호 · 숨긴 표시)이 묻어
+    /// 있어 다른 앱에 붙이면 안 보이는 글자가 딸려 간다. 파일이 원본이다 — 원문만 건넨다.
     private func tagClipboard() {
         let board = UIPasteboard.general
-        guard let notePath, let copied = board.string else { return }
-        let record: [String: String] = ["note": notePath, "text": copied]
-        guard let data = try? JSONSerialization.data(withJSONObject: record) else { return }
-        var items = board.items
-        guard !items.isEmpty else { return }
-        items[0][Self.sourceType] = data
-        board.setItems(items)
+        guard let copied = board.string else { return }
+        var item: [String: Any] = [UTType.utf8PlainText.identifier: copied]
+        if let notePath,
+           let data = try? JSONSerialization.data(withJSONObject: ["note": notePath, "text": copied]) {
+            item[Self.sourceType] = data
+        }
+        board.setItems([item])
     }
 
     private static func sourceNote(from board: UIPasteboard, plain: String) -> String? {
@@ -78,6 +83,9 @@ final class MarkdownTextView: UITextView {
     /// `replace(_:withText:)` 한 번으로 끝낸다 — **되돌리기가 한 번에 걸린다.** 그래야
     /// 사람이 고침을 무를 수 있다 (앱이 본문을 고치는 자리라 무를 수 있어야 한다).
     override func paste(_ sender: Any?) {
+        // **조합 중이면 먼저 끝낸다** (180) — 밑줄 친 글자를 확정한 뒤 그 뒤에 붙인다. 조합 범위를
+        // 들고 있는 입력기 옆에서 글을 바꾸면 입력기가 낡은 범위로 움직인다.
+        if markedTextRange != nil { unmarkText() }
         let board = UIPasteboard.general
         let plain = board.string ?? ""
         guard let target = selectedTextRange else {
@@ -329,6 +337,18 @@ struct MarkdownEditor: UIViewRepresentable {
             onLinkQuery(found)
         }
 
+        /// **한글 조합을 먼저 끝낸다** (180). 글자에 밑줄이 있는 채(조합 중) 도구 띠 · 탭 · 사진 넣기가
+        /// 글을 바꾸면 입력기가 **낡은 범위**를 들고 움직인다 — 글자가 엉키거나 UIKit 안에서 범위
+        /// 예외로 꺼진다. 누른 것은 버리지 않는다: 조합 중인 글자를 확정하고, 확정된 글 위에서 바꾼다.
+        /// 예전에는 링크 넣기만 조합 중에 멈췄다 — 이제는 모두 여기를 거친다.
+        func commitComposition(_ view: UITextView) {
+            guard view.markedTextRange != nil || isComposing else { return }
+            if view.markedTextRange != nil { view.unmarkText() }
+            isComposing = false
+            // 조합 중에 건너뛴 칠하기를 다음 번에 갚는다 — 조합이 저절로 끝날 때와 같다 (162).
+            focus = MarkerFocus.nudged(focus)
+        }
+
         /// 고른 노트를 커서 자리에 넣는다 (147). 방아쇠는 **다시 찾는다** — 사이에 커서가
         /// 움직였을 수 있다. 없으면 아무 일도 하지 않는다.
         func applyLink(title: String, path: String, noteFolder: String) -> Bool {
@@ -409,6 +429,9 @@ struct MarkdownEditor: UIViewRepresentable {
             if noteID != loadedNoteID {
                 loadedNoteID = noteID
                 loadedText = text
+                // 조합 중에 노트를 바꾸면 **조합 기억도 끝낸다** (184) — 남아 있으면 새 노트에서
+                // 칠하기 · 번호 맞추기가 조합 중인 줄 알고 멈춘다.
+                commitComposition(view)
                 view.text = text
                 refreshFocus(view)
                 return
@@ -528,6 +551,7 @@ struct MarkdownEditor: UIViewRepresentable {
         func insert(_ insertion: LibraryModel.Insertion) -> Bool {
             guard insertion.id != lastInsertionID, let view else { return false }
             lastInsertionID = insertion.id
+            commitComposition(view)
 
             let text = view.textStorage.string as NSString
             let range = view.selectedRange
@@ -551,6 +575,7 @@ struct MarkdownEditor: UIViewRepresentable {
         func apply(_ request: LibraryModel.FormatRequest) -> Bool {
             guard request.id != lastFormatID, let view else { return false }
             lastFormatID = request.id
+            commitComposition(view)
 
             switch request.kind {
             case .shift(let deeper):
@@ -627,6 +652,8 @@ struct MarkdownEditor: UIViewRepresentable {
             // `NSTextStorage` 는 `Sendable` 이 아니라 그대로 넘기면 막힌다.
             let mask = editedMask
             let edited = editedRange
+            // 주 스레드가 아니면 칠하지 않는다 — 가정이 틀리면 앱이 꺼진다 (184). 칠하기는 다음 편집이 갚는다.
+            guard Thread.isMainThread else { return }
             MainActor.assumeIsolated {
                 guard mask.contains(.editedCharacters),
                       !isComposing, !isStyling,
@@ -847,6 +874,7 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 되돌리기에 한 번의 편집으로 남는다 (53 과 같은 까닭).
         func shiftIndent(_ deeper: Bool) {
             guard let view else { return }
+            commitComposition(view)
             let text = view.textStorage.string as NSString
             let selection = view.selectedRange
             guard text.length > 0 else { return }

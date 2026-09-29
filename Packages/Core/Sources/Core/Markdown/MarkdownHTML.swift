@@ -73,6 +73,15 @@ public enum MarkdownHTML {
     ) -> RenderedNote {
         let body = FrontMatterParser.parse(markdown).body
 
+        // **겹침이 너무 깊으면 트리를 만들지 않는다** (182) — 라이브러리가 재귀로 걷다 스택이 넘친다.
+        // 글은 그대로 보여 준다(이스케이프해서). 첨부는 안 그리므로 없는 첨부도 없다.
+        guard !Nesting.isTooDeep(body) else {
+            return RenderedNote(
+                bodyHTML: "<p><em>겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다.</em></p>\n<pre>\(escape(body))</pre>\n",
+                missingAttachments: []
+            )
+        }
+
         // **스마트 따옴표를 끈다.** 파일이 원본이다 (ADR-0001) — 화면에서 곧은
         // 따옴표가 둥근 것으로 바뀌면 사용자가 쓴 글과 다르게 보인다.
         let document = Document(parsing: body, options: [.disableSmartOpts])
