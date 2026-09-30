@@ -7,23 +7,30 @@ import Core
 ///
 /// `UITextView` 는 탭을 제 입력으로 쓰지 않고 다음 칸으로 넘긴다.
 /// `wantsPriorityOverSystemBehavior` 로 우리가 먼저 받는다.
-extension UITextView {
+final class MarkdownTextView: UITextView {
 
-    /// **조합을 끝내고 키보드의 조합 상태까지 비운다** (180 → 186 → 187).
+    /// 조합을 끝내려고 **키보드를 잠깐 옆에 맡기는 중** (188). 대리자가 이 순간의 끝 · 시작 · 커서 이동을 건너뛴다.
+    var isRecyclingResponder = false
+    /// 키보드를 잠깐 맡아 주는 빈 칸 (188). 보이지 않고, 글도 안 받는다.
+    private var keyboardParker: UITextField?
+
+    /// **조합을 끝내고 키보드의 조합 버퍼까지 비운다** (180 → 186 → 187 → 188).
     ///
-    /// `unmarkText()` 만으로는 **글자만** 확정된다. 한글 키보드는 제 안에 조합하던 글자(`다`)를 그대로
-    /// 들고 있어서, 다음 자음이 오면 `다`+`ㄱ` 을 이어 조합해 **새 자리에 `다가…` 를 찍는다** — 빌드 61 ·
-    /// 2번 사용자가 본 *가나다 → 들여쓰기 → 가나다 를 치면 다가나다* 가 그것이다. 103 ② 와 같은 뿌리다
-    /// (조합 중에 앱이 글을 바꾸면 키보드와 글이 갈린다).
+    /// `unmarkText()` 는 **글자만** 확정한다. 한글 키보드는 제 안에 조합하던 글자(`다`)를 들고 있다가 다음 자음을
+    /// 거기 붙여 **커서 자리에 `다가…` 를 새로 찍는다** (빌드 61 · 62 · 63 — 같은 자리 네 번). 굵게(`****`) · 붙여넣기(낱말)
+    /// 뒤에서는 안 그러고 **빈칸 둘** 뒤에서만 그런다. 키보드가 *커서 앞 낱말*을 다시 읽을 때 **빈칸을 건너뛰고** `가나다`
+    /// 를 보면 제 버퍼와 맞다고 여겨 조합을 잇는 것으로 본다 — 키보드 안은 볼 수 없으니 짐작이지만 네 번의 결과가 다 맞는다.
     ///
-    /// 빌드 62 는 입력 대리자에게 *글 · 커서가 바뀐다* 고 알렸다. **굵게(`****` 를 넣음)는 됐고 들여쓰기(빈칸
-    /// 둘을 넣음)는 안 됐다** — 같은 자리 세 번째. 둘의 차이는 넣는 글자뿐이다: 키보드가 커서 앞 글을 다시
-    /// 읽을 때 **빈칸을 건너뛰고** `다` 를 보면 제 버퍼의 `다` 와 맞다고 여겨 조합을 잇는 것으로 보인다.
-    /// 알리는 것으로는 키보드 버퍼를 못 비운다. 그래서 **초점을 뗐다 붙인다** — 사람이 다른 곳을 눌렀다
-    /// 돌아올 때 iOS 가 조합을 확실히 끝내는 바로 그 길이다 (162 · 98 에서 실기기로 본 동작). 글자를 먼저
-    /// 확정한 뒤에 뗀다 — 마킹이 남은 채 떼면 UIKit 이 한 바퀴 뒤에 정리해서(162) 그 사이 글이 갈린다.
-    /// 대리자(`textViewDidEndEditing` · `DidBeginEditing`)는 `isRecyclingResponder` 를 보고 이 순간을 건너뛴다 —
-    /// 초점 단추가 깜빡이거나 제목 줄의 파일명 맞추기(89)가 도는 일이 없게.
+    /// 그래서 **세 겹**으로 끊는다. 어느 하나라도 키보드에 닿으면 된다.
+    /// ① 글자를 확정하며 입력 대리자에게 알린다 (186 — 굵게 · 붙여넣기는 이것으로 됐다).
+    /// ② 커서를 **맨 앞에 갔다 온다** — 앞 글이 제 버퍼와 안 맞는 자리를 한 번 보여 준다 (대리자에게 알리며).
+    /// ③ 키보드를 **옆의 빈 칸에 맡겼다가 다음 바퀴에 되찾는다.** 187 은 같은 칸에서 뗐다 붙였다 — 같은 바퀴 안의
+    ///    같은 칸이라 UIKit 이 **한 번도 안 바뀐 것으로 합쳤을** 수 있다. 다른 칸으로 넘어가면 합칠 수 없고, 다음
+    ///    바퀴에 되찾으니 두 번의 바뀜이 따로 간다. 빈 칸도 글 칸이라 **키보드는 내려가지 않는다** (같은 종류로 맞춘다).
+    ///    사람이 다른 글 칸을 눌렀다 돌아올 때 iOS 가 조합을 확실히 끝내는 바로 그 길이다 (162 · 98).
+    ///
+    /// 대리자는 `isRecyclingResponder` 를 보고 이 순간의 끝 · 시작 · 커서 이동을 건너뛴다 — 초점 단추(98)가 깜빡이거나
+    /// 커서가 맨 앞(제목 줄)에 들렀다는 이유로 파일명 맞추기(89)가 도는 일이 없게. 되찾은 뒤 한 번 정리한다.
     func finishComposition() {
         guard markedTextRange != nil else { return }
         let input = inputDelegate
@@ -33,20 +40,62 @@ extension UITextView {
         input?.textDidChange(self)
         input?.selectionDidChange(self)
 
-        guard isFirstResponder else { return }
+        guard isFirstResponder, let host = superview else { return }
+        isRecyclingResponder = true
         let selection = selectedRange
-        (self as? MarkdownTextView)?.isRecyclingResponder = true
-        resignFirstResponder()
-        becomeFirstResponder()
-        (self as? MarkdownTextView)?.isRecyclingResponder = false
+
+        input?.selectionWillChange(self)
+        selectedRange = NSRange(location: 0, length: 0)
+        input?.selectionDidChange(self)
+        input?.selectionWillChange(self)
         selectedRange = selection
+        input?.selectionDidChange(self)
+
+        let parker = keyboardParker ?? makeParker()
+        keyboardParker = parker
+        if parker.superview !== host { host.addSubview(parker) }
+        parker.frame = parkingFrame(in: host)
+        parker.text = ""
+        guard parker.becomeFirstResponder() else {
+            isRecyclingResponder = false
+            return
+        }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.becomeFirstResponder()
+            self.isRecyclingResponder = false
+            // 건너뛴 정리를 한 번에 갚는다 — 드러낼 줄 · 제목 줄 · 도구 띠의 눌린 모습.
+            self.delegate?.textViewDidChangeSelection?(self)
+        }
     }
-}
 
-final class MarkdownTextView: UITextView {
+    private func makeParker() -> UITextField {
+        let field = UITextField(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        field.alpha = 0
+        field.tintColor = .clear
+        field.isAccessibilityElement = false
+        // 키보드가 그대로 있게 — 종류가 다르면 키보드가 바뀌며 흔들린다.
+        field.keyboardType = keyboardType
+        field.keyboardAppearance = keyboardAppearance
+        field.returnKeyType = returnKeyType
+        field.autocorrectionType = autocorrectionType
+        field.autocapitalizationType = autocapitalizationType
+        field.spellCheckingType = spellCheckingType
+        field.smartQuotesType = smartQuotesType
+        field.smartDashesType = smartDashesType
+        field.smartInsertDeleteType = smartInsertDeleteType
+        return field
+    }
 
-    /// 조합을 끝내려고 **초점을 뗐다 붙이는 중** (187). 대리자가 이 순간의 끝 · 시작을 건너뛴다.
-    var isRecyclingResponder = false
+    /// 커서가 있는 자리 — 거기 두면 UIKit 이 *보이게 하려고* 무엇을 굴리지 않는다.
+    private func parkingFrame(in host: UIView) -> CGRect {
+        guard let position = selectedTextRange?.start else { return CGRect(x: 0, y: 0, width: 1, height: 1) }
+        let caret = caretRect(for: position)
+        guard caret.origin.x.isFinite, caret.origin.y.isFinite else { return CGRect(x: 0, y: 0, width: 1, height: 1) }
+        let inHost = convert(caret, to: host)
+        return CGRect(x: inHost.minX, y: inHost.minY, width: 1, height: 1)
+    }
+
     /// `true` 면 들여쓰기, `false` 면 내어쓰기.
     var onTab: (@MainActor (Bool) -> Void)?
     /// **붙여넣을 것을 한 번 손볼 기회** (144 · 157 · 158 · 159).
@@ -382,7 +431,7 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 예전에는 링크 넣기만 조합 중에 멈췄다 — 이제는 모두 여기를 거친다.
         func commitComposition(_ view: UITextView) {
             guard view.markedTextRange != nil || isComposing else { return }
-            view.finishComposition()
+            (view as? MarkdownTextView)?.finishComposition()
             isComposing = false
             // 조합 중에 건너뛴 칠하기를 다음 번에 갚는다 — 조합이 저절로 끝날 때와 같다 (162).
             focus = MarkerFocus.nudged(focus)
@@ -1063,6 +1112,8 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 조합 중에는 건드리지 않는다 — 조합이 끊긴다 (S10). 그때는 `MarkerFocus` 가
         /// **갚을 것을 적어 두고** 조합이 끝나는 자리에서 갚는다 (162).
         func textViewDidChangeSelection(_ textView: UITextView) {
+            // 조합을 끝내려고 커서를 잠깐 옮기는 중이다 (188) — 되찾은 뒤 한 번에 갚는다.
+            if (textView as? MarkdownTextView)?.isRecyclingResponder == true { return }
             reportTitleLine(textView)
             reportImageLine(textView)
             reportActiveFormats(textView)
@@ -1141,7 +1192,7 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 남고(L1), 그 줄이 제목 줄이면 파일명도 안 맞춰졌다. 커서가 사라지는 이
         /// 자리에서 둘 다 갚는다 — 커서가 없는 것처럼 다시 칠하고, 제목을 확정한다.
         func textViewDidEndEditing(_ textView: UITextView) {
-            // 조합을 끝내려고 잠깐 뗀 것이다 (187) — 초점은 곧 돌아온다. 아무 일도 하지 않는다.
+            // 조합을 끝내려고 잠깐 옆 칸에 맡긴 것이다 (188) — 초점은 곧 돌아온다. 아무 일도 하지 않는다.
             if (textView as? MarkdownTextView)?.isRecyclingResponder == true { return }
             onFocus(false)
             // **초점이 떠났으면 조합도 끝났다.** 한글을 치던 중에 다른 곳을 누르면 여기로
