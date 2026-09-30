@@ -2930,11 +2930,11 @@ def build_nesting_cases() -> list[dict]:
 # 그래서 바꾼 줄에 딸린 줄들을 그 차이만큼 함께 민다. 번호는 모두 `1.` 로 두고 다시 매기기(104)가 맞춘다.
 # 문자 개요(`가.` · `a.`)는 마크다운 목록이 아니다 — 다른 앱에서 글자로 보인다. 넣지 않는다.
 
-RESTYLE_MARKERS = {"bullet": "- ", "number": "1. ", "checkbox": "- [ ] ", "none": ""}
+RESTYLE_MARKERS = {"bullet": "- ", "number": "1. ", "checkbox": "- [ ] ", "plain": ""}
 
 
 def split_marker(line: str):
-    """(앞 빈칸, 모양, 글). 모양은 bullet · number · checkbox · none."""
+    """(앞 빈칸, 모양, 글). 모양은 bullet · number · checkbox · plain."""
     indent = line[:len(line) - len(line.lstrip(" \t"))]
     rest = line[len(indent):]
     m = re.match(r"^[-*+] \[[ xX]\] ", rest)
@@ -2946,7 +2946,7 @@ def split_marker(line: str):
     m = re.match(r"^[0-9]{1,9}[.)] ", rest)
     if m:
         return indent, "number", rest[m.end():]
-    return indent, "none", rest
+    return indent, "plain", rest
 
 
 def toggle_target(line: str) -> str:
@@ -2963,17 +2963,17 @@ def restyle_lines(lines: list[str], first: int, count: int, to: str) -> list[str
         if not line.strip():
             continue
         indent, kind, body = split_marker(line)
-        if kind == to or (kind == "none" and to == "none"):
+        if kind == to or (kind == "plain" and to == "plain"):
             continue
         new_line = indent + RESTYLE_MARKERS[to] + body
-        old_col = content_column(line) if kind != "none" else leading_width(line)
-        new_col = content_column(new_line) if to != "none" else leading_width(new_line)
+        old_col = content_column(line) if kind != "plain" else leading_width(line)
+        new_col = content_column(new_line) if to != "plain" else leading_width(new_line)
         if old_col is None:
             old_col = leading_width(line)
         if new_col is None:
             new_col = leading_width(new_line)
         delta = new_col - old_col
-        end = subtree_end(i, out) if kind != "none" else i + 1
+        end = subtree_end(i, out) if kind != "plain" else i + 1
         out[i] = new_line
         if delta:
             for j in range(i + 1, end):
@@ -2997,7 +2997,7 @@ def build_restyle_cases() -> list[dict]:
         got = restyle_lines(lines, case["first"], case["count"], to)
         selected = [l for l in lines[case["first"]:case["first"] + case["count"]] if l.strip()]
         # **단계가 그대로다** — 목록 줄끼리 모양만 바꿨으면 파서가 세는 깊이가 한 줄도 안 바뀐다.
-        if to != "none" and all(is_list_item(l) for l in selected):
+        if to != "plain" and all(is_list_item(l) for l in selected):
             if depths_in(lines) != depths_in(got):
                 raise SystemExit(f"::error::[{case['name']}] 단계가 바뀌었다:\n{lines}\n→ {got}")
             check_depths(case["name"], got)

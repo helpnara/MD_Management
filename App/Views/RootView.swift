@@ -1370,7 +1370,7 @@ private struct FormatBar: View {
             Button { library.format(.list(.bullet)) } label: { Label("글머리표", systemImage: "list.bullet") }
             Button { library.format(.list(.number)) } label: { Label("번호", systemImage: "list.number") }
             Button { library.format(.list(.checkbox)) } label: { Label("체크상자", systemImage: "checklist") }
-            Button { library.format(.list(.none)) } label: { Label("목록 해제", systemImage: "text.alignleft") }
+            Button { library.format(.list(.plain)) } label: { Label("목록 해제", systemImage: "text.alignleft") }
         } label: {
             face("목록 모양", "list.bullet", on: false)
         } primaryAction: {

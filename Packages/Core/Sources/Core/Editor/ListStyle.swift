@@ -5,7 +5,9 @@ public enum ListMarker: String, Equatable, Sendable {
     case bullet
     case number
     case checkbox
-    case none
+    /// 목록 아님. **`none` 이라 부르지 않는다** (194) — 화면 쪽은 `ListMarker?` 로 받는데, 거기서 `.none` 은
+    /// `Optional.none`(= 단추 한 번 누르기)으로 읽혀 *목록 해제* 가 번호로 바뀌었다 (빌드 67 · 8번).
+    case plain
 
     /// 새로 쓸 마커. 번호는 모두 `1.` 로 두고 다시 매기기(104)가 맞춘다.
     public var text: String {
@@ -13,7 +15,7 @@ public enum ListMarker: String, Equatable, Sendable {
         case .bullet: return "- "
         case .number: return "1. "
         case .checkbox: return "- [ ] "
-        case .none: return ""
+        case .plain: return ""
         }
     }
 }
@@ -35,7 +37,7 @@ extension ListEditing {
         switch splitMarker(line).kind {
         case .number: return .bullet
         case .bullet, .checkbox: return .number
-        case .none: return .bullet
+        case .plain: return .bullet
         }
     }
 
@@ -50,10 +52,10 @@ extension ListEditing {
             let parts = splitMarker(line)
             if parts.kind == marker { continue }
             let newLine = String(parts.indent) + marker.text + String(parts.body)
-            let oldColumn = (parts.kind == .none ? nil : contentColumn(line)) ?? width(line)
-            let newColumn = (marker == .none ? nil : contentColumn(newLine)) ?? width(newLine)
+            let oldColumn = (parts.kind == .plain ? nil : contentColumn(line)) ?? width(line)
+            let newColumn = (marker == .plain ? nil : contentColumn(newLine)) ?? width(newLine)
             let delta = newColumn - oldColumn
-            let end = parts.kind == .none ? index + 1 : subtreeEnd(from: index, in: out)
+            let end = parts.kind == .plain ? index + 1 : subtreeEnd(from: index, in: out)
             out[index] = newLine
             guard delta != 0, index + 1 < end else { continue }
             for child in (index + 1)..<end {
@@ -89,7 +91,7 @@ extension ListEditing {
         if !digits.isEmpty, digits.count <= 9, after.hasPrefix(". ") || after.hasPrefix(") ") {
             return (indent, .number, after.dropFirst(2))
         }
-        return (indent, .none, rest)
+        return (indent, .plain, rest)
     }
 
     /// 줄 앞의 빈칸 너비 (탭은 네 칸) — `leadingWidth` 와 같다.

@@ -160,7 +160,7 @@
       ],
       "first": 0,
       "count": 2,
-      "to": "none"
+      "to": "plain"
     },
     {
       "name": "딸린 줄이 있는 항목의 목록 해제",
@@ -170,7 +170,7 @@
       ],
       "first": 0,
       "count": 1,
-      "to": "none"
+      "to": "plain"
     },
     {
       "name": "보통 글을 번호로",

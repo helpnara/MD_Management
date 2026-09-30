@@ -156,6 +156,9 @@ struct EditorStyleSheet {
         case .inlineCode:
             text.addAttribute(.font, value: mono, range: range)
             text.addAttribute(.backgroundColor, value: codeBackground, range: range)
+            // 인용과 같은 옅은 파랑 (196, 사용자 — *글자 인용에도 동일하게*). 다크 모드에서 본문색 그대로면 옅은 바탕에
+            // 묻혔다. 색은 하나 — `Palette.quoteUIColor`. 인용과는 고정폭 글꼴 · 바탕으로 갈린다.
+            text.addAttribute(.foregroundColor, value: quoteInk, range: range)
         case .link, .image:
             text.addAttribute(.foregroundColor, value: linkInk, range: range)
         case .tag:
