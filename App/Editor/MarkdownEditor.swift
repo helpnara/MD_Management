@@ -445,6 +445,8 @@ struct MarkdownEditor: UIViewRepresentable {
             if noteID != loadedNoteID {
                 loadedNoteID = noteID
                 loadedText = text
+                lostStart = nil
+                pendingFollow = nil
                 // 조합 중에 노트를 바꾸면 **조합 기억도 끝낸다** (184) — 남아 있으면 새 노트에서
                 // 칠하기 · 번호 맞추기가 조합 중인 줄 알고 멈춘다.
                 commitComposition(view)
@@ -618,7 +620,95 @@ struct MarkdownEditor: UIViewRepresentable {
                                               start: selection.location), in: view)
             case .link(let title, let path, let noteFolder):
                 return applyLink(title: title, path: path, noteFolder: noteFolder)
+            case .list(let marker):
+                restyleList(marker, in: view)
+                return true
             }
+        }
+
+        /// **목록 모양 바꾸기** (193). 규칙은 `ListEditing.restyle` 이 정한다 — 여기서는 줄 덩이를 골라 한 번의
+        /// 바꾸기로 갈아 끼우고(되돌리기 한 번), 번호를 다시 맞춘다(104).
+        ///
+        /// 덩이는 커서 줄이 든 **목록 전체**다 — 바꾼 줄에 딸린 줄들을 함께 밀어야 하기 때문이다. 목록이 아니면
+        /// 고른 줄들만. **빈 줄**에서 누르면 그 줄에 마커만 넣는다(메모 앱에서 빈 줄에 목록을 켜는 것과 같다).
+        private func restyleList(_ requested: ListMarker?, in view: UITextView) {
+            let text = view.textStorage.string as NSString
+            let selection = view.selectedRange
+            let start = min(selection.location, max(text.length - 1, 0))
+            var picked = text.length == 0
+                ? NSRange(location: 0, length: 0)
+                : text.paragraphRange(for: NSRange(location: start,
+                                                    length: min(selection.length, text.length - start)))
+            if picked.length > 0, text.character(at: NSMaxRange(picked) - 1) == 0x0A { picked.length -= 1 }
+
+            // 빈 줄 — 마커만 넣고 커서를 그 뒤에.
+            let pickedText = text.substring(with: picked)
+            if !pickedText.contains("\n"), pickedText.trimmingCharacters(in: .whitespaces).isEmpty {
+                let marker = (requested ?? .bullet)
+                guard marker != .plain, let target = textRange(view, picked) else { return }
+                let piece = pickedText + marker.text
+                view.replace(target, withText: piece)
+                view.selectedRange = NSRange(location: picked.location + (piece as NSString).length, length: 0)
+                renumberList(around: view.selectedRange.location, in: view)
+                reportActiveFormats(view)
+                onEdit(view.text)
+                return
+            }
+
+            var region = picked
+            if let run = listRun(in: text, around: picked.location),
+               run.location <= picked.location, NSMaxRange(picked) <= NSMaxRange(run) {
+                region = run
+                if region.length > 0, text.character(at: NSMaxRange(region) - 1) == 0x0A { region.length -= 1 }
+            }
+            let lines = text.substring(with: region).components(separatedBy: "\n")
+            let head = text.substring(with: NSRange(location: region.location, length: picked.location - region.location))
+            let first = head.isEmpty ? 0 : head.components(separatedBy: "\n").count - 1
+            let count = pickedText.components(separatedBy: "\n").count
+            guard lines.indices.contains(first) else { return }
+            let marker = requested ?? ListEditing.toggleTarget(lines[first])
+            // **첫 번호 항목을 번호 아닌 것으로** 바꾸면 아래 번호는 그 번호로 시작한다 — 첫 항목을 지운 것과 같다 (192 · 195).
+            // 안 그러면 `가 · 2. 나 · 3. 다` 가 남아 읽기 화면에서 **한 문단으로 붙는다** — 마크다운은 1 이 아닌 번호로
+            // 글 바로 밑에서 목록을 시작하지 않는다.
+            let lostNumber = marker != .number && Self.isFirstItem(text, text.paragraphRange(for: NSRange(location: picked.location, length: 0)))
+                ? ListEditing.orderedNumber(lines[first]) : nil
+            let restyled = ListEditing.restyle(lines: lines, first: first, count: count, to: marker)
+            guard restyled != lines, let target = textRange(view, region) else { return }
+
+            // 커서가 선 줄의 마커 길이가 바뀐 만큼 커서를 민다. 마커 안에 있었으면 새 마커 뒤로.
+            let caretLine = Self.line(atUTF16: selection.location, in: text) - Self.line(atUTF16: region.location, in: text)
+            var caret = selection.location
+            if lines.indices.contains(caretLine), restyled.indices.contains(caretLine) {
+                let before = lines[caretLine], after = restyled[caretLine]
+                let oldPrefix = (before as NSString).length - (String(ListEditing.splitMarker(before).body) as NSString).length
+                let newPrefix = (after as NSString).length - (String(ListEditing.splitMarker(after).body) as NSString).length
+                let lineStart = region.location + lines[..<caretLine].reduce(0) { $0 + ($1 as NSString).length + 1 }
+                let column = max(selection.location - lineStart - oldPrefix, 0)
+                caret = lineStart + newPrefix + column
+            }
+            let joined = restyled.joined(separator: "\n")
+            view.replace(target, withText: joined)
+            let length = (view.textStorage.string as NSString).length
+            if selection.length > 0 {
+                // 고른 줄들을 그대로 골라 둔다 — 이어서 다른 모양을 눌러도 같은 줄에 걸린다.
+                let before = restyled[..<first].reduce(0) { $0 + ($1 as NSString).length + 1 }
+                let chosen = restyled[first..<min(first + count, restyled.count)]
+                let span = chosen.reduce(0) { $0 + ($1 as NSString).length + 1 } - 1
+                view.selectedRange = NSRange(location: region.location + before, length: max(span, 0))
+            } else {
+                view.selectedRange = NSRange(location: max(0, min(caret, length)), length: 0)
+            }
+            // 번호는 커서 줄의 목록에서 맞춘다. 커서 줄이 목록이 아니게 됐으면(해제) **고른 줄 바로 아래**에서.
+            let after = view.textStorage.string as NSString
+            let here = min(view.selectedRange.location, max(after.length - 1, 0))
+            let below = region.location + restyled[..<min(first + count, restyled.count)]
+                .reduce(0) { $0 + ($1 as NSString).length + 1 }
+            let anchor = after.length > 0 && !Self.isItemLine(after, after.paragraphRange(for: NSRange(location: here, length: 0)))
+                && below < after.length ? below : view.selectedRange.location
+            renumberList(around: anchor, in: view, start: lostNumber)
+            keepCaretVisible(view)
+            reportActiveFormats(view)
+            onEdit(view.text)
         }
 
         private func apply(_ edit: Formatting.Edit, in view: UITextView) -> Bool {
@@ -694,9 +784,91 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 줄이 통째로 지워졌다 — 바뀐 뒤에 번호를 맞출 자리 (104).
         private var pendingRenumber: Int?
 
+        /// **지운 첫 항목의 번호와 자리** (192). 목록의 첫 항목을 지우기 시작하면 그 번호를 적어 두고,
+        /// 줄이 없어져 번호를 맞출 때 아래 목록을 그 번호로 시작한다 — `Core` 의 규칙은 첫 항목의 번호를
+        /// 그대로 두므로(`5.` 로 시작하는 목록) 적어 두지 않으면 `2.` 가 남는다. 한 글자씩 지우면 첫 항목이
+        /// `1.` → `1` → 빈 줄로 **여러 번에 걸쳐** 사라지므로, 그 사이 내내 들고 있어야 한다.
+        private struct LostStart {
+            var number: Int
+            var anchor: Int
+        }
+        private var lostStart: LostStart?
+
+        private func noteListEdit(in textView: UITextView, range: NSRange, replacement: String) {
+            let storage = textView.textStorage.string as NSString
+            if var lost = lostStart {
+                let line = storage.paragraphRange(
+                    for: NSRange(location: min(lost.anchor, max(storage.length - 1, 0)), length: 0))
+                // 그 줄에 **새로 쳐서 다른 번호**가 되면(`1.` 을 `5.` 로 손으로 고침) 적어 둔 것을 버린다.
+                if !replacement.isEmpty, storage.length > 0,
+                   range.location >= line.location, range.location <= NSMaxRange(line) {
+                    let inLine = NSRange(location: range.location - line.location,
+                                         length: min(range.length, NSMaxRange(line) - range.location))
+                    let after = (storage.substring(with: line) as NSString)
+                        .replacingCharacters(in: inLine, with: replacement)
+                    if let number = ListEditing.orderedNumber(after), number != lost.number {
+                        lostStart = nil
+                        return
+                    }
+                }
+                // 앞에서 글이 늘거나 줄면 자리도 따라 민다.
+                let delta = (replacement as NSString).length - range.length
+                if NSMaxRange(range) <= lost.anchor {
+                    lost.anchor += delta
+                } else if range.location < lost.anchor {
+                    lost.anchor = range.location
+                }
+                lostStart = lost
+            }
+            guard range.length > 0, storage.length > 0 else { return }
+            let line = storage.paragraphRange(for: NSRange(location: min(range.location, storage.length - 1), length: 0))
+            guard let number = ListEditing.orderedNumber(Self.line(storage, line)),
+                  Self.isFirstItem(storage, line) else { return }
+            lostStart = LostStart(number: number, anchor: line.location)
+        }
+
+        /// **첫 항목의 번호를 손으로 바꿨다** (195) — 바뀐 뒤(`textViewDidChange`)에 아래 번호를 따라오게 한다.
+        private var pendingFollow: Int?
+
+        /// 첫 항목의 번호를 `1.` → `5.` 로 고치면 **그 자리에서** 아래가 `6. · 7.` 로 따라온다 (195, 빌드 67 · 4~5번).
+        ///
+        /// 예전에는 치는 동안 번호를 안 건드려(106) `5. 가 · 2. 다` 로 남았다가, 뒤에 **엔터 · 들여쓰기 같은 다른
+        /// 일**을 할 때 느닷없이 `6.` 으로 바뀌었다 — 원인과 결과가 떨어져 있었다. 읽기 화면은 처음부터 `5 · 6` 으로
+        /// 보여 준다(마크다운은 첫 번호만 본다). 그래서 **첫 항목**의 번호가 바뀐 순간에만 맞춘다. 가운데 항목에 손으로
+        /// 친 번호는 여전히 그대로 둔다(106) — 첫 항목이 아니면 여기에 안 걸린다.
+        private func noteStartEdit(in textView: UITextView, range: NSRange, replacement: String) {
+            let storage = textView.textStorage.string as NSString
+            guard storage.length > 0, !replacement.contains("\n"), NSMaxRange(range) <= storage.length else { return }
+            let line = storage.paragraphRange(for: NSRange(location: min(range.location, storage.length - 1), length: 0))
+            var body = line
+            if body.length > 0, storage.character(at: NSMaxRange(body) - 1) == 0x0A { body.length -= 1 }
+            // 한 줄 안의 고침만 — 줄바꿈을 지우거나 넣는 것은 104 의 몫이다.
+            guard range.location >= body.location, NSMaxRange(range) <= NSMaxRange(body) else { return }
+            let before = storage.substring(with: body)
+            let after = (before as NSString).replacingCharacters(
+                in: NSRange(location: range.location - body.location, length: range.length), with: replacement)
+            guard let number = ListEditing.orderedNumber(after), number != ListEditing.orderedNumber(before),
+                  Self.isFirstItem(storage, line) else { return }
+            pendingFollow = body.location
+        }
+
+        /// 이 줄이 **목록의 첫 항목**인가 — 위로 (빈 줄 하나를 건너) 항목 줄이 없다.
+        private static func isFirstItem(_ text: NSString, _ paragraph: NSRange) -> Bool {
+            guard paragraph.location > 0 else { return true }
+            let previous = text.paragraphRange(for: NSRange(location: paragraph.location - 1, length: 0))
+            if isItemLine(text, previous) { return false }
+            guard isBlankLine(text, previous), previous.location > 0 else { return true }
+            let above = text.paragraphRange(for: NSRange(location: previous.location - 1, length: 0))
+            return !isItemLine(text, above)
+        }
+
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
             isComposing = textView.markedTextRange != nil
+            if !isRenumbering {
+                noteListEdit(in: textView, range: range, replacement: text)
+                noteStartEdit(in: textView, range: range, replacement: text)
+            }
             // **줄이 없어졌나.** 지워진 자리에 줄바꿈이 끼어 있으면 항목 하나가 사라진
             // 것이다 — 아래 번호가 어긋난다. 바뀐 뒤(`textViewDidChange`)에 맞춘다.
             // **커서가 줄을 떠날 때마다 맞추지 않는다** — 그러면 `6.` 다음에 손으로 친
@@ -734,6 +906,12 @@ struct MarkdownEditor: UIViewRepresentable {
             guard let target = textRange(textView, range) else { return false }
             textView.replace(target, withText: " ")
             textView.selectedRange = NSRange(location: range.location + 1, length: 0)
+            // `1.` 뒤의 빈칸이 첫 항목을 만드는 글자다 — 여기서 바로 맞춘다 (195). 이 길은 우리가 넣으므로
+            // `textViewDidChange` 가 온다고 믿지 않는다.
+            if let location = pendingFollow {
+                pendingFollow = nil
+                renumberList(around: location, in: textView)
+            }
             onEdit(textView.text)
             return true
         }
@@ -778,11 +956,11 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 규칙은 Core 의 `ListEditing.renumber` 가 정하고 여기서는 **숫자만** 바꿔 넣는다.
         /// 줄 전체를 갈아 끼우지 않으므로 커서와 되돌리기가 덜 흔들린다. 뒤에서부터 넣어
         /// 앞의 자리가 밀리지 않게 한다.
-        private func renumberList(around location: Int, in textView: UITextView) {
+        private func renumberList(around location: Int, in textView: UITextView, start: Int? = nil) {
             guard !isRenumbering, !isComposing, textView.markedTextRange == nil else { return }
             let text = textView.textStorage.string as NSString
             guard text.length > 0, let run = listRun(in: text, around: location) else { return }
-            let fixes = ListEditing.renumber(text.substring(with: run))
+            let fixes = ListEditing.renumber(text.substring(with: run), start: start)
             guard !fixes.isEmpty else { return }
 
             isRenumbering = true
@@ -796,6 +974,29 @@ struct MarkdownEditor: UIViewRepresentable {
             }
             let length = (textView.textStorage.string as NSString).length
             textView.selectedRange = NSRange(location: max(0, min(caret, length)), length: 0)
+        }
+
+        /// **줄이 없어진 뒤 번호를 맞춘다** (104 → 192).
+        ///
+        /// 지운 자리의 줄이 목록이 아니면(제목 끝에서 빈 줄을 지웠다 — 첫 항목을 한 글자씩 지운 마지막 걸음)
+        /// **바로 아래 줄**에서 목록을 찾는다. 예전에는 거기서 멈춰 아래 목록을 못 봤다. 적어 둔 첫 번호가 있고
+        /// 이 목록이 그 자리에서(사이에 빈 줄만 두고) 시작하면 그 번호로 시작한다.
+        private func renumberAfterRemoval(at location: Int, in textView: UITextView) {
+            let text = textView.textStorage.string as NSString
+            defer { lostStart = nil }
+            guard text.length > 0 else { return }
+            var at = min(max(location, 0), text.length - 1)
+            let line = text.paragraphRange(for: NSRange(location: at, length: 0))
+            if !Self.isItemLine(text, line), NSMaxRange(line) < text.length { at = NSMaxRange(line) }
+            var start: Int?
+            if let lost = lostStart, let run = listRun(in: text, around: at), lost.anchor <= run.location {
+                let gap = NSRange(location: lost.anchor, length: run.location - lost.anchor)
+                if NSMaxRange(gap) <= text.length,
+                   text.substring(with: gap).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    start = lost.number
+                }
+            }
+            renumberList(around: at, in: textView, start: start)
         }
 
         /// 커서가 있는 줄을 둘러싼 **목록 한 덩이**. 목록 줄이 아니면 `nil`.
@@ -1189,6 +1390,11 @@ struct MarkdownEditor: UIViewRepresentable {
             // 줄이 없어졌으면 이제 번호를 맞춘다 (104).
             if let location = pendingRenumber {
                 pendingRenumber = nil
+                if !composing { renumberAfterRemoval(at: location, in: textView) }
+            }
+            // 첫 항목의 번호를 바꿨으면 아래가 따라온다 (195). 첫 항목의 번호는 `renumber` 가 그대로 둔다.
+            if let location = pendingFollow {
+                pendingFollow = nil
                 if !composing { renumberList(around: location, in: textView) }
             }
             // **여기서 `loadedText` 를 갱신하지 않는다.** 갱신하면 "사용자가

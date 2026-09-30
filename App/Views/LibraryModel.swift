@@ -167,6 +167,8 @@ final class LibraryModel: ObservableObject {
             /// 보는 상대 경로**라야 한다. 뷰에 값을 하나 더 다는 것보다 이쪽이 안전하다
             /// (값을 다는 차례가 바뀌면 컴파일이 깨진다 · 빌드 40).
             case link(title: String, path: String, noteFolder: String)
+            /// 목록 모양 (193) — `nil` 이면 **단추를 누른 것**: 번호 ↔ 글머리표. 길게 눌러 고르면 그 모양.
+            case list(ListMarker?)
         }
     }
 

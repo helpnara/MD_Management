@@ -317,6 +317,16 @@ public enum ListEditing {
 
     // MARK: - 번호 다시 매기기 (빌드 32 · 104)
 
+    /// **맨 바깥(앞 빈칸 없음) 번호 항목의 번호** — `3. 가` → 3, `12) 가` → 12. 아니면 `nil` (192).
+    /// `renumber` 와 같은 읽기다 — 아스키 숫자 아홉 자리까지, 뒤에 `. ` 이나 `) `.
+    public static func orderedNumber(_ line: String) -> Int? {
+        let digits = line.prefix { $0.isASCII && $0.isNumber }
+        let after = line.dropFirst(digits.count)
+        guard !digits.isEmpty, digits.count <= 9,
+              after.hasPrefix(". ") || after.hasPrefix(") ") else { return nil }
+        return Int(digits)
+    }
+
     /// 고칠 자리 하나 — **블록 안에서의 UTF-16 오프셋**과 그 자리에 넣을 숫자.
     /// 줄 전체를 갈아 끼우지 않고 **숫자만** 바꾼다. 커서와 되돌리기가 덜 흔들린다.
     public struct Renumber: Equatable, Sendable {
@@ -339,12 +349,18 @@ public enum ListEditing {
     /// - 글줄(목록이 아닌 줄)이 나오면 그 단계부터 아래는 새 목록이다.
     /// - 같은 단계에 글머리표(`- `)가 끼면 번호 목록이 거기서 끊긴다.
     ///
+    /// - `start` 를 주면 **맨 바깥 첫 항목을 그 번호로** 시작한다 (192). 첫 항목을 지우면 아래 `2.` 가
+    ///   새 첫 항목이 되는데, 위 규칙은 그것을 *5 로 시작하는 목록* 과 구별하지 못해 `2.` 로 남겼다
+    ///   (사용자 — *1번을 지우면 2번이 1번이 되어야 하는데 그대로 남아 있어*). 편집기가 지우기 **전의**
+    ///   첫 번호를 적어 두었다가 여기에 준다. 없으면 예전 그대로다.
+    ///
     /// 고칠 것이 없으면 빈 배열. 돌려주는 자리는 **앞에서 뒤 순서**다 — 넣을 때는 **뒤에서부터**.
-    public static func renumber(_ block: String) -> [Renumber] {
+    public static func renumber(_ block: String, start: Int? = nil) -> [Renumber] {
         var fixes: [Renumber] = []
         /// 단계(앞 빈칸 수)마다 다음에 올 번호.
         var next: [Int: Int] = [:]
         var offset = 0
+        var pendingStart = start
 
         for line in block.components(separatedBy: "\n") {
             let length = line.utf16.count
@@ -377,7 +393,10 @@ public enum ListEditing {
             // **겹친 단계의 첫 항목은 1 부터** (134, 사용자 — 둘째 줄을 들여썼더니 `2.` 로
             // 남았다). 맨 바깥 목록은 `5.` 로 시작할 수 있으므로(CommonMark) 그 번호를
             // 그대로 두지만, **들여써서 새로 생긴 단계**가 2 로 시작하는 것은 뜻이 없다.
-            let wanted = next[depth] ?? (depth > 0 ? 1 : read)
+            var first = read
+            if depth == 0, next[depth] == nil, let pendingStart { first = pendingStart }
+            if depth == 0 { pendingStart = nil }       // 맨 바깥 첫 항목에서 한 번만 쓴다
+            let wanted = next[depth] ?? (depth > 0 ? 1 : first)
             if wanted != read {
                 fixes.append(Renumber(start: offset + indent.utf16.count,
                                       length: digits.utf16.count, number: String(wanted)))

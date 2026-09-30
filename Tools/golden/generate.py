@@ -56,6 +56,7 @@ LINE_MAP_CASES = ROOT / "Tools" / "golden" / "line-map-cases.json"
 ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "attachment-cases.json"
 RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
 NESTING_CASES = ROOT / "Tools" / "golden" / "nesting-cases.json"
+RESTYLE_CASES = ROOT / "Tools" / "golden" / "restyle-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -1160,10 +1161,12 @@ def build_link_trigger_cases() -> list[dict]:
 # ── 번호 다시 매기기 — 설계서의 규칙을 파이썬으로 다시 (빌드 32 · 104) ─────────
 
 
-def renumber_block(block: str) -> list[dict]:
+def renumber_block(block: str, start: int | None = None) -> list[dict]:
     """번호 목록을 1 · 2 · 3 으로. 고칠 자리만 돌려준다 (UTF-16 오프셋).
 
     - 첫 항목의 번호는 그대로 (CommonMark 는 `5.` 로 시작하는 목록을 허용한다)
+      — 단 `start` 를 주면 **맨 바깥 첫 항목을 그 번호로** (192: 첫 항목을 지우면 `2.` 가 남았다.
+      편집기가 지우기 전의 첫 번호를 적어 두었다가 준다)
     - 겹친 단계는 따로 센다 (앞 빈칸 수가 단계)
     - 빈 줄은 목록을 끊지 않는다
     - 글줄이나 같은 단계의 글머리표가 오면 그 단계부터 아래는 끊긴다
@@ -1171,6 +1174,7 @@ def renumber_block(block: str) -> list[dict]:
     fixes: list[dict] = []
     nxt: dict[int, int] = {}
     offset = 0
+    pending_start = start
 
     for line in block.split("\n"):
         length = len(line.encode("utf-16-le")) // 2
@@ -1202,7 +1206,12 @@ def renumber_block(block: str) -> list[dict]:
         nxt = {k: v for k, v in nxt.items() if k <= depth}
         read = int(digits)
         # 겹친 단계의 첫 항목은 1 부터 (134). 맨 바깥만 제 번호를 지킨다.
-        wanted = nxt.get(depth, 1 if depth > 0 else read)
+        first = read
+        if depth == 0 and depth not in nxt and pending_start is not None:
+            first = pending_start
+        if depth == 0:
+            pending_start = None       # 맨 바깥 첫 항목에서 한 번만 쓴다
+        wanted = nxt.get(depth, 1 if depth > 0 else first)
         if wanted != read:
             fixes.append({
                 "start": here + len(indent.encode("utf-16-le")) // 2,
@@ -1213,10 +1222,42 @@ def renumber_block(block: str) -> list[dict]:
     return fixes
 
 
+def ordered_number(line: str):
+    """맨 바깥(앞 빈칸 없음) 번호 항목이면 그 번호, 아니면 None (192)."""
+    digits = ""
+    for ch in line:
+        if ch in "0123456789":
+            digits += ch
+        else:
+            break
+    after = line[len(digits):]
+    if not digits or len(digits) > 9 or after[:2] not in (". ", ") "):
+        return None
+    return int(digits)
+
+
 def build_renumber_cases() -> list[dict]:
     spec = json.loads(RENUMBER_CASES.read_text(encoding="utf-8"))
-    return [{"name": case["name"], "text": case["text"], "fixes": renumber_block(case["text"])}
-            for case in spec["cases"]]
+    out = []
+    for case in spec["cases"]:
+        start = case.get("start")
+        fixes = renumber_block(case["text"], start)
+        if start is not None:
+            # **준 번호로 시작해야 한다** — 고친 글의 맨 바깥 첫 항목을 다시 읽어 본다.
+            text = case["text"]
+            for fix in reversed(fixes):
+                units = to_units(text)
+                text = from_units(units[:fix["start"]]) + fix["number"] + from_units(units[fix["start"] + fix["length"]:])
+            firsts = [ordered_number(l) for l in text.split("\n") if ordered_number(l) is not None]
+            if not firsts or firsts[0] != start:
+                raise SystemExit(f"::error::[{case['name']}] {start} 로 시작하지 않는다:\n{text}")
+        out.append({"name": case["name"], "text": case["text"], "start": start, "fixes": fixes})
+    return out
+
+
+def build_ordered_number_cases() -> list[dict]:
+    spec = json.loads(RENUMBER_CASES.read_text(encoding="utf-8"))
+    return [{"line": line, "number": ordered_number(line)} for line in spec["numberLines"]]
 
 
 # ── 상대 링크 — `join` 의 반대 (빌드 34 · 108) ────────────────────────────────
@@ -2123,6 +2164,7 @@ def build() -> dict:
         "countCases": build_count_cases(),
         "pasteConvertCases": build_paste_convert_cases(),
         "renumberCases": build_renumber_cases(),
+        "orderedNumberCases": build_ordered_number_cases(),
         "linkCases": build_link_cases(),
         "tagCases": build_tag_cases(),
         "rebaseCases": build_rebase_cases(),
@@ -2132,6 +2174,7 @@ def build() -> dict:
         "attachmentCases": build_attachment_cases(),
         "retargetCases": build_retarget_cases(),
         "nestingCases": build_nesting_cases(),
+        "restyleCases": build_restyle_cases(),
     }
 
 
@@ -2880,6 +2923,89 @@ def build_nesting_cases() -> list[dict]:
     return out
 
 
+# ── 목록 모양 바꾸기 — 번호 · 글머리표 · 체크상자 · 없음 (193) ──────────────────────
+#
+# 도구 띠의 목록 단추. 줄의 **마커만** 갈아 끼운다 — 앞 빈칸과 글은 그대로다. `1. ` 은 세 칸, `- ` 는 두 칸이라
+# 글이 시작하는 칸(자식이 들어가야 할 칸)이 바뀐다. 그대로 두면 딸린 줄이 **겹침에서 빠진다** (141 과 같은 뿌리).
+# 그래서 바꾼 줄에 딸린 줄들을 그 차이만큼 함께 민다. 번호는 모두 `1.` 로 두고 다시 매기기(104)가 맞춘다.
+# 문자 개요(`가.` · `a.`)는 마크다운 목록이 아니다 — 다른 앱에서 글자로 보인다. 넣지 않는다.
+
+RESTYLE_MARKERS = {"bullet": "- ", "number": "1. ", "checkbox": "- [ ] ", "plain": ""}
+
+
+def split_marker(line: str):
+    """(앞 빈칸, 모양, 글). 모양은 bullet · number · checkbox · plain."""
+    indent = line[:len(line) - len(line.lstrip(" \t"))]
+    rest = line[len(indent):]
+    m = re.match(r"^[-*+] \[[ xX]\] ", rest)
+    if m:
+        return indent, "checkbox", rest[m.end():]
+    m = re.match(r"^[-*+] ", rest)
+    if m:
+        return indent, "bullet", rest[m.end():]
+    m = re.match(r"^[0-9]{1,9}[.)] ", rest)
+    if m:
+        return indent, "number", rest[m.end():]
+    return indent, "plain", rest
+
+
+def toggle_target(line: str) -> str:
+    """단추를 **눌렀을 때** 갈 모양 — 번호 ↔ 글머리표. 체크상자는 번호로, 목록이 아니면 글머리표로."""
+    kind = split_marker(line)[1]
+    return "bullet" if kind == "number" else ("number" if kind in ("bullet", "checkbox") else "bullet")
+
+
+def restyle_lines(lines: list[str], first: int, count: int, to: str) -> list[str]:
+    out = list(lines)
+    last = min(len(out), first + max(count, 1))
+    for i in range(first, last):
+        line = out[i]
+        if not line.strip():
+            continue
+        indent, kind, body = split_marker(line)
+        if kind == to or (kind == "plain" and to == "plain"):
+            continue
+        new_line = indent + RESTYLE_MARKERS[to] + body
+        old_col = content_column(line) if kind != "plain" else leading_width(line)
+        new_col = content_column(new_line) if to != "plain" else leading_width(new_line)
+        if old_col is None:
+            old_col = leading_width(line)
+        if new_col is None:
+            new_col = leading_width(new_line)
+        delta = new_col - old_col
+        end = subtree_end(i, out) if kind != "plain" else i + 1
+        out[i] = new_line
+        if delta:
+            for j in range(i + 1, end):
+                child = out[j]
+                if not child.strip():
+                    continue
+                if delta > 0:
+                    out[j] = " " * delta + child
+                else:
+                    take = min(-delta, len(child) - len(child.lstrip(" ")))
+                    out[j] = child[take:]
+    return out
+
+
+def build_restyle_cases() -> list[dict]:
+    spec = json.loads(RESTYLE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        lines = case["lines"]
+        to = case["to"] if case["to"] != "toggle" else toggle_target(lines[case["first"]])
+        got = restyle_lines(lines, case["first"], case["count"], to)
+        selected = [l for l in lines[case["first"]:case["first"] + case["count"]] if l.strip()]
+        # **단계가 그대로다** — 목록 줄끼리 모양만 바꿨으면 파서가 세는 깊이가 한 줄도 안 바뀐다.
+        if to != "plain" and all(is_list_item(l) for l in selected):
+            if depths_in(lines) != depths_in(got):
+                raise SystemExit(f"::error::[{case['name']}] 단계가 바뀌었다:\n{lines}\n→ {got}")
+            check_depths(case["name"], got)
+        out.append({"name": case["name"], "lines": lines, "first": case["first"], "count": case["count"],
+                    "to": case["to"], "resolved": to, "restyled": got})
+    return out
+
+
 def tally(loaded: dict) -> str:
     """세어 보여 줄 것들 — **한 군데에만 적는다.** 두 벌로 갈라 두었더니 새 사례를 넣을
     때마다 한쪽만 고쳐져 셈이 빠졌다."""
@@ -2887,7 +3013,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("목록 모양", "restyleCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]

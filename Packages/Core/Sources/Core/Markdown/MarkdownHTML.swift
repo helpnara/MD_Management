@@ -239,13 +239,14 @@ public enum MarkdownHTML {
     blockquote {
       margin: 1em 0;
       padding: 0.1em 0 0.1em 0.9em;
-      border-left: 0.2em solid var(--yb-rule);
-      color: var(--yb-ink-faint);
+      border-left: 0.2em solid var(--yb-quote, var(--yb-rule));
+      color: var(--yb-quote, var(--yb-ink-faint));
     }
     code {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 0.88em;
       background: var(--yb-paper-raised);
+      color: var(--yb-quote, inherit);
       padding: 0.12em 0.3em;
       border-radius: 0.3em;
     }
@@ -258,7 +259,8 @@ public enum MarkdownHTML {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
-    pre code { background: none; padding: 0; font-size: 0.85em; white-space: inherit; }
+    /* 글자 인용만 파랑 (196) — 코드 덩이는 본문색 그대로. */
+    pre code { background: none; color: inherit; padding: 0; font-size: 0.85em; white-space: inherit; }
     hr { border: none; border-top: 1px solid var(--yb-rule); margin: 2em 0; }
     img { max-width: 100%; height: auto; border-radius: 0.4em; display: block; margin: 1em auto; }
     table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1em 0; }
