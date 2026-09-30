@@ -912,10 +912,7 @@ private struct NoteDetail: View {
                     spotRequest: library.spotRequest,
                     onSpot: library.reportSpot,
                     restore: library.spotToRestore,
-                    onRestored: library.spotRestored,
-                    onNote: library.report,
-                    tracesComposition: library.showsTestTools,
-                    onTrace: library.log)
+                    onRestored: library.spotRestored)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
                 // **`>>` · `[[` 를 치면 노트 목록이 여기 뜬다** (147).
