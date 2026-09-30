@@ -25,6 +25,17 @@ enum Palette {
     /// `#태그` (T2). 편집기와 뷰어가 같은 색을 쓴다.
     static let tag = Color(uiColor: tagUIColor)
 
+    /// **인용 글자** (191). 편집기와 뷰어가 **같은 색 하나**를 쓴다 — 예전에는 편집기가 60% 회색, 뷰어가 투명도를
+    /// 버린 회색이라 한쪽은 너무 흐리고 한쪽은 본문과 같았다. 옅은 파랑 — 링크 파랑보다 옅은 톤이고 링크에는 밑줄이 있다.
+    /// 대비는 `Tools/contrast.py` 가 이 파일을 읽어 센다 (손으로 세지 않는다).
+    static let quote = Color(uiColor: quoteUIColor)
+
+    static let quoteUIColor = UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.490, green: 0.722, blue: 1.000, alpha: 1)    // 어두운 바탕 — #7DB8FF
+            : UIColor(red: 0.184, green: 0.373, blue: 0.620, alpha: 1)    // 밝은 바탕 — #2F5F9E
+    }
+
     static let tagUIColor = UIColor { traits in
         traits.userInterfaceStyle == .dark
             ? UIColor(red: 1.00, green: 0.84, blue: 0.35, alpha: 1)
@@ -70,6 +81,7 @@ enum Palette {
           --yb-accent: \(hex(.tintColor));
           --yb-rule: \(hex(.separator));
           --yb-tag: \(hex(tagUIColor));
+          --yb-quote: \(hex(quoteUIColor));
         """
     }
 }

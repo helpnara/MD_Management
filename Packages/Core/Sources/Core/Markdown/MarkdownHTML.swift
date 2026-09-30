@@ -239,8 +239,8 @@ public enum MarkdownHTML {
     blockquote {
       margin: 1em 0;
       padding: 0.1em 0 0.1em 0.9em;
-      border-left: 0.2em solid var(--yb-rule);
-      color: var(--yb-ink-faint);
+      border-left: 0.2em solid var(--yb-quote, var(--yb-rule));
+      color: var(--yb-quote, var(--yb-ink-faint));
     }
     code {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;

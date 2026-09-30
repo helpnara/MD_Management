@@ -54,7 +54,7 @@ struct EditorStyleSheet {
 
         ink = .label
         markerInk = .tertiaryLabel
-        quoteInk = .secondaryLabel
+        quoteInk = Palette.quoteUIColor      // 191 — 뷰어와 같은 색 하나
         linkInk = .tintColor
         tagInk = UIColor { traits in
             traits.userInterfaceStyle == .dark
