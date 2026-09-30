@@ -7,6 +7,29 @@ import Core
 ///
 /// `UITextView` 는 탭을 제 입력으로 쓰지 않고 다음 칸으로 넘긴다.
 /// `wantsPriorityOverSystemBehavior` 로 우리가 먼저 받는다.
+extension UITextView {
+
+    /// **조합을 끝내고 키보드에도 알린다** (180 → 186).
+    ///
+    /// `unmarkText()` 만으로는 **글자만** 확정된다. 한글 키보드는 제 안에 조합하던 글자(`다`)를 그대로
+    /// 들고 있어서, 다음 자음이 오면 `다`+`ㄱ` 을 이어 조합해 **새 자리에 `다가…` 를 찍는다** — 빌드 61 ·
+    /// 2번 사용자가 본 *가나다 → 들여쓰기 → 가나다 를 치면 다가나다* 가 그것이다. 103 ② 와 같은 뿌리다
+    /// (조합 중에 앱이 글을 바꾸면 키보드와 글이 갈린다).
+    ///
+    /// 앱이 글이나 커서를 **입력 밖에서** 바꿀 때는 입력 대리자에게 알리는 것이 `UITextInput` 의 약속이다 —
+    /// 그래야 키보드가 앞뒤 글을 다시 읽고 조합을 비운다. 사람이 다른 곳을 눌러 조합이 끝날 때 UIKit 이
+    /// 하는 일을 여기서 한다.
+    func finishComposition() {
+        guard markedTextRange != nil else { return }
+        let input = inputDelegate
+        input?.selectionWillChange(self)
+        input?.textWillChange(self)
+        unmarkText()
+        input?.textDidChange(self)
+        input?.selectionDidChange(self)
+    }
+}
+
 final class MarkdownTextView: UITextView {
     /// `true` 면 들여쓰기, `false` 면 내어쓰기.
     var onTab: (@MainActor (Bool) -> Void)?
@@ -85,7 +108,7 @@ final class MarkdownTextView: UITextView {
     override func paste(_ sender: Any?) {
         // **조합 중이면 먼저 끝낸다** (180) — 밑줄 친 글자를 확정한 뒤 그 뒤에 붙인다. 조합 범위를
         // 들고 있는 입력기 옆에서 글을 바꾸면 입력기가 낡은 범위로 움직인다.
-        if markedTextRange != nil { unmarkText() }
+        finishComposition()
         let board = UIPasteboard.general
         let plain = board.string ?? ""
         guard let target = selectedTextRange else {
@@ -343,7 +366,7 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 예전에는 링크 넣기만 조합 중에 멈췄다 — 이제는 모두 여기를 거친다.
         func commitComposition(_ view: UITextView) {
             guard view.markedTextRange != nil || isComposing else { return }
-            if view.markedTextRange != nil { view.unmarkText() }
+            view.finishComposition()
             isComposing = false
             // 조합 중에 건너뛴 칠하기를 다음 번에 갚는다 — 조합이 저절로 끝날 때와 같다 (162).
             focus = MarkerFocus.nudged(focus)
