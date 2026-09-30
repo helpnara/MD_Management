@@ -1020,7 +1020,8 @@ final class LibraryModel: ObservableObject {
         }
         if cursorImage?.path == path { return }
         imageLineTask = Task { [weak self] in
-            let data = await store.data(forRelativePath: path)
+            // 띠의 그림은 작다 — **작게 읽는다** (181). 통째로 읽어 풀면 큰 사진 하나로 앱이 꺼진다.
+            let data = await store.thumbnail(forRelativePath: path, maxPixel: 300)
             guard !Task.isCancelled, let self else { return }
             self.cursorImage = data.map { CursorImage(path: path, image: $0) }
         }
@@ -1183,18 +1184,6 @@ final class LibraryModel: ObservableObject {
         var failed: [String] = []
         for url in urls {
             let name = Paths.normalized(url.lastPathComponent)
-            // 파일 읽기는 주 액터 밖에서. 보안 범위는 그 안에서 연다.
-            let loaded = await Task.detached(priority: .userInitiated) { () -> Data? in
-                let scoped = url.startAccessingSecurityScopedResource()
-                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-                try? FileManager.default.startDownloadingUbiquitousItem(at: url)
-                var data: Data?
-                var error: NSError?
-                NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { readURL in
-                    data = try? Data(contentsOf: readURL)
-                }
-                return data
-            }.value
             // **노트는 노트로** (111). 폴더 안의 것이면 그 자리로 링크하고, 밖의 것이면
             // 그 노트 옆에 들여온다. 어느 쪽이든 `assets/` 에는 안 들어간다.
             if Paths.isNoteFile(name) {
@@ -1204,6 +1193,18 @@ final class LibraryModel: ObservableObject {
                     if let inFolder {
                         target = inFolder
                     } else {
+                        // 밖에서 온 노트만 글로 읽는다 — 주 액터 밖에서, 보안 범위는 그 안에서 연다.
+                        let loaded = await Task.detached(priority: .userInitiated) { () -> Data? in
+                            let scoped = url.startAccessingSecurityScopedResource()
+                            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+                            var data: Data?
+                            var error: NSError?
+                            NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { readURL in
+                                data = try? Data(contentsOf: readURL)
+                            }
+                            return data
+                        }.value
                         guard let data = loaded else { failed.append(name); continue }
                         target = try await store.importNote(data, named: name, in: folder)
                     }
@@ -1215,12 +1216,12 @@ final class LibraryModel: ObservableObject {
                 }
                 continue
             }
-            guard let data = loaded else { failed.append(name); continue }
+            // 그 밖의 파일은 **메모리에 올리지 않고 복사한다** (181) — 수 GB 영상도 넣을 수 있게.
             let ext = Paths.fileExtension(name).lowercased()
             let stem = Paths.safeFileName(Paths.baseName(name), fallback: "문서")
             do {
-                let relative = try await store.writeAsset(data, stem: stem, ext: ext.isEmpty ? "bin" : ext,
-                                                          besideNoteIn: folder)
+                let relative = try await store.copyAsset(from: url, stem: stem, ext: ext.isEmpty ? "bin" : ext,
+                                                         besideNoteIn: folder)
                 lines.append(ImageImport.markdownLink(label: name, path: relative))
             } catch {
                 failed.append(name)
@@ -1421,7 +1422,7 @@ final class LibraryModel: ObservableObject {
         let way = toReading ? "쓰기 → 읽기" : "읽기 → 쓰기"
         let line = (toReading ? spot.line : out.line).map(String.init) ?? "없음"
         let block = (toReading ? out.block : spot.block).map(String.init) ?? "없음"
-        let percent = Int((spot.ratio * 100).rounded())
+        let percent = spot.ratio.isFinite ? Int((spot.ratio * 100).rounded()) : 0   // NaN 이면 Int 가 끈다 (184)
         log("자리 잇기: \(way) · 줄 \(line) · 블록 \(block) · 전체의 \(percent)%")
         return out
     }

@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 import Core
 
 /// 하드웨어 키보드의 **탭 · 시프트 탭**을 받으려고 둔 껍데기 (빌드 29 · 1번).
@@ -7,6 +8,22 @@ import Core
 /// `UITextView` 는 탭을 제 입력으로 쓰지 않고 다음 칸으로 넘긴다.
 /// `wantsPriorityOverSystemBehavior` 로 우리가 먼저 받는다.
 final class MarkdownTextView: UITextView {
+
+    /// **밑줄(마킹)이 있으면 확정하고 키보드에 알린다** (180 → 186).
+    ///
+    /// 진단 기록(빌드 65)으로 안 것: **이 앱에서 쓰는 한글 키보드는 조합에 마킹을 쓰지 않는다** — 앱은 조합 중인지
+    /// 알 수 없고, 이 함수는 그 키보드에서는 한 번도 돌지 않는다. 마킹을 쓰는 다른 입력기(일본어 · 중국어 · 일부
+    /// 앱 키보드)를 위해 남긴다. 한글 문제의 진짜 답은 `Coordinator.indentPlainLine` (190).
+    func finishComposition() {
+        guard markedTextRange != nil else { return }
+        let input = inputDelegate
+        input?.selectionWillChange(self)
+        input?.textWillChange(self)
+        unmarkText()
+        input?.textDidChange(self)
+        input?.selectionDidChange(self)
+    }
+
     /// `true` 면 들여쓰기, `false` 면 내어쓰기.
     var onTab: (@MainActor (Bool) -> Void)?
     /// **붙여넣을 것을 한 번 손볼 기회** (144 · 157 · 158 · 159).
@@ -53,17 +70,21 @@ final class MarkdownTextView: UITextView {
         tagClipboard()
     }
 
-    /// 방금 복사한 글과 **원래 노트의 경로**를 첫 항목에 더한다. 글도 같이 적어 두는 까닭:
+    /// 방금 복사한 글과 **원래 노트의 경로**를 클립보드에 싣는다. 글도 같이 적어 두는 까닭:
     /// 붙일 때 클립보드의 글이 이것과 같을 때만 믿는다 — 그 사이 다른 앱에서 복사했으면 안 믿는다.
+    ///
+    /// **클립보드를 새 항목 하나로 갈아 끼운다** (184) — 마크다운 원문(글자)과 우리 기록뿐이다.
+    /// UIKit 이 넣어 둔 서식 있는 글에는 편집기의 **보기용 속성**(흐린 기호 · 숨긴 표시)이 묻어
+    /// 있어 다른 앱에 붙이면 안 보이는 글자가 딸려 간다. 파일이 원본이다 — 원문만 건넨다.
     private func tagClipboard() {
         let board = UIPasteboard.general
-        guard let notePath, let copied = board.string else { return }
-        let record: [String: String] = ["note": notePath, "text": copied]
-        guard let data = try? JSONSerialization.data(withJSONObject: record) else { return }
-        var items = board.items
-        guard !items.isEmpty else { return }
-        items[0][Self.sourceType] = data
-        board.setItems(items)
+        guard let copied = board.string else { return }
+        var item: [String: Any] = [UTType.utf8PlainText.identifier: copied]
+        if let notePath,
+           let data = try? JSONSerialization.data(withJSONObject: ["note": notePath, "text": copied]) {
+            item[Self.sourceType] = data
+        }
+        board.setItems([item])
     }
 
     private static func sourceNote(from board: UIPasteboard, plain: String) -> String? {
@@ -78,6 +99,9 @@ final class MarkdownTextView: UITextView {
     /// `replace(_:withText:)` 한 번으로 끝낸다 — **되돌리기가 한 번에 걸린다.** 그래야
     /// 사람이 고침을 무를 수 있다 (앱이 본문을 고치는 자리라 무를 수 있어야 한다).
     override func paste(_ sender: Any?) {
+        // **조합 중이면 먼저 끝낸다** (180) — 밑줄 친 글자를 확정한 뒤 그 뒤에 붙인다. 조합 범위를
+        // 들고 있는 입력기 옆에서 글을 바꾸면 입력기가 낡은 범위로 움직인다.
+        finishComposition()
         let board = UIPasteboard.general
         let plain = board.string ?? ""
         guard let target = selectedTextRange else {
@@ -329,6 +353,18 @@ struct MarkdownEditor: UIViewRepresentable {
             onLinkQuery(found)
         }
 
+        /// **한글 조합을 먼저 끝낸다** (180). 글자에 밑줄이 있는 채(조합 중) 도구 띠 · 탭 · 사진 넣기가
+        /// 글을 바꾸면 입력기가 **낡은 범위**를 들고 움직인다 — 글자가 엉키거나 UIKit 안에서 범위
+        /// 예외로 꺼진다. 누른 것은 버리지 않는다: 조합 중인 글자를 확정하고, 확정된 글 위에서 바꾼다.
+        /// 예전에는 링크 넣기만 조합 중에 멈췄다 — 이제는 모두 여기를 거친다.
+        func commitComposition(_ view: UITextView) {
+            guard view.markedTextRange != nil || isComposing else { return }
+            (view as? MarkdownTextView)?.finishComposition()
+            isComposing = false
+            // 조합 중에 건너뛴 칠하기를 다음 번에 갚는다 — 조합이 저절로 끝날 때와 같다 (162).
+            focus = MarkerFocus.nudged(focus)
+        }
+
         /// 고른 노트를 커서 자리에 넣는다 (147). 방아쇠는 **다시 찾는다** — 사이에 커서가
         /// 움직였을 수 있다. 없으면 아무 일도 하지 않는다.
         func applyLink(title: String, path: String, noteFolder: String) -> Bool {
@@ -409,6 +445,9 @@ struct MarkdownEditor: UIViewRepresentable {
             if noteID != loadedNoteID {
                 loadedNoteID = noteID
                 loadedText = text
+                // 조합 중에 노트를 바꾸면 **조합 기억도 끝낸다** (184) — 남아 있으면 새 노트에서
+                // 칠하기 · 번호 맞추기가 조합 중인 줄 알고 멈춘다.
+                commitComposition(view)
                 view.text = text
                 refreshFocus(view)
                 return
@@ -528,6 +567,7 @@ struct MarkdownEditor: UIViewRepresentable {
         func insert(_ insertion: LibraryModel.Insertion) -> Bool {
             guard insertion.id != lastInsertionID, let view else { return false }
             lastInsertionID = insertion.id
+            commitComposition(view)
 
             let text = view.textStorage.string as NSString
             let range = view.selectedRange
@@ -551,6 +591,7 @@ struct MarkdownEditor: UIViewRepresentable {
         func apply(_ request: LibraryModel.FormatRequest) -> Bool {
             guard request.id != lastFormatID, let view else { return false }
             lastFormatID = request.id
+            commitComposition(view)
 
             switch request.kind {
             case .shift(let deeper):
@@ -627,6 +668,8 @@ struct MarkdownEditor: UIViewRepresentable {
             // `NSTextStorage` 는 `Sendable` 이 아니라 그대로 넘기면 막힌다.
             let mask = editedMask
             let edited = editedRange
+            // 주 스레드가 아니면 칠하지 않는다 — 가정이 틀리면 앱이 꺼진다 (184). 칠하기는 다음 편집이 갚는다.
+            guard Thread.isMainThread else { return }
             MainActor.assumeIsolated {
                 guard mask.contains(.editedCharacters),
                       !isComposing, !isStyling,
@@ -847,6 +890,7 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 되돌리기에 한 번의 편집으로 남는다 (53 과 같은 까닭).
         func shiftIndent(_ deeper: Bool) {
             guard let view else { return }
+            commitComposition(view)
             let text = view.textStorage.string as NSString
             let selection = view.selectedRange
             guard text.length > 0 else { return }
@@ -865,7 +909,8 @@ struct MarkdownEditor: UIViewRepresentable {
             // 데려갔다 (사용자 · 빌드 45 — *모델링은 따라오는데 시스템화는 못 따라온다*).
             var parent: String?
             var shallower: String?
-            if let run = listRun(in: text, around: block.location) {
+            let run = listRun(in: text, around: block.location)
+            if let run {
                 let runLines = text.substring(with: run).components(separatedBy: "\n")
                 let head = text.substring(with: NSRange(location: run.location,
                                                         length: block.location - run.location))
@@ -892,8 +937,11 @@ struct MarkdownEditor: UIViewRepresentable {
             guard let shifted = deeper
                     ? ListEditing.indent(moving, under: parent)
                     : ListEditing.outdent(moving, to: shallower) else {
-                // 목록이 아니다 — 탭은 빈칸 둘로, 시프트 탭은 아무 일도 없다.
-                if deeper { insertPlainIndent(in: view, at: selection) }
+                // 목록이 아니고 **고른 글이 없을 때만** 줄 맨 앞에 빈칸 둘 (190). 시프트 탭은 아무 일도 없다.
+                // 예전에는 여기서 **고른 글을 빈칸 둘로 바꿨다** — 표를 넣으면 `제목 1` 이 골라진 채라
+                // 곧바로 들여쓰기를 누르면 그 글이 사라졌다 (185, 빌드 60 · 2번). 목록이 이미 천장에
+                // 닿았을 때도 글 한복판에 빈칸이 들어갔다 — `ListEditing.indent` 의 약속은 *아무 일도 없다* 다.
+                if deeper, run == nil, selection.length == 0 { indentPlainLine(in: view, caret: selection.location) }
                 return
             }
             guard let target = textRange(view, block) else { return }
@@ -914,13 +962,28 @@ struct MarkdownEditor: UIViewRepresentable {
             onEdit(view.text)
         }
 
-        /// 목록이 아닌 줄에서 탭 — 커서 자리에 빈칸 둘. 네 칸이 되면 코드가 되므로
-        /// 마크다운에서 안전한 한 단계다.
-        private func insertPlainIndent(in textView: UITextView, at range: NSRange) {
-            guard let target = textRange(textView, range) else { return }
-            textView.replace(target, withText: ListEditing.step)
-            let step = (ListEditing.step as NSString).length
-            textView.selectedRange = NSRange(location: range.location + step, length: 0)
+        /// **목록이 아닌 줄의 들여쓰기 — 줄 맨 앞에 빈칸 둘** (190). 목록 들여쓰기와 같은 자리다.
+        ///
+        /// 91 부터 빌드 65 까지는 **커서 자리에** 빈칸 둘을 넣었다(탭 키처럼). 그러면 한글을 치던 중에는
+        /// `가나다` 뒤에 빈칸이 서고, 다음 글자를 치면 `가나다  다가…` 가 됐다 (같은 자리 여섯 번 — 빌드 60~65).
+        /// 진단 기록으로 안 것: 한글 키보드는 조합에 마킹을 안 쓰고, **커서 앞 글에서 빈칸을 건너뛴 마지막
+        /// 글자**를 아직 조합 중인 글자로 이어 쓴다. 굵게(`**`) · 붙여넣기(낱말) · 표는 커서 앞이 빈칸이 아니라
+        /// 멀쩡했고, 빈칸을 넣는 들여쓰기만 걸렸다. 앱이 키보드를 고칠 수는 없으니 **빈칸을 커서 앞에 두지 않는다** —
+        /// 줄 맨 앞에 넣으면 커서 앞 글은 그대로라 키보드가 제 글자를 제자리에서 이어 간다.
+        /// 넷이면 코드 상자가 되므로(CommonMark) **둘에서 멈춘다** — 두 번 눌러도 더 안 들어간다 (141 ① 의 천장과 같은 뜻).
+        private func indentPlainLine(in textView: UITextView, caret: Int) {
+            let text = textView.textStorage.string as NSString
+            let safe = max(0, min(caret, text.length))
+            let line = text.paragraphRange(for: NSRange(location: safe, length: 0))
+            let content = text.substring(with: line)
+            if content.hasPrefix("\t") { return }
+            let leading = content.prefix { $0 == " " }.count
+            let want = ListEditing.step.count
+            guard leading < want, let target = textRange(textView, NSRange(location: line.location, length: 0)) else { return }
+            let pad = String(repeating: " ", count: want - leading)
+            textView.replace(target, withText: pad)
+            let shift = (pad as NSString).length
+            textView.selectedRange = NSRange(location: safe + shift, length: 0)
             onEdit(textView.text)
         }
 

@@ -1,4 +1,6 @@
 import UIKit
+import ImageIO
+import UniformTypeIdentifiers
 import Core
 
 /// 사진첩에서 온 사진을 노트 옆 `assets/` 에 넣을 모양으로 다듬는다.
@@ -11,21 +13,42 @@ enum ImageImport {
     static let maxSide: CGFloat = 2048
 
     /// 주 액터 밖에서 부른다 — 디코딩과 인코딩이 수백 ms 걸린다.
+    ///
+    /// **전체 해상도로 풀지 않는다** (181). 예전에는 `UIImage` 로 통째로 푼 뒤 줄여 그렸다 —
+    /// 1억 화소 사진이면 풀기만 해도 수백 MB 라 iOS 가 앱을 끈다. ImageIO 가 **줄이면서 읽는다**.
+    /// 사진의 방향(EXIF)도 여기서 바로 세운다. 작은 사진은 키우지 않는다.
     static func jpeg(from data: Data, quality: CGFloat = 0.85) -> Data? {
-        guard let image = UIImage(data: data) else { return nil }
-        let size = image.size
-        let longest = max(size.width, size.height)
-        guard longest > 0 else { return nil }
+        guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions),
+              let image = downsampled(source, maxPixel: maxSide) else { return nil }
+        return UIImage(cgImage: image).jpegData(compressionQuality: quality)
+    }
 
-        let scale = min(1, maxSide / longest)
-        let target = CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
+    /// 폴더 안 사진의 **작은 그림**(PNG) — 커서 줄 사진 띠에 쓴다 (181). 파일을 통째로 메모리에
+    /// 올리지 않고 파일에서 바로 줄여 읽는다. 사진이 아니면 `nil`.
+    static func thumbnailPNG(at url: URL, maxPixel: CGFloat) -> Data? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions),
+              let image = downsampled(source, maxPixel: maxPixel) else { return nil }
+        let out = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(
+            out, UTType.png.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, image, nil)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return out as Data
+    }
 
-        let format = UIGraphicsImageRendererFormat.default()
-        format.scale = 1   // 점 크기 = 화소 크기. 안 그러면 3배로 커진다.
-        let rendered = UIGraphicsImageRenderer(size: target, format: format).image { _ in
-            image.draw(in: CGRect(origin: .zero, size: target))
-        }
-        return rendered.jpegData(compressionQuality: quality)
+    /// 원본을 캐시에 풀어 두지 않는다 — 줄인 것만 남는다.
+    private static var sourceOptions: CFDictionary {
+        [kCGImageSourceShouldCache: false] as CFDictionary
+    }
+
+    private static func downsampled(_ source: CGImageSource, maxPixel: CGFloat) -> CGImage? {
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+        ]
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
     }
 
     /// `2026-09-13` — 저장소가 뒤에 `-1.jpg` `-2.jpg` 를 붙인다. 공백이 없어 링크에

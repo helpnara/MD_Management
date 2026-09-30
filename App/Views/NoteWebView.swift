@@ -107,10 +107,13 @@ struct NoteWebView: UIViewRepresentable {
                 return
             }
             webView.evaluateJavaScript(Self.measureScript) { [weak self] value, _ in
+                // 완료 처리는 주 스레드에서 온다 — 아니면 가정하지 않고 물러선다(400ms 뒤 비율로) (184).
+                guard Thread.isMainThread else { return }
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     let parts = (value as? String)?.split(separator: ",").compactMap { Double($0) } ?? []
-                    guard parts.count == 3 else {
+                    // `NaN` 이 오면 `Int(_:)` 가 앱을 끈다 (184).
+                    guard parts.count == 3, parts.allSatisfy(\.isFinite) else {
                         self.onSpot(LibraryModel.Spot(ratio: fallback))
                         return
                     }
@@ -133,6 +136,7 @@ struct NoteWebView: UIViewRepresentable {
             window.scrollTo(0,y);return y;})(\(block),\(spot.fraction),\(spot.ratio))
             """
             webView.evaluateJavaScript(script) { [weak self, weak webView] _, error in
+                guard Thread.isMainThread else { return }
                 MainActor.assumeIsolated {
                     if error != nil, let scrollView = webView?.scrollView {
                         // 스크립트가 안 돌면 비율로 (A17 이 틀린 경우).

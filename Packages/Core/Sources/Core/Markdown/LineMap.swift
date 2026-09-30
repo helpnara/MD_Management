@@ -54,7 +54,9 @@ public enum LineMap {
         guard blocks.indices.contains(index) else { return nil }
         let block = blocks[index]
         let span = block.lineEnd - block.line + 1
-        let step = Int((fraction * Double(span) + 1e-9).rounded(.down))
+        // 웹뷰가 준 값이다 — `NaN` · 무한이면 `Int(_:)` 가 앱을 끈다 (184). 블록 첫 줄로.
+        let safe = fraction.isFinite ? min(max(fraction, 0), 1) : 0
+        let step = Int((safe * Double(span) + 1e-9).rounded(.down))
         return block.line + min(max(step, 0), span - 1)
     }
 
@@ -107,6 +109,8 @@ public enum LineMap {
         let source = String(String.UnicodeScalarView(markdown.unicodeScalars.filter { $0 != "\r" }))
         let body = FrontMatterParser.parse(source).body
         let offset = newlines(in: source) - newlines(in: body)
+        // 겹침이 너무 깊으면 블록을 안 준다 (182) — 자리 잇기는 비율로 물러선다.
+        guard !Nesting.isTooDeep(body) else { return Parsed(entries: []) }
         let lines = body.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         let document = Document(parsing: body, options: [.disableSmartOpts])
         var walker = Walker(offset: offset, lines: lines)

@@ -24,10 +24,34 @@ public enum MarkdownLinks {
     /// 머리말을 뗀 본문에서 이미지와 링크를 **나온 순서대로** 뽑는다.
     public static func extract(from markdown: String) -> [ExtractedLink] {
         let body = FrontMatterParser.parse(markdown).body
+        // 겹침이 너무 깊으면 트리를 만들지 않고 글자로 훑는다 (182). 공유 묶음 · 링크 셈이 첨부를
+        // 놓치지 않게 — 코드 안의 `](` 까지 줍겠지만 이런 글에서는 빠뜨리는 것보다 낫다.
+        guard !Nesting.isTooDeep(body) else { return scanned(body) }
         let document = Document(parsing: body)
         var walker = LinkWalker()
         walker.visit(document)
         return walker.found
+    }
+
+    /// `](` 를 글자로 훑어 뽑는다 — 트리를 못 만드는 글에서만 (182).
+    static func scanned(_ text: String) -> [ExtractedLink] {
+        var found: [ExtractedLink] = []
+        var cursor = text.startIndex
+        while let bracket = text.range(of: "](", range: cursor..<text.endIndex) {
+            cursor = bracket.upperBound
+            guard let piece = destination(in: text, from: cursor) else { continue }
+            cursor = text.index(after: piece.end)
+            var target = piece.raw
+            if target.hasPrefix("<"), target.hasSuffix(">"), target.count >= 2 {
+                target = String(target.dropFirst().dropLast())
+            } else if let space = target.firstIndex(of: " ") {
+                target = String(target[..<space])          // 뒤에 붙은 제목(`"…"`)을 뗀다
+            }
+            guard !target.isEmpty else { continue }
+            let kind: ExtractedLink.Kind = BrokenLinks.isImage(text, before: bracket.lowerBound) ? .image : .link
+            found.append(ExtractedLink(destination: target, kind: kind))
+        }
+        return found
     }
 
     /// **노트를 다른 폴더로 옮길 때 링크를 새 자리에 맞춰 고친 글** (T1).
@@ -224,14 +248,22 @@ public enum MarkdownLinks {
         return (wrapped || link.contains(" ")) ? "<" + link + ">" : link
     }
 
+    /// **줄이 끝나는 글자인가** (183). Swift 는 `\r\n` 을 글자 **하나**로 본다 — `== "\n"` 만 보면 윈도
+    /// 줄 끝 파일에서 줄을 못 보고 **다음 줄의 `)` 까지** 링크로 읽어 고쳐 버린다. 파이썬 정답표는
+    /// 코드 포인트로 `\n` 을 보므로 이 둘이 같은 셈이다 (홀로 선 `\r` 은 둘 다 줄로 안 본다).
+    static func endsLine(_ character: Character) -> Bool {
+        character == "\n" || character == "\r\n"
+    }
+
     /// `](` 바로 뒤에서 닫는 `)` 까지. `<…>` 와 겹친 괄호를 다룬다.
-    private static func destination(in text: String,
-                                    from start: String.Index) -> (raw: String, end: String.Index)? {
+    /// `BrokenLinks` 도 이것을 부른다 — 링크를 **읽는 길은 하나**다 (183 전에는 둘이었다).
+    static func destination(in text: String,
+                            from start: String.Index) -> (raw: String, end: String.Index)? {
         guard start < text.endIndex else { return nil }
         if text[start] == "<" {
             var cursor = text.index(after: start)
             while cursor < text.endIndex, text[cursor] != ">" {
-                if text[cursor] == "\n" { return nil }
+                if endsLine(text[cursor]) { return nil }
                 cursor = text.index(after: cursor)
             }
             guard cursor < text.endIndex else { return nil }
@@ -243,7 +275,7 @@ public enum MarkdownLinks {
         var cursor = start
         while cursor < text.endIndex {
             let character = text[cursor]
-            if character == "\n" { return nil }
+            if endsLine(character) { return nil }
             if character == "(" { depth += 1 }
             if character == ")" {
                 if depth == 0 { return (String(text[start..<cursor]), cursor) }

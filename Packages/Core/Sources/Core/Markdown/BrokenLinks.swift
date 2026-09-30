@@ -41,14 +41,11 @@ public enum BrokenLinks {
         var found: [BrokenLink] = []
 
         // 머리말은 본문이 아니다 — 거기 있는 `](` 는 링크가 아니다.
-        let header = FrontMatterParser.headerLength(of: markdown)
-        let start = markdown.index(markdown.startIndex,
-                                   offsetBy: min(header, markdown.count))
-        var cursor = start
+        var cursor = bodyStart(of: markdown)
 
         while let bracket = markdown.range(of: "](", range: cursor..<markdown.endIndex) {
             cursor = bracket.upperBound
-            guard let piece = destination(in: markdown, from: cursor) else { continue }
+            guard let piece = MarkdownLinks.destination(in: markdown, from: cursor) else { continue }
             defer { cursor = markdown.index(after: piece.end) }
 
             let kind = isImage(markdown, before: bracket.lowerBound) ? ExtractedLink.Kind.image
@@ -81,6 +78,21 @@ public enum BrokenLinks {
         }
     }
 
+    /// 머리말이 끝난 자리. `headerLength` 는 **UTF-16** 길이다 — 글자 수로 세면 머리말에 그림 글자나
+    /// `\r\n` 이 있을 때 그만큼 **본문 안으로 넘어가** 첫 링크를 못 본다 (183). 글자를 하나씩 넘기며
+    /// UTF-16 을 세고, 그 수에 닿은 첫 글자 경계에서 멈춘다 (`\r\n` 가운데에 떨어지면 뒤로 민다).
+    private static func bodyStart(of text: String) -> String.Index {
+        let header = FrontMatterParser.headerLength(of: text)
+        guard header > 0 else { return text.startIndex }
+        var units = 0
+        var cursor = text.startIndex
+        while cursor < text.endIndex, units < header {
+            units += text[cursor].utf16.count
+            cursor = text.index(after: cursor)
+        }
+        return cursor
+    }
+
     /// 이 자리가 몇째 줄이고 그 줄이 무엇인가 (1부터).
     private static func place(of index: String.Index,
                               in text: String) -> (line: Int, text: String) {
@@ -88,25 +100,25 @@ public enum BrokenLinks {
         var lineStart = text.startIndex
         var cursor = text.startIndex
         while cursor < index {
-            if text[cursor] == "\n" {
+            if MarkdownLinks.endsLine(text[cursor]) {
                 line += 1
                 lineStart = text.index(after: cursor)
             }
             cursor = text.index(after: cursor)
         }
         var lineEnd = lineStart
-        while lineEnd < text.endIndex, text[lineEnd] != "\n" { lineEnd = text.index(after: lineEnd) }
+        while lineEnd < text.endIndex, !MarkdownLinks.endsLine(text[lineEnd]) { lineEnd = text.index(after: lineEnd) }
         return (line, String(text[lineStart..<lineEnd]).trimmingCharacters(in: .whitespaces))
     }
 
     /// `](` 앞이 `![…]` 인가 — 그림이면 목록에 다르게 보여 준다.
-    private static func isImage(_ text: String, before bracket: String.Index) -> Bool {
+    static func isImage(_ text: String, before bracket: String.Index) -> Bool {
         var cursor = bracket
         var depth = 0
         while cursor > text.startIndex {
             cursor = text.index(before: cursor)
             let character = text[cursor]
-            if character == "\n" { return false }
+            if MarkdownLinks.endsLine(character) { return false }
             if character == "]" { depth += 1 }
             if character == "[" {
                 if depth == 0 {
@@ -117,35 +129,5 @@ public enum BrokenLinks {
             }
         }
         return false
-    }
-
-    /// `](` 바로 뒤에서 닫는 `)` 까지. `MarkdownLinks` 와 같은 규칙이다.
-    private static func destination(in text: String,
-                                    from start: String.Index) -> (raw: String, end: String.Index)? {
-        guard start < text.endIndex else { return nil }
-        if text[start] == "<" {
-            var cursor = text.index(after: start)
-            while cursor < text.endIndex, text[cursor] != ">" {
-                if text[cursor] == "\n" { return nil }
-                cursor = text.index(after: cursor)
-            }
-            guard cursor < text.endIndex else { return nil }
-            let close = text.index(after: cursor)
-            guard close < text.endIndex, text[close] == ")" else { return nil }
-            return (String(text[start...cursor]), close)
-        }
-        var depth = 0
-        var cursor = start
-        while cursor < text.endIndex {
-            let character = text[cursor]
-            if character == "\n" { return nil }
-            if character == "(" { depth += 1 }
-            if character == ")" {
-                if depth == 0 { return (String(text[start..<cursor]), cursor) }
-                depth -= 1
-            }
-            cursor = text.index(after: cursor)
-        }
-        return nil
     }
 }

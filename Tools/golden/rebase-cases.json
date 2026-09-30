@@ -78,6 +78,24 @@
       "from": "",
       "to": "회의",
       "text": "[그림](assets/a(1).png)"
+    },
+    {
+      "name": "CRLF-줄마다-링크",
+      "from": "",
+      "to": "회의",
+      "text": "![a](assets/a.png)\r\n[b](기록.md)\r\n끝\r\n"
+    },
+    {
+      "name": "CRLF-닫는괄호가-다음줄이면-안고친다",
+      "from": "",
+      "to": "회의",
+      "text": "[a](assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n![b](assets/b.png)\r\n"
+    },
+    {
+      "name": "LF-닫는괄호가-다음줄이면-안고친다",
+      "from": "",
+      "to": "회의",
+      "text": "[a](assets/a.png 설명\n다음 줄 (괄호) 끝)\n"
     }
   ]
 }

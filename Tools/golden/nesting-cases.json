@@ -1,0 +1,117 @@
+{
+  "_설명": "겹침이 너무 깊은 글 (182). 파서에 넘기기 전에 겹침 깊이의 위쪽 한계를 잰다 — cmark 의 실제 깊이보다 작으면 generate.py 가 멈춘다. head + repeat × count + tail 로 글을 만든다.",
+  "cases": [
+    {
+      "name": "빈 글",
+      "text": "",
+      "expectDeep": false
+    },
+    {
+      "name": "보통 노트",
+      "text": "# 제목\n\n본문 **굵게** 와 *기울임* 과 [링크](a.md).\n\n- 하나\n  - 둘\n    - 셋\n\n> 인용\n",
+      "expectDeep": false
+    },
+    {
+      "name": "굵게가 든 긴 목록 — 항목마다 새로 센다",
+      "repeat": "- **항목** 과 _기울임_ 과 [링크](a.md)\n",
+      "count": 150,
+      "expectDeep": false
+    },
+    {
+      "name": "굵게가 든 긴 번호 목록",
+      "repeat": "1. **굵게** 와 ~~지움~~\n",
+      "count": 150,
+      "expectDeep": false
+    },
+    {
+      "name": "굵게가 든 큰 표 — 줄마다 새로 센다",
+      "head": "| 이름 | 값 |\n|---|---|\n",
+      "repeat": "| **a** | b_c *d* |\n",
+      "count": 150,
+      "expectDeep": false
+    },
+    {
+      "name": "코드 울타리 안은 줄 안 표시를 안 센다",
+      "head": "```\n",
+      "repeat": "a_b * c [d] ~e\n",
+      "count": 200,
+      "tail": "```\n",
+      "expectDeep": false
+    },
+    {
+      "name": "낱말 가운데 밑줄은 안 센다",
+      "repeat": "snake_case_name ",
+      "count": 200,
+      "expectDeep": false
+    },
+    {
+      "name": "메일 답장 인용 20겹",
+      "repeat": "> ",
+      "count": 20,
+      "tail": "답장\n",
+      "expectDeep": false
+    },
+    {
+      "name": "CRLF 인용 20겹",
+      "repeat": "> ",
+      "count": 20,
+      "tail": "답장\r\n두 줄\r\n",
+      "expectDeep": false
+    },
+    {
+      "name": "들여쓴 목록 10단계",
+      "text": "- 1\n  - 2\n    - 3\n      - 4\n        - 5\n          - 6\n            - 7\n              - 8\n                - 9\n                  - 10\n",
+      "expectDeep": false
+    },
+    {
+      "name": "경계 — 인용 125겹은 연다",
+      "repeat": "> ",
+      "count": 125,
+      "tail": "x",
+      "expectDeep": false
+    },
+    {
+      "name": "경계 — 인용 126겹은 막는다",
+      "repeat": "> ",
+      "count": 126,
+      "tail": "x",
+      "expectDeep": true
+    },
+    {
+      "name": "인용 300겹",
+      "repeat": "> ",
+      "count": 300,
+      "tail": "x",
+      "expectDeep": true
+    },
+    {
+      "name": "한 줄에 목록 표시 200겹",
+      "repeat": "- ",
+      "count": 200,
+      "tail": "x",
+      "expectDeep": true
+    },
+    {
+      "name": "중첩 기울임 150겹",
+      "head": "",
+      "repeat": "*a ",
+      "count": 150,
+      "tail": "b c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c* c*",
+      "expectDeep": true
+    },
+    {
+      "name": "줄을 넘어 이어지는 기울임",
+      "repeat": "*a\n",
+      "count": 300,
+      "tail": "b",
+      "expectDeep": true
+    },
+    {
+      "name": "대괄호 300겹",
+      "repeat": "[",
+      "count": 300,
+      "tail": "a](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)](x)",
+      "expectDeep": true
+    }
+  ]
+}

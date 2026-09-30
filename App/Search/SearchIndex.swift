@@ -236,8 +236,11 @@ actor SearchIndex {
         let sql = "SELECT rel_path, title, body FROM note_fts WHERE " + conditions.joined(separator: " AND ") + " LIMIT 200"
         let terms = (q.ftsTerms + q.likeTerms).map { $0.lowercased() }
         var hits: [SearchHit] = []
+        var seen: Set<String> = []
         for row in query(sql, binds) {
             let path = row[0], title = row[1], body = row[2]
+            // 같은 경로가 두 번 오면 목록의 이름표(`id`)가 겹친다 — 화면이 어긋나거나 꺼진다 (184).
+            guard seen.insert(path).inserted else { continue }
             let byTitle = terms.contains { title.lowercased().contains($0) }
             let line = Self.matchingLine(in: body, terms: terms, skipping: title)
                 ?? Self.firstBodyLine(of: FrontMatterParser.parse(body).body)

@@ -55,6 +55,7 @@ PASTE_CONVERT_CASES = ROOT / "Tools" / "golden" / "paste-convert-cases.json"
 LINE_MAP_CASES = ROOT / "Tools" / "golden" / "line-map-cases.json"
 ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "attachment-cases.json"
 RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
+NESTING_CASES = ROOT / "Tools" / "golden" / "nesting-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -2130,6 +2131,7 @@ def build() -> dict:
         "lineMapCases": build_line_map_cases(),
         "attachmentCases": build_attachment_cases(),
         "retargetCases": build_retarget_cases(),
+        "nestingCases": build_nesting_cases(),
     }
 
 
@@ -2728,6 +2730,156 @@ def build_format_cases() -> list[dict]:
     return out
 
 
+# ── 겹침이 너무 깊은 글 (182) ───────────────────────────────────────────────────
+#
+# 마크다운 라이브러리(swift-markdown)는 cmark 가 읽은 트리를 **재귀로** 옮기고 · 걷고 · 지운다.
+# `> > > …` 가 수천 겹이면 스택이 넘쳐 앱이 꺼진다. 그래서 파서에 넘기기 전에 **한 번 훑어**
+# 겹침 깊이의 **위쪽 한계**를 잰다 — 실제 깊이보다 **작게 말하면 안 된다** (그러면 막지 못한다).
+# 아래 `build_nesting_cases` 가 cmark 가 실제로 만든 HTML 의 깊이와 견주어 그것을 확인한다.
+#
+# 한 줄의 값 = 앞머리(`>` 1 · 목록 표시 2 · 빈칸 1 · 탭 4) + 잎 블록 4 + 줄 안 표시 + 여유 2.
+# 줄 안 표시(`*` `~` `[` · 낱말 가운데가 아닌 `_`)는 **문단이 이어지는 동안 더해 간다** — 기울임은
+# 줄을 넘어 이어질 수 있다. 빈 줄 · 제목 · 새 목록 항목 · 코드 울타리에서 새로 센다. `|` 가 든 줄
+# (표의 한 줄)은 저 혼자 센다 — 표의 칸은 줄을 넘지 않는다. 울타리 안은 줄 안 표시를 안 센다.
+
+NESTING_LIMIT = 256
+NESTING_LEAF = 4
+NESTING_SLACK = 2
+
+
+def _wordish(ch: str) -> bool:
+    o = ord(ch)
+    return (48 <= o <= 57) or (65 <= o <= 90) or (97 <= o <= 122) or (0xAC00 <= o <= 0xD7A3)
+
+
+def nesting_depth(text: str) -> int:
+    deepest = 0
+    carried = 0
+    fence = None          # (글자, 길이) — 코드 울타리 안이면
+    for raw in text.split("\n"):
+        line = raw.replace("\r", "")
+        n = len(line)
+        i = 0
+        container = 0
+        item = False
+        while i < n:
+            c = line[i]
+            if c == " ":
+                container += 1
+                i += 1
+            elif c == "\t":
+                container += 4
+                i += 1
+            elif c == ">":
+                container += 1
+                i += 1
+            elif c in "-+*" and (i + 1 == n or line[i + 1] in " \t"):
+                container += 2
+                item = True
+                i += 1
+            elif "0" <= c <= "9":
+                j = i
+                while j < n and "0" <= line[j] <= "9" and j - i < 9:
+                    j += 1
+                if j < n and line[j] in ".)" and (j + 1 == n or line[j + 1] in " \t"):
+                    container += 2
+                    item = True
+                    i = j + 1
+                else:
+                    break
+            else:
+                break
+        rest = line[i:]
+        stripped = rest.strip(" \t")
+        if fence is not None:
+            mark, length = fence
+            run = len(stripped) - len(stripped.lstrip(mark))
+            if run >= length and stripped[run:].strip(" \t") == "":
+                fence = None
+            deepest = max(deepest, container + NESTING_LEAF)
+            carried = 0
+            continue
+        if stripped == "":
+            carried = 0
+            continue
+        if stripped[0] in "`~":
+            mark = stripped[0]
+            run = len(stripped) - len(stripped.lstrip(mark))
+            if run >= 3 and not (mark == "`" and "`" in stripped[run:]):
+                fence = (mark, run)
+                deepest = max(deepest, container + NESTING_LEAF)
+                carried = 0
+                continue
+        hashes = len(stripped) - len(stripped.lstrip("#"))
+        if item or (1 <= hashes <= 6 and (hashes == len(stripped) or stripped[hashes] in " \t")):
+            carried = 0
+        marks = 0
+        for k, ch in enumerate(rest):
+            if ch in "*~[":
+                marks += 1
+            elif ch == "_":
+                inside = 0 < k < len(rest) - 1 and _wordish(rest[k - 1]) and _wordish(rest[k + 1])
+                if not inside:
+                    marks += 1
+        if "|" in stripped:
+            unit = marks
+            carried = 0
+        else:
+            carried += marks
+            unit = carried
+        deepest = max(deepest, container + NESTING_LEAF + unit + NESTING_SLACK)
+    return deepest
+
+
+_VOID_TAGS = {"br", "hr", "img", "input", "meta", "link", "col", "area", "base", "embed", "source", "wbr"}
+
+
+def html_depth(html: str) -> int:
+    """HTML 의 태그가 몇 겹까지 들어가나 — cmark 가 **실제로** 만든 트리의 깊이."""
+    from html.parser import HTMLParser
+
+    class Depth(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.now = 0
+            self.most = 0
+
+        def handle_starttag(self, tag, attrs):
+            if tag in _VOID_TAGS:
+                return
+            self.now += 1
+            self.most = max(self.most, self.now)
+
+        def handle_endtag(self, tag):
+            if tag not in _VOID_TAGS:
+                self.now -= 1
+
+    parser = Depth()
+    parser.feed(html)
+    return parser.most
+
+
+def build_nesting_cases() -> list[dict]:
+    spec = json.loads(NESTING_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        if "text" in case:
+            text = case["text"]
+        else:
+            text = case.get("head", "") + case["repeat"] * case["count"] + case.get("tail", "")
+        depth = nesting_depth(text)
+        # **위쪽 한계여야 한다** — cmark 가 실제로 만든 깊이보다 작게 말하면 막지 못한다.
+        real = html_depth(cmark_html(text))
+        if real > depth:
+            raise SystemExit(f"::error::[{case['name']}] 겹침을 작게 셌다 — 셈 {depth} · cmark {real}")
+        deep = depth > NESTING_LIMIT
+        want = case.get("expectDeep")
+        if want is not None and want != deep:
+            raise SystemExit(f"::error::[{case['name']}] 너무 깊은가: 뜻 {want} · 셈 {deep} (깊이 {depth})")
+        out.append({"name": case["name"], "text": text, "depth": depth, "tooDeep": deep, "cmark": real})
+    return out
+
+
 def tally(loaded: dict) -> str:
     """세어 보여 줄 것들 — **한 군데에만 적는다.** 두 벌로 갈라 두었더니 새 사례를 넣을
     때마다 한쪽만 고쳐져 셈이 빠졌다."""
@@ -2735,7 +2887,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]

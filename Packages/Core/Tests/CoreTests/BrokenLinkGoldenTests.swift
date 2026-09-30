@@ -64,13 +64,15 @@ final class BrokenLinkGoldenTests: XCTestCase {
     /// **줄 번호가 진짜 그 줄을 가리킨다.** 사람이 찾아가야 하는 값이다.
     func testLineNumbersPointAtTheRightLine() throws {
         for item in try Self.load().brokenCases {
-            let lines = item.text.components(separatedBy: "\n")
+            // 줄은 코드 포인트 `\n` 으로 나눈다 — `\r\n` 은 글자 하나라서 글자로 나누면 CRLF 파일이 한 줄이 된다 (183).
+            let lines = item.text.unicodeScalars.split(separator: "\n", omittingEmptySubsequences: false)
+                .map { String(String.UnicodeScalarView($0)) }
             for broken in BrokenLinks.find(in: item.text, notePath: item.notePath,
                                            files: item.files) {
                 guard broken.line >= 1, broken.line <= lines.count else {
                     XCTFail("줄 번호가 글 밖이다 — [\(item.name)] \(broken.line)"); continue
                 }
-                XCTAssertEqual(lines[broken.line - 1].trimmingCharacters(in: .whitespaces),
+                XCTAssertEqual(lines[broken.line - 1].trimmingCharacters(in: .whitespacesAndNewlines),
                                broken.text, "줄 번호가 딴 줄을 가리킨다 — [\(item.name)]")
             }
         }
