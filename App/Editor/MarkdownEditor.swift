@@ -9,16 +9,21 @@ import Core
 /// `wantsPriorityOverSystemBehavior` 로 우리가 먼저 받는다.
 extension UITextView {
 
-    /// **조합을 끝내고 키보드에도 알린다** (180 → 186).
+    /// **조합을 끝내고 키보드의 조합 상태까지 비운다** (180 → 186 → 187).
     ///
     /// `unmarkText()` 만으로는 **글자만** 확정된다. 한글 키보드는 제 안에 조합하던 글자(`다`)를 그대로
     /// 들고 있어서, 다음 자음이 오면 `다`+`ㄱ` 을 이어 조합해 **새 자리에 `다가…` 를 찍는다** — 빌드 61 ·
     /// 2번 사용자가 본 *가나다 → 들여쓰기 → 가나다 를 치면 다가나다* 가 그것이다. 103 ② 와 같은 뿌리다
     /// (조합 중에 앱이 글을 바꾸면 키보드와 글이 갈린다).
     ///
-    /// 앱이 글이나 커서를 **입력 밖에서** 바꿀 때는 입력 대리자에게 알리는 것이 `UITextInput` 의 약속이다 —
-    /// 그래야 키보드가 앞뒤 글을 다시 읽고 조합을 비운다. 사람이 다른 곳을 눌러 조합이 끝날 때 UIKit 이
-    /// 하는 일을 여기서 한다.
+    /// 빌드 62 는 입력 대리자에게 *글 · 커서가 바뀐다* 고 알렸다. **굵게(`****` 를 넣음)는 됐고 들여쓰기(빈칸
+    /// 둘을 넣음)는 안 됐다** — 같은 자리 세 번째. 둘의 차이는 넣는 글자뿐이다: 키보드가 커서 앞 글을 다시
+    /// 읽을 때 **빈칸을 건너뛰고** `다` 를 보면 제 버퍼의 `다` 와 맞다고 여겨 조합을 잇는 것으로 보인다.
+    /// 알리는 것으로는 키보드 버퍼를 못 비운다. 그래서 **초점을 뗐다 붙인다** — 사람이 다른 곳을 눌렀다
+    /// 돌아올 때 iOS 가 조합을 확실히 끝내는 바로 그 길이다 (162 · 98 에서 실기기로 본 동작). 글자를 먼저
+    /// 확정한 뒤에 뗀다 — 마킹이 남은 채 떼면 UIKit 이 한 바퀴 뒤에 정리해서(162) 그 사이 글이 갈린다.
+    /// 대리자(`textViewDidEndEditing` · `DidBeginEditing`)는 `isRecyclingResponder` 를 보고 이 순간을 건너뛴다 —
+    /// 초점 단추가 깜빡이거나 제목 줄의 파일명 맞추기(89)가 도는 일이 없게.
     func finishComposition() {
         guard markedTextRange != nil else { return }
         let input = inputDelegate
@@ -27,10 +32,21 @@ extension UITextView {
         unmarkText()
         input?.textDidChange(self)
         input?.selectionDidChange(self)
+
+        guard isFirstResponder else { return }
+        let selection = selectedRange
+        (self as? MarkdownTextView)?.isRecyclingResponder = true
+        resignFirstResponder()
+        becomeFirstResponder()
+        (self as? MarkdownTextView)?.isRecyclingResponder = false
+        selectedRange = selection
     }
 }
 
 final class MarkdownTextView: UITextView {
+
+    /// 조합을 끝내려고 **초점을 뗐다 붙이는 중** (187). 대리자가 이 순간의 끝 · 시작을 건너뛴다.
+    var isRecyclingResponder = false
     /// `true` 면 들여쓰기, `false` 면 내어쓰기.
     var onTab: (@MainActor (Bool) -> Void)?
     /// **붙여넣을 것을 한 번 손볼 기회** (144 · 157 · 158 · 159).
@@ -1125,6 +1141,8 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 남고(L1), 그 줄이 제목 줄이면 파일명도 안 맞춰졌다. 커서가 사라지는 이
         /// 자리에서 둘 다 갚는다 — 커서가 없는 것처럼 다시 칠하고, 제목을 확정한다.
         func textViewDidEndEditing(_ textView: UITextView) {
+            // 조합을 끝내려고 잠깐 뗀 것이다 (187) — 초점은 곧 돌아온다. 아무 일도 하지 않는다.
+            if (textView as? MarkdownTextView)?.isRecyclingResponder == true { return }
             onFocus(false)
             // **초점이 떠났으면 조합도 끝났다.** 한글을 치던 중에 다른 곳을 누르면 여기로
             // 오는데, 예전에는 조합 중이라는 이유로 숨기기를 건너뛰고 **기억까지 지워**
@@ -1151,6 +1169,7 @@ struct MarkdownEditor: UIViewRepresentable {
         /// **아직 옛 선택**을 보고 그 자리로 화면을 옮긴다. 칠하는 일은 커서가 실제로 놓인
         /// 뒤로 미루고, 여기서는 *다음에는 반드시 다시 칠하라* 고만 적어 둔다.
         func textViewDidBeginEditing(_ textView: UITextView) {
+            if (textView as? MarkdownTextView)?.isRecyclingResponder == true { return }
             onFocus(true)
             // **기억을 지우지 않는다.** 드러난 줄이 남아 있으면 그것을 지울 근거가 사라진다
             // (162). 대신 *다음에는 같은 자리라도 반드시 다시 칠하라* 고만 적어 둔다.
