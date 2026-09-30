@@ -17,9 +17,15 @@ final class RenumberGoldenTests: XCTestCase {
         struct Case: Decodable {
             let name: String
             let text: String
+            let start: Int?
             let fixes: [Fix]
         }
+        struct NumberCase: Decodable {
+            let line: String
+            let number: Int?
+        }
         let renumberCases: [Case]
+        let orderedNumberCases: [NumberCase]
     }
 
     static func load() throws -> Golden {
@@ -30,7 +36,7 @@ final class RenumberGoldenTests: XCTestCase {
 
     func testMatchesGolden() throws {
         for item in try Self.load().renumberCases {
-            let fixes = ListEditing.renumber(item.text)
+            let fixes = ListEditing.renumber(item.text, start: item.start)
             let where_ = "[\(item.name)]"
             XCTAssertEqual(fixes.count, item.fixes.count, "고칠 자리 수가 다르다 — \(where_)")
             for (made, want) in zip(fixes, item.fixes) {
@@ -45,11 +51,20 @@ final class RenumberGoldenTests: XCTestCase {
     func testSettlesInOnePass() throws {
         for item in try Self.load().renumberCases {
             var utf16 = Array(item.text.utf16)
-            for fix in ListEditing.renumber(item.text).reversed() {
+            for fix in ListEditing.renumber(item.text, start: item.start).reversed() {
                 utf16.replaceSubrange(fix.start..<(fix.start + fix.length), with: Array(fix.number.utf16))
             }
             let fixed = String(decoding: utf16, as: UTF16.self)
             XCTAssertTrue(ListEditing.renumber(fixed).isEmpty, "두 번 돌아야 맞는다 — [\(item.name)] \(fixed)")
+        }
+    }
+
+    /// 번호 읽기 (192) — 편집기가 지우기 전의 첫 번호를 이것으로 적는다.
+    func testOrderedNumberMatchesGolden() throws {
+        let cases = try Self.load().orderedNumberCases
+        XCTAssertFalse(cases.isEmpty)
+        for item in cases {
+            XCTAssertEqual(ListEditing.orderedNumber(item.line), item.number, "[\(item.line)]")
         }
     }
 }

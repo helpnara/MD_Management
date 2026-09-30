@@ -1302,6 +1302,7 @@ private struct FormatBar: View {
                 button("인용", "text.quote", .quote, on: library.activeFormats.quote)
                 button("표 넣기", "tablecells", .table)
                 rule
+                listButton
                 button("내어쓰기", "decrease.indent", .shift(deeper: false))
                 button("들여쓰기", "increase.indent", .shift(deeper: true))
             }
@@ -1340,20 +1341,45 @@ private struct FormatBar: View {
     private func button(_ name: String, _ symbol: String, on isOn: Bool = false,
                         action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(name, systemImage: symbol)
-                .labelStyle(.iconOnly)
-                .font(.scaled(.body))
-                .frame(minWidth: Metrics.scaledLength(40),
-                       minHeight: Metrics.scaledLength(34))
-                .foregroundStyle(isOn ? Palette.paper : Palette.accent)
-                .background {
-                    RoundedRectangle(cornerRadius: Metrics.scaledLength(7))
-                        .fill(isOn ? Palette.accent : .clear)
-                }
-                .contentShape(Rectangle())
+            face(name, symbol, on: isOn)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isOn ? "\(name) 켜짐" : name)
+    }
+
+    /// 단추의 얼굴 — 일반 단추와 목록 단추(193)가 같이 쓴다.
+    private func face(_ name: String, _ symbol: String, on isOn: Bool) -> some View {
+        Label(name, systemImage: symbol)
+            .labelStyle(.iconOnly)
+            .font(.scaled(.body))
+            .frame(minWidth: Metrics.scaledLength(40),
+                   minHeight: Metrics.scaledLength(34))
+            .foregroundStyle(isOn ? Palette.paper : Palette.accent)
+            .background {
+                RoundedRectangle(cornerRadius: Metrics.scaledLength(7))
+                    .fill(isOn ? Palette.accent : .clear)
+            }
+            .contentShape(Rectangle())
+    }
+
+    /// **목록 모양** (193, 사용자 — *탭 누르고 숫자 형태 개요 또는 문자 형태 개요를 변경할 수 있는 버튼*).
+    /// **누르면** 번호 ↔ 글머리표 (목록이 아니면 글머리표), **길게 누르면** 넷 가운데 고른다. 문자 개요(`가.`)는
+    /// 마크다운 목록이 아니라 다른 앱에서 글자로 보여 넣지 않았다. 규칙은 `ListEditing.restyle`.
+    private var listButton: some View {
+        Menu {
+            Button { library.format(.list(.bullet)) } label: { Label("글머리표", systemImage: "list.bullet") }
+            Button { library.format(.list(.number)) } label: { Label("번호", systemImage: "list.number") }
+            Button { library.format(.list(.checkbox)) } label: { Label("체크상자", systemImage: "checklist") }
+            Button { library.format(.list(.none)) } label: { Label("목록 해제", systemImage: "text.alignleft") }
+        } label: {
+            face("목록 모양", "list.bullet", on: false)
+        } primaryAction: {
+            library.format(.list(nil))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .accessibilityLabel("목록 모양")
+        .accessibilityHint("누르면 번호와 글머리표를 바꿉니다. 길게 누르면 모양을 고릅니다")
     }
 }
 
