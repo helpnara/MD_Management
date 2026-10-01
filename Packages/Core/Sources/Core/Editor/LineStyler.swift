@@ -444,9 +444,11 @@ public enum LineStyler {
         if character == "~", run >= 3 { return ([], open) }
         // **여는 자리인가 — 읽기 화면과 같은 판정** (197). 예전에는 *뒤가 빈칸만 아니면* 열었다 — `2 * 3 * 4` 는 막았지만
         // `**개인 기록(영어)**로` 까지 굵게 칠해 읽기 화면(`**` 가 글자로)과 갈렸다. 이제 CommonMark 의 기댐 그대로(`Emphasis`).
-        guard open < end,
-              Emphasis.canOpen(character, before: Self.scalar(before: start, in: text),
-                               after: text[open].unicodeScalars.first) else { return nil }
+        // 못 여는 뭉치는 **통째로** 건너뛴다 — CommonMark 는 `**` 를 한 덩이로 판정한다. 한 글자씩 물러나면 둘째 `*` 가
+        // 앞의 `*` 를 문장부호로 보고 혼자 열어 버린다 (`말**"따옴"**` 이 기울었다).
+        guard open < end else { return nil }
+        guard Emphasis.canOpen(character, before: Self.scalar(before: start, in: text),
+                               after: text[open].unicodeScalars.first) else { return ([], open) }
 
         // 한 번에 먹는 마커 수. `***글***` 은 기울임 하나만 먹고, 남은 `**글**` 은
         // 안쪽에서 굵게가 된다 — CommonMark 가 겹치는 방식 그대로다.
