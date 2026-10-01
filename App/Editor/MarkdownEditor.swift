@@ -856,10 +856,11 @@ struct MarkdownEditor: UIViewRepresentable {
         private static func isFirstItem(_ text: NSString, _ paragraph: NSRange) -> Bool {
             guard paragraph.location > 0 else { return true }
             let previous = text.paragraphRange(for: NSRange(location: paragraph.location - 1, length: 0))
-            if isItemLine(text, previous) { return false }
+            // 글에 이어지는 줄(198)은 항목으로 치지 않는다 — `listRun` 과 같은 판정.
+            if isItemLine(text, previous) { return continuesText(text, previous) }
             guard isBlankLine(text, previous), previous.location > 0 else { return true }
             let above = text.paragraphRange(for: NSRange(location: previous.location - 1, length: 0))
-            return !isItemLine(text, above)
+            return !isItemLine(text, above) || continuesText(text, above)
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
@@ -1006,19 +1007,22 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 항목 사이의 빈 줄 하나는 목록을 끊지 않는다 — 그렇게 쓰는 사람이 많다.
         private func listRun(in text: NSString, around location: Int) -> NSRange? {
             let seed = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
-            guard Self.isItemLine(text, seed) else { return nil }
+            // **글에 이어지는 줄은 목록이 아니다** (198, 빌드 70 · 2번) — `가나다` 밑의 `2. 나` 를 목록에 넣으면 빈 줄 아래
+            // 새로 친 `1. 가` 가 그 뒤를 이어 `3.` 이 됐다. 읽기 화면은 `2. 나` 를 글로, `1. 가` 를 새 목록의 첫 항목으로 그린다.
+            guard Self.isItemLine(text, seed), !Self.continuesText(text, seed) else { return nil }
             var start = seed.location
             var end = NSMaxRange(seed)
             while start > 0 {
                 let previous = text.paragraphRange(for: NSRange(location: start - 1, length: 0))
                 if Self.isItemLine(text, previous) {
+                    if Self.continuesText(text, previous) { break }
                     start = previous.location
                     continue
                 }
                 // 빈 줄 하나는 건너뛴다 — 그 위가 항목일 때만.
                 guard Self.isBlankLine(text, previous), previous.location > 0 else { break }
                 let above = text.paragraphRange(for: NSRange(location: previous.location - 1, length: 0))
-                guard Self.isItemLine(text, above) else { break }
+                guard Self.isItemLine(text, above), !Self.continuesText(text, above) else { break }
                 start = above.location
             }
             while end < text.length {
