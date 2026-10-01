@@ -60,30 +60,46 @@ enum MarkdownStyler {
         if let run = listRun(in: text, covering: touched) {
             touched = NSUnionRange(touched, run)
         }
+        // **줄 문맥** (198) — 밑줄(`---` · `===`)이 받친 글은 제목이고, 글 바로 밑의 `2. ` 는 목록이 아니다. 줄 하나로는
+        // 모르는 일이라 **글 덩이**(빈 줄 사이)를 함께 본다. 다만 덩이 전체를 칠하지는 않는다 — 한 번 엔터로만 줄을 나눈
+        // 노트는 덩이가 노트 전체라 글자마다 다 칠하게 된다 (S11). 칠하는 것은 **고친 줄 ± 한 줄**과 **역할이 있는 줄**이다.
+        // `---` 를 치면 바로 윗줄이 제목이 되고, 지우면 윗줄이 돌아온다. (여러 줄짜리 밑줄 제목에서 `---` 를 지우면
+        // 두 줄 위부터는 그 줄을 고칠 때 돌아온다 — 드문 모양이라 값을 아꼈다.)
+        touched = NSUnionRange(touched, neighbors(in: text, around: touched))
+        let roles = contextRoles(in: text, covering: textBlock(in: text, around: touched), header: header)
         // 문단마다 위로 훑으면 큰 노트에서 느려지므로 한 번에 재어 둔다.
         let depths = listDepths(in: text, covering: touched)
-        var location = touched.location
         let limit = NSMaxRange(touched)
 
-        repeat {
-            let paragraph = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+        func paint(_ paragraph: NSRange) {
             if paragraph.location < header {
                 storage.setAttributes(sheet.frontMatter(), range: paragraph)
-            } else {
-                // 커서가 이 문단에 있나. 문단 끝(줄바꿈 앞)까지, 마지막 문단은 글 끝까지.
-                let hasCursor = cursor.map { at in
-                    at >= paragraph.location
-                        && (at < NSMaxRange(paragraph) || NSMaxRange(paragraph) == text.length)
-                } ?? true
-                style(paragraph: paragraph, in: text, storage: storage, sheet: sheet,
-                      hasCursor: hasCursor, isTitle: paragraph.location == titleStart,
-                      depth: depths[paragraph.location] ?? 0)
+                return
             }
+            // 커서가 이 문단에 있나. 문단 끝(줄바꿈 앞)까지, 마지막 문단은 글 끝까지.
+            let hasCursor = cursor.map { at in
+                at >= paragraph.location
+                    && (at < NSMaxRange(paragraph) || NSMaxRange(paragraph) == text.length)
+            } ?? true
+            style(paragraph: paragraph, in: text, storage: storage, sheet: sheet,
+                  hasCursor: hasCursor, isTitle: paragraph.location == titleStart,
+                  depth: depths[paragraph.location] ?? 0,
+                  role: roles[paragraph.location] ?? .normal)
+        }
+
+        var location = touched.location
+        repeat {
+            let paragraph = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
+            paint(paragraph)
             let next = NSMaxRange(paragraph)
             // 문단이 앞으로 안 가면 멈춘다 — 무한 반복 막이.
             if next <= location { break }
             location = next
         } while location < limit && location < text.length
+        // 고친 자리에서 먼 **역할 있는 줄** — 여러 줄짜리 밑줄 제목의 윗줄들 · 글에 이어지는 줄.
+        for start in roles.keys.sorted() where start < touched.location || start >= limit {
+            paint(text.paragraphRange(for: NSRange(location: start, length: 0)))
+        }
         return header
     }
 
@@ -192,6 +208,81 @@ enum MarkdownStyler {
         return map
     }
 
+    /// 범위의 **한 줄 위 · 한 줄 아래**까지 (198). `---` 를 치거나 지우면 바로 윗줄의 모습이 바뀐다.
+    private static func neighbors(in text: NSString, around range: NSRange) -> NSRange {
+        guard text.length > 0 else { return range }
+        var start = min(range.location, text.length - 1)
+        if start > 0 { start = text.paragraphRange(for: NSRange(location: start - 1, length: 0)).location }
+        var end = min(NSMaxRange(range), text.length)
+        if end < text.length { end = NSMaxRange(text.paragraphRange(for: NSRange(location: end, length: 0))) }
+        return NSRange(location: start, length: max(0, end - start))
+    }
+
+    /// **글 덩이** (198) — 범위의 한 줄 위 · 한 줄 아래부터 빈 줄을 만날 때까지 넓힌다. 한 줄씩 더 보는 까닭: 빈 줄을
+    /// 끼우거나 지운 자리에서도 위아래 글이 다시 칠해져야 한다.
+    private static func textBlock(in text: NSString, around range: NSRange) -> NSRange {
+        guard text.length > 0 else { return range }
+        var start = min(range.location, text.length - 1)
+        if start > 0 { start = text.paragraphRange(for: NSRange(location: start - 1, length: 0)).location }
+        while start > 0 {
+            let above = text.paragraphRange(for: NSRange(location: start - 1, length: 0))
+            if lineText(text, above).trimmingCharacters(in: .whitespaces).isEmpty || above.location >= start { break }
+            start = above.location
+        }
+        var end = min(NSMaxRange(range), text.length)
+        if end < text.length { end = NSMaxRange(text.paragraphRange(for: NSRange(location: end, length: 0))) }
+        while end < text.length {
+            let next = text.paragraphRange(for: NSRange(location: end, length: 0))
+            if lineText(text, next).trimmingCharacters(in: .whitespaces).isEmpty || NSMaxRange(next) <= end { break }
+            end = NSMaxRange(next)
+        }
+        return NSRange(location: start, length: max(0, end - start))
+    }
+
+    /// 범위 안 줄들의 역할 (198). 규칙은 Core 의 `BlockContext.roles` 가 정한다 — 여기서는 줄을 모아 건넨다.
+    /// 머리말은 빼고, 위쪽에서 코드 울타리가 열려 있으면 그 안으로 본다.
+    private static func contextRoles(in text: NSString, covering range: NSRange,
+                                     header: Int) -> [Int: BlockContext.Role] {
+        let begin = max(range.location, header)
+        let limit = min(NSMaxRange(range), text.length)
+        guard begin < limit else { return [:] }
+        var starts: [Int] = []
+        var lines: [String] = []
+        var at = begin
+        while at < limit {
+            let paragraph = text.paragraphRange(for: NSRange(location: at, length: 0))
+            starts.append(paragraph.location)
+            lines.append(lineText(text, paragraph))
+            let next = NSMaxRange(paragraph)
+            if next <= at { break }
+            at = next
+        }
+        let roles = BlockContext.roles(of: lines, insideFence: fenceIsOpen(in: text, from: header, to: begin))
+        var map: [Int: BlockContext.Role] = [:]
+        for (index, location) in starts.enumerated() where index < roles.count && roles[index] != .normal {
+            map[location] = roles[index]
+        }
+        return map
+    }
+
+    /// `start ..< end` 사이에 코드 울타리 줄이 홀수 개면 `end` 는 울타리 안이다.
+    private static func fenceIsOpen(in text: NSString, from start: Int, to end: Int) -> Bool {
+        guard end > start,
+              text.range(of: "```").location != NSNotFound || text.range(of: "~~~").location != NSNotFound else {
+            return false
+        }
+        var open = false
+        var at = start
+        while at < end {
+            let paragraph = text.paragraphRange(for: NSRange(location: at, length: 0))
+            if BlockContext.isFence(lineText(text, paragraph)) { open.toggle() }
+            let next = NSMaxRange(paragraph)
+            if next <= at { break }
+            at = next
+        }
+        return open
+    }
+
     /// 문단 범위에서 **줄바꿈을 뺀** 글.
     private static func lineText(_ text: NSString, _ paragraph: NSRange) -> String {
         var line = paragraph
@@ -201,13 +292,22 @@ enum MarkdownStyler {
 
     private static func style(paragraph: NSRange, in text: NSString,
                               storage: NSTextStorage, sheet: EditorStyleSheet,
-                              hasCursor: Bool, isTitle: Bool = false, depth: Int = 0) {
+                              hasCursor: Bool, isTitle: Bool = false, depth: Int = 0,
+                              role: BlockContext.Role = .normal) {
         // `paragraphRange` 는 끝의 줄바꿈까지 준다. `LineStyler` 는 줄 하나만 본다.
         var line = paragraph
         if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A {
             line.length -= 1
         }
-        let style = LineStyler.style(paragraph: text.substring(with: line))
+        let lineString = text.substring(with: line)
+        // 제목 글줄 · 이어지는 줄은 **보통 글로** 읽는다 (198) — `2. 나` 가 목록 마커를 갖지 않게.
+        var style = LineStyler.style(paragraph: lineString, asText: role != .normal && role != .underline)
+        if role == .underline {
+            // 밑줄 줄은 **줄 전체가 마커**다 — 읽기 화면에는 안 보이므로 커서가 없으면 숨긴다(L2), 있으면 흐리게.
+            let length = (lineString as NSString).length
+            style = ParagraphStyle(block: nil, contentStart: length, inlineSpans: [],
+                                   markers: [StyleSpan(start: 0, length: length, token: .marker)])
+        }
 
         // 목록: 겹친 단계는 **부른 쪽이 재어 준다** (141 — 마크다운과 같은 셈이라야
         // 화면과 파일이 안 갈린다). 매달린 들여쓰기는 **실제 폭**으로 — `- ` · `1. ` ·
@@ -229,7 +329,12 @@ enum MarkdownStyler {
         let depth = (style.block == .listItem || style.block == .orderedItem) ? max(0, depth - 1) : 0
         // 첫 글줄이고 **아직 아무 블록도 아니면** 제목처럼 그린다 (133). 이미 `#` 이
         // 붙었거나 목록 · 인용이면 그 모습을 그대로 둔다 — 글은 한 글자도 안 바뀐다.
-        let block = (isTitle && style.block == nil) ? StyleToken.heading(level: 1) : style.block
+        let block: StyleToken?
+        switch role {
+        case .heading1: block = .heading(level: 1)
+        case .heading2: block = .heading(level: 2)
+        default: block = (isTitle && style.block == nil) ? StyleToken.heading(level: 1) : style.block
+        }
         storage.setAttributes(sheet.base(for: block, depth: depth, contentInset: contentInset),
                               range: paragraph)
 

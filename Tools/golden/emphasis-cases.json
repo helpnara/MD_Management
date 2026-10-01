@@ -1,0 +1,24 @@
+{
+  "_설명": "한글 곁의 강조 (197). 읽기 화면에 넘기기 전 ⸱ 를 끼운 글(prepared)과 강조 수를 generate.py 가 계산한다. want 는 사람이 적은 뜻 — 강조가 생겨야(true) / 안 생겨야(false) 한다.",
+  "cases": [
+    {"name": "캡처 그대로 — 괄호 뒤 조사", "text": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될", "want": true},
+    {"name": "괄호로 끝난 굵게 + 조사", "text": "**(괄호)**는 된다", "want": true},
+    {"name": "조사 앞 따옴표 굵게", "text": "그는 **\"좋다\"**라고 했다", "want": true},
+    {"name": "글 바로 뒤 따옴표 굵게", "text": "말**\"따옴\"**", "want": true},
+    {"name": "굵은 링크 + 조사", "text": "**[회의록](회의록.md)**을 본다", "want": true},
+    {"name": "굵은 코드 + 조사", "text": "**`git pull`**을 먼저", "want": true},
+    {"name": "기울임 괄호 + 조사", "text": "*(참고)*는 뺀다", "want": true},
+    {"name": "취소선 괄호 + 조사", "text": "~~(취소)~~는 지운다", "want": true},
+    {"name": "일본어 곁", "text": "これは**「重要」**です", "want": true},
+    {"name": "한자 곁", "text": "**(漢字)**이다", "want": true},
+    {"name": "그냥 굵게 + 조사 — 예전부터 됨", "text": "**굵게**는", "want": true},
+    {"name": "영어는 그대로 — 표준 규칙", "text": "foo**(bar)**baz", "want": false},
+    {"name": "빈칸 뒤 닫는 마커는 여전히 아니다", "text": "**굵게 **는", "want": false},
+    {"name": "곱셈 별표", "text": "2 * 3 * 4 는 24", "want": false},
+    {"name": "이스케이프한 별표", "text": "\\*(별)\\*는", "want": false},
+    {"name": "밑줄은 넣지 않는다 — 낱말 안 규칙", "text": "__(밑줄)__는", "want": false},
+    {"name": "한 줄에 둘", "text": "**(가)**와 **(나)**를 본다", "want": true},
+    {"name": "제목 안", "text": "## **설계(Design)**의 원칙", "want": true},
+    {"name": "목록 안", "text": "- **기한(Due)**을 적는다", "want": true}
+  ]
+}

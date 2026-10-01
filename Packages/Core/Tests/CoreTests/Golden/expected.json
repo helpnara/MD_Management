@@ -1426,6 +1426,334 @@
       "title": "표와 코드가 든 노트"
     }
   ],
+  "contextCases": [
+    {
+      "lines": [
+        "# 새 노트",
+        "",
+        "가나다",
+        "---",
+        "본문"
+      ],
+      "name": "캡처 — 글 밑 ---",
+      "roles": [
+        "normal",
+        "normal",
+        "heading2",
+        "underline",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "==="
+      ],
+      "name": "글 밑 ===",
+      "roles": [
+        "heading1",
+        "underline"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "",
+        "---"
+      ],
+      "name": "빈 줄을 두면 수평선",
+      "roles": [
+        "normal",
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "첫 줄",
+        "둘째 줄",
+        "---"
+      ],
+      "name": "두 줄 글 밑 --- — 두 줄이 다 제목",
+      "roles": [
+        "heading2",
+        "heading2",
+        "underline"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "-"
+      ],
+      "name": "밑줄은 짧아도 된다",
+      "roles": [
+        "heading2",
+        "underline"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "===   "
+      ],
+      "name": "밑줄 뒤 빈칸",
+      "roles": [
+        "heading1",
+        "underline"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "   ---"
+      ],
+      "name": "밑줄 앞 빈칸 셋",
+      "roles": [
+        "heading2",
+        "underline"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "***"
+      ],
+      "name": "*** 는 밑줄이 아니라 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "- - -"
+      ],
+      "name": "- - - 는 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "## 제목",
+        "---"
+      ],
+      "name": "제목 밑 --- 는 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "- 가",
+        "---"
+      ],
+      "name": "목록 밑 --- 는 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "> 가",
+        "---"
+      ],
+      "name": "인용 밑 --- 는 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "- 가",
+        "나",
+        "---"
+      ],
+      "name": "목록에 딸린 글줄 밑 ---",
+      "roles": [
+        "normal",
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "- 가",
+        "",
+        "나",
+        "---"
+      ],
+      "name": "목록 뒤 빈 줄 뒤 글 밑 ---",
+      "roles": [
+        "normal",
+        "normal",
+        "heading2",
+        "underline"
+      ]
+    },
+    {
+      "lines": [
+        "```",
+        "가나다",
+        "---",
+        "```"
+      ],
+      "name": "울타리 안은 안 건드린다",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "```",
+        "코드",
+        "```",
+        "가나다",
+        "---"
+      ],
+      "name": "울타리 뒤",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "heading2",
+        "underline"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "2. 나"
+      ],
+      "name": "글 밑 2. — 이어지는 글",
+      "roles": [
+        "normal",
+        "continuation"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "1. 나"
+      ],
+      "name": "글 밑 1. — 목록",
+      "roles": [
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "- 나"
+      ],
+      "name": "글 밑 - — 목록",
+      "roles": [
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "1. "
+      ],
+      "name": "글 밑 빈 항목 — 이어지는 글",
+      "roles": [
+        "normal",
+        "continuation"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "    나"
+      ],
+      "name": "글 밑 네 칸 — 이어지는 글",
+      "roles": [
+        "normal",
+        "continuation"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "",
+        "2. 나"
+      ],
+      "name": "빈 줄 뒤 2. — 목록",
+      "roles": [
+        "normal",
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "1. 가",
+        "2. 나",
+        "3. 다"
+      ],
+      "name": "번호 목록 이어짐",
+      "roles": [
+        "normal",
+        "normal",
+        "normal"
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "2. 나",
+        "---"
+      ],
+      "name": "이어지는 줄까지 제목",
+      "roles": [
+        "heading2",
+        "heading2",
+        "underline"
+      ]
+    },
+    {
+      "lines": [
+        "가",
+        "",
+        "***",
+        "나",
+        "==="
+      ],
+      "name": "글 · 수평선 · 글",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "heading1",
+        "underline"
+      ]
+    },
+    {
+      "lines": [
+        "# 제목",
+        "가",
+        "---"
+      ],
+      "name": "제목 줄 뒤 바로 글 밑 ---",
+      "roles": [
+        "normal",
+        "heading2",
+        "underline"
+      ]
+    }
+  ],
   "countCases": [
     {
       "countsAsNote": true,
@@ -1743,6 +2071,160 @@
         "  - 나"
       ],
       "name": "마커 뒤 빈칸이 다섯 — 딸림은 하나"
+    }
+  ],
+  "emphasisCases": [
+    {
+      "del": 0,
+      "em": 0,
+      "name": "캡처 그대로 — 괄호 뒤 조사",
+      "prepared": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**⸱로 연결될",
+      "strong": 1,
+      "text": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "괄호로 끝난 굵게 + 조사",
+      "prepared": "**(괄호)**⸱는 된다",
+      "strong": 1,
+      "text": "**(괄호)**는 된다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "조사 앞 따옴표 굵게",
+      "prepared": "그는 **\"좋다\"**⸱라고 했다",
+      "strong": 1,
+      "text": "그는 **\"좋다\"**라고 했다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "글 바로 뒤 따옴표 굵게",
+      "prepared": "말⸱**\"따옴\"**",
+      "strong": 1,
+      "text": "말**\"따옴\"**"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "굵은 링크 + 조사",
+      "prepared": "**[회의록](회의록.md)**⸱을 본다",
+      "strong": 1,
+      "text": "**[회의록](회의록.md)**을 본다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "굵은 코드 + 조사",
+      "prepared": "**`git pull`**⸱을 먼저",
+      "strong": 1,
+      "text": "**`git pull`**을 먼저"
+    },
+    {
+      "del": 0,
+      "em": 1,
+      "name": "기울임 괄호 + 조사",
+      "prepared": "*(참고)*⸱는 뺀다",
+      "strong": 0,
+      "text": "*(참고)*는 뺀다"
+    },
+    {
+      "del": 1,
+      "em": 0,
+      "name": "취소선 괄호 + 조사",
+      "prepared": "~~(취소)~~⸱는 지운다",
+      "strong": 0,
+      "text": "~~(취소)~~는 지운다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "일본어 곁",
+      "prepared": "これは⸱**「重要」**⸱です",
+      "strong": 1,
+      "text": "これは**「重要」**です"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "한자 곁",
+      "prepared": "**(漢字)**⸱이다",
+      "strong": 1,
+      "text": "**(漢字)**이다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "그냥 굵게 + 조사 — 예전부터 됨",
+      "prepared": "**굵게**는",
+      "strong": 1,
+      "text": "**굵게**는"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "영어는 그대로 — 표준 규칙",
+      "prepared": "foo**(bar)**baz",
+      "strong": 0,
+      "text": "foo**(bar)**baz"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "빈칸 뒤 닫는 마커는 여전히 아니다",
+      "prepared": "**굵게 **는",
+      "strong": 0,
+      "text": "**굵게 **는"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "곱셈 별표",
+      "prepared": "2 * 3 * 4 는 24",
+      "strong": 0,
+      "text": "2 * 3 * 4 는 24"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "이스케이프한 별표",
+      "prepared": "\\*(별)\\*는",
+      "strong": 0,
+      "text": "\\*(별)\\*는"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "밑줄은 넣지 않는다 — 낱말 안 규칙",
+      "prepared": "__(밑줄)__는",
+      "strong": 0,
+      "text": "__(밑줄)__는"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "한 줄에 둘",
+      "prepared": "**(가)**⸱와 **(나)**⸱를 본다",
+      "strong": 2,
+      "text": "**(가)**와 **(나)**를 본다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "제목 안",
+      "prepared": "## **설계(Design)**⸱의 원칙",
+      "strong": 1,
+      "text": "## **설계(Design)**의 원칙"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "목록 안",
+      "prepared": "- **기한(Due)**⸱을 적는다",
+      "strong": 1,
+      "text": "- **기한(Due)**을 적는다"
     }
   ],
   "enterCases": [
@@ -6858,6 +7340,128 @@
       "name": "물결 울타리",
       "spans": [],
       "text": "~~~"
+    },
+    {
+      "block": null,
+      "content": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될",
+      "name": "한글 곁 강조 — 괄호 뒤 조사 (197)",
+      "spans": [
+        {
+          "text": "개인 기록 생태계(Personal Life Record Ecosystem)",
+          "token": "strong"
+        }
+      ],
+      "text": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될"
+    },
+    {
+      "block": null,
+      "content": "**[회의록](notes/a.md)**을 본다",
+      "name": "한글 곁 강조 — 굵은 링크 + 조사",
+      "spans": [
+        {
+          "text": "[회의록](notes/a.md)",
+          "token": "strong"
+        },
+        {
+          "text": "회의록",
+          "token": "link"
+        }
+      ],
+      "text": "**[회의록](notes/a.md)**을 본다"
+    },
+    {
+      "block": null,
+      "content": "**`git pull`**을 먼저",
+      "name": "한글 곁 강조 — 굵은 코드 + 조사",
+      "spans": [
+        {
+          "text": "`git pull`",
+          "token": "strong"
+        },
+        {
+          "text": "git pull",
+          "token": "inlineCode"
+        }
+      ],
+      "text": "**`git pull`**을 먼저"
+    },
+    {
+      "block": null,
+      "content": "말**\"따옴\"**",
+      "name": "한글 곁 강조 — 글 바로 뒤 따옴표",
+      "spans": [
+        {
+          "text": "\"따옴\"",
+          "token": "strong"
+        }
+      ],
+      "text": "말**\"따옴\"**"
+    },
+    {
+      "block": null,
+      "content": "*(참고)*는 뺀다",
+      "name": "한글 곁 강조 — 기울임 괄호",
+      "spans": [
+        {
+          "text": "(참고)",
+          "token": "emphasis"
+        }
+      ],
+      "text": "*(참고)*는 뺀다"
+    },
+    {
+      "block": null,
+      "content": "~~(취소)~~는 지운다",
+      "name": "한글 곁 강조 — 취소선 괄호",
+      "spans": [
+        {
+          "text": "(취소)",
+          "token": "strikethrough"
+        }
+      ],
+      "text": "~~(취소)~~는 지운다"
+    },
+    {
+      "block": null,
+      "content": "**(가)**와 **(나)**를 본다",
+      "name": "한글 곁 강조 — 한 줄에 둘",
+      "spans": [
+        {
+          "text": "(가)",
+          "token": "strong"
+        },
+        {
+          "text": "(나)",
+          "token": "strong"
+        }
+      ],
+      "text": "**(가)**와 **(나)**를 본다"
+    },
+    {
+      "block": "listItem",
+      "content": "**기한(Due)**을 적는다",
+      "name": "한글 곁 강조 — 목록 안",
+      "spans": [
+        {
+          "text": "기한(Due)",
+          "token": "strong"
+        }
+      ],
+      "text": "- **기한(Due)**을 적는다"
+    },
+    {
+      "block": null,
+      "content": "foo**(bar)**baz",
+      "name": "영어 문장부호 곁은 표준대로 — 강조 아님",
+      "spans": [],
+      "text": "foo**(bar)**baz"
+    },
+    {
+      "block": null,
+      "content": "**굵게 **는",
+      "name": "빈칸 뒤 닫는 마커 — 강조 아님",
+      "spans": [],
+      "text": "**굵게 **는"
     }
   ],
   "tagCases": [

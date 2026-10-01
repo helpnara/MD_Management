@@ -56,6 +56,8 @@ LINE_MAP_CASES = ROOT / "Tools" / "golden" / "line-map-cases.json"
 ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "attachment-cases.json"
 RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
 NESTING_CASES = ROOT / "Tools" / "golden" / "nesting-cases.json"
+EMPHASIS_CASES = ROOT / "Tools" / "golden" / "emphasis-cases.json"
+CONTEXT_CASES = ROOT / "Tools" / "golden" / "context-cases.json"
 RESTYLE_CASES = ROOT / "Tools" / "golden" / "restyle-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
@@ -510,6 +512,275 @@ def marker_mask(line: str, positions) -> str:
     return "".join(out)
 
 
+# ── 한글 곁의 강조 (197) ──────────────────────────────────────────────────────
+#
+# CommonMark 는 `**` 가 **문장부호 곁**에 붙을 때 반대쪽이 빈칸이나 문장부호여야 강조로 연다 · 닫는다.
+# 영어는 낱말 사이에 빈칸이 있어 문제가 없는데, 한글은 조사가 붙는다 — `**개인 기록(영어)**로` 의 닫는 `**` 는
+# 앞이 `)` 이고 뒤가 `로` 라 **닫히지 않는다**. 읽기 화면에 `**` 가 글자로 남았다 (사용자 · 2026-10-01 캡처).
+#
+# 규칙 하나를 더한다 — **반대쪽이 한중일 글자여도 된다**. 편집기는 이 규칙으로 칠하고(`Emphasis`), 읽기 화면은
+# 같은 자리에 **안 보이는 문장부호(⸱, U+2E31)** 를 끼워 cmark-gfm 이 스스로 열고 닫게 한 뒤 HTML 에서 뺀다.
+# 파일은 한 글자도 안 바뀐다. `_` 는 넣지 않는다 — 낱말 안의 밑줄(`snake_case`) 규칙이 더 중하다.
+
+EMPHASIS_SENTINEL = "\u2e31"
+ASCII_PUNCT = set("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
+CJK_RANGES = [
+    (0x1100, 0x11FF), (0x3040, 0x30FF), (0x3130, 0x318F), (0x3400, 0x4DBF), (0x4E00, 0x9FFF),
+    (0xA960, 0xA97F), (0xAC00, 0xD7A3), (0xD7B0, 0xD7FF), (0xF900, 0xFAFF), (0xFF66, 0xFFDC),
+]
+
+
+def is_cjk(ch: str | None) -> bool:
+    return ch is not None and any(lo <= ord(ch) <= hi for lo, hi in CJK_RANGES)
+
+
+def is_md_space(ch: str | None) -> bool:
+    """줄 끝 · 첫머리(`None`)도 빈칸이다 (CommonMark)."""
+    return ch is None or ch in " \t\n\r\f" or unicodedata.category(ch) == "Zs"
+
+
+def is_md_punct(ch: str | None) -> bool:
+    return ch is not None and (ch in ASCII_PUNCT or unicodedata.category(ch).startswith("P"))
+
+
+def left_flanking(prev: str | None, nxt: str | None, cjk: bool) -> bool:
+    if is_md_space(nxt):
+        return False
+    if not is_md_punct(nxt):
+        return True
+    return is_md_space(prev) or is_md_punct(prev) or (cjk and is_cjk(prev))
+
+
+def right_flanking(prev: str | None, nxt: str | None, cjk: bool) -> bool:
+    if is_md_space(prev):
+        return False
+    if not is_md_punct(prev):
+        return True
+    return is_md_space(nxt) or is_md_punct(nxt) or (cjk and is_cjk(nxt))
+
+
+def cjk_friendly(text: str) -> str:
+    """읽기 화면에 넘기기 전 — 한글 덕에만 열리고 닫히는 `*` · `~` 뭉치 곁에 ⸱ 를 끼운다."""
+    if EMPHASIS_SENTINEL in text:
+        return text
+    out: list[str] = []
+    i, n = 0, len(text)
+    while i < n:
+        ch = text[i]
+        if ch == "\\" and i + 1 < n:
+            out.append(text[i:i + 2])
+            i += 2
+            continue
+        if ch in "*~":
+            j = i
+            while j < n and text[j] == ch:
+                j += 1
+            prev = text[i - 1] if i > 0 else None
+            nxt = text[j] if j < n else None
+            run = text[i:j]
+            if not left_flanking(prev, nxt, False) and left_flanking(prev, nxt, True):
+                out.append(EMPHASIS_SENTINEL + run)
+            elif not right_flanking(prev, nxt, False) and right_flanking(prev, nxt, True):
+                out.append(run + EMPHASIS_SENTINEL)
+            else:
+                out.append(run)
+            i = j
+            continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def unsentinel(value):
+    """⸱ 를 뺀다 — 문자열 · 목록 · 사전 어디에 있든."""
+    if isinstance(value, str):
+        return value.replace(EMPHASIS_SENTINEL, "")
+    if isinstance(value, list):
+        return [unsentinel(v) for v in value]
+    if isinstance(value, dict):
+        return {k: unsentinel(v) for k, v in value.items()}
+    return value
+
+
+def emphasis_counts(html: str) -> dict:
+    return {"strong": html.count("<strong>"), "em": html.count("<em>"),
+            "del": html.count("<del>") + html.count("<s>")}
+
+
+def build_emphasis_cases() -> list[dict]:
+    spec = json.loads(EMPHASIS_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        text = case["text"]
+        prepared = cjk_friendly(text)
+        counts = emphasis_counts(cmark_html(prepared))
+        other = emphasis_counts(make_parser().render(prepared))
+        if counts != other:
+            raise SystemExit(f"::error::[{case['name']}] 심판 둘이 갈린다 — cmark {counts} · markdown-it {other}")
+        if EMPHASIS_SENTINEL in unsentinel(cmark_html(prepared)):
+            raise SystemExit(f"::error::[{case['name']}] ⸱ 가 남았다")
+        # 이 사례가 **기대하는 것**(`want`)은 사람이 적은 뜻이다 — 숫자가 아니라 *굵게가 생겨야 한다 / 안 생겨야 한다*.
+        if "want" in case and (counts["strong"] + counts["em"] + counts["del"] > 0) != case["want"]:
+            raise SystemExit(f"::error::[{case['name']}] 강조가 {'안 생겼다' if case['want'] else '생겼다'}: {prepared!r}")
+        out.append({"name": case["name"], "text": text, "prepared": prepared, **counts})
+    return out
+
+
+# ── 줄 하나만 봐서는 모르는 것 — 밑줄 제목 · 글에 이어지는 줄 (198) ──────────────────────
+#
+# Swift `BlockContext.roles` 와 같은 셈. 답은 **cmark-gfm 이 그린 HTML 에 대어 본다** — 손으로 적은 기댓값이 아니다.
+
+def context_kind(line: str) -> str:
+    i, width = 0, 0
+    while i < len(line) and line[i] in " \t":
+        width += 4 if line[i] == "\t" else 1
+        i += 1
+    if i == len(line):
+        return "blank"
+    if width >= 4:
+        return "indented"
+    rest = line[i:]
+    if rest.startswith("```") or rest.startswith("~~~"):
+        return "fence"
+    if thematic_break_rest(rest):
+        return "other"
+    if rest.startswith("|"):
+        return "other"
+    if rest.startswith(">"):
+        return "container"
+    hashes = len(rest) - len(rest.lstrip("#"))
+    if 1 <= hashes <= 6:
+        after = rest[hashes:]
+        if after == "" or after[0] in " \t":
+            return "other"
+    if rest[0] in "-*+" and len(rest) > 1 and rest[1] in " \t":
+        return "weakItem" if not rest[1:].strip(" \t") else "container"
+    m = re.match(r"([0-9]{1,9})[.)]([ \t].*)$", rest)
+    if m:
+        empty = not m.group(2).strip(" \t")
+        return "container" if int(m.group(1)) == 1 and not empty else "weakItem"
+    return "plain"
+
+
+def thematic_break_rest(rest: str) -> bool:
+    trimmed = rest.strip(" \t")
+    if not trimmed or trimmed[0] not in "-*_":
+        return False
+    first = trimmed[0]
+    count = 0
+    for ch in trimmed:
+        if ch == first:
+            count += 1
+        elif ch not in " \t":
+            return False
+    return count >= 3
+
+
+def underline_level(line: str) -> int | None:
+    m = re.fullmatch(r" {0,3}(=+|-+)[ \t]*", line)
+    if not m:
+        return None
+    return 1 if m.group(1)[0] == "=" else 2
+
+
+def context_roles(lines: list[str]) -> list[str]:
+    roles = ["normal"] * len(lines)
+    paragraph = None
+    in_fence = False
+    container = False
+    for i, line in enumerate(lines):
+        kind = context_kind(line)
+        if in_fence:
+            if kind == "fence":
+                in_fence = False
+            continue
+        if kind == "blank":
+            paragraph = None
+            container = False
+            continue
+        if paragraph is not None:
+            level = underline_level(line)
+            if level is not None:
+                for row in range(paragraph, i):
+                    roles[row] = "heading1" if level == 1 else "heading2"
+                roles[i] = "underline"
+                paragraph = None
+                continue
+            if kind == "plain":
+                continue
+            if kind in ("weakItem", "indented"):
+                roles[i] = "continuation"
+                continue
+            paragraph = None
+        if kind == "fence":
+            in_fence = True
+            container = False
+        elif kind == "plain":
+            if not container:
+                paragraph = i
+        elif kind in ("container", "weakItem"):
+            container = True
+        elif kind == "other":
+            container = False
+    return roles
+
+
+def build_context_cases() -> list[dict]:
+    """역할을 셈하고, **cmark-gfm 이 그린 것과 맞는지** 본다.
+
+    - 제목 역할의 줄들은 `<hN>` 하나로 나와야 한다 (글은 줄마다 앞뒤 빈칸을 떼고 줄바꿈으로 잇는다).
+    - 이어지는 줄은 목록 · 코드가 아니라 **글 그대로** HTML 에 있어야 한다.
+    - `<h1>` · `<h2>` · `<hr />` 의 수가 역할로 센 수와 같아야 한다.
+    """
+    import html as htmllib
+    spec = json.loads(CONTEXT_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        lines = case["lines"]
+        roles = context_roles(lines)
+        rendered = cmark_html("\n".join(lines))
+        groups: list[tuple[int, list[str]]] = []
+        current: list[str] = []
+        for line, role in zip(lines, roles):
+            if role in ("heading1", "heading2"):
+                current.append(line.strip(" \t"))
+            elif role == "underline":
+                groups.append((1 if underline_level(line) == 1 else 2, current))
+                current = []
+        for level, content in groups:
+            want = f"<h{level}>" + htmllib.escape("\n".join(content), quote=True) + f"</h{level}>"
+            if want not in rendered:
+                raise SystemExit(f"::error::[{case['name']}] 제목이 cmark 와 다르다 — {want!r} 가 없다:\n{rendered}")
+        for line, role in zip(lines, roles):
+            if role == "continuation" and htmllib.escape(line.strip(" \t"), quote=True) not in rendered:
+                raise SystemExit(f"::error::[{case['name']}] 이어지는 줄 {line!r} 이 글 그대로가 아니다:\n{rendered}")
+        atx = {1: 0, 2: 0}
+        breaks = 0
+        in_fence = False
+        for line, role in zip(lines, roles):
+            kind = context_kind(line)
+            if in_fence:
+                in_fence = kind != "fence"
+                continue
+            if kind == "fence":
+                in_fence = True
+                continue
+            rest = line.lstrip(" ")
+            for level in (1, 2):
+                if rest.startswith("#" * level + " ") and not rest.startswith("#" * (level + 1)):
+                    atx[level] += 1
+            if role == "normal" and kind == "other" and thematic_break_rest(rest):
+                breaks += 1
+        for level in (1, 2):
+            want = atx[level] + sum(1 for lv, _ in groups if lv == level)
+            if rendered.count(f"<h{level}>") != want:
+                raise SystemExit(f"::error::[{case['name']}] <h{level}> 수가 다르다 — cmark {rendered.count(f'<h{level}>')} · 셈 {want}:\n{rendered}")
+        if rendered.count("<hr />") != breaks:
+            raise SystemExit(f"::error::[{case['name']}] 수평선 수가 다르다 — cmark {rendered.count('<hr />')} · 셈 {breaks}:\n{rendered}")
+        out.append({"name": case["name"], "lines": lines, "roles": roles})
+    return out
+
+
 def style_facts(line: str) -> dict:
     """한 줄의 블록 종류 · 마커 뗀 내용 · 강조 구간."""
     # 표는 여러 줄이라 한 줄만으로는 markdown-it 이 표로 읽지 않는다. 편집기는 줄
@@ -528,7 +799,8 @@ def style_facts(line: str) -> dict:
     if indent_width(line) >= 4 and list_marker_width(line) is not None:
         return style_facts_in_list_context(line)
 
-    tokens = make_parser().parse(line)
+    # 편집기는 한글 곁 강조(197)를 같은 규칙으로 칠한다 — 심판에게도 같은 글을 준다. ⸱ 는 답에서 뺀다.
+    tokens = make_parser().parse(cjk_friendly(line))
     if not tokens:
         return {"block": None, "content": "", "spans": []}
 
@@ -555,7 +827,7 @@ def style_facts(line: str) -> dict:
     if block in ("listItem", "orderedItem"):
         content = strip_checkbox(content)
 
-    return {"block": block, "content": content, "spans": inline_spans(inline.children)}
+    return unsentinel({"block": block, "content": content, "spans": inline_spans(inline.children)})
 
 
 def style_facts_in_list_context(line: str) -> dict:
@@ -563,7 +835,7 @@ def style_facts_in_list_context(line: str) -> dict:
     goal = indent_width(line)
     # 두 칸에 한 단계씩 조상을 세운다: `- 조상`, `  - 조상`, …
     context = "".join(f"{'  ' * step}- 조상\n" for step in range(goal // 2))
-    tokens = make_parser().parse(context + line)
+    tokens = make_parser().parse(cjk_friendly(context + line))
 
     block = None
     for token in tokens:
@@ -579,7 +851,7 @@ def style_facts_in_list_context(line: str) -> dict:
         raise SystemExit(f"문맥을 붙여도 목록으로 안 읽힌다 — {line!r}")
 
     content = strip_checkbox(inline.content)
-    return {"block": block, "content": content, "spans": inline_spans(inline.children)}
+    return unsentinel({"block": block, "content": content, "spans": inline_spans(inline.children)})
 
 
 def build_style_cases() -> list[dict]:
@@ -2174,6 +2446,8 @@ def build() -> dict:
         "attachmentCases": build_attachment_cases(),
         "retargetCases": build_retarget_cases(),
         "nestingCases": build_nesting_cases(),
+        "emphasisCases": build_emphasis_cases(),
+        "contextCases": build_context_cases(),
         "restyleCases": build_restyle_cases(),
     }
 
@@ -3013,7 +3287,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("목록 모양", "restyleCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("한글 곁 강조", "emphasisCases"), ("줄 문맥", "contextCases"), ("목록 모양", "restyleCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
