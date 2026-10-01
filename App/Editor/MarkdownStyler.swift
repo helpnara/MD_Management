@@ -66,25 +66,7 @@ enum MarkdownStyler {
         // `---` 를 치면 바로 윗줄이 제목이 되고, 지우면 윗줄이 돌아온다. (여러 줄짜리 밑줄 제목에서 `---` 를 지우면
         // 두 줄 위부터는 그 줄을 고칠 때 돌아온다 — 드문 모양이라 값을 아꼈다.)
         touched = NSUnionRange(touched, neighbors(in: text, around: touched))
-        var roles = contextRoles(in: text, covering: textBlock(in: text, around: touched), header: header)
-        // **치는 중인 줄은 미룬다** — 글 밑에서 `-` 를 치거나 목록 단추로 `- ` 를 넣는 순간 윗줄이 제목으로 커지지 않게.
-        // 커서가 떠나면 표준대로 보인다 (`BlockContext.isTentative`).
-        if let at = cursor, at >= 0, at < text.length || (at == text.length && text.character(at: text.length - 1) != 0x0A) {
-            let here = text.paragraphRange(for: NSRange(location: min(at, max(text.length - 1, 0)), length: 0))
-            if roles[here.location] != nil, BlockContext.isTentative(lineText(text, here)) {
-                if roles[here.location] == .underline {
-                    // 받치던 제목 줄들(바로 위로 이어진)도 함께 미룬다.
-                    var above = here.location
-                    while above > 0 {
-                        let line = text.paragraphRange(for: NSRange(location: above - 1, length: 0))
-                        guard let role = roles[line.location], role == .heading1 || role == .heading2 else { break }
-                        roles[line.location] = nil
-                        above = line.location
-                    }
-                }
-                roles[here.location] = nil
-            }
-        }
+        let roles = contextRoles(in: text, covering: textBlock(in: text, around: touched), header: header)
         // 문단마다 위로 훑으면 큰 노트에서 느려지므로 한 번에 재어 둔다.
         let depths = listDepths(in: text, covering: touched)
         let limit = NSMaxRange(touched)
@@ -321,9 +303,11 @@ enum MarkdownStyler {
         // 제목 글줄 · 이어지는 줄은 **보통 글로** 읽는다 (198) — `2. 나` 가 목록 마커를 갖지 않게.
         var style = LineStyler.style(paragraph: lineString, asText: role != .normal && role != .underline)
         if role == .underline {
-            // 밑줄 줄은 **줄 전체가 마커**다 — 읽기 화면에는 안 보이므로 커서가 없으면 숨긴다(L2), 있으면 흐리게.
+            // 밑줄 줄은 **줄 전체가 마커**이고 **늘 흐리게** 보인다 — 수평선 줄과 같다. 커서가 없을 때 숨기면 커서가 그 줄에
+            // 와도 다시 안 드러나 빈 줄 위에서 치게 됐다 (빌드 69 · 9번 녹화). 커서 따라 드러내는 장치(`MarkerFocus`)는
+            // 줄 하나만 보고 마커가 있는 줄만 챙긴다 — `===` 는 줄 혼자로는 마커가 없다.
             let length = (lineString as NSString).length
-            style = ParagraphStyle(block: nil, contentStart: length, inlineSpans: [],
+            style = ParagraphStyle(block: .thematicBreak, contentStart: length, inlineSpans: [],
                                    markers: [StyleSpan(start: 0, length: length, token: .marker)])
         }
 

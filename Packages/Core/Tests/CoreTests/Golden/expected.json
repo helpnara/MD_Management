@@ -1509,8 +1509,8 @@
       ],
       "name": "밑줄은 짧아도 된다",
       "roles": [
-        "heading2",
-        "underline"
+        "normal",
+        "normal"
       ],
       "tentative": [
         false,
@@ -1759,7 +1759,7 @@
       "name": "글 밑 빈 항목 — 이어지는 글",
       "roles": [
         "normal",
-        "continuation"
+        "normal"
       ],
       "tentative": [
         false,
@@ -1884,8 +1884,8 @@
       ],
       "name": "글 밑에서 목록 시작 — `-` 하나 (치는 중)",
       "roles": [
-        "heading2",
-        "underline"
+        "normal",
+        "normal"
       ],
       "tentative": [
         false,
@@ -1899,8 +1899,8 @@
       ],
       "name": "글 밑 빈 글머리표 — 목록 단추가 넣은 것",
       "roles": [
-        "heading2",
-        "underline"
+        "normal",
+        "normal"
       ],
       "tentative": [
         false,
@@ -1914,8 +1914,8 @@
       ],
       "name": "글 밑 `--`",
       "roles": [
-        "heading2",
-        "underline"
+        "normal",
+        "normal"
       ],
       "tentative": [
         false,
@@ -1945,7 +1945,7 @@
       "name": "글 밑 빈 번호 `1. `",
       "roles": [
         "normal",
-        "continuation"
+        "normal"
       ],
       "tentative": [
         false,

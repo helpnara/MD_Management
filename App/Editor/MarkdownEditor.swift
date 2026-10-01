@@ -924,6 +924,9 @@ struct MarkdownEditor: UIViewRepresentable {
             let paragraph = text.paragraphRange(for: NSRange(location: range.location, length: 0))
             var line = paragraph
             if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
+            // **글에 이어지는 줄은 목록이 아니다** (198, 빌드 69 · 11번) — `가나다` 밑의 `2. 나` 에서 엔터를 쳐도 `3. ` 을
+            // 잇지 않는다. 표준이 그 줄을 같은 문단의 글로 읽는다 (화면도 보통 글로 칠한다).
+            if Self.continuesText(text, paragraph) { return false }
 
             // **빈 항목에서 나올 때 얕은 위 줄까지** 간다 (141 뒷이야기). 단계의 너비는
             // 부모의 마커에 따라 다르므로 빈칸 둘로는 어느 단계에도 못 선다.
@@ -1030,6 +1033,20 @@ struct MarkdownEditor: UIViewRepresentable {
                 end = NSMaxRange(below)
             }
             return NSRange(location: start, length: end - start)
+        }
+
+        /// 이 줄이 **앞 글에 이어지는 줄**인가 (198) — 위로 빈 줄까지 모아 `BlockContext.roles` 에 묻는다.
+        private static func continuesText(_ text: NSString, _ paragraph: NSRange) -> Bool {
+            var lines = [line(text, paragraph)]
+            var at = paragraph.location
+            while at > 0, lines.count < 200 {
+                let above = text.paragraphRange(for: NSRange(location: at - 1, length: 0))
+                let string = line(text, above)
+                if string.trimmingCharacters(in: .whitespaces).isEmpty || above.location >= at { break }
+                lines.insert(string, at: 0)
+                at = above.location
+            }
+            return BlockContext.roles(of: lines).last == .continuation
         }
 
         private static func line(_ text: NSString, _ paragraph: NSRange) -> String {

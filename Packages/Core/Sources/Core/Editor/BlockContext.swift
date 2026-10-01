@@ -50,6 +50,13 @@ public enum BlockContext {
                 container = false
                 continue
             }
+            // **치는 중일 수 있는 줄은 목록을 시작하는 줄로 본다** (빌드 69 · 9번). 표준은 글 바로 밑의 `-` · 빈 `- ` 를
+            // 제목 밑줄로 읽지만, 그렇게 칠하면 글 밑에서 목록을 시작하는 순간 윗글이 제목으로 커진다.
+            if isTentative(line) {
+                paragraph = nil
+                container = true
+                continue
+            }
             if let start = paragraph {
                 if let level = underlineLevel(line) {
                     for row in start..<index { roles[row] = level == 1 ? .heading1 : .heading2 }
@@ -88,9 +95,10 @@ public enum BlockContext {
 
     /// **치는 중일 수 있는 줄** — 빈 항목(`- ` · `1. `) · 짧은 밑줄(`-` · `--`).
     ///
-    /// 표준대로면 글 바로 밑의 `-` 하나도 제목 밑줄이라, 글 밑에서 목록을 시작하면 `-` 를 치는 순간 윗줄이 제목으로
-    /// 커졌다가 글자를 치면 돌아온다 — 목록 단추가 넣는 `- ` 도 같다. 편집기는 **커서가 그 줄에 있는 동안**만 이 줄의
-    /// 역할을 미룬다. 커서가 떠나면 표준대로 보인다 (읽기 화면과 같다).
+    /// 표준대로면 글 바로 밑의 `-` 하나 · 빈 `- ` 도 제목 밑줄이라, 글 밑에서 목록을 시작하면 `-` 를 치는 순간 윗줄이 제목으로
+    /// 커진다 — 목록 단추가 넣는 `- ` 도 같다. 빌드 69 에서는 *커서가 그 줄에 있는 동안만* 미뤘는데, 그러면 커서를 옮길 때마다
+    /// 윗줄이 커졌다 작아졌고 숨은 `-` 위에서 치게 됐다 (사용자 · 화면 녹화). 이제 **커서와 상관없이** 이런 줄은 목록을 시작하는
+    /// 줄로 본다(`roles`). **표준과 갈리는 자리는 이것 하나다** — 빈 `- ` 를 글 밑에 남겨 두면 읽기 화면에서는 윗글이 제목이다.
     public static func isTentative(_ line: String) -> Bool {
         if kind(of: line) == .weakItem {
             let rest = line.drop { $0 == " " || $0 == "\t" }

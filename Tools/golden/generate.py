@@ -597,7 +597,9 @@ def underline_level(line: str) -> int | None:
     return 1 if m.group(1)[0] == "=" else 2
 
 
-def context_roles(lines: list[str]) -> list[str]:
+def context_roles(lines: list[str], editor: bool = True) -> list[str]:
+    """`editor=False` 는 표준 그대로 (cmark-gfm 에 대어 보는 셈), `True` 는 편집기 — 치는 중인 줄(`is_tentative`)을
+    목록을 시작하는 줄로 본다 (빌드 69 · 9번). 둘이 갈리는 것은 그 줄 언저리뿐이다."""
     roles = ["normal"] * len(lines)
     paragraph = None
     in_fence = False
@@ -611,6 +613,10 @@ def context_roles(lines: list[str]) -> list[str]:
         if kind == "blank":
             paragraph = None
             container = False
+            continue
+        if editor and is_tentative(line):
+            paragraph = None
+            container = True
             continue
         if paragraph is not None:
             level = underline_level(line)
@@ -661,7 +667,7 @@ def build_context_cases() -> list[dict]:
     out = []
     for case in spec["cases"]:
         lines = case["lines"]
-        roles = context_roles(lines)
+        roles = context_roles(lines, editor=False)      # 표준 — cmark-gfm 에 대어 본다
         rendered = cmark_html("\n".join(lines))
         groups: list[tuple[int, list[str]]] = []
         current: list[str] = []
@@ -701,7 +707,7 @@ def build_context_cases() -> list[dict]:
                 raise SystemExit(f"::error::[{case['name']}] <h{level}> 수가 다르다 — cmark {rendered.count(f'<h{level}>')} · 셈 {want}:\n{rendered}")
         if rendered.count("<hr />") != breaks:
             raise SystemExit(f"::error::[{case['name']}] 수평선 수가 다르다 — cmark {rendered.count('<hr />')} · 셈 {breaks}:\n{rendered}")
-        out.append({"name": case["name"], "lines": lines, "roles": roles,
+        out.append({"name": case["name"], "lines": lines, "roles": context_roles(lines),
                     "tentative": [is_tentative(line) for line in lines]})
     return out
 
