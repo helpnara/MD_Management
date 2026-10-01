@@ -19,14 +19,14 @@ final class EmphasisGoldenTests: XCTestCase {
         let emphasisCases: [Case]
     }
 
-    static func load() throws -> [Golden.Case] {
+    static func goldenCases() throws -> [Golden.Case] {
         let here = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         let url = here.appendingPathComponent("Golden/expected.json")
         return try JSONDecoder().decode(Golden.self, from: try Data(contentsOf: url)).emphasisCases
     }
 
     func testReaderDrawsTheSameEmphasis() throws {
-        let cases = try Self.load()
+        let cases = try Self.goldenCases()
         XCTAssertFalse(cases.isEmpty, "정답표가 비었다")
         for item in cases {
             let html = MarkdownHTML.render(markdown: item.text, notePath: "노트.md", existing: []).bodyHTML
@@ -39,7 +39,7 @@ final class EmphasisGoldenTests: XCTestCase {
 
     /// **편집기도 같은 수를 칠한다** — 읽기 화면에서 `**` 가 글자로 남는 글은 편집기에서도 굵게 안 칠한다.
     func testEditorPaintsTheSameEmphasis() throws {
-        for item in try Self.load() {
+        for item in try Self.goldenCases() {
             let spans = LineStyler.style(paragraph: item.text).inlineSpans
             XCTAssertEqual(spans.filter { $0.token == .strong }.count, item.strong, "굵게 — [\(item.name)]")
             XCTAssertEqual(spans.filter { $0.token == .emphasis }.count, item.em, "기울임 — [\(item.name)]")
