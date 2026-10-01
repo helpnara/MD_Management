@@ -7,7 +7,7 @@
 
 | # | 무엇 | 고친 자리 | 심판 |
 |---|---|---|---|
-| **197** 🔴 | 문장부호 곁 굵게 + 조사 — 쓰기는 굵게, 읽기는 `**` 글자 → **쓰기도 표준대로** | `Core/Markdown/Emphasis` (CommonMark 기댐) · `LineStyler.scanEmphasis` | ✅ `emphasisCases` 19 (cmark-gfm · markdown-it) — 읽기 · 쓰기 둘 다 · `styleCases` +10 |
+| **197** 🔴 | 문장부호 곁 굵게 + 조사 — 쓰기는 굵게, 읽기는 `**` 글자 → **쓰기도 표준대로** | `Core/Markdown/Emphasis` (CommonMark 기댐) · `LineStyler.scanEmphasis` | ✅ `emphasisCases` 18 (cmark-gfm · markdown-it) — 읽기 · 쓰기 둘 다 · `styleCases` +10 |
 | **198** 🟡 | 글 밑 `---` · `===` 는 제목, 글 밑 `2. ` 는 이어지는 글 — **쓰기도 표준대로** | `Core/Editor/BlockContext` · `MarkdownStyler` (고친 줄 ± 1 · 역할 있는 줄만 칠함 · 치는 중인 줄은 미룸) | ✅ `contextCases` 31 (cmark-gfm HTML 에 대어 봄) |
 | 199 🟢 | 한 번 엔터 — 읽기에서 붙는다 | **표준대로 둔다** (사용자) | — |
 
