@@ -1442,6 +1442,13 @@
         "heading2",
         "underline",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1453,6 +1460,10 @@
       "roles": [
         "heading1",
         "underline"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1466,6 +1477,11 @@
         "normal",
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1479,6 +1495,11 @@
         "heading2",
         "heading2",
         "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1490,6 +1511,10 @@
       "roles": [
         "heading2",
         "underline"
+      ],
+      "tentative": [
+        false,
+        true
       ]
     },
     {
@@ -1501,6 +1526,10 @@
       "roles": [
         "heading1",
         "underline"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1512,6 +1541,10 @@
       "roles": [
         "heading2",
         "underline"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1523,6 +1556,10 @@
       "roles": [
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1534,6 +1571,10 @@
       "roles": [
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1545,6 +1586,10 @@
       "roles": [
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1556,6 +1601,10 @@
       "roles": [
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1567,6 +1616,10 @@
       "roles": [
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1580,6 +1633,11 @@
         "normal",
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1595,6 +1653,12 @@
         "normal",
         "heading2",
         "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1610,6 +1674,12 @@
         "normal",
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1627,6 +1697,13 @@
         "normal",
         "heading2",
         "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1638,6 +1715,10 @@
       "roles": [
         "normal",
         "continuation"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1649,6 +1730,10 @@
       "roles": [
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1660,6 +1745,10 @@
       "roles": [
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1671,6 +1760,10 @@
       "roles": [
         "normal",
         "continuation"
+      ],
+      "tentative": [
+        false,
+        true
       ]
     },
     {
@@ -1682,6 +1775,10 @@
       "roles": [
         "normal",
         "continuation"
+      ],
+      "tentative": [
+        false,
+        false
       ]
     },
     {
@@ -1695,6 +1792,11 @@
         "normal",
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1708,6 +1810,11 @@
         "normal",
         "normal",
         "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1721,6 +1828,11 @@
         "heading2",
         "heading2",
         "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1738,6 +1850,13 @@
         "normal",
         "heading1",
         "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false
       ]
     },
     {
@@ -1751,6 +1870,86 @@
         "normal",
         "heading2",
         "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "-"
+      ],
+      "name": "글 밑에서 목록 시작 — `-` 하나 (치는 중)",
+      "roles": [
+        "heading2",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        true
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "- "
+      ],
+      "name": "글 밑 빈 글머리표 — 목록 단추가 넣은 것",
+      "roles": [
+        "heading2",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        true
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "--"
+      ],
+      "name": "글 밑 `--`",
+      "roles": [
+        "heading2",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        true
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "- 우유"
+      ],
+      "name": "글 밑 글머리표에 글",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "1. "
+      ],
+      "name": "글 밑 빈 번호 `1. `",
+      "roles": [
+        "normal",
+        "continuation"
+      ],
+      "tentative": [
+        false,
+        true
       ]
     }
   ],
@@ -2077,104 +2276,91 @@
     {
       "del": 0,
       "em": 0,
-      "name": "캡처 그대로 — 괄호 뒤 조사",
-      "prepared": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**⸱로 연결될",
-      "strong": 1,
+      "name": "캡처 그대로 — 괄호 뒤 조사는 표준에서 강조가 아니다",
+      "strong": 0,
       "text": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될"
     },
     {
       "del": 0,
       "em": 0,
-      "name": "괄호로 끝난 굵게 + 조사",
-      "prepared": "**(괄호)**⸱는 된다",
+      "name": "이렇게 쓰면 된다 — 괄호를 밖으로",
       "strong": 1,
-      "text": "**(괄호)**는 된다"
+      "text": "하나의 **개인 기록 생태계**(Personal Life Record Ecosystem)로 연결될"
     },
     {
       "del": 0,
       "em": 0,
-      "name": "조사 앞 따옴표 굵게",
-      "prepared": "그는 **\"좋다\"**⸱라고 했다",
+      "name": "이렇게 쓰면 된다 — 조사 앞 빈칸",
       "strong": 1,
-      "text": "그는 **\"좋다\"**라고 했다"
+      "text": "**(괄호)** 는 된다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "괄호로 끝난 굵게 + 조사",
+      "strong": 0,
+      "text": "**(괄호)**는"
     },
     {
       "del": 0,
       "em": 0,
       "name": "글 바로 뒤 따옴표 굵게",
-      "prepared": "말⸱**\"따옴\"**",
-      "strong": 1,
+      "strong": 0,
       "text": "말**\"따옴\"**"
     },
     {
       "del": 0,
       "em": 0,
       "name": "굵은 링크 + 조사",
-      "prepared": "**[회의록](회의록.md)**⸱을 본다",
-      "strong": 1,
-      "text": "**[회의록](회의록.md)**을 본다"
+      "strong": 0,
+      "text": "**[회의록](notes/a.md)**을 본다"
     },
     {
       "del": 0,
       "em": 0,
       "name": "굵은 코드 + 조사",
-      "prepared": "**`git pull`**⸱을 먼저",
-      "strong": 1,
+      "strong": 0,
       "text": "**`git pull`**을 먼저"
     },
     {
       "del": 0,
-      "em": 1,
-      "name": "기울임 괄호 + 조사",
-      "prepared": "*(참고)*⸱는 뺀다",
-      "strong": 0,
-      "text": "*(참고)*는 뺀다"
-    },
-    {
-      "del": 1,
       "em": 0,
-      "name": "취소선 괄호 + 조사",
-      "prepared": "~~(취소)~~⸱는 지운다",
-      "strong": 0,
-      "text": "~~(취소)~~는 지운다"
-    },
-    {
-      "del": 0,
-      "em": 0,
-      "name": "일본어 곁",
-      "prepared": "これは⸱**「重要」**⸱です",
+      "name": "굵은 링크 + 빈칸",
       "strong": 1,
-      "text": "これは**「重要」**です"
+      "text": "**[회의록](notes/a.md)** 을 본다"
     },
     {
       "del": 0,
       "em": 0,
-      "name": "한자 곁",
-      "prepared": "**(漢字)**⸱이다",
-      "strong": 1,
-      "text": "**(漢字)**이다"
-    },
-    {
-      "del": 0,
-      "em": 0,
-      "name": "그냥 굵게 + 조사 — 예전부터 됨",
-      "prepared": "**굵게**는",
+      "name": "그냥 굵게 + 조사",
       "strong": 1,
       "text": "**굵게**는"
     },
     {
       "del": 0,
+      "em": 1,
+      "name": "기울임 + 조사",
+      "strong": 0,
+      "text": "*기울임*은"
+    },
+    {
+      "del": 1,
       "em": 0,
-      "name": "영어는 그대로 — 표준 규칙",
-      "prepared": "foo**(bar)**baz",
+      "name": "취소선 + 조사",
+      "strong": 0,
+      "text": "~~취소~~는"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "영어 문장부호 곁",
       "strong": 0,
       "text": "foo**(bar)**baz"
     },
     {
       "del": 0,
       "em": 0,
-      "name": "빈칸 뒤 닫는 마커는 여전히 아니다",
-      "prepared": "**굵게 **는",
+      "name": "빈칸 뒤 닫는 마커",
       "strong": 0,
       "text": "**굵게 **는"
     },
@@ -2182,49 +2368,43 @@
       "del": 0,
       "em": 0,
       "name": "곱셈 별표",
-      "prepared": "2 * 3 * 4 는 24",
       "strong": 0,
       "text": "2 * 3 * 4 는 24"
     },
     {
       "del": 0,
       "em": 0,
-      "name": "이스케이프한 별표",
-      "prepared": "\\*(별)\\*는",
+      "name": "밑줄 — 낱말 안",
       "strong": 0,
-      "text": "\\*(별)\\*는"
+      "text": "snake_case_name"
     },
     {
       "del": 0,
       "em": 0,
-      "name": "밑줄은 넣지 않는다 — 낱말 안 규칙",
-      "prepared": "__(밑줄)__는",
+      "name": "밑줄 — 조사 앞은 낱말 안",
       "strong": 0,
-      "text": "__(밑줄)__는"
+      "text": "_강조_는"
     },
     {
       "del": 0,
       "em": 0,
       "name": "한 줄에 둘",
-      "prepared": "**(가)**⸱와 **(나)**⸱를 본다",
       "strong": 2,
-      "text": "**(가)**와 **(나)**를 본다"
+      "text": "**가**와 **나**를 본다"
     },
     {
       "del": 0,
       "em": 0,
       "name": "제목 안",
-      "prepared": "## **설계(Design)**⸱의 원칙",
       "strong": 1,
-      "text": "## **설계(Design)**의 원칙"
+      "text": "## **설계**(Design)의 원칙"
     },
     {
       "del": 0,
       "em": 0,
       "name": "목록 안",
-      "prepared": "- **기한(Due)**⸱을 적는다",
       "strong": 1,
-      "text": "- **기한(Due)**을 적는다"
+      "text": "- **기한**(Due)을 적는다"
     }
   ],
   "enterCases": [
@@ -7344,19 +7524,38 @@
     {
       "block": null,
       "content": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될",
-      "name": "한글 곁 강조 — 괄호 뒤 조사 (197)",
-      "spans": [
-        {
-          "text": "개인 기록 생태계(Personal Life Record Ecosystem)",
-          "token": "strong"
-        }
-      ],
+      "name": "표준 강조 — 괄호 뒤 조사는 강조 아님 (197)",
+      "spans": [],
       "text": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될"
     },
     {
       "block": null,
+      "content": "하나의 **개인 기록 생태계**(Personal Life Record Ecosystem)로 연결될",
+      "name": "표준 강조 — 괄호를 밖으로 내면 굵게",
+      "spans": [
+        {
+          "text": "개인 기록 생태계",
+          "token": "strong"
+        }
+      ],
+      "text": "하나의 **개인 기록 생태계**(Personal Life Record Ecosystem)로 연결될"
+    },
+    {
+      "block": null,
       "content": "**[회의록](notes/a.md)**을 본다",
-      "name": "한글 곁 강조 — 굵은 링크 + 조사",
+      "name": "표준 강조 — 굵은 링크 + 조사는 강조 아님",
+      "spans": [
+        {
+          "text": "회의록",
+          "token": "link"
+        }
+      ],
+      "text": "**[회의록](notes/a.md)**을 본다"
+    },
+    {
+      "block": null,
+      "content": "**[회의록](notes/a.md)** 을 본다",
+      "name": "표준 강조 — 굵은 링크 + 빈칸은 굵게",
       "spans": [
         {
           "text": "[회의록](notes/a.md)",
@@ -7367,17 +7566,13 @@
           "token": "link"
         }
       ],
-      "text": "**[회의록](notes/a.md)**을 본다"
+      "text": "**[회의록](notes/a.md)** 을 본다"
     },
     {
       "block": null,
       "content": "**`git pull`**을 먼저",
-      "name": "한글 곁 강조 — 굵은 코드 + 조사",
+      "name": "표준 강조 — 굵은 코드 + 조사는 강조 아님",
       "spans": [
-        {
-          "text": "`git pull`",
-          "token": "strong"
-        },
         {
           "text": "git pull",
           "token": "inlineCode"
@@ -7388,80 +7583,47 @@
     {
       "block": null,
       "content": "말**\"따옴\"**",
-      "name": "한글 곁 강조 — 글 바로 뒤 따옴표",
-      "spans": [
-        {
-          "text": "\"따옴\"",
-          "token": "strong"
-        }
-      ],
+      "name": "표준 강조 — 글 바로 뒤 따옴표는 강조 아님",
+      "spans": [],
       "text": "말**\"따옴\"**"
     },
     {
       "block": null,
-      "content": "*(참고)*는 뺀다",
-      "name": "한글 곁 강조 — 기울임 괄호",
+      "content": "**굵게**는",
+      "name": "표준 강조 — 그냥 굵게 + 조사",
       "spans": [
         {
-          "text": "(참고)",
-          "token": "emphasis"
-        }
-      ],
-      "text": "*(참고)*는 뺀다"
-    },
-    {
-      "block": null,
-      "content": "~~(취소)~~는 지운다",
-      "name": "한글 곁 강조 — 취소선 괄호",
-      "spans": [
-        {
-          "text": "(취소)",
-          "token": "strikethrough"
-        }
-      ],
-      "text": "~~(취소)~~는 지운다"
-    },
-    {
-      "block": null,
-      "content": "**(가)**와 **(나)**를 본다",
-      "name": "한글 곁 강조 — 한 줄에 둘",
-      "spans": [
-        {
-          "text": "(가)",
-          "token": "strong"
-        },
-        {
-          "text": "(나)",
+          "text": "굵게",
           "token": "strong"
         }
       ],
-      "text": "**(가)**와 **(나)**를 본다"
-    },
-    {
-      "block": "listItem",
-      "content": "**기한(Due)**을 적는다",
-      "name": "한글 곁 강조 — 목록 안",
-      "spans": [
-        {
-          "text": "기한(Due)",
-          "token": "strong"
-        }
-      ],
-      "text": "- **기한(Due)**을 적는다"
+      "text": "**굵게**는"
     },
     {
       "block": null,
       "content": "foo**(bar)**baz",
-      "name": "영어 문장부호 곁은 표준대로 — 강조 아님",
+      "name": "표준 강조 — 영어 문장부호 곁은 강조 아님",
       "spans": [],
       "text": "foo**(bar)**baz"
     },
     {
       "block": null,
       "content": "**굵게 **는",
-      "name": "빈칸 뒤 닫는 마커 — 강조 아님",
+      "name": "표준 강조 — 빈칸 뒤 닫는 마커는 강조 아님",
       "spans": [],
       "text": "**굵게 **는"
+    },
+    {
+      "block": "listItem",
+      "content": "**기한**(Due)을 적는다",
+      "name": "표준 강조 — 목록 안",
+      "spans": [
+        {
+          "text": "기한",
+          "token": "strong"
+        }
+      ],
+      "text": "- **기한**(Due)을 적는다"
     }
   ],
   "tagCases": [

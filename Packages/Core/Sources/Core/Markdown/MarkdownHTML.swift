@@ -84,8 +84,7 @@ public enum MarkdownHTML {
 
         // **스마트 따옴표를 끈다.** 파일이 원본이다 (ADR-0001) — 화면에서 곧은
         // 따옴표가 둥근 것으로 바뀌면 사용자가 쓴 글과 다르게 보인다.
-        // **한글 곁의 강조** (197) — 편집기와 같은 규칙으로 열고 닫도록 안 보이는 `⸱` 를 끼워 넘기고, 다 그린 뒤 뺀다.
-        let document = Document(parsing: Emphasis.cjkFriendly(body), options: [.disableSmartOpts])
+        let document = Document(parsing: body, options: [.disableSmartOpts])
 
         var rewriter = NoteRewriter(notePath: Paths.normalized(notePath), existing: existing)
         let rewritten = rewriter.visit(document) ?? document
@@ -93,7 +92,7 @@ public enum MarkdownHTML {
         // 블록마다 원문 줄 범위를 붙인다 — 읽기 ↔ 쓰기를 오가도 보던 자리를 잇는다 (176).
         // 짝이 안 맞으면 `LineMap` 이 손대지 않고 돌려준다.
         return RenderedNote(
-            bodyHTML: LineMap.annotate(Emphasis.stripSentinel(HTMLFormatter.format(rewritten)), markdown: markdown),
+            bodyHTML: LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown),
             missingAttachments: rewriter.missing
         )
     }
@@ -339,8 +338,7 @@ private struct NoteRewriter: MarkupRewriter {
     // MARK: 주소 바꾸기
 
     mutating func visitImage(_ image: Image) -> Markup? {
-        // 주소에 `⸱`(197)가 끼었으면 먼저 뺀다 — `자료~(최종).png` 같은 파일명에서 첨부를 못 찾지 않게.
-        guard let source = image.source.map(Emphasis.stripSentinel), !source.isEmpty else { return image }
+        guard let source = image.source, !source.isEmpty else { return image }
 
         switch Paths.resolve(link: source, fromNoteAt: notePath) {
         case .empty:
@@ -367,12 +365,11 @@ private struct NoteRewriter: MarkupRewriter {
     }
 
     mutating func visitLink(_ link: Link) -> Markup? {
-        guard let destination = link.destination.map(Emphasis.stripSentinel), !destination.isEmpty else {
+        guard let destination = link.destination, !destination.isEmpty else {
             return defaultVisit(link)
         }
 
         var copy = link
-        copy.destination = destination
         switch Paths.resolve(link: destination, fromNoteAt: notePath) {
         case .empty, .external, .absolute:
             break   // 그대로 둔다. 외부 URL 은 앱이 Safari 로 연다

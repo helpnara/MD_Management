@@ -86,6 +86,21 @@ public enum BlockContext {
         return roles
     }
 
+    /// **치는 중일 수 있는 줄** — 빈 항목(`- ` · `1. `) · 짧은 밑줄(`-` · `--`).
+    ///
+    /// 표준대로면 글 바로 밑의 `-` 하나도 제목 밑줄이라, 글 밑에서 목록을 시작하면 `-` 를 치는 순간 윗줄이 제목으로
+    /// 커졌다가 글자를 치면 돌아온다 — 목록 단추가 넣는 `- ` 도 같다. 편집기는 **커서가 그 줄에 있는 동안**만 이 줄의
+    /// 역할을 미룬다. 커서가 떠나면 표준대로 보인다 (읽기 화면과 같다).
+    public static func isTentative(_ line: String) -> Bool {
+        if kind(of: line) == .weakItem {
+            let rest = line.drop { $0 == " " || $0 == "\t" }
+            let marker = rest.prefix { $0 != " " && $0 != "\t" }
+            if rest.dropFirst(marker.count).allSatisfy({ $0 == " " || $0 == "\t" }) { return true }
+        }
+        guard underlineLevel(line) == 2 else { return false }
+        return line.filter { $0 == "-" }.count < 3
+    }
+
     /// 코드 울타리 줄인가 (```` ``` ```` · `~~~`, 앞 빈칸 셋까지). 편집기가 위쪽 울타리를 셀 때 쓴다.
     public static func isFence(_ line: String) -> Bool {
         kind(of: line) == .fence

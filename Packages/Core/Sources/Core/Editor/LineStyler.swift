@@ -443,7 +443,7 @@ public enum LineStyler {
         // 안쪽 `~~` 가 잘못 짝지어지므로 그 뭉치를 통째로 건너뛴다.
         if character == "~", run >= 3 { return ([], open) }
         // **여는 자리인가 — 읽기 화면과 같은 판정** (197). 예전에는 *뒤가 빈칸만 아니면* 열었다 — `2 * 3 * 4` 는 막았지만
-        // `foo**(bar)**baz` 까지 굵게 칠해 읽기 화면과 갈렸다. 이제 CommonMark 의 기댐 + 한중일 규칙 하나(`Emphasis`).
+        // `**개인 기록(영어)**로` 까지 굵게 칠해 읽기 화면(`**` 가 글자로)과 갈렸다. 이제 CommonMark 의 기댐 그대로(`Emphasis`).
         guard open < end,
               Emphasis.canOpen(character, before: Self.scalar(before: start, in: text),
                                after: text[open].unicodeScalars.first) else { return nil }

@@ -12,6 +12,7 @@ final class BlockContextGoldenTests: XCTestCase {
             let name: String
             let lines: [String]
             let roles: [String]
+            let tentative: [Bool]
         }
         let contextCases: [Case]
     }
@@ -23,6 +24,7 @@ final class BlockContextGoldenTests: XCTestCase {
         XCTAssertFalse(cases.isEmpty, "정답표가 비었다")
         for item in cases {
             XCTAssertEqual(BlockContext.roles(of: item.lines).map(\.rawValue), item.roles, "[\(item.name)]")
+            XCTAssertEqual(item.lines.map(BlockContext.isTentative), item.tentative, "치는 중 — [\(item.name)]")
         }
     }
 
