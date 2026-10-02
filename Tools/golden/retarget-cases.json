@@ -24,6 +24,17 @@
     { "name": "이름이 그대로면 아무것도 안 한다", "note": "메모.md", "old": "회의", "new": "회의",
       "text": "![](회의/assets/a.png)", "expectFixed": 0 },
     {"name": "CRLF 줄마다 링크", "note": "메모.md", "old": "회의", "new": "회의록", "text": "![](회의/assets/a.png)\r\n[기록](회의/B.md)\r\n", "expectFixed": 2},
-    {"name": "CRLF 닫는 괄호가 다음 줄이면 안 고친다", "note": "메모.md", "old": "회의", "new": "회의록", "text": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n", "expectFixed": 0}
+    {"name": "CRLF 닫는 괄호가 다음 줄이면 안 고친다", "note": "메모.md", "old": "회의", "new": "회의록", "text": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n", "expectFixed": 0},
+    {"name": "옮기기 — 안의 노트가 바깥 사진 · 노트를 가리킨다", "note": "A/n.md", "old": "A", "new": "D/A", "text": "![](../assets/x.png) [메모](../메모.md)", "expectFixed": 2},
+    {"name": "옮기기 — 안에서 안은 그대로", "note": "A/n.md", "old": "A", "new": "D/A", "text": "![](assets/a.png) [옆](sub/c.md)", "expectFixed": 0},
+    {"name": "옮기기 — 맨 위 노트에서 들어오는 링크", "note": "메모.md", "old": "A", "new": "D/A", "text": "[x](A/n.md)", "expectFixed": 1},
+    {"name": "옮기기 — 옆 폴더에서 들어오는 사진", "note": "B/n.md", "old": "A", "new": "D/A", "text": "![](../A/assets/a.png)", "expectFixed": 1},
+    {"name": "옮기기 — 새 부모 폴더의 노트가 가리킨다", "note": "D/x.md", "old": "A", "new": "D/A", "text": "[a](../A/n.md)", "expectFixed": 1},
+    {"name": "꺼내기 — 맨 위로", "note": "D/A/n.md", "old": "D/A", "new": "A", "text": "![](../../assets/x.png) [옆](../B/m.md)", "expectFixed": 2},
+    {"name": "옮기기 — 두 단계 안의 노트", "note": "A/sub/n.md", "old": "A", "new": "D/A", "text": "[메모](../../메모.md) [옆](../c.md)", "expectFixed": 1},
+    {"name": "옮기기 — 바깥 주소 · 앵커만은 그대로", "note": "A/n.md", "old": "A", "new": "D/A", "text": "[s](https://example.org/a) [절](#제목)", "expectFixed": 0},
+    {"name": "옮기기 — 앵커 붙은 바깥 노트", "note": "A/n.md", "old": "A", "new": "D/A", "text": "[메모](../메모.md#할-일)", "expectFixed": 1},
+    {"name": "옮기기 — 빈칸 이름 바깥 노트", "note": "A/n.md", "old": "A", "new": "D/A", "text": "[계획](<../여행 계획.md>)", "expectFixed": 1},
+    {"name": "옮기기 — 다른 최상위 폴더 안으로", "note": "회의/2026/n.md", "old": "회의/2026", "new": "독서/2026", "text": "[메모](../../메모.md) [위](../요약.md)", "expectFixed": 1}
   ]
 }

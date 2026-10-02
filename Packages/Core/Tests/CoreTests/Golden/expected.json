@@ -1426,6 +1426,533 @@
       "title": "표와 코드가 든 노트"
     }
   ],
+  "contextCases": [
+    {
+      "lines": [
+        "# 새 노트",
+        "",
+        "가나다",
+        "---",
+        "본문"
+      ],
+      "name": "캡처 — 글 밑 ---",
+      "roles": [
+        "normal",
+        "normal",
+        "heading2",
+        "underline",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "==="
+      ],
+      "name": "글 밑 ===",
+      "roles": [
+        "heading1",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "",
+        "---"
+      ],
+      "name": "빈 줄을 두면 수평선",
+      "roles": [
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "첫 줄",
+        "둘째 줄",
+        "---"
+      ],
+      "name": "두 줄 글 밑 --- — 두 줄이 다 제목",
+      "roles": [
+        "heading2",
+        "heading2",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "-"
+      ],
+      "name": "밑줄은 짧아도 된다",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        true
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "===   "
+      ],
+      "name": "밑줄 뒤 빈칸",
+      "roles": [
+        "heading1",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "   ---"
+      ],
+      "name": "밑줄 앞 빈칸 셋",
+      "roles": [
+        "heading2",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "***"
+      ],
+      "name": "*** 는 밑줄이 아니라 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "- - -"
+      ],
+      "name": "- - - 는 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "## 제목",
+        "---"
+      ],
+      "name": "제목 밑 --- 는 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "- 가",
+        "---"
+      ],
+      "name": "목록 밑 --- 는 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "> 가",
+        "---"
+      ],
+      "name": "인용 밑 --- 는 수평선",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "- 가",
+        "나",
+        "---"
+      ],
+      "name": "목록에 딸린 글줄 밑 ---",
+      "roles": [
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "- 가",
+        "",
+        "나",
+        "---"
+      ],
+      "name": "목록 뒤 빈 줄 뒤 글 밑 ---",
+      "roles": [
+        "normal",
+        "normal",
+        "heading2",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "```",
+        "가나다",
+        "---",
+        "```"
+      ],
+      "name": "울타리 안은 안 건드린다",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "```",
+        "코드",
+        "```",
+        "가나다",
+        "---"
+      ],
+      "name": "울타리 뒤",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "heading2",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "2. 나"
+      ],
+      "name": "글 밑 2. — 이어지는 글",
+      "roles": [
+        "normal",
+        "continuation"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "1. 나"
+      ],
+      "name": "글 밑 1. — 목록",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "- 나"
+      ],
+      "name": "글 밑 - — 목록",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "1. "
+      ],
+      "name": "글 밑 빈 항목 — 이어지는 글",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        true
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "    나"
+      ],
+      "name": "글 밑 네 칸 — 이어지는 글",
+      "roles": [
+        "normal",
+        "continuation"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "",
+        "2. 나"
+      ],
+      "name": "빈 줄 뒤 2. — 목록",
+      "roles": [
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "1. 가",
+        "2. 나",
+        "3. 다"
+      ],
+      "name": "번호 목록 이어짐",
+      "roles": [
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "2. 나",
+        "---"
+      ],
+      "name": "이어지는 줄까지 제목",
+      "roles": [
+        "heading2",
+        "heading2",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가",
+        "",
+        "***",
+        "나",
+        "==="
+      ],
+      "name": "글 · 수평선 · 글",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "heading1",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "# 제목",
+        "가",
+        "---"
+      ],
+      "name": "제목 줄 뒤 바로 글 밑 ---",
+      "roles": [
+        "normal",
+        "heading2",
+        "underline"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "-"
+      ],
+      "name": "글 밑에서 목록 시작 — `-` 하나 (치는 중)",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        true
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "- "
+      ],
+      "name": "글 밑 빈 글머리표 — 목록 단추가 넣은 것",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        true
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "--"
+      ],
+      "name": "글 밑 `--`",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        true
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "- 우유"
+      ],
+      "name": "글 밑 글머리표에 글",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "할 일",
+        "1. "
+      ],
+      "name": "글 밑 빈 번호 `1. `",
+      "roles": [
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        true
+      ]
+    }
+  ],
   "countCases": [
     {
       "countsAsNote": true,
@@ -1745,6 +2272,134 @@
       "name": "마커 뒤 빈칸이 다섯 — 딸림은 하나"
     }
   ],
+  "emphasisCases": [
+    {
+      "del": 0,
+      "em": 0,
+      "name": "캡처 그대로 — 괄호 뒤 조사는 표준에서 강조가 아니다",
+      "strong": 0,
+      "text": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "이렇게 쓰면 된다 — 괄호를 밖으로",
+      "strong": 1,
+      "text": "하나의 **개인 기록 생태계**(Personal Life Record Ecosystem)로 연결될"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "이렇게 쓰면 된다 — 조사 앞 빈칸",
+      "strong": 1,
+      "text": "**(괄호)** 는 된다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "괄호로 끝난 굵게 + 조사",
+      "strong": 0,
+      "text": "**(괄호)**는"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "글 바로 뒤 따옴표 굵게",
+      "strong": 0,
+      "text": "말**\"따옴\"**"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "굵은 링크 + 조사",
+      "strong": 0,
+      "text": "**[회의록](notes/a.md)**을 본다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "굵은 코드 + 조사",
+      "strong": 0,
+      "text": "**`git pull`**을 먼저"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "굵은 링크 + 빈칸",
+      "strong": 1,
+      "text": "**[회의록](notes/a.md)** 을 본다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "그냥 굵게 + 조사",
+      "strong": 1,
+      "text": "**굵게**는"
+    },
+    {
+      "del": 0,
+      "em": 1,
+      "name": "기울임 + 조사",
+      "strong": 0,
+      "text": "*기울임*은"
+    },
+    {
+      "del": 1,
+      "em": 0,
+      "name": "취소선 + 조사",
+      "strong": 0,
+      "text": "~~취소~~는"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "영어 문장부호 곁",
+      "strong": 0,
+      "text": "foo**(bar)**baz"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "빈칸 뒤 닫는 마커",
+      "strong": 0,
+      "text": "**굵게 **는"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "곱셈 별표",
+      "strong": 0,
+      "text": "2 * 3 * 4 는 24"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "밑줄 — 낱말 안",
+      "strong": 0,
+      "text": "snake_case_name"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "밑줄 — 조사 앞은 낱말 안",
+      "strong": 0,
+      "text": "_강조_는"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "한 줄에 둘",
+      "strong": 2,
+      "text": "**가**와 **나**를 본다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "목록 안",
+      "strong": 1,
+      "text": "- **기한**(Due)을 적는다"
+    }
+  ],
   "enterCases": [
     {
       "above": [],
@@ -1890,6 +2545,467 @@
       "line": "그냥 글",
       "name": "목록이 아니면 아무 일도 없다",
       "shallower": null
+    }
+  ],
+  "folderTreeCases": [
+    {
+      "children": {},
+      "depths": [],
+      "name": "폴더 없음",
+      "paths": [],
+      "sidebar": []
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        1
+      ],
+      "name": "최상위만",
+      "paths": [
+        "독서",
+        "회의"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "독서",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {
+        "독서": [],
+        "회의": [
+          "회의/2026",
+          "회의/기획"
+        ]
+      },
+      "depths": [
+        1,
+        1,
+        2,
+        2
+      ],
+      "name": "두 단계",
+      "paths": [
+        "독서",
+        "회의",
+        "회의/2026",
+        "회의/기획"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "독서",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 2
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 0
+        },
+        {
+          "depth": 2,
+          "path": "회의/기획",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {
+        "회의/2026": [
+          "회의/2026/1월",
+          "회의/2026/2월"
+        ],
+        "회의/2026/1월": [
+          "회의/2026/1월/주간"
+        ]
+      },
+      "depths": [
+        1,
+        2,
+        3,
+        3,
+        4
+      ],
+      "name": "세 단계 이상은 표시만",
+      "paths": [
+        "회의",
+        "회의/2026",
+        "회의/2026/1월",
+        "회의/2026/2월",
+        "회의/2026/1월/주간"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 2
+        }
+      ]
+    },
+    {
+      "children": {},
+      "depths": [
+        2,
+        1
+      ],
+      "name": "부모가 없는 하위 폴더는 안 보인다",
+      "paths": [
+        "회의/2026",
+        "독서"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "독서",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        2
+      ],
+      "name": "하위 폴더 이름 바꾸기 — 같은 부모 안",
+      "paths": [
+        "회의",
+        "회의/2026"
+      ],
+      "rename": {
+        "path": "회의/2026",
+        "result": "회의/2027",
+        "to": "2027"
+      },
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {},
+      "depths": [
+        1
+      ],
+      "name": "최상위 폴더 이름 바꾸기",
+      "paths": [
+        "회의"
+      ],
+      "rename": {
+        "path": "회의",
+        "result": "모임",
+        "to": "모임"
+      },
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        2
+      ],
+      "name": "보던 폴더 따라가기",
+      "paths": [
+        "회의",
+        "회의/2026"
+      ],
+      "rebase": [
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "회의",
+          "result": "모임"
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "회의/2026",
+          "result": "모임/2026"
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "회의/2026/1월",
+          "result": "모임/2026/1월"
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "회의록",
+          "result": null
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "독서",
+          "result": null
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "",
+          "result": null
+        }
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "move": [
+        {
+          "into": "D",
+          "path": "A",
+          "result": "D/A"
+        },
+        {
+          "into": "D",
+          "path": "B",
+          "result": "D/B"
+        },
+        {
+          "into": "D",
+          "path": "C",
+          "result": "D/C"
+        }
+      ],
+      "name": "폴더 셋을 새 폴더에 넣기 (204)",
+      "paths": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "A",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "B",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "C",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "D",
+          "subfolders": 0
+        }
+      ],
+      "targets": {
+        "A": [
+          "B",
+          "C",
+          "D"
+        ],
+        "D": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    },
+    {
+      "children": {
+        "D": [
+          "D/A",
+          "D/B",
+          "D/C"
+        ],
+        "D/A": [
+          "D/A/1월"
+        ]
+      },
+      "depths": [
+        1,
+        2,
+        2,
+        2,
+        3
+      ],
+      "move": [
+        {
+          "into": "",
+          "path": "D/A",
+          "result": "A"
+        },
+        {
+          "into": "E",
+          "path": "D/B",
+          "result": "E/B"
+        }
+      ],
+      "name": "옮긴 뒤의 모습",
+      "paths": [
+        "D",
+        "D/A",
+        "D/B",
+        "D/C",
+        "D/A/1월"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "D",
+          "subfolders": 3
+        },
+        {
+          "depth": 2,
+          "path": "D/A",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "D/B",
+          "subfolders": 0
+        },
+        {
+          "depth": 2,
+          "path": "D/C",
+          "subfolders": 0
+        }
+      ],
+      "targets": {
+        "D": [],
+        "D/A": [
+          ""
+        ]
+      }
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        2,
+        1,
+        1
+      ],
+      "move": [
+        {
+          "into": "독서",
+          "path": "회의/2026",
+          "result": "독서/2026"
+        }
+      ],
+      "name": "하위 폴더를 다른 최상위 폴더로",
+      "paths": [
+        "회의",
+        "회의/2026",
+        "독서",
+        "일기"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "독서",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "일기",
+          "subfolders": 0
+        }
+      ],
+      "targets": {
+        "독서": [
+          "회의",
+          "일기"
+        ],
+        "회의": [
+          "독서",
+          "일기"
+        ],
+        "회의/2026": [
+          "",
+          "독서",
+          "일기"
+        ]
+      }
+    },
+    {
+      "children": {},
+      "depths": [
+        1
+      ],
+      "name": "폴더가 하나뿐",
+      "paths": [
+        "회의"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 0
+        }
+      ],
+      "targets": {
+        "회의": []
+      }
     }
   ],
   "formatCases": [
@@ -6265,6 +7381,218 @@
       "old": "회의",
       "retargeted": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n",
       "text": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n"
+    },
+    {
+      "fixed": 2,
+      "name": "옮기기 — 안의 노트가 바깥 사진 · 노트를 가리킨다",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "![](../../assets/x.png) [메모](../../메모.md)",
+      "text": "![](../assets/x.png) [메모](../메모.md)"
+    },
+    {
+      "fixed": 0,
+      "name": "옮기기 — 안에서 안은 그대로",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "![](assets/a.png) [옆](sub/c.md)",
+      "text": "![](assets/a.png) [옆](sub/c.md)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 맨 위 노트에서 들어오는 링크",
+      "new": "D/A",
+      "note": "메모.md",
+      "old": "A",
+      "retargeted": "[x](D/A/n.md)",
+      "text": "[x](A/n.md)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 옆 폴더에서 들어오는 사진",
+      "new": "D/A",
+      "note": "B/n.md",
+      "old": "A",
+      "retargeted": "![](../D/A/assets/a.png)",
+      "text": "![](../A/assets/a.png)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 새 부모 폴더의 노트가 가리킨다",
+      "new": "D/A",
+      "note": "D/x.md",
+      "old": "A",
+      "retargeted": "[a](A/n.md)",
+      "text": "[a](../A/n.md)"
+    },
+    {
+      "fixed": 2,
+      "name": "꺼내기 — 맨 위로",
+      "new": "A",
+      "note": "D/A/n.md",
+      "old": "D/A",
+      "retargeted": "![](../assets/x.png) [옆](../D/B/m.md)",
+      "text": "![](../../assets/x.png) [옆](../B/m.md)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 두 단계 안의 노트",
+      "new": "D/A",
+      "note": "A/sub/n.md",
+      "old": "A",
+      "retargeted": "[메모](../../../메모.md) [옆](../c.md)",
+      "text": "[메모](../../메모.md) [옆](../c.md)"
+    },
+    {
+      "fixed": 0,
+      "name": "옮기기 — 바깥 주소 · 앵커만은 그대로",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "[s](https://example.org/a) [절](#제목)",
+      "text": "[s](https://example.org/a) [절](#제목)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 앵커 붙은 바깥 노트",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "[메모](../../메모.md#할-일)",
+      "text": "[메모](../메모.md#할-일)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 빈칸 이름 바깥 노트",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "[계획](<../../여행 계획.md>)",
+      "text": "[계획](<../여행 계획.md>)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 다른 최상위 폴더 안으로",
+      "new": "독서/2026",
+      "note": "회의/2026/n.md",
+      "old": "회의/2026",
+      "retargeted": "[메모](../../메모.md) [위](../../회의/요약.md)",
+      "text": "[메모](../../메모.md) [위](../요약.md)"
+    }
+  ],
+  "scrollGaugeCases": [
+    {
+      "content": 500,
+      "minimum": 30,
+      "name": "화면보다 짧은 노트 — 안 그린다",
+      "offset": 0,
+      "thumb": null,
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 700,
+      "minimum": 30,
+      "name": "딱 한 화면 — 안 그린다",
+      "offset": 0,
+      "thumb": null,
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 1400,
+      "minimum": 30,
+      "name": "두 화면 · 맨 위",
+      "offset": 0,
+      "thumb": {
+        "length": 340.0,
+        "start": 0.0
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 1400,
+      "minimum": 30,
+      "name": "두 화면 · 가운데",
+      "offset": 350,
+      "thumb": {
+        "length": 340.0,
+        "start": 170.0
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 1400,
+      "minimum": 30,
+      "name": "두 화면 · 맨 아래",
+      "offset": 700,
+      "thumb": {
+        "length": 340.0,
+        "start": 340.0
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 140000,
+      "minimum": 30,
+      "name": "아주 긴 노트 — 가장 짧은 길이에서 멈춘다",
+      "offset": 70000,
+      "thumb": {
+        "length": 30,
+        "start": 326.6331658291457
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 2100,
+      "minimum": 30,
+      "name": "맨 위를 지나 당김 — 위에 붙는다",
+      "offset": -80,
+      "thumb": {
+        "length": 226.66666666666666,
+        "start": 0.0
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 2100,
+      "minimum": 30,
+      "name": "맨 아래를 지나 당김 — 아래에 붙는다",
+      "offset": 1500,
+      "thumb": {
+        "length": 226.66666666666666,
+        "start": 453.33333333333337
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 5000,
+      "minimum": 30,
+      "name": "트랙이 가장 짧은 길이보다 짧다",
+      "offset": 100,
+      "thumb": {
+        "length": 20,
+        "start": 0.0
+      },
+      "track": 20,
+      "viewport": 700
+    },
+    {
+      "content": 1000,
+      "minimum": 30,
+      "name": "보이는 칸이 0 — 안 그린다",
+      "offset": 0,
+      "thumb": null,
+      "track": 0,
+      "viewport": 0
     }
   ],
   "styleCases": [
@@ -6858,6 +8186,110 @@
       "name": "물결 울타리",
       "spans": [],
       "text": "~~~"
+    },
+    {
+      "block": null,
+      "content": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될",
+      "name": "표준 강조 — 괄호 뒤 조사는 강조 아님 (197)",
+      "spans": [],
+      "text": "하나의 **개인 기록 생태계(Personal Life Record Ecosystem)**로 연결될"
+    },
+    {
+      "block": null,
+      "content": "하나의 **개인 기록 생태계**(Personal Life Record Ecosystem)로 연결될",
+      "name": "표준 강조 — 괄호를 밖으로 내면 굵게",
+      "spans": [
+        {
+          "text": "개인 기록 생태계",
+          "token": "strong"
+        }
+      ],
+      "text": "하나의 **개인 기록 생태계**(Personal Life Record Ecosystem)로 연결될"
+    },
+    {
+      "block": null,
+      "content": "**[회의록](notes/a.md)**을 본다",
+      "name": "표준 강조 — 굵은 링크 + 조사는 강조 아님",
+      "spans": [
+        {
+          "text": "회의록",
+          "token": "link"
+        }
+      ],
+      "text": "**[회의록](notes/a.md)**을 본다"
+    },
+    {
+      "block": null,
+      "content": "**[회의록](notes/a.md)** 을 본다",
+      "name": "표준 강조 — 굵은 링크 + 빈칸은 굵게",
+      "spans": [
+        {
+          "text": "[회의록](notes/a.md)",
+          "token": "strong"
+        },
+        {
+          "text": "회의록",
+          "token": "link"
+        }
+      ],
+      "text": "**[회의록](notes/a.md)** 을 본다"
+    },
+    {
+      "block": null,
+      "content": "**`git pull`**을 먼저",
+      "name": "표준 강조 — 굵은 코드 + 조사는 강조 아님",
+      "spans": [
+        {
+          "text": "git pull",
+          "token": "inlineCode"
+        }
+      ],
+      "text": "**`git pull`**을 먼저"
+    },
+    {
+      "block": null,
+      "content": "말**\"따옴\"**",
+      "name": "표준 강조 — 글 바로 뒤 따옴표는 강조 아님",
+      "spans": [],
+      "text": "말**\"따옴\"**"
+    },
+    {
+      "block": null,
+      "content": "**굵게**는",
+      "name": "표준 강조 — 그냥 굵게 + 조사",
+      "spans": [
+        {
+          "text": "굵게",
+          "token": "strong"
+        }
+      ],
+      "text": "**굵게**는"
+    },
+    {
+      "block": null,
+      "content": "foo**(bar)**baz",
+      "name": "표준 강조 — 영어 문장부호 곁은 강조 아님",
+      "spans": [],
+      "text": "foo**(bar)**baz"
+    },
+    {
+      "block": null,
+      "content": "**굵게 **는",
+      "name": "표준 강조 — 빈칸 뒤 닫는 마커는 강조 아님",
+      "spans": [],
+      "text": "**굵게 **는"
+    },
+    {
+      "block": "listItem",
+      "content": "**기한**(Due)을 적는다",
+      "name": "표준 강조 — 목록 안",
+      "spans": [
+        {
+          "text": "기한",
+          "token": "strong"
+        }
+      ],
+      "text": "- **기한**(Due)을 적는다"
     }
   ],
   "tagCases": [

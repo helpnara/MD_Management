@@ -24,7 +24,7 @@ packages:
 
 settings:
   base:
-    MARKETING_VERSION: "1.0.3"
+    MARKETING_VERSION: "1.0.4"
     # CI 가 실행 번호를 넣는다 — 빌드 번호와 실행 번호가 늘 같게.
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "6.0"

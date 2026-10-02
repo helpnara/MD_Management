@@ -98,13 +98,17 @@ public enum LineStyler {
         text.contains("\t") ? text.replacingOccurrences(of: "\t", with: "    ") : text
     }
 
-    public static func style(paragraph: String) -> ParagraphStyle {
+    /// - Parameter asText: **앞 문단에 이어지는 줄**(198, `BlockContext.Role.continuation`) — 목록 · 코드처럼 보여도
+    ///   블록 앞머리를 읽지 않고 보통 글로 본다. 앞 빈칸만 지나 강조 · 링크를 찾는다.
+    public static func style(paragraph: String, asText: Bool = false) -> ParagraphStyle {
         guard !paragraph.isEmpty else { return .plain }
 
         var markers: [StyleSpan] = []
         // **오프셋이 아니라 `String.Index` 를 받는다.** UTF-16 오프셋으로 되돌리면
         // 글자 가운데를 가리킬 수 있고, 되돌리는 코드가 곧 버그 자리가 된다.
-        let (block, contentIndex) = blockPrefix(paragraph, markers: &markers)
+        let (block, contentIndex): (StyleToken?, String.Index) = asText
+            ? (nil, paragraph.firstIndex(where: { $0 != " " && $0 != "\t" }) ?? paragraph.endIndex)
+            : blockPrefix(paragraph, markers: &markers)
         let inlineSpans = inlineScan(paragraph, from: contentIndex, to: paragraph.endIndex, markers: &markers)
 
         return ParagraphStyle(
@@ -438,8 +442,13 @@ public enum LineStyler {
         // **물결표 셋 이상은 글자 그대로다** (cmark-gfm · GitHub). 한 글자씩 물러나면
         // 안쪽 `~~` 가 잘못 짝지어지므로 그 뭉치를 통째로 건너뛴다.
         if character == "~", run >= 3 { return ([], open) }
-        // 여는 마커 뒤가 공백이면 강조가 아니다. `2 * 3 * 4` 가 기울지 않는 이유다.
-        guard open < end, !text[open].isWhitespace else { return nil }
+        // **여는 자리인가 — 읽기 화면과 같은 판정** (197). 예전에는 *뒤가 빈칸만 아니면* 열었다 — `2 * 3 * 4` 는 막았지만
+        // `**개인 기록(영어)**로` 까지 굵게 칠해 읽기 화면(`**` 가 글자로)과 갈렸다. 이제 CommonMark 의 기댐 그대로(`Emphasis`).
+        // 못 여는 뭉치는 **통째로** 건너뛴다 — CommonMark 는 `**` 를 한 덩이로 판정한다. 한 글자씩 물러나면 둘째 `*` 가
+        // 앞의 `*` 를 문장부호로 보고 혼자 열어 버린다 (`말**"따옴"**` 이 기울었다).
+        guard open < end else { return nil }
+        guard Emphasis.canOpen(character, before: Self.scalar(before: start, in: text),
+                               after: text[open].unicodeScalars.first) else { return ([], open) }
 
         // 한 번에 먹는 마커 수. `***글***` 은 기울임 하나만 먹고, 남은 `**글**` 은
         // 안쪽에서 굵게가 된다 — CommonMark 가 겹치는 방식 그대로다.
@@ -473,8 +482,11 @@ public enum LineStyler {
                 closing += 1
                 close = text.index(after: close)
             }
-            // 닫는 마커 앞이 공백이면 닫지 않는다.
-            if closing >= width, !text[text.index(before: search)].isWhitespace {
+            // **닫는 자리인가** — 여는 쪽과 같은 판정 (197). 양옆은 **글 전체**에서 본다 — 링크 글자 안에서 훑을 때도
+            // 읽기 화면은 바깥 글자를 보고 판정한다.
+            if closing >= width,
+               Emphasis.canClose(character, before: Self.scalar(before: search, in: text),
+                                 after: close < text.endIndex ? text[close].unicodeScalars.first : nil) {
                 // 여닫는 마커 수가 같고 남는 게 있으면(`***글***`) 안쪽 겹을 먼저 짝지어야
                 // 하므로 바깥은 **뒤쪽 끝**을 가져간다. 그 밖에는 앞쪽부터다 (`*글***`).
                 let markerStart = (closing == run && run > width)
@@ -494,6 +506,11 @@ public enum LineStyler {
             search = close
         }
         return nil
+    }
+
+    /// `index` 바로 앞 글자의 마지막 낱자. 글 첫머리면 `nil` (빈칸으로 본다).
+    private static func scalar(before index: String.Index, in text: String) -> Unicode.Scalar? {
+        index > text.startIndex ? text[text.index(before: index)].unicodeScalars.last : nil
     }
 
     private static func isWord(_ character: Character) -> Bool {

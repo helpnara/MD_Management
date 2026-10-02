@@ -1,0 +1,15 @@
+{
+  "_설명": "늘 보이는 스크롤 막대 (202). generate.py 가 막대 위치 · 길이를 내고, 막대가 트랙 안에 있는지 본다. thumb 가 null 이면 그리지 않는다.",
+  "cases": [
+    {"name": "화면보다 짧은 노트 — 안 그린다", "content": 500, "viewport": 700, "offset": 0, "track": 680, "minimum": 30},
+    {"name": "딱 한 화면 — 안 그린다", "content": 700, "viewport": 700, "offset": 0, "track": 680, "minimum": 30},
+    {"name": "두 화면 · 맨 위", "content": 1400, "viewport": 700, "offset": 0, "track": 680, "minimum": 30},
+    {"name": "두 화면 · 가운데", "content": 1400, "viewport": 700, "offset": 350, "track": 680, "minimum": 30},
+    {"name": "두 화면 · 맨 아래", "content": 1400, "viewport": 700, "offset": 700, "track": 680, "minimum": 30},
+    {"name": "아주 긴 노트 — 가장 짧은 길이에서 멈춘다", "content": 140000, "viewport": 700, "offset": 70000, "track": 680, "minimum": 30},
+    {"name": "맨 위를 지나 당김 — 위에 붙는다", "content": 2100, "viewport": 700, "offset": -80, "track": 680, "minimum": 30},
+    {"name": "맨 아래를 지나 당김 — 아래에 붙는다", "content": 2100, "viewport": 700, "offset": 1500, "track": 680, "minimum": 30},
+    {"name": "트랙이 가장 짧은 길이보다 짧다", "content": 5000, "viewport": 700, "offset": 100, "track": 20, "minimum": 30},
+    {"name": "보이는 칸이 0 — 안 그린다", "content": 1000, "viewport": 0, "offset": 0, "track": 0, "minimum": 30}
+  ]
+}

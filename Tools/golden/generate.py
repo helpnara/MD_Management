@@ -56,6 +56,10 @@ LINE_MAP_CASES = ROOT / "Tools" / "golden" / "line-map-cases.json"
 ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "attachment-cases.json"
 RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
 NESTING_CASES = ROOT / "Tools" / "golden" / "nesting-cases.json"
+EMPHASIS_CASES = ROOT / "Tools" / "golden" / "emphasis-cases.json"
+CONTEXT_CASES = ROOT / "Tools" / "golden" / "context-cases.json"
+FOLDER_TREE_CASES = ROOT / "Tools" / "golden" / "folder-tree-cases.json"
+SCROLL_GAUGE_CASES = ROOT / "Tools" / "golden" / "scroll-gauge-cases.json"
 RESTYLE_CASES = ROOT / "Tools" / "golden" / "restyle-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
@@ -508,6 +512,311 @@ def marker_mask(line: str, positions) -> str:
     for i in positions:
         out[i] = "·"
     return "".join(out)
+
+
+# ── 강조를 여닫는 자리 (197) ────────────────────────────────────────────────────
+#
+# CommonMark 는 `**` 가 **문장부호 곁**에 붙으면 반대쪽이 빈칸이나 문장부호여야 열고 닫는다 — `**개인 기록(영어)**로`
+# 의 닫는 `**` 는 앞이 `)` 뒤가 `로` 라 닫히지 않는다. 읽기 화면은 그대로 `**` 를 글자로 남기는데 편집기는 *빈칸만
+# 아니면* 닫아 굵게 칠했다 (사용자 · 2026-10-01 캡처). **표준을 따른다** (사용자 — *기본에 충실*): 편집기를 읽기에 맞춘다.
+# 편집기 기댓값은 `styleCases`(markdown-it), 읽기 기댓값은 여기(cmark-gfm · markdown-it 둘이 같은 수를 말해야 한다).
+
+def emphasis_counts(html: str) -> dict:
+    return {"strong": html.count("<strong>"), "em": html.count("<em>"),
+            "del": html.count("<del>") + html.count("<s>")}
+
+
+def build_emphasis_cases() -> list[dict]:
+    spec = json.loads(EMPHASIS_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        text = case["text"]
+        counts = emphasis_counts(cmark_html(text))
+        other = emphasis_counts(make_parser().render(text))
+        if counts != other:
+            raise SystemExit(f"::error::[{case['name']}] 심판 둘이 갈린다 — cmark {counts} · markdown-it {other}")
+        # `want` 는 사람이 적은 뜻 — *강조가 생겨야 한다 / 안 생겨야 한다*. 숫자는 파서가 낸다.
+        if "want" in case and (counts["strong"] + counts["em"] + counts["del"] > 0) != case["want"]:
+            raise SystemExit(f"::error::[{case['name']}] 강조가 {'안 생겼다' if case['want'] else '생겼다'}: {text!r}")
+        out.append({"name": case["name"], "text": text, **counts})
+    return out
+
+
+# ── 줄 하나만 봐서는 모르는 것 — 밑줄 제목 · 글에 이어지는 줄 (198) ──────────────────────
+#
+# Swift `BlockContext.roles` 와 같은 셈. 답은 **cmark-gfm 이 그린 HTML 에 대어 본다** — 손으로 적은 기댓값이 아니다.
+
+def context_kind(line: str) -> str:
+    i, width = 0, 0
+    while i < len(line) and line[i] in " \t":
+        width += 4 if line[i] == "\t" else 1
+        i += 1
+    if i == len(line):
+        return "blank"
+    if width >= 4:
+        return "indented"
+    rest = line[i:]
+    if rest.startswith("```") or rest.startswith("~~~"):
+        return "fence"
+    if thematic_break_rest(rest):
+        return "other"
+    if rest.startswith("|"):
+        return "other"
+    if rest.startswith(">"):
+        return "container"
+    hashes = len(rest) - len(rest.lstrip("#"))
+    if 1 <= hashes <= 6:
+        after = rest[hashes:]
+        if after == "" or after[0] in " \t":
+            return "other"
+    if rest[0] in "-*+" and len(rest) > 1 and rest[1] in " \t":
+        return "weakItem" if not rest[1:].strip(" \t") else "container"
+    m = re.match(r"([0-9]{1,9})[.)]([ \t].*)$", rest)
+    if m:
+        empty = not m.group(2).strip(" \t")
+        return "container" if int(m.group(1)) == 1 and not empty else "weakItem"
+    return "plain"
+
+
+def thematic_break_rest(rest: str) -> bool:
+    trimmed = rest.strip(" \t")
+    if not trimmed or trimmed[0] not in "-*_":
+        return False
+    first = trimmed[0]
+    count = 0
+    for ch in trimmed:
+        if ch == first:
+            count += 1
+        elif ch not in " \t":
+            return False
+    return count >= 3
+
+
+def underline_level(line: str) -> int | None:
+    m = re.fullmatch(r" {0,3}(=+|-+)[ \t]*", line)
+    if not m:
+        return None
+    return 1 if m.group(1)[0] == "=" else 2
+
+
+def context_roles(lines: list[str], editor: bool = True) -> list[str]:
+    """`editor=False` 는 표준 그대로 (cmark-gfm 에 대어 보는 셈), `True` 는 편집기 — 치는 중인 줄(`is_tentative`)을
+    목록을 시작하는 줄로 본다 (빌드 69 · 9번). 둘이 갈리는 것은 그 줄 언저리뿐이다."""
+    roles = ["normal"] * len(lines)
+    paragraph = None
+    in_fence = False
+    container = False
+    for i, line in enumerate(lines):
+        kind = context_kind(line)
+        if in_fence:
+            if kind == "fence":
+                in_fence = False
+            continue
+        if kind == "blank":
+            paragraph = None
+            container = False
+            continue
+        if editor and is_tentative(line):
+            paragraph = None
+            container = True
+            continue
+        if paragraph is not None:
+            level = underline_level(line)
+            if level is not None:
+                for row in range(paragraph, i):
+                    roles[row] = "heading1" if level == 1 else "heading2"
+                roles[i] = "underline"
+                paragraph = None
+                continue
+            if kind == "plain":
+                continue
+            if kind in ("weakItem", "indented"):
+                roles[i] = "continuation"
+                continue
+            paragraph = None
+        if kind == "fence":
+            in_fence = True
+            container = False
+        elif kind == "plain":
+            if not container:
+                paragraph = i
+        elif kind in ("container", "weakItem"):
+            container = True
+        elif kind == "other":
+            container = False
+    return roles
+
+
+def is_tentative(line: str) -> bool:
+    """치는 중일 수 있는 줄 — 빈 항목 · 짧은 밑줄. 편집기는 커서가 그 줄에 있는 동안 역할을 미룬다 (Swift `isTentative`)."""
+    if context_kind(line) == "weakItem":
+        rest = line.lstrip(" \t")
+        marker = re.match(r"[^ \t]*", rest).group(0)
+        if not rest[len(marker):].strip(" \t"):
+            return True
+    return underline_level(line) == 2 and line.count("-") < 3
+
+
+def build_context_cases() -> list[dict]:
+    """역할을 셈하고, **cmark-gfm 이 그린 것과 맞는지** 본다.
+
+    - 제목 역할의 줄들은 `<hN>` 하나로 나와야 한다 (글은 줄마다 앞뒤 빈칸을 떼고 줄바꿈으로 잇는다).
+    - 이어지는 줄은 목록 · 코드가 아니라 **글 그대로** HTML 에 있어야 한다.
+    - `<h1>` · `<h2>` · `<hr />` 의 수가 역할로 센 수와 같아야 한다.
+    """
+    import html as htmllib
+    spec = json.loads(CONTEXT_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        lines = case["lines"]
+        roles = context_roles(lines, editor=False)      # 표준 — cmark-gfm 에 대어 본다
+        rendered = cmark_html("\n".join(lines))
+        groups: list[tuple[int, list[str]]] = []
+        current: list[str] = []
+        for line, role in zip(lines, roles):
+            if role in ("heading1", "heading2"):
+                current.append(line.strip(" \t"))
+            elif role == "underline":
+                groups.append((1 if underline_level(line) == 1 else 2, current))
+                current = []
+        for level, content in groups:
+            want = f"<h{level}>" + htmllib.escape("\n".join(content), quote=True) + f"</h{level}>"
+            if want not in rendered:
+                raise SystemExit(f"::error::[{case['name']}] 제목이 cmark 와 다르다 — {want!r} 가 없다:\n{rendered}")
+        for line, role in zip(lines, roles):
+            if role == "continuation" and htmllib.escape(line.strip(" \t"), quote=True) not in rendered:
+                raise SystemExit(f"::error::[{case['name']}] 이어지는 줄 {line!r} 이 글 그대로가 아니다:\n{rendered}")
+        atx = {1: 0, 2: 0}
+        breaks = 0
+        in_fence = False
+        for line, role in zip(lines, roles):
+            kind = context_kind(line)
+            if in_fence:
+                in_fence = kind != "fence"
+                continue
+            if kind == "fence":
+                in_fence = True
+                continue
+            rest = line.lstrip(" ")
+            for level in (1, 2):
+                if rest.startswith("#" * level + " ") and not rest.startswith("#" * (level + 1)):
+                    atx[level] += 1
+            if role == "normal" and kind == "other" and thematic_break_rest(rest):
+                breaks += 1
+        for level in (1, 2):
+            want = atx[level] + sum(1 for lv, _ in groups if lv == level)
+            if rendered.count(f"<h{level}>") != want:
+                raise SystemExit(f"::error::[{case['name']}] <h{level}> 수가 다르다 — cmark {rendered.count(f'<h{level}>')} · 셈 {want}:\n{rendered}")
+        if rendered.count("<hr />") != breaks:
+            raise SystemExit(f"::error::[{case['name']}] 수평선 수가 다르다 — cmark {rendered.count('<hr />')} · 셈 {breaks}:\n{rendered}")
+        out.append({"name": case["name"], "lines": lines, "roles": context_roles(lines),
+                    "tentative": [is_tentative(line) for line in lines]})
+    return out
+
+
+# ── 폴더 안의 폴더 (203) — Swift `FolderTree` 와 같은 셈 ─────────────────────────
+
+def folder_depth(path: str) -> int:
+    return 0 if not path else len([p for p in path.split("/") if p])
+
+
+def folder_parent(path: str) -> str:
+    return path.rsplit("/", 1)[0] if "/" in path else ""
+
+
+def folder_children(folder: str, paths: list[str]) -> list[str]:
+    return [p for p in paths if p and folder_parent(p) == folder]
+
+
+def folder_sidebar(paths: list[str]) -> list[dict]:
+    out = []
+    for top in folder_children("", paths):
+        below = folder_children(top, paths)
+        out.append({"path": top, "depth": 1, "subfolders": len(below)})
+        for child in below:
+            out.append({"path": child, "depth": 2, "subfolders": len(folder_children(child, paths))})
+    return out
+
+
+def folder_renamed(path: str, name: str) -> str:
+    up = folder_parent(path)
+    return name if not up else up + "/" + name
+
+
+def folder_rebased(path: str, old: str, new: str):
+    if not old:
+        return None
+    if path == old:
+        return new
+    if not path.startswith(old + "/"):
+        return None
+    return new + path[len(old):]
+
+
+def folder_moved(path: str, parent: str) -> str:
+    name = path.rsplit("/", 1)[-1]
+    return name if not parent else parent + "/" + name
+
+
+def folder_move_targets(path: str, paths: list[str]) -> list[str]:
+    """204 — 옮겨 넣을 자리: 맨 위(이미 맨 위면 빼고) + 최상위 폴더 (자기 · 지금 자리 빼고)."""
+    here = folder_parent(path)
+    out = [] if not here else [""]
+    out += [top for top in folder_children("", paths) if top != path and top != here]
+    return out
+
+
+def build_folder_tree_cases() -> list[dict]:
+    spec = json.loads(FOLDER_TREE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        paths = case["paths"]
+        item = {"name": case["name"], "paths": paths, "sidebar": folder_sidebar(paths),
+                "depths": [folder_depth(p) for p in paths],
+                "children": {f: folder_children(f, paths) for f in case.get("open", [])}}
+        if "rename" in case:
+            r = case["rename"]
+            item["rename"] = {**r, "result": folder_renamed(r["path"], r["to"])}
+        if "rebase" in case:
+            item["rebase"] = [{**r, "result": folder_rebased(r["path"], r["old"], r["new"])}
+                              for r in case["rebase"]]
+        if "move" in case:
+            item["move"] = [{**m, "result": folder_moved(m["path"], m["into"])} for m in case["move"]]
+            for m in item["move"]:
+                if folder_depth(m["result"]) > 2:
+                    raise SystemExit(f"::error::[{case['name']}] 옮긴 폴더가 두 단계보다 깊다: {m}")
+        if "targets" in case:
+            item["targets"] = {f: folder_move_targets(f, paths) for f in case["targets"]}
+            for f, ts in item["targets"].items():
+                if any(t == f or t.startswith(f + "/") for t in ts):
+                    raise SystemExit(f"::error::[{case['name']}] {f} 를 제 안으로 옮길 수 있게 됐다")
+        out.append(item)
+    return out
+
+
+# ── 늘 보이는 스크롤 막대 (202) — Swift `ScrollGauge.thumb` 와 같은 셈 ──────────────────
+
+def scroll_thumb(content: float, viewport: float, offset: float, track: float, minimum: float):
+    import math
+    if not all(math.isfinite(v) for v in (content, viewport, offset, track)):
+        return None
+    if viewport <= 0 or track <= 0 or content <= viewport + 1:
+        return None
+    length = min(track, max(minimum, track * viewport / content))
+    progress = min(1.0, max(0.0, offset / (content - viewport)))
+    return {"start": (track - length) * progress, "length": length}
+
+
+def build_scroll_gauge_cases() -> list[dict]:
+    spec = json.loads(SCROLL_GAUGE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        thumb = scroll_thumb(case["content"], case["viewport"], case["offset"], case["track"], case["minimum"])
+        if thumb is not None:
+            if not (0 <= thumb["start"] and thumb["start"] + thumb["length"] <= case["track"] + 1e-9):
+                raise SystemExit(f"::error::[{case['name']}] 막대가 트랙 밖으로 나간다: {thumb}")
+        out.append({**case, "thumb": thumb})
+    return out
 
 
 def style_facts(line: str) -> dict:
@@ -2174,6 +2483,10 @@ def build() -> dict:
         "attachmentCases": build_attachment_cases(),
         "retargetCases": build_retarget_cases(),
         "nestingCases": build_nesting_cases(),
+        "emphasisCases": build_emphasis_cases(),
+        "contextCases": build_context_cases(),
+        "folderTreeCases": build_folder_tree_cases(),
+        "scrollGaugeCases": build_scroll_gauge_cases(),
         "restyleCases": build_restyle_cases(),
     }
 
@@ -2453,6 +2766,8 @@ def build_attachment_cases() -> list[dict]:
 # 노트 자신이 old 안에 있었으면 노트의 자리도 new 로 옮긴 뒤 상대 링크를 다시 계산한다 —
 # 안에서 안을 가리키던 `x.png` 는 그대로 남고, 안에서 `../old/x.png` 로 돌아 들어오던 것은 고쳐진다.
 # 바깥 주소 · 폴더 밖 · 다른 폴더를 가리키는 링크는 손대지 않는다 (옮기기 T1 과 같은 규칙으로 적는다).
+# 204 — 폴더를 **다른 폴더 안으로** 옮길 때도 같은 셈이다. 안의 노트가 바깥을 가리키는 링크는 새 자리에서
+# 같은 파일에 닿지 않을 때만 다시 계산한다 (이름만 바꾸면 깊이가 같아 늘 닿는다).
 
 def retarget_one(raw: str, note_old: str, note_new: str, old: str, new: str):
     wrapped = len(raw) >= 2 and raw.startswith("<") and raw.endswith(">")
@@ -2464,9 +2779,19 @@ def retarget_one(raw: str, note_old: str, note_new: str, old: str, new: str):
         anchor = inner[hash_at:]
         target = inner[:hash_at]
     got = resolve(target, note_old)
-    if got["kind"] != "relative" or not got["value"].startswith(old + "/"):
+    if got["kind"] != "relative":
         return raw
-    moved = new + got["value"][len(old):]
+    if got["value"].startswith(old + "/"):
+        moved = new + got["value"][len(old):]
+    elif note_old != note_new:
+        # 204 — 폴더를 다른 폴더 안으로 옮기면 안의 노트의 깊이가 바뀐다. 바깥을 가리키는 링크가
+        # 새 자리에서도 같은 파일에 닿으면 그대로, 아니면 다시 계산한다.
+        again = resolve(target, note_new)
+        if again["kind"] == "relative" and again["value"] == got["value"]:
+            return raw
+        moved = got["value"]
+    else:
+        return raw
     link = relative_link(directory_of(note_new), moved) + anchor
     if link == inner:
         return raw
@@ -2515,8 +2840,10 @@ def build_retarget_cases() -> list[dict]:
         for before, after in zip(extract_links(case["text"]), extract_links(got["text"])):
             was = resolve(before["destination"], case["note"])
             now = resolve(after["destination"], note_new)
-            if was["kind"] == "relative" and was["value"].startswith(nfc(case["old"]) + "/"):
-                expected = nfc(case["new"]) + was["value"][len(nfc(case["old"])):]
+            if was["kind"] == "relative":
+                # 옛 폴더 안이면 새 자리로, 아니면 **같은 파일** — 안의 노트가 옮겨 가도 (204).
+                expected = (nfc(case["new"]) + was["value"][len(nfc(case["old"])):]
+                            if was["value"].startswith(nfc(case["old"]) + "/") else was["value"])
                 if now.get("value") != expected:
                     raise SystemExit(f"::error::[{case['name']}] {before} → {after} 가 {expected} 에 안 닿는다")
         out.append({"name": case["name"], "text": case["text"], "note": case["note"],
@@ -3013,7 +3340,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("목록 모양", "restyleCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]

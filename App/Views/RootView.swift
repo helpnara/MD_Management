@@ -225,7 +225,7 @@ private struct FolderActionAlerts: ViewModifier {
     }
 
     private func trashMessage(_ folder: FolderSummary) -> some View {
-        Text("\(folder.name) 폴더와 안의 노트 \(folder.noteCount)개를 폴더 안 .trash 로 옮깁니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.\(linkNotice(verb: "지우면"))")
+        Text("\(folder.name) 폴더와 안의 노트 \(library.noteCountInside(folder.relativePath))개를 폴더 안 .trash 로 옮깁니다. 안의 폴더도 함께 갑니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.\(linkNotice(verb: "지우면"))")
     }
 }
 
@@ -325,8 +325,12 @@ private struct FolderSidebar: View {
                 row(name: library.folderName, path: "", count: library.rootNoteCount, isRoot: true)
                     // 최상위로도 끌어다 놓을 수 있다 (T1).
                     .dropDestination(for: String.self) { paths, _ in drop(paths, into: "") }
-                ForEach(library.folders) { folder in
-                    row(name: folder.name, path: folder.relativePath, count: folder.noteCount, isRoot: false)
+                // **두 단계까지 펼친다** (203). 최상위 폴더 아래에 그 안 폴더가 들여 써져 나오고, ▸ 로 접는다.
+                // 두 번째 단계 폴더 안에 폴더가 더 있으면 줄 끝에 표시만 — 열면 노트 목록 위에 나온다.
+                ForEach(visibleSidebar) { item in
+                    let folder = item.folder
+                    row(name: folder.name, path: folder.relativePath, count: folder.noteCount, isRoot: false,
+                        depth: item.depth, subfolders: item.subfolders)
                         .swipeActions(edge: .trailing) { folderSwipeActions(for: folder) }
                         // **길게 눌러도 나온다** (167, 2026-09-25 사용자 — 이름 바꾸기가 있는 줄
                         // 몰랐다). 줄 밀기(55)는 있어도 **찾는 사람이 없으면 없는 기능**이다.
@@ -371,8 +375,7 @@ private struct FolderSidebar: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    library.newFolderName = ""
-                    library.creatingFolder = true
+                    library.beginCreateFolder()
                 } label: {
                     Label("새 폴더", systemImage: "folder.badge.plus")
                 }
@@ -386,13 +389,18 @@ private struct FolderSidebar: View {
             }
         }
         .modifier(FolderActionAlerts())
-        // 새 폴더 (52). 최상위 바로 아래 한 단계만 — 폴더 안의 폴더는 아직 없다.
+        // 폴더를 다른 폴더 안으로 (204) — 고르는 창.
+        .sheet(item: $library.movingFolder) { folder in
+            FolderMoveView(folder: folder)
+                .environmentObject(library)
+        }
+        // 새 폴더 (52) — 최상위에, 또는 최상위 폴더 안에 (203). 두 단계에서 멈춘다.
         .alert("새 폴더", isPresented: $library.creatingFolder) {
             TextField("폴더 이름", text: $library.newFolderName)
             Button("만들기") { Task { await library.finishCreateFolder() } }
             Button("취소", role: .cancel) { library.creatingFolder = false }
         } message: {
-            Text("\(library.folderName) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.")
+            Text("\(library.newFolderParent.isEmpty ? library.folderName : library.newFolderParent) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.")
         }
     }
 
@@ -409,10 +417,24 @@ private struct FolderSidebar: View {
     /// 줄 밀기와 **같은 두 가지** — 하는 일이 갈리지 않게 같은 모델 함수를 부른다.
     @ViewBuilder
     private func folderContextMenu(for folder: FolderSummary) -> some View {
+        // 최상위 폴더에만 — 이 앱에서 만드는 폴더는 두 단계에서 멈춘다 (203).
+        if FolderTree.depth(of: folder.relativePath) < FolderTree.creatableDepth {
+            Button {
+                library.beginCreateFolder(in: folder.relativePath)
+            } label: {
+                Label("안에 폴더 만들기", systemImage: "folder.badge.plus")
+            }
+        }
         Button {
             Task { await library.beginRenameFolder(folder) }
         } label: {
             Label("이름 바꾸기", systemImage: "pencil.line")
+        }
+        // 이미 있는 폴더들을 새 폴더 안에 모은다 (204, 2026-10-02 사용자).
+        Button {
+            Task { await library.beginMoveFolder(folder) }
+        } label: {
+            Label("다른 폴더로 옮기기", systemImage: "arrowshape.turn.up.right")
         }
         Button(role: .destructive) {
             Task { await library.beginTrashFolder(folder) }
@@ -438,23 +460,42 @@ private struct FolderSidebar: View {
         .tint(Palette.accent)
     }
 
-    private func row(name: String, path: String, count: Int, isRoot: Bool) -> some View {
+    /// 접어 둔 최상위 폴더 (203). 처음에는 다 펼친다 — 두 단계까지 보이는 것이 기본이다.
+    @State private var collapsed: Set<String> = []
+
+    /// 접은 폴더의 안쪽 줄을 뺀 폴더 화면의 줄.
+    private var visibleSidebar: [SidebarFolder] {
+        library.sidebarFolders.filter { item in
+            item.depth < 2 || !collapsed.contains(FolderTree.parent(of: item.folder.relativePath))
+        }
+    }
+
+    private func row(name: String, path: String, count: Int, isRoot: Bool,
+                     depth: Int = 1, subfolders: Int = 0) -> some View {
         Label {
             HStack(spacing: Metrics.rowSpacing) {
                 Text(name)
                     .font(.scaled(.body, weight: isRoot ? .semibold : .regular))
                 Spacer(minLength: 0)
-                if count > 0 {
-                    Text("\(count)")
-                        .font(.scaled(.caption))
-                        .foregroundStyle(Palette.inkFaint)
-                        .lineLimit(1)
-                        .fixedSize()
-                }
+                // 두 번째 단계 폴더 안에 폴더가 더 있다 — 열면 노트 목록 위에 나온다 (203).
+                // 최상위 폴더는 안쪽 폴더가 바로 아래 줄에 보이므로 노트 수만.
+                FolderCounts(folders: depth >= 2 ? subfolders : 0, notes: count)
             }
         } icon: {
-            Image(systemName: isRoot ? "tray.full" : "folder")
+            // 최상위 폴더에 안쪽 폴더가 있으면 아이콘 자리가 ▸ · ▾ — 눌러서 접고 편다 (203).
+            if depth == 1, subfolders > 0 {
+                Button {
+                    if collapsed.contains(path) { collapsed.remove(path) } else { collapsed.insert(path) }
+                } label: {
+                    Image(systemName: collapsed.contains(path) ? "chevron.right" : "chevron.down")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(collapsed.contains(path) ? "펼치기" : "접기")
+            } else {
+                Image(systemName: isRoot ? "tray.full" : "folder")
+            }
         }
+        .padding(.leading, depth >= 2 ? Metrics.scaledLength(20) : 0)
         .tag(path)
     }
 
@@ -475,6 +516,11 @@ private struct NoteList: View {
     var body: some View {
         List(selection: $library.selectedNoteID) {
             if library.searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+                // **두 단계보다 깊은 폴더** (203) — 폴더 화면에는 두 단계까지만 보이므로, 두 번째 단계 이상을 열면
+                // 그 안 폴더가 노트 위에 나온다. 세 번째 단계부터는 위 폴더로 돌아가는 줄도.
+                if FolderTree.depth(of: library.selectedFolder) >= FolderTree.sidebarDepth {
+                    deeperFolders
+                }
                 // **고정된 노트** (T10, 메모 앱처럼). 없으면 구역 자체가 안 보인다.
                 if !library.pinnedNotes.isEmpty {
                     Section("고정된 노트") {
@@ -587,7 +633,42 @@ private struct NoteList: View {
     }
 
     private var listTitle: String {
-        library.selectedFolder.isEmpty ? library.folderName : library.selectedFolder
+        library.selectedFolder.isEmpty ? library.folderName
+            : (library.selectedFolder.split(separator: "/").last.map(String.init) ?? library.selectedFolder)
+    }
+
+    /// 열린 폴더 안의 폴더 · 위 폴더로 (203). 줄을 누르면 그 폴더의 노트로 바뀐다.
+    @ViewBuilder
+    private var deeperFolders: some View {
+        let inside = library.subfolders(of: library.selectedFolder)
+        let up = FolderTree.parent(of: library.selectedFolder)
+        let showsUp = FolderTree.depth(of: library.selectedFolder) > FolderTree.sidebarDepth
+        if showsUp || !inside.isEmpty {
+            Section("폴더") {
+                if showsUp {
+                    Button {
+                        library.selectedFolder = up
+                    } label: {
+                        Label(up.split(separator: "/").last.map(String.init) ?? up,
+                              systemImage: "arrow.turn.left.up")
+                            .font(.scaled(.body))
+                    }
+                }
+                ForEach(inside) { folder in
+                    Button {
+                        library.selectedFolder = folder.relativePath
+                    } label: {
+                        HStack(spacing: Metrics.rowSpacing) {
+                            Label(folder.name, systemImage: "folder")
+                                .font(.scaled(.body))
+                            Spacer(minLength: 0)
+                            FolderCounts(folders: library.subfolders(of: folder.relativePath).count,
+                                         notes: folder.noteCount)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -677,6 +758,99 @@ private struct NoteList: View {
     }
 }
 
+/// **폴더 줄 끝의 수** (205, 2026-10-02 사용자 — 폴더는 아이콘과 숫자, 노트는 숫자만이라 보기에 좋지 않다).
+/// 둘 다 **작은 그림 + 숫자**로 맞춘다 — 폴더는 폴더 그림, 노트는 종이 그림. 없는 것은 안 보인다.
+/// 폴더 화면과 열린 폴더의 **폴더** 구역이 같은 것을 쓴다 — 보여 주는 자리가 둘이면 갈린다.
+private struct FolderCounts: View {
+    let folders: Int
+    let notes: Int
+
+    var body: some View {
+        HStack(spacing: Metrics.scaledLength(8)) {
+            if folders > 0 { count(folders, systemImage: "folder") }
+            if notes > 0 { count(notes, systemImage: "doc.text") }
+        }
+        .font(.scaled(.caption))
+        .foregroundStyle(Palette.inkFaint)
+        .lineLimit(1)
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spoken)
+        .accessibilityHidden(folders <= 0 && notes <= 0)
+    }
+
+    private func count(_ value: Int, systemImage: String) -> some View {
+        HStack(spacing: Metrics.scaledLength(2)) {
+            Image(systemName: systemImage)
+                .imageScale(.small)
+            Text("\(value)")
+                .monospacedDigit()
+        }
+    }
+
+    private var spoken: String {
+        var parts: [String] = []
+        if folders > 0 { parts.append("폴더 \(folders)개") }
+        if notes > 0 { parts.append("노트 \(notes)개") }
+        return parts.joined(separator: ", ")
+    }
+}
+
+/// **폴더를 어느 폴더 안으로** (204, 2026-10-02 사용자 — A · B · C 를 새 폴더 D 에 넣고 싶다).
+///
+/// 고를 수 있는 자리는 맨 위와 최상위 폴더들 (`FolderTree.moveTargets`) — 옮긴 폴더는 두 단계에 선다.
+/// 그 안의 폴더는 함께 내려가고, 열어서 들어가는 자리가 된다 (203). 링크는 이름 바꾸기처럼 따라 고친다.
+private struct FolderMoveView: View {
+    let folder: FolderSummary
+    @EnvironmentObject private var library: LibraryModel
+
+    var body: some View {
+        let targets = library.moveTargets(for: folder)
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(targets, id: \.self) { path in
+                        Button {
+                            Task { await library.finishMoveFolder(folder, into: path) }
+                        } label: {
+                            Label {
+                                Text(path.isEmpty ? "\(library.folderName) (맨 위)" : path)
+                                    .font(.scaled(.body))
+                                    .foregroundStyle(Palette.ink)
+                            } icon: {
+                                Image(systemName: path.isEmpty ? "tray" : "folder")
+                            }
+                        }
+                    }
+                } footer: {
+                    // 문구 속 **굵게** 가 그려지도록 문자열을 열쇠로 넘긴다 (Text(String) 은 글자 그대로 보인다).
+                    Text(LocalizedStringKey(footer(isEmpty: targets.isEmpty)))
+                        .font(.scaled(.caption))
+                }
+            }
+            .navigationTitle("어느 폴더 안으로")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("취소") { library.movingFolder = nil }
+                }
+            }
+        }
+    }
+
+    private func footer(isEmpty: Bool) -> String {
+        if isEmpty {
+            return "옮겨 넣을 폴더가 없습니다. 먼저 폴더 화면 위의 새 폴더 단추로 담을 폴더를 만드세요."
+        }
+        var text = "**\(folder.name)** 폴더를 안의 노트 · 폴더와 함께 옮깁니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. 노트 안의 링크는 새 자리에 맞게 고칩니다."
+        let links = library.folderLinkNotice
+        if links > 0 {
+            text += " 다른 폴더의 노트에서 이 폴더 안을 가리키는 링크 \(links)개도 함께 고칩니다."
+        }
+        return text
+    }
+}
+
 /// **어느 폴더로 옮길까** (T1). 아이폰에는 끌어다 놓을 자리가 없어 목록으로 고른다.
 private struct FolderPickerView: View {
     let note: NoteSummary
@@ -690,8 +864,10 @@ private struct FolderPickerView: View {
             List {
                 Section {
                     row(name: library.folderName, path: "")
-                    ForEach(library.folders) { folder in
-                        row(name: folder.name, path: folder.relativePath)
+                    // 폴더 화면과 같은 두 단계 (203).
+                    ForEach(library.sidebarFolders) { item in
+                        row(name: item.folder.name, path: item.folder.relativePath)
+                            .padding(.leading, item.depth >= 2 ? Metrics.scaledLength(20) : 0)
                     }
                 } footer: {
                     Text("**\(note.title)** 을 옮깁니다. 지금 있는 폴더는 고를 수 없습니다.")
