@@ -447,6 +447,8 @@ final class LibraryModel: ObservableObject {
     @Published var renamingFolder: FolderSummary?
     @Published var folderRenameText = ""
     @Published var trashingFolder: FolderSummary?
+    /// 다른 폴더 안으로 옮기는 중인 폴더 (204). 폴더 화면이 고르는 창을 띄운다.
+    @Published var movingFolder: FolderSummary?
     /// 새 폴더 이름을 묻는 중인가 · 그 이름. 폴더 화면의 알림창이 이것을 본다 (52).
     @Published var creatingFolder = false
     @Published var newFolderName = ""
@@ -974,6 +976,16 @@ final class LibraryModel: ObservableObject {
         renamingFolder = folder
     }
 
+    func beginMoveFolder(_ folder: FolderSummary) async {
+        folderLinkNotice = await store?.incomingLinkCount(toFolder: folder.relativePath) ?? 0
+        movingFolder = folder
+    }
+
+    /// 폴더를 옮겨 넣을 수 있는 자리 (204) — 맨 위(빈 문자열)와 최상위 폴더들. 셈은 `FolderTree.moveTargets` 하나.
+    func moveTargets(for folder: FolderSummary) -> [String] {
+        FolderTree.moveTargets(for: folder.relativePath, in: folders.map(\.relativePath))
+    }
+
     func beginTrashFolder(_ folder: FolderSummary) async {
         folderLinkNotice = await store?.incomingLinkCount(toFolder: folder.relativePath) ?? 0
         trashingFolder = folder
@@ -989,26 +1001,54 @@ final class LibraryModel: ObservableObject {
         do {
             // **이 폴더를 가리키던 링크도 같이 고친다** (179). 확인창이 몇 개인지 먼저 알렸다(168).
             let renamed = try await store.renameFolderFixingLinks(folder.relativePath, to: name)
-            let moved = renamed.path
-            pinned = await store.followPins(from: folder.relativePath, to: moved)
-            // 보고 있던 폴더가 이 폴더거나 **그 안**이어도 따라간다 (203).
-            let following = FolderTree.rebased(selectedFolder, from: folder.relativePath, to: moved)
-            if following != nil { selectedNoteID = nil }
-            await reloadFolders()
-            if let following { selectedFolder = following }
-            // 고친 노트가 지금 열려 있을 수 있다 — 목록과 글을 다시 읽는다.
-            if renamed.notes > 0 { await reloadNotes() }
-            log("폴더 이름: \(folder.relativePath) → \(moved) · 링크 \(renamed.fixed)개(노트 \(renamed.notes)) · 못 고침 \(renamed.failed) · 못 봄 \(renamed.unread)")
-            var said: [String] = []
-            if renamed.fixed > 0 { said.append("링크 \(renamed.fixed)개를 새 이름에 맞게 고쳤습니다") }
-            if renamed.failed > 0 { said.append("노트 \(renamed.failed)개는 그 사이 바뀌어 고치지 못했습니다") }
-            if renamed.unread > 0, renamed.fixed + renamed.failed > 0 || folderLinkNotice > 0 {
-                said.append("아직 받지 않은 노트 \(renamed.unread)개는 확인하지 못했습니다")
-            }
-            if said.isEmpty { lastError = nil } else { report(said.joined(separator: ". ") + ".") }
+            await followFolder(from: folder.relativePath, renamed, what: "폴더 이름", fixedSaying: "새 이름에 맞게")
         } catch {
             lastError = "폴더 이름을 바꾸지 못했습니다: \(error.localizedDescription)"
         }
+    }
+
+    /// 폴더를 다른 폴더 안으로 (204). 고르는 창이 링크 수를 먼저 알렸다. 이름 바꾸기와 같은 뒷일을 한다.
+    func finishMoveFolder(_ folder: FolderSummary, into parent: String) async {
+        guard let store else { return }
+        movingFolder = nil
+        guard FolderTree.parent(of: folder.relativePath) != parent else { return }
+        await save()
+        do {
+            let moved = try await store.moveFolderFixingLinks(folder.relativePath, into: parent)
+            await followFolder(from: folder.relativePath, moved, what: "폴더 옮김", fixedSaying: "새 자리에 맞게")
+        } catch {
+            lastError = "폴더를 옮기지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    /// 폴더가 새 자리로 갔다 — 이름 바꾸기 · 옮기기의 **같은 뒷일**. 고정 · 보던 폴더가 따라가고, 고친 링크를 알린다.
+    private func followFolder(from old: String, _ renamed: FolderRename, what: String, fixedSaying: String) async {
+        guard let store else { return }
+        let moved = renamed.path
+        guard moved != old else { return }
+        pinned = await store.followPins(from: old, to: moved)
+        // 열려 있던 노트가 그 안에 있었다 — 옛 경로로 저장하면 옛 폴더가 다시 생긴다. 위에서 `save()` 로 비웠다.
+        if let draftPath, FolderTree.isInside(draftPath, old) {
+            clearNote()
+            selectedNoteID = nil
+        }
+        // 보고 있던 폴더가 이 폴더거나 **그 안**이어도 따라간다 (203).
+        let following = FolderTree.rebased(selectedFolder, from: old, to: moved)
+        if following != nil { selectedNoteID = nil }
+        await reloadFolders()
+        if let following { selectedFolder = following }
+        // 고친 노트가 지금 열려 있을 수 있다 — 목록과 글을 다시 읽는다.
+        if renamed.notes > 0 || following != nil { await reloadNotes() }
+        // 노트의 경로가 바뀌었다 — 검색 색인도 새 경로로.
+        scheduleIndexRefresh()
+        log("\(what): \(old) → \(moved) · 링크 \(renamed.fixed)개(노트 \(renamed.notes)) · 못 고침 \(renamed.failed) · 못 봄 \(renamed.unread)")
+        var said: [String] = []
+        if renamed.fixed > 0 { said.append("링크 \(renamed.fixed)개를 \(fixedSaying) 고쳤습니다") }
+        if renamed.failed > 0 { said.append("노트 \(renamed.failed)개는 그 사이 바뀌어 고치지 못했습니다") }
+        if renamed.unread > 0, renamed.fixed + renamed.failed > 0 || folderLinkNotice > 0 {
+            said.append("아직 받지 않은 노트 \(renamed.unread)개는 확인하지 못했습니다")
+        }
+        if said.isEmpty { lastError = nil } else { report(said.joined(separator: ". ") + ".") }
     }
 
     /// 하위 폴더를 통째로 휴지통으로. 확인은 화면이 받았다. 보고 있던 폴더면 최상위로 돌아간다.

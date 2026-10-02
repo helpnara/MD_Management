@@ -753,6 +753,19 @@ def folder_rebased(path: str, old: str, new: str):
     return new + path[len(old):]
 
 
+def folder_moved(path: str, parent: str) -> str:
+    name = path.rsplit("/", 1)[-1]
+    return name if not parent else parent + "/" + name
+
+
+def folder_move_targets(path: str, paths: list[str]) -> list[str]:
+    """204 — 옮겨 넣을 자리: 맨 위(이미 맨 위면 빼고) + 최상위 폴더 (자기 · 지금 자리 빼고)."""
+    here = folder_parent(path)
+    out = [] if not here else [""]
+    out += [top for top in folder_children("", paths) if top != path and top != here]
+    return out
+
+
 def build_folder_tree_cases() -> list[dict]:
     spec = json.loads(FOLDER_TREE_CASES.read_text(encoding="utf-8"))
     out = []
@@ -767,6 +780,16 @@ def build_folder_tree_cases() -> list[dict]:
         if "rebase" in case:
             item["rebase"] = [{**r, "result": folder_rebased(r["path"], r["old"], r["new"])}
                               for r in case["rebase"]]
+        if "move" in case:
+            item["move"] = [{**m, "result": folder_moved(m["path"], m["into"])} for m in case["move"]]
+            for m in item["move"]:
+                if folder_depth(m["result"]) > 2:
+                    raise SystemExit(f"::error::[{case['name']}] 옮긴 폴더가 두 단계보다 깊다: {m}")
+        if "targets" in case:
+            item["targets"] = {f: folder_move_targets(f, paths) for f in case["targets"]}
+            for f, ts in item["targets"].items():
+                if any(t == f or t.startswith(f + "/") for t in ts):
+                    raise SystemExit(f"::error::[{case['name']}] {f} 를 제 안으로 옮길 수 있게 됐다")
         out.append(item)
     return out
 
@@ -2743,6 +2766,8 @@ def build_attachment_cases() -> list[dict]:
 # 노트 자신이 old 안에 있었으면 노트의 자리도 new 로 옮긴 뒤 상대 링크를 다시 계산한다 —
 # 안에서 안을 가리키던 `x.png` 는 그대로 남고, 안에서 `../old/x.png` 로 돌아 들어오던 것은 고쳐진다.
 # 바깥 주소 · 폴더 밖 · 다른 폴더를 가리키는 링크는 손대지 않는다 (옮기기 T1 과 같은 규칙으로 적는다).
+# 204 — 폴더를 **다른 폴더 안으로** 옮길 때도 같은 셈이다. 안의 노트가 바깥을 가리키는 링크는 새 자리에서
+# 같은 파일에 닿지 않을 때만 다시 계산한다 (이름만 바꾸면 깊이가 같아 늘 닿는다).
 
 def retarget_one(raw: str, note_old: str, note_new: str, old: str, new: str):
     wrapped = len(raw) >= 2 and raw.startswith("<") and raw.endswith(">")
@@ -2754,9 +2779,19 @@ def retarget_one(raw: str, note_old: str, note_new: str, old: str, new: str):
         anchor = inner[hash_at:]
         target = inner[:hash_at]
     got = resolve(target, note_old)
-    if got["kind"] != "relative" or not got["value"].startswith(old + "/"):
+    if got["kind"] != "relative":
         return raw
-    moved = new + got["value"][len(old):]
+    if got["value"].startswith(old + "/"):
+        moved = new + got["value"][len(old):]
+    elif note_old != note_new:
+        # 204 — 폴더를 다른 폴더 안으로 옮기면 안의 노트의 깊이가 바뀐다. 바깥을 가리키는 링크가
+        # 새 자리에서도 같은 파일에 닿으면 그대로, 아니면 다시 계산한다.
+        again = resolve(target, note_new)
+        if again["kind"] == "relative" and again["value"] == got["value"]:
+            return raw
+        moved = got["value"]
+    else:
+        return raw
     link = relative_link(directory_of(note_new), moved) + anchor
     if link == inner:
         return raw
@@ -2805,8 +2840,10 @@ def build_retarget_cases() -> list[dict]:
         for before, after in zip(extract_links(case["text"]), extract_links(got["text"])):
             was = resolve(before["destination"], case["note"])
             now = resolve(after["destination"], note_new)
-            if was["kind"] == "relative" and was["value"].startswith(nfc(case["old"]) + "/"):
-                expected = nfc(case["new"]) + was["value"][len(nfc(case["old"])):]
+            if was["kind"] == "relative":
+                # 옛 폴더 안이면 새 자리로, 아니면 **같은 파일** — 안의 노트가 옮겨 가도 (204).
+                expected = (nfc(case["new"]) + was["value"][len(nfc(case["old"])):]
+                            if was["value"].startswith(nfc(case["old"]) + "/") else was["value"])
                 if now.get("value") != expected:
                     raise SystemExit(f"::error::[{case['name']}] {before} → {after} 가 {expected} 에 안 닿는다")
         out.append({"name": case["name"], "text": case["text"], "note": case["note"],

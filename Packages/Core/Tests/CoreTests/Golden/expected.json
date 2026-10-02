@@ -2792,6 +2792,220 @@
           "subfolders": 0
         }
       ]
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "move": [
+        {
+          "into": "D",
+          "path": "A",
+          "result": "D/A"
+        },
+        {
+          "into": "D",
+          "path": "B",
+          "result": "D/B"
+        },
+        {
+          "into": "D",
+          "path": "C",
+          "result": "D/C"
+        }
+      ],
+      "name": "폴더 셋을 새 폴더에 넣기 (204)",
+      "paths": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "A",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "B",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "C",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "D",
+          "subfolders": 0
+        }
+      ],
+      "targets": {
+        "A": [
+          "B",
+          "C",
+          "D"
+        ],
+        "D": [
+          "A",
+          "B",
+          "C"
+        ]
+      }
+    },
+    {
+      "children": {
+        "D": [
+          "D/A",
+          "D/B",
+          "D/C"
+        ],
+        "D/A": [
+          "D/A/1월"
+        ]
+      },
+      "depths": [
+        1,
+        2,
+        2,
+        2,
+        3
+      ],
+      "move": [
+        {
+          "into": "",
+          "path": "D/A",
+          "result": "A"
+        },
+        {
+          "into": "E",
+          "path": "D/B",
+          "result": "E/B"
+        }
+      ],
+      "name": "옮긴 뒤의 모습",
+      "paths": [
+        "D",
+        "D/A",
+        "D/B",
+        "D/C",
+        "D/A/1월"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "D",
+          "subfolders": 3
+        },
+        {
+          "depth": 2,
+          "path": "D/A",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "D/B",
+          "subfolders": 0
+        },
+        {
+          "depth": 2,
+          "path": "D/C",
+          "subfolders": 0
+        }
+      ],
+      "targets": {
+        "D": [],
+        "D/A": [
+          ""
+        ]
+      }
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        2,
+        1,
+        1
+      ],
+      "move": [
+        {
+          "into": "독서",
+          "path": "회의/2026",
+          "result": "독서/2026"
+        }
+      ],
+      "name": "하위 폴더를 다른 최상위 폴더로",
+      "paths": [
+        "회의",
+        "회의/2026",
+        "독서",
+        "일기"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "독서",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "일기",
+          "subfolders": 0
+        }
+      ],
+      "targets": {
+        "독서": [
+          "회의",
+          "일기"
+        ],
+        "회의": [
+          "독서",
+          "일기"
+        ],
+        "회의/2026": [
+          "",
+          "독서",
+          "일기"
+        ]
+      }
+    },
+    {
+      "children": {},
+      "depths": [
+        1
+      ],
+      "name": "폴더가 하나뿐",
+      "paths": [
+        "회의"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 0
+        }
+      ],
+      "targets": {
+        "회의": []
+      }
     }
   ],
   "formatCases": [
@@ -7167,6 +7381,105 @@
       "old": "회의",
       "retargeted": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n",
       "text": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n"
+    },
+    {
+      "fixed": 2,
+      "name": "옮기기 — 안의 노트가 바깥 사진 · 노트를 가리킨다",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "![](../../assets/x.png) [메모](../../메모.md)",
+      "text": "![](../assets/x.png) [메모](../메모.md)"
+    },
+    {
+      "fixed": 0,
+      "name": "옮기기 — 안에서 안은 그대로",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "![](assets/a.png) [옆](sub/c.md)",
+      "text": "![](assets/a.png) [옆](sub/c.md)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 맨 위 노트에서 들어오는 링크",
+      "new": "D/A",
+      "note": "메모.md",
+      "old": "A",
+      "retargeted": "[x](D/A/n.md)",
+      "text": "[x](A/n.md)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 옆 폴더에서 들어오는 사진",
+      "new": "D/A",
+      "note": "B/n.md",
+      "old": "A",
+      "retargeted": "![](../D/A/assets/a.png)",
+      "text": "![](../A/assets/a.png)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 새 부모 폴더의 노트가 가리킨다",
+      "new": "D/A",
+      "note": "D/x.md",
+      "old": "A",
+      "retargeted": "[a](A/n.md)",
+      "text": "[a](../A/n.md)"
+    },
+    {
+      "fixed": 2,
+      "name": "꺼내기 — 맨 위로",
+      "new": "A",
+      "note": "D/A/n.md",
+      "old": "D/A",
+      "retargeted": "![](../assets/x.png) [옆](../D/B/m.md)",
+      "text": "![](../../assets/x.png) [옆](../B/m.md)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 두 단계 안의 노트",
+      "new": "D/A",
+      "note": "A/sub/n.md",
+      "old": "A",
+      "retargeted": "[메모](../../../메모.md) [옆](../c.md)",
+      "text": "[메모](../../메모.md) [옆](../c.md)"
+    },
+    {
+      "fixed": 0,
+      "name": "옮기기 — 바깥 주소 · 앵커만은 그대로",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "[s](https://example.org/a) [절](#제목)",
+      "text": "[s](https://example.org/a) [절](#제목)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 앵커 붙은 바깥 노트",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "[메모](../../메모.md#할-일)",
+      "text": "[메모](../메모.md#할-일)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 빈칸 이름 바깥 노트",
+      "new": "D/A",
+      "note": "A/n.md",
+      "old": "A",
+      "retargeted": "[계획](<../../여행 계획.md>)",
+      "text": "[계획](<../여행 계획.md>)"
+    },
+    {
+      "fixed": 1,
+      "name": "옮기기 — 다른 최상위 폴더 안으로",
+      "new": "독서/2026",
+      "note": "회의/2026/n.md",
+      "old": "회의/2026",
+      "retargeted": "[메모](../../메모.md) [위](../../회의/요약.md)",
+      "text": "[메모](../../메모.md) [위](../요약.md)"
     }
   ],
   "scrollGaugeCases": [

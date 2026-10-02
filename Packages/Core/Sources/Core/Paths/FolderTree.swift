@@ -68,6 +68,24 @@ public enum FolderTree {
         return up.isEmpty ? name : up + "/" + name
     }
 
+    /// 폴더를 `parent` 안으로 옮긴 경로 — 이름은 그대로 (204). `parent` 가 빈 문자열이면 맨 위로.
+    public static func moved(_ path: String, into parent: String) -> String {
+        let name = path.split(separator: "/").last.map(String.init) ?? path
+        return parent.isEmpty ? name : parent + "/" + name
+    }
+
+    /// 폴더를 **옮겨 넣을 수 있는 자리** (204) — 맨 위(빈 문자열, 이미 맨 위면 빼고)와 최상위 폴더들.
+    /// 자기 자신 · 지금 있는 자리는 뺀다. 최상위 폴더 안으로만 넣으므로 옮긴 폴더는 **두 단계**에 선다
+    /// (`creatableDepth` 와 같은 선). 그 안의 폴더는 함께 한 단계씩 내려가 열어서 들어가는 자리가 된다.
+    public static func moveTargets(for path: String, in paths: [String]) -> [String] {
+        let here = parent(of: path)
+        var out: [String] = here.isEmpty ? [] : [""]
+        for top in children(of: "", in: paths) where top != path && top != here {
+            out.append(top)
+        }
+        return out
+    }
+
     /// 폴더가 `old` 에서 `new` 로 옮겨 갔을 때 `path` 의 새 자리 — 그 폴더거나 그 안이면. 아니면 `nil`.
     /// 보고 있던 폴더가 이름이 바뀐 폴더의 **안**이어도 따라간다.
     public static func rebased(_ path: String, from old: String, to new: String) -> String? {

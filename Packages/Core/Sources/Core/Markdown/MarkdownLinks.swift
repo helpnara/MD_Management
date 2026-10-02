@@ -188,6 +188,10 @@ public enum MarkdownLinks {
     /// 노트 하나의 링크 가운데 `old` 안을 가리키던 것만 `new` 안으로 옮겨 적는다. 노트 자신이 `old`
     /// 안에 있었으면 **노트의 자리도 옮긴 뒤** 상대 링크를 다시 계산한다 — 안에서 안을 가리키는 보통
     /// 링크는 그대로 남는다. 바깥 주소 · 앵커 · 다른 폴더는 손대지 않는다. 옮기기(T1)와 같은 글쓰기다.
+    ///
+    /// **폴더를 다른 폴더 안으로 옮길 때도 이것 하나다** (204). 그때는 안의 노트가 한 단계 깊어지거나 얕아져서
+    /// 바깥을 가리키던 `../메모.md` 가 엉뚱한 곳을 가리킨다 — 안의 노트의 링크는 **새 자리에서 같은 파일에 닿지
+    /// 않으면** 다시 계산한다. 이름만 바꿀 때는 깊이가 같아 늘 닿으므로 손대지 않는다.
     public static func retargeted(_ text: String, notePath: String,
                                   fromFolder oldFolder: String, toFolder newFolder: String) -> Repair {
         let old = Paths.normalized(oldFolder), new = Paths.normalized(newFolder)
@@ -221,9 +225,19 @@ public enum MarkdownLinks {
             anchor = String(inner[hash...])
             target = String(inner[inner.startIndex..<hash])
         }
-        guard case .relative(let resolved) = Paths.resolve(link: target, fromNoteAt: noteOld),
-              resolved.hasPrefix(old + "/") else { return raw }
-        let moved = new + String(resolved.dropFirst(old.count))
+        guard case .relative(let resolved) = Paths.resolve(link: target, fromNoteAt: noteOld) else { return raw }
+        let moved: String
+        if resolved.hasPrefix(old + "/") {
+            moved = new + String(resolved.dropFirst(old.count))
+        } else if noteOld != noteNew {
+            // 안의 노트가 바깥을 가리킨다 (204) — 새 자리에서도 같은 파일에 닿으면 그대로.
+            if case .relative(let again) = Paths.resolve(link: target, fromNoteAt: noteNew), again == resolved {
+                return raw
+            }
+            moved = resolved
+        } else {
+            return raw
+        }
         let link = Paths.relativeLink(from: Paths.directory(of: noteNew), to: moved) + anchor
         guard link != inner else { return raw }
         return (wrapped || link.contains(" ")) ? "<" + link + ">" : link

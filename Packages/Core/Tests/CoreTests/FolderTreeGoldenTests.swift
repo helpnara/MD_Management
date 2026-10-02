@@ -23,6 +23,11 @@ final class FolderTreeGoldenTests: XCTestCase {
             let new: String
             let result: String?
         }
+        struct Move: Decodable {
+            let path: String
+            let into: String
+            let result: String
+        }
         struct Case: Decodable {
             let name: String
             let paths: [String]
@@ -31,6 +36,8 @@ final class FolderTreeGoldenTests: XCTestCase {
             let children: [String: [String]]
             let rename: Rename?
             let rebase: [Rebase]?
+            let move: [Move]?
+            let targets: [String: [String]]?
         }
         let folderTreeCases: [Case]
     }
@@ -55,6 +62,15 @@ final class FolderTreeGoldenTests: XCTestCase {
             for rebase in item.rebase ?? [] {
                 XCTAssertEqual(FolderTree.rebased(rebase.path, from: rebase.old, to: rebase.new), rebase.result,
                                "따라가기 \(rebase.path) — [\(item.name)]")
+            }
+            // 204 — 다른 폴더 안으로 옮기기.
+            for move in item.move ?? [] {
+                XCTAssertEqual(FolderTree.moved(move.path, into: move.into), move.result,
+                               "옮기기 \(move.path) → \(move.into) — [\(item.name)]")
+            }
+            for (folder, targets) in item.targets ?? [:] {
+                XCTAssertEqual(FolderTree.moveTargets(for: folder, in: item.paths), targets,
+                               "옮길 자리 \(folder) — [\(item.name)]")
             }
         }
     }

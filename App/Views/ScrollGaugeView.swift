@@ -7,15 +7,16 @@ import Core
 /// `ScrollGauge.thumb` 하나다. 스크롤 뷰의 **자식**으로 붙어 화면과 함께 움직이므로, 자리를 매번 지금 보이는 칸에 맞춰 놓는다
 /// (iOS 의 스크롤 표시가 하는 방식).
 ///
-/// **움직이는 동안에는 비켜 준다.** 손으로 미는 동안에는 iOS 의 스크롤 표시가 나타나고 — 길게 눌러 끌 수도 있다 — 둘이 겹치면
-/// 어지럽다. 멈추고 잠시 뒤 다시 나타난다. 누름은 받지 않는다 — 글 고르기 · 링크 누르기를 가로채지 않게.
+/// **막대는 하나다** (빌드 72 · 10번, 2026-10-02 사용자 — *iOS 기본 스크롤과 앱 자체 스크롤이 꼭 2개여야 해? 상식과 벗어난다*).
+/// iOS 의 스크롤 표시는 멈추면 사라지고 늘 켜 두는 설정이 없어 이 막대를 그렸다. 빌드 72 는 iOS 표시를 살려 두고 미는 동안
+/// 이 막대가 비켜 주게 했는데, 한 가지를 두 모양이 번갈아 보여 주었다. 이제 **iOS 표시를 끄고** 이 막대가 밀 때도 손을 따라
+/// 움직인다. 잃는 것은 iOS 표시를 길게 눌러 끄는 빠른 넘기기 하나. 누름은 받지 않는다 — 글 고르기 · 링크 누르기를 가로채지 않게.
 @MainActor
 final class ScrollGaugeView: UIView {
 
     private weak var scrollView: UIScrollView?
     private var observations: [NSKeyValueObservation] = []
     private let thumb = UIView()
-    private var reveal: Task<Void, Never>?
 
     /// 스크롤 뷰에 막대를 붙인다. 막대는 스크롤 뷰의 자식이라 따로 붙들어 둘 필요가 없다.
     @discardableResult
@@ -27,6 +28,7 @@ final class ScrollGaugeView: UIView {
         gauge.thumb.backgroundColor = .secondaryLabel
         gauge.addSubview(gauge.thumb)
         gauge.isHidden = true
+        scrollView.showsVerticalScrollIndicator = false
         scrollView.addSubview(gauge)
         gauge.scrollView = scrollView
         gauge.observations = [
@@ -68,19 +70,5 @@ final class ScrollGaugeView: UIView {
         thumb.layer.cornerRadius = width / 2
         // 글 조각들이 새로 붙어도 막대가 그 위에 오게.
         scrollView.bringSubviewToFront(self)
-
-        let moving = scrollView.isTracking || scrollView.isDragging || scrollView.isDecelerating
-        if moving, alpha > 0 {
-            UIView.animate(withDuration: 0.15) { self.alpha = 0 }
-        }
-        if moving || alpha < 1 {
-            // 멈추고 잠시 뒤 다시 — iOS 의 스크롤 표시가 사라질 즈음.
-            reveal?.cancel()
-            reveal = Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled, let self else { return }
-                UIView.animate(withDuration: 0.25) { self.alpha = 1 }
-            }
-        }
     }
 }
