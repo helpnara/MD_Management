@@ -42,6 +42,8 @@ struct NoteWebView: UIViewRepresentable {
         // 핀치 줌은 웹뷰가 한다.
         webView.scrollView.minimumZoomScale = 1
         webView.scrollView.maximumZoomScale = 4
+        // 늘 보이는 스크롤 막대 (202) — 쓰기 화면과 같은 것.
+        ScrollGaugeView.attach(to: webView.scrollView)
         return webView
     }
 

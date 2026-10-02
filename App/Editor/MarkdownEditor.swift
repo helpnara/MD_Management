@@ -243,6 +243,8 @@ struct MarkdownEditor: UIViewRepresentable {
 
         context.coordinator.view = view
         context.coordinator.sheet = EditorStyleSheet()
+        // 늘 보이는 스크롤 막대 (202) — 읽기 화면과 같은 것.
+        ScrollGaugeView.attach(to: view)
         view.onTab = { [weak coordinator = context.coordinator] deeper in
             coordinator?.shiftIndent(deeper)
         }

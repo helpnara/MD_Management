@@ -40,6 +40,15 @@ struct NoteSummary: Identifiable, Hashable, Sendable {
 }
 
 /// 사이드바의 폴더 한 줄.
+/// 폴더 화면의 줄 하나 (203) — 폴더와 그 단계, 바로 아래 폴더 수.
+struct SidebarFolder: Identifiable, Hashable, Sendable {
+    let folder: FolderSummary
+    let depth: Int
+    let subfolders: Int
+
+    var id: String { folder.relativePath }
+}
+
 struct FolderSummary: Identifiable, Hashable, Sendable {
     /// 폴더 기준 상대경로. 최상위는 빈 문자열.
     let relativePath: String

@@ -2547,6 +2547,253 @@
       "shallower": null
     }
   ],
+  "folderTreeCases": [
+    {
+      "children": {},
+      "depths": [],
+      "name": "폴더 없음",
+      "paths": [],
+      "sidebar": []
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        1
+      ],
+      "name": "최상위만",
+      "paths": [
+        "독서",
+        "회의"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "독서",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {
+        "독서": [],
+        "회의": [
+          "회의/2026",
+          "회의/기획"
+        ]
+      },
+      "depths": [
+        1,
+        1,
+        2,
+        2
+      ],
+      "name": "두 단계",
+      "paths": [
+        "독서",
+        "회의",
+        "회의/2026",
+        "회의/기획"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "독서",
+          "subfolders": 0
+        },
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 2
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 0
+        },
+        {
+          "depth": 2,
+          "path": "회의/기획",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {
+        "회의/2026": [
+          "회의/2026/1월",
+          "회의/2026/2월"
+        ],
+        "회의/2026/1월": [
+          "회의/2026/1월/주간"
+        ]
+      },
+      "depths": [
+        1,
+        2,
+        3,
+        3,
+        4
+      ],
+      "name": "세 단계 이상은 표시만",
+      "paths": [
+        "회의",
+        "회의/2026",
+        "회의/2026/1월",
+        "회의/2026/2월",
+        "회의/2026/1월/주간"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 2
+        }
+      ]
+    },
+    {
+      "children": {},
+      "depths": [
+        2,
+        1
+      ],
+      "name": "부모가 없는 하위 폴더는 안 보인다",
+      "paths": [
+        "회의/2026",
+        "독서"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "독서",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        2
+      ],
+      "name": "하위 폴더 이름 바꾸기 — 같은 부모 안",
+      "paths": [
+        "회의",
+        "회의/2026"
+      ],
+      "rename": {
+        "path": "회의/2026",
+        "result": "회의/2027",
+        "to": "2027"
+      },
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {},
+      "depths": [
+        1
+      ],
+      "name": "최상위 폴더 이름 바꾸기",
+      "paths": [
+        "회의"
+      ],
+      "rename": {
+        "path": "회의",
+        "result": "모임",
+        "to": "모임"
+      },
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 0
+        }
+      ]
+    },
+    {
+      "children": {},
+      "depths": [
+        1,
+        2
+      ],
+      "name": "보던 폴더 따라가기",
+      "paths": [
+        "회의",
+        "회의/2026"
+      ],
+      "rebase": [
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "회의",
+          "result": "모임"
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "회의/2026",
+          "result": "모임/2026"
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "회의/2026/1월",
+          "result": "모임/2026/1월"
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "회의록",
+          "result": null
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "독서",
+          "result": null
+        },
+        {
+          "new": "모임",
+          "old": "회의",
+          "path": "",
+          "result": null
+        }
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 0
+        }
+      ]
+    }
+  ],
   "formatCases": [
     {
       "activeAfter": {
@@ -6920,6 +7167,119 @@
       "old": "회의",
       "retargeted": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n",
       "text": "[a](회의/assets/a.png 설명\r\n다음 줄 (괄호) 끝)\r\n"
+    }
+  ],
+  "scrollGaugeCases": [
+    {
+      "content": 500,
+      "minimum": 30,
+      "name": "화면보다 짧은 노트 — 안 그린다",
+      "offset": 0,
+      "thumb": null,
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 700,
+      "minimum": 30,
+      "name": "딱 한 화면 — 안 그린다",
+      "offset": 0,
+      "thumb": null,
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 1400,
+      "minimum": 30,
+      "name": "두 화면 · 맨 위",
+      "offset": 0,
+      "thumb": {
+        "length": 340.0,
+        "start": 0.0
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 1400,
+      "minimum": 30,
+      "name": "두 화면 · 가운데",
+      "offset": 350,
+      "thumb": {
+        "length": 340.0,
+        "start": 170.0
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 1400,
+      "minimum": 30,
+      "name": "두 화면 · 맨 아래",
+      "offset": 700,
+      "thumb": {
+        "length": 340.0,
+        "start": 340.0
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 140000,
+      "minimum": 30,
+      "name": "아주 긴 노트 — 가장 짧은 길이에서 멈춘다",
+      "offset": 70000,
+      "thumb": {
+        "length": 30,
+        "start": 326.6331658291457
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 2100,
+      "minimum": 30,
+      "name": "맨 위를 지나 당김 — 위에 붙는다",
+      "offset": -80,
+      "thumb": {
+        "length": 226.66666666666666,
+        "start": 0.0
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 2100,
+      "minimum": 30,
+      "name": "맨 아래를 지나 당김 — 아래에 붙는다",
+      "offset": 1500,
+      "thumb": {
+        "length": 226.66666666666666,
+        "start": 453.33333333333337
+      },
+      "track": 680,
+      "viewport": 700
+    },
+    {
+      "content": 5000,
+      "minimum": 30,
+      "name": "트랙이 가장 짧은 길이보다 짧다",
+      "offset": 100,
+      "thumb": {
+        "length": 20,
+        "start": 0.0
+      },
+      "track": 20,
+      "viewport": 700
+    },
+    {
+      "content": 1000,
+      "minimum": 30,
+      "name": "보이는 칸이 0 — 안 그린다",
+      "offset": 0,
+      "thumb": null,
+      "track": 0,
+      "viewport": 0
     }
   ],
   "styleCases": [

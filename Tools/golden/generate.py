@@ -58,6 +58,8 @@ RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
 NESTING_CASES = ROOT / "Tools" / "golden" / "nesting-cases.json"
 EMPHASIS_CASES = ROOT / "Tools" / "golden" / "emphasis-cases.json"
 CONTEXT_CASES = ROOT / "Tools" / "golden" / "context-cases.json"
+FOLDER_TREE_CASES = ROOT / "Tools" / "golden" / "folder-tree-cases.json"
+SCROLL_GAUGE_CASES = ROOT / "Tools" / "golden" / "scroll-gauge-cases.json"
 RESTYLE_CASES = ROOT / "Tools" / "golden" / "restyle-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
@@ -709,6 +711,88 @@ def build_context_cases() -> list[dict]:
             raise SystemExit(f"::error::[{case['name']}] 수평선 수가 다르다 — cmark {rendered.count('<hr />')} · 셈 {breaks}:\n{rendered}")
         out.append({"name": case["name"], "lines": lines, "roles": context_roles(lines),
                     "tentative": [is_tentative(line) for line in lines]})
+    return out
+
+
+# ── 폴더 안의 폴더 (203) — Swift `FolderTree` 와 같은 셈 ─────────────────────────
+
+def folder_depth(path: str) -> int:
+    return 0 if not path else len([p for p in path.split("/") if p])
+
+
+def folder_parent(path: str) -> str:
+    return path.rsplit("/", 1)[0] if "/" in path else ""
+
+
+def folder_children(folder: str, paths: list[str]) -> list[str]:
+    return [p for p in paths if p and folder_parent(p) == folder]
+
+
+def folder_sidebar(paths: list[str]) -> list[dict]:
+    out = []
+    for top in folder_children("", paths):
+        below = folder_children(top, paths)
+        out.append({"path": top, "depth": 1, "subfolders": len(below)})
+        for child in below:
+            out.append({"path": child, "depth": 2, "subfolders": len(folder_children(child, paths))})
+    return out
+
+
+def folder_renamed(path: str, name: str) -> str:
+    up = folder_parent(path)
+    return name if not up else up + "/" + name
+
+
+def folder_rebased(path: str, old: str, new: str):
+    if not old:
+        return None
+    if path == old:
+        return new
+    if not path.startswith(old + "/"):
+        return None
+    return new + path[len(old):]
+
+
+def build_folder_tree_cases() -> list[dict]:
+    spec = json.loads(FOLDER_TREE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        paths = case["paths"]
+        item = {"name": case["name"], "paths": paths, "sidebar": folder_sidebar(paths),
+                "depths": [folder_depth(p) for p in paths],
+                "children": {f: folder_children(f, paths) for f in case.get("open", [])}}
+        if "rename" in case:
+            r = case["rename"]
+            item["rename"] = {**r, "result": folder_renamed(r["path"], r["to"])}
+        if "rebase" in case:
+            item["rebase"] = [{**r, "result": folder_rebased(r["path"], r["old"], r["new"])}
+                              for r in case["rebase"]]
+        out.append(item)
+    return out
+
+
+# ── 늘 보이는 스크롤 막대 (202) — Swift `ScrollGauge.thumb` 와 같은 셈 ──────────────────
+
+def scroll_thumb(content: float, viewport: float, offset: float, track: float, minimum: float):
+    import math
+    if not all(math.isfinite(v) for v in (content, viewport, offset, track)):
+        return None
+    if viewport <= 0 or track <= 0 or content <= viewport + 1:
+        return None
+    length = min(track, max(minimum, track * viewport / content))
+    progress = min(1.0, max(0.0, offset / (content - viewport)))
+    return {"start": (track - length) * progress, "length": length}
+
+
+def build_scroll_gauge_cases() -> list[dict]:
+    spec = json.loads(SCROLL_GAUGE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        thumb = scroll_thumb(case["content"], case["viewport"], case["offset"], case["track"], case["minimum"])
+        if thumb is not None:
+            if not (0 <= thumb["start"] and thumb["start"] + thumb["length"] <= case["track"] + 1e-9):
+                raise SystemExit(f"::error::[{case['name']}] 막대가 트랙 밖으로 나간다: {thumb}")
+        out.append({**case, "thumb": thumb})
     return out
 
 
@@ -2378,6 +2462,8 @@ def build() -> dict:
         "nestingCases": build_nesting_cases(),
         "emphasisCases": build_emphasis_cases(),
         "contextCases": build_context_cases(),
+        "folderTreeCases": build_folder_tree_cases(),
+        "scrollGaugeCases": build_scroll_gauge_cases(),
         "restyleCases": build_restyle_cases(),
     }
 
@@ -3217,7 +3303,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("목록 모양", "restyleCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]

@@ -89,10 +89,43 @@ final class LibraryModel: ObservableObject {
             : (folders.first { $0.relativePath == folder }?.noteCount ?? 0)
     }
 
-    /// 전체 노트 수 — 폴더 화면에 보이는 숫자들의 **합**이다. 합과 다르면 사람이 더해 보고
-    /// 어긋난 것을 찾는다. 앱이 보여 주는 폴더는 최상위와 그 바로 아래 한 단계뿐이다 (52).
+    /// 전체 노트 수 — 모든 폴더의 숫자를 **더한 것**이다 (203 부터는 깊은 폴더까지). 폴더 화면에는 두 단계까지
+    /// 보이고, 더 깊은 폴더는 열어서 들어가야 보인다.
     var totalNoteCount: Int {
         folders.reduce(rootNoteCount) { $0 + $1.noteCount }
+    }
+
+    // MARK: - 폴더 안의 폴더 (203)
+    //
+    // `folders` 는 **모든 깊이**다. 무엇을 어디에 보일지는 Core 의 `FolderTree` 가 정한다 — 여기서는 요약을 붙여 건넨다.
+
+    /// 폴더 화면의 줄 — 최상위와 그 바로 아래 (두 단계).
+    var sidebarFolders: [SidebarFolder] {
+        let byPath = Dictionary(folders.map { ($0.relativePath, $0) }, uniquingKeysWith: { first, _ in first })
+        return FolderTree.sidebar(folders.map(\.relativePath)).compactMap { entry in
+            byPath[entry.path].map { SidebarFolder(folder: $0, depth: entry.depth, subfolders: entry.subfolders) }
+        }
+    }
+
+    /// 폴더 하나의 **바로 아래** 폴더들 — 이름 차례.
+    func subfolders(of folder: String) -> [FolderSummary] {
+        let set = Set(FolderTree.children(of: folder, in: folders.map(\.relativePath)))
+        return folders.filter { set.contains($0.relativePath) }
+    }
+
+    /// 폴더와 그 안 모든 폴더의 노트 수 — 폴더를 지울 때 확인창이 말한다.
+    func noteCountInside(_ folder: String) -> Int {
+        folders.filter { FolderTree.isInside($0.relativePath, folder) }.reduce(0) { $0 + $1.noteCount }
+    }
+
+    /// 새 폴더를 만들 자리 — 최상위면 빈 문자열 (203).
+    @Published var newFolderParent = ""
+
+    func beginCreateFolder(in parent: String = "") {
+        guard FolderTree.depth(of: parent) < FolderTree.creatableDepth else { return }
+        newFolderParent = parent
+        newFolderName = ""
+        creatingFolder = true
     }
 
     /// **목록에 없는데 상세 칸에 떠 있는 노트** (T7). 링크를 따라온 것 — `assets/` 안의
@@ -910,16 +943,18 @@ final class LibraryModel: ObservableObject {
         }
     }
 
-    /// 최상위에 하위 폴더를 만들고 그 폴더로 간다 (52).
+    /// 폴더를 만들고 그 폴더로 간다 (52). 자리는 `newFolderParent` — 최상위거나 최상위 폴더 안 (203).
     func finishCreateFolder() async {
         guard let store else { return }
         creatingFolder = false
         let name = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parent = newFolderParent
         newFolderName = ""
+        newFolderParent = ""
         guard !name.isEmpty else { return }
         await save()
         do {
-            let path = try await store.createSubfolder(named: name)
+            let path = try await store.createSubfolder(named: name, in: parent)
             await reloadFolders()
             selectedFolder = path
             lastError = nil
@@ -956,10 +991,11 @@ final class LibraryModel: ObservableObject {
             let renamed = try await store.renameFolderFixingLinks(folder.relativePath, to: name)
             let moved = renamed.path
             pinned = await store.followPins(from: folder.relativePath, to: moved)
-            let wasViewing = selectedFolder == folder.relativePath
-            if wasViewing { selectedNoteID = nil }
+            // 보고 있던 폴더가 이 폴더거나 **그 안**이어도 따라간다 (203).
+            let following = FolderTree.rebased(selectedFolder, from: folder.relativePath, to: moved)
+            if following != nil { selectedNoteID = nil }
             await reloadFolders()
-            if wasViewing { selectedFolder = moved }
+            if let following { selectedFolder = following }
             // 고친 노트가 지금 열려 있을 수 있다 — 목록과 글을 다시 읽는다.
             if renamed.notes > 0 { await reloadNotes() }
             log("폴더 이름: \(folder.relativePath) → \(moved) · 링크 \(renamed.fixed)개(노트 \(renamed.notes)) · 못 고침 \(renamed.failed) · 못 봄 \(renamed.unread)")
@@ -981,7 +1017,8 @@ final class LibraryModel: ObservableObject {
         trashingFolder = nil
         await save()
         do {
-            let wasViewing = selectedFolder == folder.relativePath
+            // 보고 있던 폴더가 이 폴더거나 그 안이면 최상위로 (203).
+            let wasViewing = FolderTree.isInside(selectedFolder, folder.relativePath)
             if wasViewing { selectedNoteID = nil }
             _ = try await store.trashFolder(folder.relativePath)
             pinned = await store.unpin(folder.relativePath)

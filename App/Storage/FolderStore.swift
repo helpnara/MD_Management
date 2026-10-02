@@ -151,25 +151,42 @@ actor FolderStore {
         return count
     }
 
-    /// 하위 폴더 목록 (사이드바용). 숨김 폴더는 뺀다 — 옵시디언 볼트의 `.obsidian/` (A6).
+    /// 하위 폴더 목록 — **모든 깊이** (203). 숨김 폴더는 뺀다 — 옵시디언 볼트의 `.obsidian/` (A6).
+    ///
+    /// 폴더 화면은 이 가운데 두 단계까지 펼치고(`FolderTree.sidebar`), 더 깊은 폴더는 두 번째 단계 폴더를 열면 나온다.
+    /// 노트 수는 폴더마다 **바로 든** 노트다 (153). 차례는 이름 차례 — 부모 아래 자식이 같은 셈으로 놓인다.
     func folders() -> [FolderSummary] {
         openScopeIfNeeded()
         // **이름만 먼저 모으고 조정 밖에서 센다** (153). 조정 읽기 **안에서** 또 조정
         // 읽기를 부르면 겹친다 — 읽기끼리는 막지 않지만 겹쳐 부를 까닭이 없다.
-        var names: [String] = []
-        coordinateRead(root) { url in
-            guard let entries = try? FileManager.default.contentsOfDirectory(
-                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
-            ) else { return }
-            for entry in entries {
-                let name = Paths.normalized(entry.lastPathComponent)
-                guard !name.hasPrefix("."), name != "assets" else { continue }
-                guard (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { continue }
-                names.append(name)
+        var paths: [String] = []
+        var pending: [(path: String, depth: Int)] = [("", 0)]
+        while let next = pending.popLast() {
+            let folder = next.path
+            let depth = next.depth
+            // 아주 깊은 폴더는 끝까지 안 내려간다 — 고리(별칭)나 남의 앱 자료가 끝없이 깊을 때.
+            guard depth < 12 else { continue }
+            let url = folder.isEmpty ? root : root.appendingPathComponent(folder)
+            coordinateRead(url) { readURL in
+                guard let entries = try? FileManager.default.contentsOfDirectory(
+                    at: readURL, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+                ) else { return }
+                for entry in entries {
+                    let name = Paths.normalized(entry.lastPathComponent)
+                    guard !name.hasPrefix("."), name != "assets" else { continue }
+                    guard (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { continue }
+                    let path = folder.isEmpty ? name : folder + "/" + name
+                    paths.append(path)
+                    pending.append((path, depth + 1))
+                }
             }
         }
-        return names
-            .map { FolderSummary(relativePath: $0, name: $0, noteCount: noteCount(in: $0)) }
+        return paths
+            .map { path in
+                FolderSummary(relativePath: path,
+                              name: path.split(separator: "/").last.map(String.init) ?? path,
+                              noteCount: noteCount(in: path))
+            }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
@@ -708,30 +725,37 @@ actor FolderStore {
         }
     }
 
-    /// 최상위에 하위 폴더를 만든다. 이름은 파일 이름과 같은 규칙으로 다듬고,
+    /// `parent` 안에 폴더를 만든다 (최상위면 빈 문자열). 이름은 파일 이름과 같은 규칙으로 다듬고,
     /// 같은 이름이 있으면 `이름 2` 로 비켜 간다. 만든 폴더의 상대경로를 준다.
-    func createSubfolder(named name: String) throws -> String {
+    /// **두 단계까지만** 만든다 (203, `FolderTree.creatableDepth`) — 부르는 쪽이 지키지만 여기서도 막는다.
+    func createSubfolder(named name: String, in parent: String = "") throws -> String {
         openScopeIfNeeded()
+        guard FolderTree.depth(of: parent) < FolderTree.creatableDepth else {
+            throw CocoaError(.fileWriteNoPermission)
+        }
         let safe = Paths.safeFileName(name, fallback: "새 폴더")
-        var chosen = safe
+        let base = parent.isEmpty ? safe : parent + "/" + safe
+        var chosen = base
         for attempt in 2...999 {
             if !FileManager.default.fileExists(atPath: root.appendingPathComponent(chosen).path) { break }
-            chosen = "\(safe) \(attempt)"
+            chosen = "\(base) \(attempt)"
         }
         try createFolder(chosen)
         return chosen
     }
 
-    /// 하위 폴더 이름을 바꾼다. 같은 이름이 있으면 `이름 2`. 새 상대경로를 준다.
+    /// 폴더 이름을 바꾼다 — **같은 부모 안에서** (203). 같은 이름이 있으면 `이름 2`. 새 상대경로를 준다.
+    /// 예전에는 새 이름을 최상위에 만들었다 — 하위 폴더에 쓰면 최상위로 빠져나갔을 것이다.
     func renameFolder(_ relativePath: String, to newName: String) throws -> String {
         openScopeIfNeeded()
         let safe = Paths.safeFileName(newName, fallback: "새 폴더")
-        guard safe != relativePath else { return relativePath }
-        var chosen = safe
+        let base = FolderTree.renamed(relativePath, to: safe)
+        guard base != relativePath else { return relativePath }
+        var chosen = base
         for attempt in 2...999 {
             if chosen == relativePath { return relativePath }
             if !FileManager.default.fileExists(atPath: root.appendingPathComponent(chosen).path) { break }
-            chosen = "\(safe) \(attempt)"
+            chosen = "\(base) \(attempt)"
         }
         try move(from: root.appendingPathComponent(relativePath),
                  to: root.appendingPathComponent(chosen))
