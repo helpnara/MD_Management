@@ -56,6 +56,10 @@ final class MarkdownTextView: UITextView {
         /// **이 앱에서 복사한 글이면 원래 노트의 경로** (177 둘째). 다른 곳에서 왔거나, 복사한 뒤
         /// 클립보드가 바뀌었으면 `nil` — 그때는 이름으로 찾는다(144).
         let sourceNote: String?
+        /// 클립보드에 실린 갈래 이름들 — 진단 화면이 마지막 붙여넣기를 보여 줄 때 쓴다 (206).
+        let types: [String]
+        /// **서식 있는 글에 든 사진들** (207) — 문서 차례. 사진이 있을 때만 읽으므로 늦게 부른다.
+        let loadImages: @MainActor () -> [Data]
     }
 
     // MARK: 복사 — 원래 노트를 함께 싣는다 (177 둘째)
@@ -114,7 +118,9 @@ final class MarkdownTextView: UITextView {
                               urlName: Self.urlName(from: board),
                               lineBefore: lineBeforeCaret(),
                               selection: text(in: target) ?? "",
-                              sourceNote: Self.sourceNote(from: board, plain: plain))
+                              sourceNote: Self.sourceNote(from: board, plain: plain),
+                              types: board.types,
+                              loadImages: { Self.images(from: board) })
         guard let made = onPaste?(item), made != plain else {
             super.paste(sender)
             return
@@ -138,6 +144,28 @@ final class MarkdownTextView: UITextView {
         if let text = value as? String { return text }
         if let data = value as? Data { return String(data: data, encoding: .utf8) }
         return nil
+    }
+
+    /// **서식 있는 글 속의 사진** (207) — 메모 · 메일처럼 글과 사진을 함께 복사하면 사진은 RTFD 갈래의 첨부로 온다.
+    /// 문서 차례대로 원래 파일 그대로(PNG · JPEG · HEIC)를 준다. 그 갈래가 없으면 클립보드의 사진들.
+    private static func images(from board: UIPasteboard) -> [Data] {
+        for type in ["com.apple.flat-rtfd", "com.apple.rtfd"] {
+            guard let data = board.data(forPasteboardType: type),
+                  let text = try? NSAttributedString(
+                    data: data, options: [.documentType: NSAttributedString.DocumentType.rtfd],
+                    documentAttributes: nil) else { continue }
+            var found: [Data] = []
+            text.enumerateAttribute(.attachment, in: NSRange(location: 0, length: text.length)) { value, _, _ in
+                guard let attachment = value as? NSTextAttachment else { return }
+                if let contents = attachment.fileWrapper?.regularFileContents ?? attachment.contents {
+                    found.append(contents)
+                } else if let png = attachment.image?.pngData() {
+                    found.append(png)
+                }
+            }
+            if !found.isEmpty { return found }
+        }
+        return board.images?.compactMap { $0.pngData() } ?? []
     }
 
     /// 주소와 함께 오는 **페이지 이름**. 사파리가 이 갈래로 제목을 실어 준다.
@@ -307,6 +335,8 @@ struct MarkdownEditor: UIViewRepresentable {
         private var isStyling = false
         /// 지난번 머리말 길이. 바뀌면 그 구간을 통째로 다시 칠한다 (`MarkdownStyler.restyle`).
         private var headerLength = 0
+        /// 지난번 코드 울타리 줄 수 (200). 바뀌면 고친 자리부터 글 끝까지 다시 칠한다 (`MarkdownStyler.restyle`).
+        private var fenceCount = -1
         /// **지금 어느 줄이 원문을 드러내고 있나** (162). 무엇을 지우고 무엇을 드러낼지는
         /// `Core` 의 `MarkerFocus` 가 정한다 — 여기서는 커서 자리와 *지금 칠해도 되나* 만
         /// 말하고 그 결과를 옮긴다. 예전에는 대리자 셋이 각자 판단했고, **화면은 안 지운 채
@@ -738,7 +768,7 @@ struct MarkdownEditor: UIViewRepresentable {
             let caret = view.isFirstResponder
                 ? min(max(view.selectedRange.location, 0), text.length) : nil
             isStyling = true
-            headerLength = MarkdownStyler.restyleAll(storage, with: sheet,
+            headerLength = MarkdownStyler.restyleAll(storage, with: sheet, fences: &fenceCount,
                                                      cursor: caret ?? MarkdownStyler.noCursor)
             isStyling = false
             focus = MarkerFocus.afterWholeRepaint(cursor: caret.map { paragraph(at: $0, in: text) })
@@ -770,7 +800,8 @@ struct MarkdownEditor: UIViewRepresentable {
                 // 고치는 중인 문단에 커서가 있다 — 선택값은 아직 옛것일 수 있으므로 고친 자리를 쓴다.
                 let cursor = edited.location
                 headerLength = MarkdownStyler.restyle(storage, touching: edited, with: sheet,
-                                                      previousHeader: headerLength, cursor: cursor)
+                                                      previousHeader: headerLength, fences: &fenceCount,
+                                                      cursor: cursor)
                 isStyling = false
                 // **여기서도 문단 하나가 드러난다.** 적어 두지 않으면 아무도 그것을 못 지운다
                 // (162). *갚을 것이 있다* 고 함께 적어, 선택이 자리를 잡으면 반드시 맞춘다.

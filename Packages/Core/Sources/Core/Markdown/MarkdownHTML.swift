@@ -87,7 +87,10 @@ public enum MarkdownHTML {
         let document = Document(parsing: body, options: [.disableSmartOpts])
 
         var rewriter = NoteRewriter(notePath: Paths.normalized(notePath), existing: existing)
-        let rewritten = rewriter.visit(document) ?? document
+        var rewritten = rewriter.visit(document) ?? document
+        // 제목 안의 굵게 · 기울임 · 코드 · 링크를 살린다 (201) — 위에서 링크 · 이스케이프를 다 고친 **뒤에** 한다.
+        var headings = HeadingRewriter()
+        rewritten = headings.visit(rewritten) ?? rewritten
 
         // 블록마다 원문 줄 범위를 붙인다 — 읽기 ↔ 쓰기를 오가도 보던 자리를 잇는다 (176).
         // 짝이 안 맞으면 `LineMap` 이 손대지 않고 돌려준다.
@@ -287,6 +290,24 @@ public enum MarkdownHTML {
 /// **왜 AST 를 고치나.** `HTMLFormatter` 가 내보낸 HTML 을 나중에 문자열로
 /// 손보면 따옴표 · 중첩 때문에 반드시 틀린다. 트리에서 고치면 형식 생성은
 /// 라이브러리에 맡기고 우리는 뜻만 바꾼다.
+/// **제목 안의 글 모양** (201, 2026-10-01 자동 검사가 찾았다). `HTMLFormatter` 는 제목을 글자만(`plainText`) 그린다 —
+/// `## **설계**` 의 굵게, `## [회의록](회의.md)` 의 링크가 읽기 화면에서 사라졌다 (쓰기 화면 · 다른 앱은 그린다).
+///
+/// 제목의 글을 **본문 문단과 같은 길**(`HTMLFormatter`)로 그리고 `<hN>` 으로 감싼 날 HTML 덩이로 바꾼다. 날 HTML 덩이는
+/// `HTMLFormatter` 가 글자 그대로 내보내므로 링크 고치기 · 이스케이프는 앞의 `NoteRewriter` 가 이미 한 그대로 남는다.
+/// 블록 차례와 `<hN>` 여는 태그는 그대로라 줄 지도(`LineMap`)도 그대로 맞는다.
+private struct HeadingRewriter: MarkupRewriter {
+    mutating func visitHeading(_ heading: Heading) -> Markup? {
+        let paragraph = Paragraph(heading.inlineChildren.map { $0 })
+        var inner = HTMLFormatter.format(paragraph)
+        if inner.hasPrefix("<p>") { inner.removeFirst(3) }
+        while inner.hasSuffix("\n") { inner.removeLast() }
+        if inner.hasSuffix("</p>") { inner.removeLast(4) }
+        let level = min(max(heading.level, 1), 6)
+        return HTMLBlock("<h\(level)>" + inner + "</h\(level)>\n")
+    }
+}
+
 private struct NoteRewriter: MarkupRewriter {
     let notePath: String
     /// 폴더 안에 실제로 있는 상대경로들. 클로저가 아니라 값이라 저장해도 안전하다.

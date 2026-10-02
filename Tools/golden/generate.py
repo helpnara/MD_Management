@@ -612,6 +612,8 @@ def context_roles(lines: list[str], editor: bool = True) -> list[str]:
         if in_fence:
             if kind == "fence":
                 in_fence = False
+            else:
+                roles[i] = "code"       # 200 — 울타리 안 줄은 글자 그대로 (읽기 화면도 코드로 그린다)
             continue
         if kind == "blank":
             paragraph = None
@@ -684,6 +686,11 @@ def build_context_cases() -> list[dict]:
             want = f"<h{level}>" + htmllib.escape("\n".join(content), quote=True) + f"</h{level}>"
             if want not in rendered:
                 raise SystemExit(f"::error::[{case['name']}] 제목이 cmark 와 다르다 — {want!r} 가 없다:\n{rendered}")
+        # 200 — 코드 역할의 줄은 cmark 도 `<pre>` 안에 글자 그대로 그려야 한다.
+        blocks = "".join(re.findall(r"<pre[^>]*>.*?</pre>", rendered, flags=re.S))
+        for line, role in zip(lines, roles):
+            if role == "code" and line.strip() and htmllib.escape(line.strip(), quote=False) not in blocks:
+                raise SystemExit(f"::error::[{case['name']}] 코드 줄 {line!r} 이 cmark 의 <pre> 안에 없다:\n{rendered}")
         for line, role in zip(lines, roles):
             if role == "continuation" and htmllib.escape(line.strip(" \t"), quote=True) not in rendered:
                 raise SystemExit(f"::error::[{case['name']}] 이어지는 줄 {line!r} 이 글 그대로가 아니다:\n{rendered}")

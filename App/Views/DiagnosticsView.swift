@@ -17,6 +17,7 @@ struct DiagnosticsView: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.dismiss) private var dismiss
     @State private var copied = false
+    @State private var pasteCopied = false
     /// 최근 일을 다 펼쳤나 (T9). 기본은 다섯 줄이다.
     @State private var showsAllEvents = false
 
@@ -150,6 +151,28 @@ struct DiagnosticsView: View {
                         Text("최근 일")
                     } footer: {
                         Text("충돌 · 저장 실패 · 다른 기기의 변경이 여기 쌓입니다. 빨간 띠가 떴는데 이유를 모르겠으면 이것을 복사해 보내 주세요. **복사 단추는 접혀 있어도 갖고 있는 전부를 복사합니다.**")
+                    }
+                }
+
+                // **마지막 붙여넣기** (206) — 메모 · 다른 앱이 클립보드에 무엇을 싣는지 여기서만 볼 수 있다.
+                // 붙여넣은 글이 그대로 담기므로 **사람이 단추를 눌렀을 때만** 클립보드로 나간다.
+                if let paste = library.lastPaste {
+                    Section {
+                        LabeledContent("서식", value: paste.converted ? "마크다운으로 바꿈" : "평문으로 붙임")
+                        LabeledContent("서식 글 길이", value: "\(paste.html.count)자")
+                        LabeledContent("갈래", value: "\(paste.types.count)개")
+                        Button {
+                            UIPasteboard.general.string = (["갈래: " + paste.types.joined(separator: ", "), ""]
+                                                           + [paste.html]).joined(separator: "\n")
+                            pasteCopied = true
+                        } label: {
+                            Label(pasteCopied ? "복사했습니다" : "붙여넣은 서식 복사",
+                                  systemImage: pasteCopied ? "checkmark" : "doc.on.clipboard")
+                        }
+                    } header: {
+                        Text("마지막 붙여넣기")
+                    } footer: {
+                        Text("붙여넣기가 이상하게 바뀌었을 때 이것을 복사해 보내 주세요. **붙여넣은 글이 그대로 담깁니다** — 앱을 끄면 사라집니다.")
                     }
                 }
 

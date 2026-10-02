@@ -13,7 +13,8 @@ import Foundation
 /// | `가나다` 바로 밑 `2. 나` | 번호 목록 | **같은 문단** — 1 이 아닌 번호는 글을 끊고 목록을 못 연다 |
 /// | `가나다` 바로 밑 `    나` (네 칸) | 코드 | **같은 문단** — 코드는 글을 못 끊는다 |
 ///
-/// 여기서는 **줄마다 역할만** 정한다. 칠하기는 편집기가 이 역할을 보고 한다. 울타리(```) 안은 건드리지 않는다.
+/// 여기서는 **줄마다 역할만** 정한다. 칠하기는 편집기가 이 역할을 보고 한다. 울타리(```) 안의 줄은 **코드** 역할이다 —
+/// 줄 하나만 보면 `# 주석` 이 제목, `- 항목` 이 목록처럼 칠해졌다 (200). 읽기 화면은 코드로 그린다.
 /// 목록 · 인용 바로 밑의 글줄은 그 항목에 딸린 줄(게으른 이음)이라 문단을 새로 열지 않는다.
 ///
 /// **파이썬 `context_roles` 와 같은 셈이다** (`Tools/golden`, `contextCases`) — 파이썬은 그 답을 cmark-gfm 이 그린
@@ -29,6 +30,8 @@ public enum BlockContext {
         case underline
         /// 앞 문단에 이어지는 줄 — 목록 · 코드처럼 보여도 **보통 글**이다.
         case continuation
+        /// 코드 울타리(```` ``` ````) **안**의 줄 (200) — `# 주석` · `- 항목` 도 글자 그대로. 울타리 줄 자신은 아니다.
+        case code
     }
 
     /// `lines` 는 **머리말 뒤** 의 줄들 (줄바꿈 없이). 첫 줄 위는 빈 줄로 본다.
@@ -42,7 +45,7 @@ public enum BlockContext {
         for (index, line) in lines.enumerated() {
             let kind = kind(of: line)
             if inFence {
-                if kind == .fence { inFence = false }
+                if kind == .fence { inFence = false } else { roles[index] = .code }
                 continue
             }
             if kind == .blank {

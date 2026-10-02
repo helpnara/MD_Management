@@ -1671,8 +1671,8 @@
       "name": "울타리 안은 안 건드린다",
       "roles": [
         "normal",
-        "normal",
-        "normal",
+        "code",
+        "code",
         "normal"
       ],
       "tentative": [
@@ -1693,7 +1693,7 @@
       "name": "울타리 뒤",
       "roles": [
         "normal",
-        "normal",
+        "code",
         "normal",
         "heading2",
         "underline"
@@ -1950,6 +1950,63 @@
       "tentative": [
         false,
         true
+      ]
+    },
+    {
+      "lines": [
+        "설정:",
+        "",
+        "```",
+        "# 주석",
+        "- 항목",
+        "1. 하나",
+        "**굵게 아님**",
+        "```",
+        "뒤 글"
+      ],
+      "name": "200 — 울타리 안의 제목 · 목록 · 굵게는 코드",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "code",
+        "code",
+        "code",
+        "code",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "```python",
+        "x = 1",
+        "",
+        "# 끝까지"
+      ],
+      "name": "200 — 닫히지 않은 울타리는 끝까지 코드",
+      "roles": [
+        "normal",
+        "code",
+        "code",
+        "code"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
       ]
     }
   ],
@@ -2398,6 +2455,34 @@
       "name": "목록 안",
       "strong": 1,
       "text": "- **기한**(Due)을 적는다"
+    },
+    {
+      "del": 0,
+      "em": 0,
+      "name": "201 — 제목 안의 굵게",
+      "strong": 1,
+      "text": "## **설계** 원칙"
+    },
+    {
+      "del": 0,
+      "em": 1,
+      "name": "201 — 제목 안의 기울임",
+      "strong": 0,
+      "text": "### *기울임* 제목"
+    },
+    {
+      "del": 1,
+      "em": 0,
+      "name": "201 — 제목 안의 취소선",
+      "strong": 0,
+      "text": "# ~~지운~~ 제목"
+    },
+    {
+      "del": 0,
+      "em": 1,
+      "name": "201 — 제목 안의 굵게 · 기울임 함께",
+      "strong": 1,
+      "text": "## **굵게**와 *기울임*"
     }
   ],
   "enterCases": [

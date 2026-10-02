@@ -319,29 +319,20 @@ final class LibraryModel: ObservableObject {
         }
     }
 
-    /// **붙여넣을 글의 링크를 이 노트 기준으로** (144). 고칠 것이 없으면 `nil`.
-    ///
-    /// 앱이 본문을 고치는 자리이므로 **고쳤다고 알리고**, 되돌리기 한 번으로 무를 수 있다
-    /// (편집기가 한 번의 바꾸기로 넣는다).
-    /// **붙여넣을 것을 이 자리에 맞게 바꾼다** (144 · 157 · 158 · 159).
+    /// **붙여넣을 것을 이 자리에 맞게 바꾼다** (144 · 157 · 158 · 159 · 206 · 207). 고칠 것이 없으면 `nil`.
     ///
     /// 순서가 뜻을 정한다.
     ///
-    /// 1. **표** (159) — HTML 에 표가 있으면 그것이 붙을 것이다. 평문 갈래에는 칸 구분이
-    ///    뭉개진 글자만 오므로, 표가 있으면 평문을 볼 까닭이 없다.
-    /// 2. **주소** (157) — 붙일 것이 주소 하나면 링크로 만든다. 글이 섞여 있으면 아니다 —
+    /// 1. **주소** (157) — 붙일 것이 주소 하나면 링크로 만든다. 글이 섞여 있으면 아니다 —
     ///    글 속의 주소까지 건드리면 **무엇을 할지 모르는 자리**가 된다.
-    /// 3. **번호 겹침** (158) 과 **링크 고치기** (144) — 둘 다 평문에 건다. 서로 다른
-    ///    자리를 만지므로 겹치지 않는다.
+    /// 2. **서식 있는 글** (206) — HTML 갈래가 있으면 **글 전체**를 마크다운으로 바꾼다 (제목 · 목록 · 표 · 굵게 · 링크 …).
+    ///    예전(159)에는 표 하나만 꺼내 붙여 **나머지 글이 사라졌다.** 바꾼 글에 평문의 글자가 차례대로 다 있을 때만 쓴다
+    ///    (`HTMLMarkdown.keepsLetters`) — 아니면 평문 그대로 붙인다. 사진은 노트 옆 `assets/` 에 저장하고 링크로 (207).
+    /// 3. **번호 겹침** (158) 과 **링크 고치기** (144) — 평문에 건다. 서로 다른 자리를 만지므로 겹치지 않는다.
     ///
     /// **바꿨으면 알린다.** 사람이 모르게 본문이 달라지지 않는다. 되돌리기는 한 번이다.
     func repairPastedLinks(_ pasted: MarkdownTextView.PastedItem) -> String? {
-        // 1. 표
-        if let html = pasted.html, let table = HTMLTable.markdown(from: html) {
-            report("표를 마크다운 표로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
-            return table
-        }
-        // 2. 주소 하나
+        // 1. 주소 하나
         let address = pasted.url ?? pasted.plain
         if Pasting.isWebAddress(pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines))
             || (pasted.url != nil && pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty),
@@ -349,6 +340,21 @@ final class LibraryModel: ObservableObject {
                                       selection: pasted.selection) {
             report("주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다.")
             return link
+        }
+        // 2. 서식 있는 글 — 글 전체를 마크다운으로
+        if let html = pasted.html, let converted = HTMLMarkdown.convert(html) {
+            let keeps = HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: converted)
+            lastPaste = PasteRecord(types: pasted.types, html: html, plainLength: pasted.plain.count,
+                                    converted: keeps)
+            if keeps {
+                var text = placeImages(converted, slots: HTMLMarkdown.imageSlots(html), pasted: pasted)
+                if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) { text = fixed.text }
+                guard text != pasted.plain else { return nil }
+                report("서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
+                return text
+            }
+            // 바꾼 글에 평문의 글자가 다 없다 — 바꾸지 않는다. 글을 잃느니 서식을 잃는다.
+            log("붙여넣기: 서식 바꾸기를 그만두고 평문으로 — 바꾼 글에 원래 글자가 다 담기지 않았다")
         }
         // 3. 평문 — 번호 겹침과 링크 고치기
         var text = pasted.plain
@@ -370,6 +376,108 @@ final class LibraryModel: ObservableObject {
         guard !notes.isEmpty, text != pasted.plain else { return nil }
         report(notes.joined(separator: ". ") + ". 되돌리기로 무를 수 있습니다.")
         return text
+    }
+
+    /// **마지막 붙여넣기** (206) — 클립보드의 갈래와 HTML. 메모리에만 두고, 진단 화면에서 사람이 복사할 때만 밖으로 나간다.
+    /// 메모 · 다른 앱이 실제로 무엇을 싣는지 여기서는 볼 수 없어서 (CLAUDE.md §2) 사용자가 보내 줄 길을 둔다.
+    struct PasteRecord: Equatable {
+        let types: [String]
+        let html: String
+        let plainLength: Int
+        /// 마크다운으로 바꿨나 (거짓이면 평문으로 붙였다).
+        let converted: Bool
+    }
+
+    @Published private(set) var lastPaste: PasteRecord?
+
+    /// **붙여넣은 글 속 사진을 파일로** (207, 2026-10-02 사용자 — *중간에 이미지가 있다면 이미지도 함께 파일로 저장하고
+    /// 링크로 변환*). 사진 자리(U+FFFC)마다 노트 옆 `assets/` 의 새 이름을 **지금** 정해 링크를 넣고, 파일은 곧이어 쓴다 —
+    /// 붙여넣기는 한 번의 바꾸기로 끝나야 되돌리기가 한 번에 걸린다.
+    ///
+    /// 사진은 `data:` 주소에 든 것 · 클립보드의 서식 있는 글(RTFD)에 든 것을 **문서 차례대로** 맞춘다. 웹 주소의 사진은
+    /// 받아오지 않고(이 앱은 통신하지 않는다) 주소 그대로 링크로 둔다. 짝을 못 찾은 자리는 지운다 —
+    /// 엉뚱한 사진을 엉뚱한 자리에 넣지 않는다 (`HTMLMarkdown.fillImages`).
+    private func placeImages(_ markdown: String, slots: [HTMLMarkdown.ImageSlot],
+                             pasted: MarkdownTextView.PastedItem) -> String {
+        guard !slots.isEmpty else { return HTMLMarkdown.fillImages(markdown, links: []) }
+        var attachments: [Data]?
+        var nextAttachment = 0
+        let folder = noteFolderForLink
+        let assets = folder.isEmpty ? "assets" : folder + "/assets"
+        let taken = Set(vaultPaths.map { $0.lowercased() })
+        let stem = ImageImport.stem() + "-" + Self.pasteClock.string(from: Date())
+        var sequence = 0
+        var writes: [(path: String, data: Data, ext: String)] = []
+        var links: [String?] = []
+        for slot in slots {
+            var data: Data?
+            if slot.src.lowercased().hasPrefix("data:image/") {
+                data = Self.dataURIContents(slot.src)
+            } else if slot.src.lowercased().hasPrefix("http://") || slot.src.lowercased().hasPrefix("https://") {
+                links.append(ImageImport.markdownImage(path: slot.src))
+                continue
+            } else {
+                if attachments == nil { attachments = pasted.loadImages() }
+                if let all = attachments, nextAttachment < all.count { data = all[nextAttachment] }
+                nextAttachment += 1
+            }
+            guard let data, let ext = ImageImport.pastedExtension(of: data) else {
+                links.append(nil)
+                continue
+            }
+            var path = ""
+            repeat {
+                sequence += 1
+                path = assets + "/" + stem + "-\(sequence)." + ext
+            } while taken.contains(path.lowercased())
+            writes.append((path, data, ext))
+            links.append(ImageImport.markdownImage(path: String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))))
+        }
+        if !writes.isEmpty { writePastedImages(writes) }
+        return HTMLMarkdown.fillImages(markdown, links: links)
+    }
+
+    private static let pasteClock: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HHmmss"
+        return formatter
+    }()
+
+    /// `data:image/png;base64,…` 의 사진. base64 가 아니면 읽지 않는다.
+    private static func dataURIContents(_ uri: String) -> Data? {
+        guard let comma = uri.firstIndex(of: ","), uri[..<comma].lowercased().hasSuffix(";base64") else { return nil }
+        return Data(base64Encoded: String(uri[uri.index(after: comma)...]), options: .ignoreUnknownCharacters)
+    }
+
+    /// 정해 둔 이름으로 사진을 쓴다. JPEG · HEIC 처럼 줄일 수 있는 것은 사진 넣기와 같이 줄여 JPEG 로, PNG · GIF 는 그대로.
+    private func writePastedImages(_ writes: [(path: String, data: Data, ext: String)]) {
+        guard let store else { return }
+        Task { [weak self] in
+            var failed = 0
+            for item in writes {
+                let data: Data?
+                if item.ext == "jpg" {
+                    let original = item.data
+                    data = await Task.detached(priority: .userInitiated) { ImageImport.jpeg(from: original) }.value
+                } else {
+                    data = item.data
+                }
+                guard let data else {
+                    failed += 1
+                    continue
+                }
+                do {
+                    try await store.writeData(data, to: item.path)
+                } catch {
+                    failed += 1
+                }
+            }
+            guard let self else { return }
+            self.log("붙여넣기: 사진 \(writes.count - failed)장 저장" + (failed > 0 ? " · \(failed)장 실패" : ""))
+            if failed > 0 { self.report("붙여넣은 사진 \(failed)장을 저장하지 못했습니다.") }
+            self.refreshVaultPaths()
+        }
     }
 
     /// 지금 노트가 든 폴더 — 링크는 여기서 보는 상대 경로다.
