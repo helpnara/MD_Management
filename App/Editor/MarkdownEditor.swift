@@ -1073,6 +1073,7 @@ struct MarkdownEditor: UIViewRepresentable {
         }
 
         /// 이 줄이 **앞 글에 이어지는 줄**인가 (198) — 위로 빈 줄까지 모아 `BlockContext.roles` 에 묻는다.
+        /// **코드 울타리 안의 줄**도 목록 항목이 아니다 (200) — 엔터가 `- ` 를 잇거나 번호를 다시 매기지 않는다.
         private static func continuesText(_ text: NSString, _ paragraph: NSRange) -> Bool {
             var lines = [line(text, paragraph)]
             var at = paragraph.location
@@ -1083,7 +1084,8 @@ struct MarkdownEditor: UIViewRepresentable {
                 lines.insert(string, at: 0)
                 at = above.location
             }
-            return BlockContext.roles(of: lines).last == .continuation
+            let role = BlockContext.roles(of: lines).last
+            return role == .continuation || role == .code
         }
 
         private static func line(_ text: NSString, _ paragraph: NSRange) -> String {
