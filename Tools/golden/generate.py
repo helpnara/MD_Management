@@ -60,6 +60,7 @@ EMPHASIS_CASES = ROOT / "Tools" / "golden" / "emphasis-cases.json"
 CONTEXT_CASES = ROOT / "Tools" / "golden" / "context-cases.json"
 FOLDER_TREE_CASES = ROOT / "Tools" / "golden" / "folder-tree-cases.json"
 SCROLL_GAUGE_CASES = ROOT / "Tools" / "golden" / "scroll-gauge-cases.json"
+HTML_MARKDOWN_CASES = ROOT / "Tools" / "golden" / "html-markdown-cases.json"
 RESTYLE_CASES = ROOT / "Tools" / "golden" / "restyle-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
@@ -2314,6 +2315,99 @@ def build_paste_convert_cases() -> dict:
     return {"numbering": numbering, "webLink": links, "htmlTable": tables}
 
 
+# ── 붙여넣은 HTML 전체를 마크다운으로 (206 · 207) ──────────────────────────────
+#
+# 셈은 `html_markdown.py` (Swift `HTMLMarkdown` 의 쌍둥이). 여기서는 그 답을 **따로** 심판한다:
+# 1. 표준 HTML 파서(파이썬 내장)로 원문의 글자를 뽑고, 바꾼 마크다운을 cmark-gfm 으로 그려 글자를 뽑아
+#    **글자 · 숫자가 차례까지 똑같은지** 본다 — 하나라도 빠지면 그것이 206 의 사고다.
+# 2. 사례가 적어 둔 구조 수(제목 · 표 칸 · 목록 항목 · 굵게 …)가 그려진 HTML 과 맞는지 본다.
+# 3. 159 의 표 사례는 새 변환에서도 **같은 표**가 나와야 한다.
+
+def _source_letters(html: str) -> list:
+    from html.parser import HTMLParser
+    import html_markdown as hm
+
+    class Text(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.parts, self.skip = [], 0
+        def handle_starttag(self, tag, attrs):
+            if tag in hm.SKIP and tag not in hm.VOID:
+                self.skip += 1
+            if tag == "img" and not self.skip:
+                self.parts.append(hm.OBJECT)
+        def handle_endtag(self, tag):
+            if tag in hm.SKIP and tag not in hm.VOID and self.skip:
+                self.skip -= 1
+        def handle_data(self, data):
+            if not self.skip:
+                self.parts.append(data)
+
+    parser = Text()
+    parser.feed(html)
+    parser.close()
+    return hm.letters("".join(parser.parts))
+
+
+def build_html_markdown_cases() -> dict:
+    sys.path.insert(0, str(ROOT / "Tools" / "golden"))
+    import html_markdown as hm
+    spec = json.loads(HTML_MARKDOWN_CASES.read_text(encoding="utf-8"))
+
+    converted = []
+    for case in spec["convert"]:
+        got = hm.convert(case["html"])
+        slots = hm.image_slots(case["html"])
+        name = case["name"]
+        if got is None:
+            if _source_letters(case["html"]):
+                raise SystemExit(f"::error::[{name}] 글이 있는데 아무것도 안 냈다")
+        else:
+            if got.count(hm.OBJECT) != len(slots):
+                raise SystemExit(f"::error::[{name}] 사진 자리 {got.count(hm.OBJECT)} · 사진 {len(slots)}")
+            if "images" in case and len(slots) != case["images"]:
+                raise SystemExit(f"::error::[{name}] 사진 수가 뜻과 다르다: {len(slots)}")
+            rendered = cmark_html(got)
+            seen = hm.letters(html_unescape(re.sub(r"<[^>]*>", "", rendered)))
+            source = _source_letters(case["html"])
+            if seen != source:
+                raise SystemExit(f"::error::[{name}] 글자가 달라졌다\n원문: {''.join(source)}\n결과: {''.join(seen)}\n{got}")
+            for tag, want in case.get("expect", {}).items():
+                found = len(re.findall(r"<" + tag + r"[\s>]", rendered))
+                if found != want:
+                    raise SystemExit(f"::error::[{name}] <{tag}> {found}개 — 뜻은 {want}개\n{got}\n{rendered}")
+            if "plain" in case and not hm.keeps_letters(case["plain"], got):
+                raise SystemExit(f"::error::[{name}] 평문의 글자를 다 담지 못했다 — 앱은 평문으로 붙인다")
+        converted.append({"name": name, "html": case["html"], "markdown": got,
+                          "images": slots, "plain": case.get("plain"),
+                          "keeps": hm.keeps_letters(case["plain"], got or "") if "plain" in case else None})
+
+    # 159 의 표 사례 — 새 변환도 같은 표를 낸다.
+    paste = json.loads(PASTE_CONVERT_CASES.read_text(encoding="utf-8"))
+    for case in paste["htmlTable"]:
+        old = html_table_markdown(case["html"])
+        if old is None:
+            continue
+        new = hm.convert(case["html"]) or ""
+        if old not in new:
+            raise SystemExit(f"::error::[159 {case['name']}] 표가 달라졌다\n예전:\n{old}\n새:\n{new}")
+        converted.append({"name": "159 · " + case["name"], "html": case["html"], "markdown": new,
+                          "images": hm.image_slots(case["html"]), "plain": None, "keeps": None})
+
+    fills = []
+    for case in spec["fill"]:
+        fills.append({**case, "result": hm.fill_images(case["markdown"], case["links"])})
+
+    keeps = []
+    for case in spec["keeps"]:
+        got = hm.keeps_letters(case["plain"], case["converted"])
+        if got != case["want"]:
+            raise SystemExit(f"::error::[{case['name']}] 안전장치: 뜻 {case['want']} · 셈 {got}")
+        keeps.append({"name": case["name"], "plain": case["plain"], "converted": case["converted"], "result": got})
+
+    return {"convert": converted, "fill": fills, "keeps": keeps}
+
+
 def build_broken_cases() -> list[dict]:
     spec = json.loads(BROKEN_CASES.read_text(encoding="utf-8"))
     out = []
@@ -2487,6 +2581,7 @@ def build() -> dict:
         "contextCases": build_context_cases(),
         "folderTreeCases": build_folder_tree_cases(),
         "scrollGaugeCases": build_scroll_gauge_cases(),
+        "htmlMarkdownCases": build_html_markdown_cases(),
         "restyleCases": build_restyle_cases(),
     }
 

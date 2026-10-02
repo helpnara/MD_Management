@@ -1,0 +1,255 @@
+{
+ "_왜": "206 · 207 — 붙여넣은 HTML 전체를 마크다운으로. 기댓값은 generate.py 가 html_markdown.py 로 계산하고, cmark-gfm 으로 그려 글자가 하나도 안 빠졌는지 · 구조 수가 맞는지 본다. plain 은 같은 클립보드의 평문 갈래 (있으면 안전장치를 같이 본다).",
+ "convert": [
+  {
+   "name": "메모 — 표가 든 긴 글 (사용자가 걸린 것)",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<p class=\"p1\"><span class=\"s1\"><b>여행 준비</b></span></p>\n<p class=\"p3\">이번 주말에 떠난다.</p>\n<p class=\"p4\"><br></p>\n<p class=\"p2\"><span class=\"s2\"><b>예산</b></span></p>\n<table cellspacing=\"0\" cellpadding=\"0\" class=\"t1\">\n<tbody>\n<tr>\n<td valign=\"top\" class=\"td1\"><p class=\"p3\">항목</p></td>\n<td valign=\"top\" class=\"td1\"><p class=\"p3\">금액</p></td>\n</tr>\n<tr>\n<td valign=\"top\" class=\"td1\"><p class=\"p3\">숙소</p></td>\n<td valign=\"top\" class=\"td1\"><p class=\"p3\">120,000원</p></td>\n</tr>\n</tbody>\n</table>\n<p class=\"p4\"><br></p>\n<p class=\"p3\">표 뒤의 글도 <b>남아야</b> 한다.</p>\n<ul class=\"ul1\">\n<li class=\"li3\">여권</li>\n<li class=\"li3\">충전기</li>\n</ul>\n<p class=\"p3\">끝.</p>\n</body>\n</html>\n",
+   "plain": "여행 준비\n이번 주말에 떠난다.\n\n예산\n항목\t금액\n숙소\t120,000원\n\n표 뒤의 글도 남아야 한다.\n•\t여권\n•\t충전기\n끝.",
+   "expect": {
+    "h1": 1,
+    "h2": 1,
+    "table": 1,
+    "td": 4,
+    "li": 2,
+    "strong": 1,
+    "th": 2
+   }
+  },
+  {
+   "name": "메모 — 제목 · 머리말 · 본문 · 취소선 · 기울임",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<p class=\"p1\"><span class=\"s1\"><b>제목</b></span></p>\n<p class=\"p2\"><span class=\"s2\"><b>머리말</b></span></p>\n<p class=\"p3\">본문 <span class=\"s3\">지운 글</span> 과 <span class=\"s4\">기운 글</span>.</p>\n</body>\n</html>\n",
+   "expect": {
+    "h1": 1,
+    "h2": 1,
+    "del": 1,
+    "em": 1
+   }
+  },
+  {
+   "name": "메모 — 번호 목록 · 겹친 목록",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<ol class=\"ol1\">\n<li class=\"li3\">첫째</li>\n<li class=\"li3\">둘째\n<ul class=\"ul1\">\n<li class=\"li3\">둘째의 하나</li>\n</ul>\n</li>\n<li class=\"li3\">셋째</li>\n</ol>\n</body>\n</html>\n",
+   "expect": {
+    "li": 4,
+    "ol": 1,
+    "ul": 1
+   }
+  },
+  {
+   "name": "메모 — 고정폭 문단은 코드 덩어리로",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<p class=\"p3\">설정:</p>\n<p class=\"p5\">let a = 1</p>\n<p class=\"p5\">let b = 2</p>\n<p class=\"p3\">끝</p>\n</body>\n</html>\n",
+   "expect": {
+    "pre": 1
+   }
+  },
+  {
+   "name": "메모 — 사진이 끼어 있다",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<p class=\"p3\">사진 앞</p>\n<p class=\"p3\"><img src=\"file:///Attachment.png\" alt=\"Attachment.png\"></p>\n<p class=\"p3\">사진 뒤</p>\n</body>\n</html>\n",
+   "images": 1
+  },
+  {
+   "name": "메모 — 글 속 사진 자리 글자 (U+FFFC)",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<p class=\"p3\">앞 ￼ 뒤</p>\n</body>\n</html>\n",
+   "images": 1
+  },
+  {
+   "name": "메모 — 표 칸 안의 여러 줄 · 세로줄",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<table class=\"t1\"><tbody><tr>\n<td class=\"td1\"><p class=\"p3\">한 줄</p><p class=\"p3\">두 줄</p></td>\n<td class=\"td1\"><p class=\"p3\">a | b</p></td>\n</tr></tbody></table>\n</body>\n</html>\n",
+   "expect": {
+    "table": 1,
+    "td": 2,
+    "th": 2
+   }
+  },
+  {
+   "name": "메모 — 빈 줄 여러 개는 하나로",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<p class=\"p3\">가</p>\n<p class=\"p4\"><br></p>\n<p class=\"p4\"><br></p>\n<p class=\"p4\"><br></p>\n<p class=\"p3\">나</p>\n</body>\n</html>\n"
+  },
+  {
+   "name": "메모 — 연속 문단은 줄바꿈 하나 (평문과 같다)",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<p class=\"p3\">첫 줄</p>\n<p class=\"p3\">둘째 줄</p>\n<p class=\"p3\">셋째 줄</p>\n</body>\n</html>\n",
+   "plain": "첫 줄\n둘째 줄\n셋째 줄"
+  },
+  {
+   "name": "AI 답 — 제목 · 문단 · 표 · 목록 · 코드",
+   "html": "<h2>정리</h2><p>아래 <strong>표</strong>를 보세요. 자세한 것은 <a href=\"https://example.org/doc\">문서</a>.</p>\n<table><thead><tr><th>이름</th><th>값</th></tr></thead><tbody><tr><td>가</td><td><code>1</code></td></tr></tbody></table>\n<ul><li>하나</li><li><em>둘</em></li></ul>\n<pre><code>print(\"hi\")\nx = 1</code></pre>\n<p>끝.</p>",
+   "expect": {
+    "h2": 1,
+    "strong": 1,
+    "a": 1,
+    "table": 1,
+    "th": 2,
+    "li": 2,
+    "em": 1,
+    "pre": 1,
+    "code": 2
+   }
+  },
+  {
+   "name": "웹 — 인용 · 가로줄 · 링크 속 굵게",
+   "html": "<blockquote><p>인용 첫 줄</p><p>둘째 문단</p></blockquote><hr><p><a href=\"https://a.example/x\"><b>굵은 링크</b></a> 뒤</p>",
+   "expect": {
+    "blockquote": 1,
+    "hr": 1,
+    "a": 1,
+    "strong": 1
+   }
+  },
+  {
+   "name": "웹 — 체크 상자 목록",
+   "html": "<ul><li><input type=\"checkbox\" checked> 한 일</li><li><input type=\"checkbox\"> 할 일</li></ul>",
+   "expect": {
+    "li": 2,
+    "input": 2
+   }
+  },
+  {
+   "name": "글자 체크 표시 · 글머리 글자",
+   "html": "<ul><li>☐ 할 일</li><li>☑ 한 일</li><li>• 그냥 항목</li></ul>",
+   "expect": {
+    "li": 3,
+    "input": 2
+   }
+  },
+  {
+   "name": "구글 문서식 — b 안의 font-weight normal",
+   "html": "<b style=\"font-weight:normal;\"><p><span style=\"font-weight:700\">굵다</span> <span style=\"font-weight:400\">보통</span></p></b>",
+   "expect": {
+    "strong": 1
+   }
+  },
+  {
+   "name": "강조 안의 빈칸은 기호 밖으로",
+   "html": "<p><b>굵게 </b>다음 <i> 기울임</i>끝</p>",
+   "expect": {
+    "strong": 1,
+    "em": 1
+   }
+  },
+  {
+   "name": "굵게 안에 기울임이 겹친다",
+   "html": "<p><b>가 <i>나</i> 다</b></p>",
+   "expect": {
+    "strong": 1,
+    "em": 1
+   }
+  },
+  {
+   "name": "엔터티와 줄바꿈",
+   "html": "<div>A &amp; B &lt;태그&gt; &#54620;&#xae00;&nbsp;끝<br>둘째 줄</div>",
+   "plain": "A & B <태그> 한글 끝\n둘째 줄"
+  },
+  {
+   "name": "스크립트 · 스타일 · 주석은 버린다",
+   "html": "<html><head><title>제목</title><script>var x = \"<p>나쁨</p>\";</script></head><body><!-- 숨김 --><p>보임</p></body></html>"
+  },
+  {
+   "name": "닫는 태그가 빠진 문단 · 짝 없는 닫는 태그",
+   "html": "<p>첫째<p>둘째</span></p>"
+  },
+  {
+   "name": "주소에 빈칸 · 괄호",
+   "html": "<p><a href=\"https://example.org/a b(1)\">링크</a></p>",
+   "expect": {
+    "a": 1
+   }
+  },
+  {
+   "name": "글자 크기가 다 같으면 제목이 없다",
+   "html": "<p style=\"font-size:17px\">하나</p><p style=\"font-size:17px\">둘</p>",
+   "expect": {
+    "h1": 0,
+    "h2": 0
+   }
+  },
+  {
+   "name": "여는 번호가 있는 목록",
+   "html": "<ol start=\"3\"><li>셋</li><li>넷</li></ol>",
+   "expect": {
+    "li": 2,
+    "ol": 1
+   }
+  },
+  {
+   "name": "목록 앞뒤 글은 빈 줄로 띄운다",
+   "html": "<div>앞 글</div><ul><li>항목</li></ul><div>뒤 글</div>",
+   "expect": {
+    "li": 1,
+    "p": 2
+   }
+  },
+  {
+   "name": "빈 HTML",
+   "html": "<html><body>  <p> </p> </body></html>"
+  },
+  {
+   "name": "웹 — 문단 하나가 통째로 code 여도 글 속 코드",
+   "html": "<p><code>npm install</code></p><ul><li><code>a</code></li></ul>",
+   "expect": {
+    "code": 2,
+    "pre": 0
+   }
+  }
+ ],
+ "fill": [
+  {
+   "name": "두 장 다 링크",
+   "markdown": "앞\n￼\n뒤 ￼",
+   "links": [
+    "![](assets/a-1.jpg)",
+    "![](assets/a-2.jpg)"
+   ]
+  },
+  {
+   "name": "한 장은 못 넣었다",
+   "markdown": "앞\n\n￼\n\n뒤",
+   "links": [
+    null
+   ]
+  },
+  {
+   "name": "수가 안 맞으면 모두 지운다",
+   "markdown": "￼ 와 ￼",
+   "links": [
+    "![](x.jpg)"
+   ]
+  }
+ ],
+ "keeps": [
+  {
+   "name": "같은 글",
+   "plain": "가나 다",
+   "converted": "**가나** 다",
+   "want": true
+  },
+  {
+   "name": "링크 주소가 더 있다",
+   "plain": "문서",
+   "converted": "[문서](https://example.org)",
+   "want": true
+  },
+  {
+   "name": "글이 빠졌다",
+   "plain": "앞 글 표 뒤 글",
+   "converted": "| 표 |",
+   "want": false
+  },
+  {
+   "name": "평문이 비었다",
+   "plain": "",
+   "converted": "아무거나",
+   "want": true
+  },
+  {
+   "name": "차례가 바뀌었다",
+   "plain": "가 나",
+   "converted": "나 가",
+   "want": false
+  },
+  {
+   "name": "숫자도 본다",
+   "plain": "120,000원",
+   "converted": "120원",
+   "want": false
+  }
+ ]
+}
