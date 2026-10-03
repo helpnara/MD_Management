@@ -95,7 +95,8 @@ public enum MarkdownHTML {
         // 블록마다 원문 줄 범위를 붙인다 — 읽기 ↔ 쓰기를 오가도 보던 자리를 잇는다 (176).
         // 짝이 안 맞으면 `LineMap` 이 손대지 않고 돌려준다.
         return RenderedNote(
-            bodyHTML: linkTasks(LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown)),
+            bodyHTML: linkTasks(LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown),
+                                markdown: markdown),
             missingAttachments: rewriter.missing
         )
     }
@@ -103,24 +104,42 @@ public enum MarkdownHTML {
     /// **체크상자를 누를 수 있게** (211) — 목록 항목의 줄 번호(`data-line`, `LineMap` 이 붙였다)로 `yb://task/<줄>` 링크를 씌운다.
     /// 체크상자 자체는 그대로 두고(`disabled`), 링크가 누름을 받는다 — CSS 가 체크상자의 누름을 링크로 흘린다.
     /// 줄 번호가 없으면(줄 지도가 안 맞았다) 손대지 않는다 — 엉뚱한 줄을 바꾸느니 못 누르는 편이 낫다.
-    static func linkTasks(_ html: String) -> String {
-        guard html.contains("type=\"checkbox\""),
+    ///
+    /// **인용(`>`) 안의 체크상자** (빌드 78 · 4번 사용자 화면) — cmark-gfm 은 이것을 체크상자로 안 읽고 글자 `[ ]` 로 남긴다.
+    /// GFM 규격은 인용 안의 목록 항목을 막지 않는다(렌더러의 한계 — markdown-it 의 확장은 체크상자로 읽는다). 그래서 목록 항목이
+    /// 글자 `[ ]` · `[x]` 로 시작하고 **그 원문 줄이 체크상자 줄이면**(`TaskToggle.marker` — 뒤집을 때와 같은 잣대) 체크상자로 그린다.
+    /// `\[ ]` 로 막은 줄은 원문 줄이 체크상자 줄이 아니라 글자 그대로 둔다. 느슨한 목록(`<li><p>[ ] …`)은 체크상자를 `<p>` 앞으로 —
+    /// cmark-gfm 이 보통 체크상자를 두는 자리와 같게 해 CSS 가 같은 규칙으로 맞춘다.
+    static func linkTasks(_ html: String, markdown: String) -> String {
+        guard html.contains("data-line=\""),
               let regex = try? NSRegularExpression(
-                pattern: #"<li\b[^>]*\bdata-line="(\d+)"[^>]*>|<input\b[^>]*type="checkbox"[^>]*>"#) else { return html }
+                pattern: #"(<li\b[^>]*\bdata-line="(\d+)"[^>]*>)(?:(<input\b[^>]*type="checkbox"[^>]*>)|(\s*<p\b[^>]*>)?\[([ xX])\](?=[ \t]))"#)
+        else { return html }
+        let lines = TaskToggle.split(markdown)
         let text = html as NSString
         var out = ""
         var cursor = 0
-        var line: String?
         for match in regex.matches(in: html, range: NSRange(location: 0, length: text.length)) {
-            let whole = text.substring(with: match.range)
-            if whole.hasPrefix("<li") {
-                line = text.substring(with: match.range(at: 1))
-                continue
+            let open = text.substring(with: match.range(at: 1))
+            let line = text.substring(with: match.range(at: 2))
+            let link = "<a class=\"yb-task\" href=\"\(scheme)://task/\(line)\">"
+            var replaced: String
+            if match.range(at: 3).location != NSNotFound {
+                // cmark-gfm 이 그린 체크상자.
+                replaced = open + link + text.substring(with: match.range(at: 3)) + "</a>"
+            } else {
+                // 글자로 남은 `[ ]` — 원문 줄이 정말 체크상자 줄일 때만.
+                guard let row = Int(line), row < lines.count,
+                      TaskToggle.marker(Array(lines[row].unicodeScalars)) != nil else { continue }
+                let checked = text.substring(with: match.range(at: 5)) != " "
+                let box = "<input type=\"checkbox\" disabled=\"\"" + (checked ? " checked=\"\"" : "") + " />"
+                replaced = open + link + box + "</a>"
+                if match.range(at: 4).location != NSNotFound {
+                    replaced += " " + text.substring(with: match.range(at: 4)).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
             }
-            guard let taskLine = line else { continue }
-            line = nil          // 항목 하나에 체크상자 하나
             out += text.substring(with: NSRange(location: cursor, length: match.range.location - cursor))
-            out += "<a class=\"yb-task\" href=\"\(scheme)://task/\(taskLine)\">" + whole + "</a>"
+            out += replaced
             cursor = match.range.location + match.range.length
         }
         out += text.substring(from: cursor)

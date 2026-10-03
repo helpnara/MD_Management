@@ -26,6 +26,7 @@ import urllib.parse
 
 try:
     from markdown_it import MarkdownIt
+    from mdit_py_plugins.tasklists import tasklists_plugin
     import cmarkgfm
     import yaml
 except ImportError:  # pragma: no cover
@@ -2426,24 +2427,36 @@ def build_html_markdown_cases() -> dict:
             raise SystemExit(f"::error::[{case['name']}] 머리줄을 올렸더니 표가 깨졌다\n{got}")
         promotes.append({**case, "result": got})
 
-    # 211 — 읽기 화면에서 체크상자 누르기. 뒤집은 글을 cmark-gfm 으로 그려 **켜진 체크상자 수가 하나만** 바뀌는지 본다.
+    # 211 — 읽기 화면에서 체크상자 누르기. 뒤집은 글을 그려 **켜진 체크상자 수가 하나만** 바뀌는지 본다.
+    #
+    # **심판은 markdown-it 의 체크상자 확장이다** (빌드 78 · 4번 사용자 화면). cmark-gfm 은 **인용(`>`) 안의 체크상자**를
+    # 글자 `[ ]` 로 남긴다 — GFM 규격은 인용 안의 목록 항목을 막지 않는다(렌더러의 한계). 앱은 그 자리를 체크상자로 고쳐 그린다
+    # (`MarkdownHTML.linkTasks`). **인용이 없는 글은 cmark-gfm 이 심판이다** — 앱이 그리는 것과 같은 계열이고, markdown-it 의
+    # 확장은 `]` 뒤의 탭을 안 받는 등 cmark-gfm 과 작은 데서 다르다. 인용이 든 글만 markdown-it 에 묻는다.
+    task_md = MarkdownIt("commonmark").use(tasklists_plugin)
+
+    def boxes(markdown: str) -> tuple:
+        body = re.sub(r"^---\n.*?\n---\n", "", markdown, flags=re.S)
+        if ">" not in body:
+            plain = cmark_html(body)
+            return plain.count("checkbox"), plain.count('checked=""')
+        html = task_md.render(body)
+        return html.count('type="checkbox"'), html.count('checked="checked"')
+
     tasks = []
     for case in spec["tasks"]:
         got = hm.task_toggled(case["markdown"], case["line"])
         if got is not None:
-            body = re.sub(r"^---\n.*?\n---\n", "", got, flags=re.S)
-            before = re.sub(r"^---\n.*?\n---\n", "", case["markdown"], flags=re.S)
-            on_before = cmark_html(before).count('checked=""')
-            on_after = cmark_html(body).count('checked=""')
-            if abs(on_after - on_before) != 1 or cmark_html(body).count("checkbox") != cmark_html(before).count("checkbox"):
+            total_before, on_before = boxes(case["markdown"])
+            total_after, on_after = boxes(got)
+            if abs(on_after - on_before) != 1 or total_after != total_before:
                 raise SystemExit(f"::error::[{case['name']}] 체크상자를 하나만 뒤집지 못했다\n{got}")
         tasks.append({**case, "result": got})
     task_lines = []
     for case in spec["taskLines"]:
         lines = hm.task_lines(case["markdown"])
-        body = re.sub(r"^---\n.*?\n---\n", "", case["markdown"], flags=re.S)
-        if len(lines) != cmark_html(body).count("checkbox"):
-            raise SystemExit(f"::error::[{case['name']}] 체크상자 줄 {lines} · cmark 체크상자 {cmark_html(body).count('checkbox')}")
+        if len(lines) != boxes(case["markdown"])[0]:
+            raise SystemExit(f"::error::[{case['name']}] 체크상자 줄 {lines} · 심판의 체크상자 {boxes(case['markdown'])[0]}")
         task_lines.append({**case, "lines": lines})
 
     return {"convert": converted, "fill": fills, "keeps": keeps, "promote": promotes,
