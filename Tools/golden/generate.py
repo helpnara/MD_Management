@@ -2931,6 +2931,21 @@ def incoming_links(folder: str, notes: dict) -> int:
     return count
 
 
+def backlinks(note: str, notes: dict) -> list:
+    """이 노트를 가리키는 노트 (212) — 폴더 링크 셈(168)과 같은 해석(`extract_links` · `resolve`).
+    자기 자신은 빼고, 여러 번 가리켜도 한 번. 못 읽은 노트는 뺀다. 코드 포인트 순 (Swift `ordered`)."""
+    note = nfc(note)
+    found = []
+    for path, text in notes.items():
+        if text is None or path == note:
+            continue
+        targets = [r["value"] for r in (resolve(link["destination"], path) for link in extract_links(text))
+                   if r["kind"] == "relative"]
+        if note in targets:
+            found.append(path)
+    return sorted(found)
+
+
 def build_attachment_cases() -> list[dict]:
     spec = json.loads(ATTACHMENT_CASES.read_text(encoding="utf-8"))
     out = []
@@ -2952,10 +2967,13 @@ def build_attachment_cases() -> list[dict]:
         if "folder" in case:
             entry["folder"] = nfc(case["folder"])
             entry["incoming"] = incoming_links(entry["folder"], notes)
+        if "backlinksOf" in case:
+            entry["backlinksOf"] = nfc(case["backlinksOf"])
+            entry["backlinks"] = backlinks(entry["backlinksOf"], notes)
         if "purge" in case:
             entry["purge"] = nfc(case["purge"])
             entry["purging"] = purging_with(entry["purge"], notes, trashed, files)
-        for key in ("unused", "trashing", "purging", "incoming"):
+        for key in ("unused", "trashing", "purging", "incoming", "backlinks"):
             want = case.get("expect", {}).get(key, "없음")
             if want != "없음" and want != entry.get(key):
                 # 사람이 적은 것은 **뜻**(이 사례가 무엇을 지키나)이고, 값은 위 셈이 낸다.

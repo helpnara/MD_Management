@@ -339,6 +339,86 @@
         ".trash/아이디어/노트.md": "![](../회의/assets/a.png)"
       },
       "unused": []
+    },
+    {
+      "backlinks": [
+        "일기/C.md",
+        "회의/A.md"
+      ],
+      "backlinksOf": "회의/B.md",
+      "files": [],
+      "name": "212 — 같은 폴더 · 다른 폴더에서 가리키는 노트",
+      "notes": {
+        "일기/C.md": "[회의 B](../회의/B.md)",
+        "일기/D.md": "[없는 것](없는.md)",
+        "회의/A.md": "[B 보기](B.md)",
+        "회의/B.md": "본문"
+      },
+      "trashed": {},
+      "unused": []
+    },
+    {
+      "backlinks": [
+        "가.md",
+        "나.md",
+        "다.md"
+      ],
+      "backlinksOf": "다른 노트.md",
+      "files": [],
+      "name": "212 — 빈칸 든 이름 · 꺾쇠 주소와 %20 주소 · 앵커",
+      "notes": {
+        "가.md": "[다른](<다른 노트.md>)",
+        "나.md": "[다른](다른%20노트.md)",
+        "다.md": "[절](<다른 노트.md#제목>)",
+        "다른 노트.md": "본문",
+        "라.md": "[다른](다른 노트.md)"
+      },
+      "trashed": {},
+      "unused": []
+    },
+    {
+      "backlinks": [
+        "A.md"
+      ],
+      "backlinksOf": "B.md",
+      "files": [],
+      "name": "212 — 자기 자신은 빼고 · 여러 번 가리켜도 한 번 · 못 읽은 노트는 못 센다",
+      "notes": {
+        "A.md": "[B](B.md) 그리고 다시 [B](B.md)",
+        "B.md": "[나](B.md)",
+        "C.md": null
+      },
+      "trashed": {},
+      "unused": null
+    },
+    {
+      "backlinks": [],
+      "backlinksOf": "B.md",
+      "files": [],
+      "name": "212 — 코드 안의 링크 · 이미지 · 바깥 주소는 아니다",
+      "notes": {
+        "A.md": "```\n[B](B.md)\n```\n\n`[B](B.md)`",
+        "B.md": "본문",
+        "E.md": "[B](https://example.org/B.md)",
+        "F.md": "[[B]]"
+      },
+      "trashed": {},
+      "unused": []
+    },
+    {
+      "backlinks": [
+        "회의/깊은/A.md"
+      ],
+      "backlinksOf": "노트.md",
+      "files": [],
+      "name": "212 — 폴더 밖으로 나가는 링크 · 맨 위 폴더",
+      "notes": {
+        "노트.md": "본문",
+        "회의/B.md": "[밖](../../노트.md)",
+        "회의/깊은/A.md": "[위](../../노트.md)"
+      },
+      "trashed": {},
+      "unused": []
     }
   ],
   "brokenCases": [

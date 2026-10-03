@@ -944,6 +944,11 @@ actor FolderStore {
         return AttachmentLedger.incomingLinks(to: folder, notes: census.notes)
     }
 
+    /// **이 노트를 가리키는 노트** (212). 폴더 링크 셈(168)과 같은 훑기 · 같은 셈이다. 못 읽은 노트는 세지 못한다.
+    func backlinks(to path: String) -> [String] {
+        AttachmentLedger.backlinks(to: path, notes: attachmentCensus().notes)
+    }
+
     /// `.trash/` 를 통째로 지운다. 다음 지우기가 다시 만든다.
     func emptyTrash() throws {
         openScopeIfNeeded()

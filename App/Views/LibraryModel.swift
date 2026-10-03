@@ -656,6 +656,14 @@ final class LibraryModel: ObservableObject {
 
     let launch: LaunchOptions
     private var store: FolderStore?
+    /// **이 노트를 가리키는 노트** (212). 폴더 전체를 읽어 세므로 **노트가 바뀌거나 읽기로 넘어갈 때만** 다시 센다 —
+    /// 2초마다 도는 자동 저장이 읽기 화면을 다시 그릴 때는 센 것을 그대로 쓴다.
+    /// `backlinksOwner` — 지금 목록이 누구의 것인가 (그 노트일 때만 그린다). `backlinksCounted` — 어느 노트를 세기 시작했나
+    /// (지금 노트가 아니면 다시 센다 · 읽기로 넘어갈 때 비운다).
+    private var backlinks: [String] = []
+    private var backlinksOwner: String?
+    private var backlinksCounted: String?
+    private var backlinksTask: Task<Void, Never>?
     /// 검색 색인 — 폴더마다 하나. 캐시다 (ADR-0003).
     private var index: SearchIndex?
 
@@ -1608,11 +1616,15 @@ final class LibraryModel: ObservableObject {
             spotRequest = nil
             return
         }
+        // 다른 노트를 고치고 왔을 수 있다 — 읽기로 넘어갈 때 이 노트를 가리키는 노트를 다시 센다 (212).
+        backlinksCounted = nil
         // **읽기로 넘기기 전에 쓰고, 다 쓴 뒤에 넘긴다.** 읽기 화면은 쓴 글로 다시 렌더한다 —
         // 먼저 넘기면 옛 페이지가 떠서 자리를 잡은 뒤 새 페이지가 다시 떠 맨 위로 간다.
         // 그동안 `spotRequest` 를 쥐고 있어 단추를 또 눌러도 겹치지 않는다.
         Task {
             await save()
+            // 쓸 글이 없었으면 저장이 다시 그리지 않는다 — 그래도 세기는 다시 한다.
+            if let path = draftPath, backlinksCounted != path { refreshBacklinks(for: path) }
             spotToRestore = restore
             isReading = true
             spotRequest = nil
@@ -2364,9 +2376,32 @@ final class LibraryModel: ObservableObject {
         let existing = await store.existingPaths(among: referenced)
         let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing)
 
-        pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML, css: Palette.cssTokens())
+        let pointing = backlinksOwner == path ? backlinks : []
+        pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML + MarkdownHTML.backlinksHTML(pointing),
+                                     css: Palette.cssTokens())
         attachmentCount = existing.count
         missingAttachments = rendered.missingAttachments
+        if backlinksCounted != path { refreshBacklinks(for: path) }
+    }
+
+    /// 이 노트를 가리키는 노트를 **뒤에서** 센다 (212). 다 세면 읽기 화면을 한 번 더 그린다 — 같은 노트라
+    /// 보던 높이는 지킨다 (`NoteWebView.pageID`). 그사이 다른 노트로 갔으면 버린다.
+    private func refreshBacklinks(for path: String) {
+        backlinksTask?.cancel()
+        backlinksCounted = path
+        guard let store else { return }
+        backlinksTask = Task { [weak self] in
+            let found = await store.backlinks(to: path)
+            guard let self, !Task.isCancelled, self.backlinksCounted == path, self.draftPath == path else { return }
+            // 이미 그린 것과 같으면 다시 그리지 않는다 — 웹뷰가 한 번 깜빡인다.
+            if self.backlinksOwner == path, found == self.backlinks { return }
+            let drawn = self.backlinksOwner == path ? self.backlinks : []
+            self.backlinks = found
+            self.backlinksOwner = path
+            if found != drawn {
+                await self.renderReading(path: path, text: self.isDirty ? self.draft : self.noteText)
+            }
+        }
     }
 
     /// 폴더 안의 다른 노트를 뷰어에서 탭했을 때.

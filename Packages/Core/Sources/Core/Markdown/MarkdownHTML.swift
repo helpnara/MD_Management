@@ -146,6 +146,25 @@ public enum MarkdownHTML {
         return out
     }
 
+    /// **이 노트를 가리키는 노트** 칸 (212) — 읽기 화면 맨 아래. 없으면 빈 글 (칸을 아예 안 그린다).
+    /// 줄마다 노트 이름(노트 목록의 제목과 같은 `Paths.baseName`)과, 맨 위 폴더가 아니면 흐린 폴더 경로. 누르면 `yb://note/…` —
+    /// 본문의 노트 링크와 같은 길로 그 노트가 열린다 (`NoteLinkAction.note`). 파일에는 아무것도 안 쓴다.
+    /// 목록은 `AttachmentLedger.backlinks` 가 정한다 — 여기서는 그리기만.
+    public static func backlinksHTML(_ paths: [String]) -> String {
+        guard !paths.isEmpty else { return "" }
+        var html = "<section class=\"yb-backlinks\">\n<p class=\"yb-backlinks-title\">이 노트를 가리키는 노트 · \(paths.count)</p>\n<ul>\n"
+        for path in paths {
+            let normalized = Paths.normalized(path)
+            // 이름은 노트 목록과 같은 셈 (`Paths.baseName` — 목록의 제목이 이것이다).
+            let name = normalized.split(separator: "/").last.map(String.init) ?? normalized
+            let folder = Paths.directory(of: normalized)
+            html += "<li><a href=\"\(assetURL(normalized))\">\(escape(Paths.baseName(name)))</a>"
+            if !folder.isEmpty { html += " <span class=\"yb-backlinks-folder\">\(escape(folder))</span>" }
+            html += "</li>\n"
+        }
+        return html + "</ul>\n</section>\n"
+    }
+
     /// 완전한 HTML 문서. 색 토큰(`--yb-*`)은 App 이 만들어 넘긴다 — 앱과 웹뷰의
     /// 다크 모드가 같이 가야 하기 때문이다 (설계서 §8).
     public static func page(bodyHTML: String, css: String) -> String {
@@ -290,6 +309,12 @@ public enum MarkdownHTML {
        들어갔다. 체크상자 항목 아래 목록은 그만큼 더 들여 **점 목록과 같은 한 단계(1.4em)** 가 되게 한다. */
     li:has(> input[type="checkbox"]) > ul, li:has(> input[type="checkbox"]) > ol,
     li:has(> a.yb-task) > ul, li:has(> a.yb-task) > ol { padding-left: 2.55em; }
+    /* 212 — 이 노트를 가리키는 노트. 본문과 가는 선으로 가르고, 제목은 작고 흐리게. */
+    .yb-backlinks { margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--yb-rule); }
+    .yb-backlinks-title { font-size: 0.85em; font-weight: 600; color: var(--yb-ink-faint); margin: 0 0 0.5em; }
+    .yb-backlinks ul { list-style: none; padding-left: 0; margin: 0; }
+    .yb-backlinks li { margin: 0.45em 0; }
+    .yb-backlinks-folder { font-size: 0.8em; color: var(--yb-ink-faint); margin-left: 0.35em; }
     .yb-tag {
       color: var(--yb-tag, #B88500);
       font-weight: 600;
