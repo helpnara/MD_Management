@@ -1017,10 +1017,9 @@ def table_blocks(doc: Doc, el: El, style: Style) -> list:
     if not rows:
         return []
     width = max(len(r[0]) for r in rows)
+    # **첫 줄이 곧 머리줄이다** (2026-10-03 사용자 — 빈 머리줄 대신 첫 줄을 머리줄로). 메모의 표는 `<th>` 없이 첫 줄을
+    # 머리처럼 쓴다. 159 는 *자료를 머리줄로 올리지 않는다* 며 빈 머리줄을 세웠는데, 표 맨 위에 빈 줄이 하나 더 생겼다.
     head, body = rows[0], rows[1:]
-    if not head[1]:
-        body.insert(0, head)
-        head = ([""] * width, True)
 
     def line(cells):
         padded = cells + [""] * (width - len(cells))
@@ -1154,3 +1153,34 @@ def keeps_letters(plain: str, converted: str) -> bool:
         if i < len(want) and want[i] == c:
             i += 1
     return i == len(want)
+
+
+def _is_table_row(line: str) -> bool:
+    return _trim(line).startswith("|")
+
+
+def _is_blank_row(line: str) -> bool:
+    t = _trim(line)
+    return t.startswith("|") and all(c in " |\t" for c in t)
+
+
+def _is_separator(line: str) -> bool:
+    t = _trim(line)
+    return t.startswith("|") and "-" in t and all(c in " |-:\t" for c in t)
+
+
+def promote_empty_headers(markdown: str) -> str:
+    """**빈 머리줄을 첫 줄로 갈아 끼운다** (2026-10-03 사용자). 머리줄이 비고 바로 밑이 구분줄 · 그 밑이 표 줄이면
+    그 표 줄을 머리줄 자리로 올린다. 보낸 앱이 실어 준 마크다운(메모)에도 같은 규칙을 건다 — 우리 변환과 갈리지 않게."""
+    lines = markdown.split("\n")
+    out = []
+    i = 0
+    while i < len(lines):
+        if i + 2 < len(lines) and _is_blank_row(lines[i]) and _is_separator(lines[i + 1]) \
+                and _is_table_row(lines[i + 2]) and not _is_separator(lines[i + 2]):
+            out += [lines[i + 2], lines[i + 1]]
+            i += 3
+            continue
+        out.append(lines[i])
+        i += 1
+    return "\n".join(out)

@@ -355,8 +355,10 @@ final class LibraryModel: ObservableObject {
             log("붙여넣기: 서식 바꾸기를 그만둠 — 바꾼 글에 원래 글자가 다 담기지 않았다")
         }
         // 2-1. 보낸 앱이 실어 준 마크다운 (메모) — 우리 변환을 못 쓸 때만. 글자가 다 있어야 쓴다.
-        if let markdown = pasted.markdown?.trimmingCharacters(in: .whitespacesAndNewlines), !markdown.isEmpty,
-           HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: markdown) {
+        if let given = pasted.markdown?.trimmingCharacters(in: .whitespacesAndNewlines), !given.isEmpty,
+           HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: given) {
+            // 표의 빈 머리줄은 첫 줄로 — 우리 변환과 같은 모양 (2026-10-03 사용자).
+            let markdown = HTMLMarkdown.promoteEmptyHeaders(given)
             recordPaste(pasted, outcome: "보낸 앱의 마크다운을 씀")
             guard markdown != pasted.plain else { return nil }
             report("서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다.")

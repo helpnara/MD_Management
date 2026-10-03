@@ -32,10 +32,16 @@ final class HTMLMarkdownGoldenTests: XCTestCase {
             let converted: String
             let result: Bool
         }
+        struct Promote: Decodable {
+            let name: String
+            let markdown: String
+            let result: String
+        }
         struct Cases: Decodable {
             let convert: [Convert]
             let fill: [Fill]
             let keeps: [Keeps]
+            let promote: [Promote]
         }
         let htmlMarkdownCases: Cases
     }
@@ -71,6 +77,13 @@ final class HTMLMarkdownGoldenTests: XCTestCase {
         for item in try Self.goldenCases().keeps {
             XCTAssertEqual(HTMLMarkdown.keepsLetters(plain: item.plain, converted: item.converted), item.result,
                            "[\(item.name)]")
+        }
+    }
+
+    /// 보낸 앱의 마크다운에 든 표 — 빈 머리줄을 첫 줄로 (2026-10-03 사용자).
+    func testPromoteEmptyHeadersMatchesGolden() throws {
+        for item in try Self.goldenCases().promote {
+            XCTAssertEqual(HTMLMarkdown.promoteEmptyHeaders(item.markdown), item.result, "[\(item.name)]")
         }
     }
 }

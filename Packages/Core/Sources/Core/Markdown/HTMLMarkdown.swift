@@ -89,6 +89,35 @@ public enum HTMLMarkdown {
         return result.joined(separator: "\n")
     }
 
+    /// **빈 머리줄을 첫 줄로 갈아 끼운다** (2026-10-03 사용자). 머리줄이 비고 바로 밑이 구분줄 · 그 밑이 표 줄이면 그 표 줄을
+    /// 머리줄 자리로 올린다. 보낸 앱이 실어 준 마크다운(메모)에도 같은 규칙을 건다 — 우리 변환과 갈리지 않게.
+    public static func promoteEmptyHeaders(_ markdown: String) -> String {
+        func isTableRow(_ line: String) -> Bool { trim(line).hasPrefix("|") }
+        func isBlankRow(_ line: String) -> Bool {
+            let t = trim(line)
+            return t.hasPrefix("|") && t.unicodeScalars.allSatisfy { $0 == " " || $0 == "|" || $0 == "\t" }
+        }
+        func isSeparator(_ line: String) -> Bool {
+            let t = trim(line)
+            return t.hasPrefix("|") && t.unicodeScalars.contains("-")
+                && t.unicodeScalars.allSatisfy { $0 == " " || $0 == "|" || $0 == "-" || $0 == ":" || $0 == "\t" }
+        }
+        let lines = splitLines(markdown)
+        var out: [String] = []
+        var i = 0
+        while i < lines.count {
+            if i + 2 < lines.count, isBlankRow(lines[i]), isSeparator(lines[i + 1]),
+               isTableRow(lines[i + 2]), !isSeparator(lines[i + 2]) {
+                out += [lines[i + 2], lines[i + 1]]
+                i += 3
+                continue
+            }
+            out.append(lines[i])
+            i += 1
+        }
+        return out.joined(separator: "\n")
+    }
+
     /// **평문의 글자 · 숫자가 차례대로 모두 바꾼 글에 있나** — 바꾼 글에 더 있는 것(링크 주소)은 된다.
     /// 앱은 이것이 거짓이면 바꾸지 않고 **평문 그대로** 붙인다. 붙여넣기에서 글이 사라지는 일은 다시 없어야 한다 (206).
     public static func keepsLetters(plain: String, converted: String) -> Bool {
@@ -1210,12 +1239,10 @@ public enum HTMLMarkdown {
         }
         findRows(el)
         guard let width = rows.map({ $0.cells.count }).max(), width > 0 else { return [] }
-        var head = rows[0]
-        var body = Array(rows.dropFirst())
-        if !head.isHeader {
-            body.insert(head, at: 0)
-            head = (Array(repeating: "", count: width), true)
-        }
+        // **첫 줄이 곧 머리줄이다** (2026-10-03 사용자 — 빈 머리줄 대신 첫 줄을 머리줄로). 메모의 표는 `<th>` 없이 첫 줄을
+        // 머리처럼 쓴다. 159 는 *자료를 머리줄로 올리지 않는다* 며 빈 머리줄을 세웠는데, 표 맨 위에 빈 줄이 하나 더 생겼다.
+        let head = rows[0]
+        let body = Array(rows.dropFirst())
         func line(_ cells: [String]) -> String {
             var padded = cells
             while padded.count < width { padded.append("") }

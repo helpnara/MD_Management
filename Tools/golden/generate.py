@@ -2396,6 +2396,10 @@ def build_html_markdown_cases() -> dict:
         if old is None:
             continue
         new = hm.convert(case["html"]) or ""
+        # 159 는 머리줄이 없으면 빈 머리줄을 세웠다 — 이제 첫 줄이 머리줄이다 (2026-10-03 사용자). 예전 표를 그렇게 옮겨 견준다.
+        lines = old.split("\n")
+        if lines and not lines[0].replace("|", "").strip() and len(lines) >= 3:
+            old = "\n".join([lines[2], lines[1]] + lines[3:])
         if old not in new:
             raise SystemExit(f"::error::[159 {case['name']}] 표가 달라졌다\n예전:\n{old}\n새:\n{new}")
         converted.append({"name": "159 · " + case["name"], "html": case["html"], "markdown": new,
@@ -2412,7 +2416,17 @@ def build_html_markdown_cases() -> dict:
             raise SystemExit(f"::error::[{case['name']}] 안전장치: 뜻 {case['want']} · 셈 {got}")
         keeps.append({"name": case["name"], "plain": case["plain"], "converted": case["converted"], "result": got})
 
-    return {"convert": converted, "fill": fills, "keeps": keeps}
+    promotes = []
+    for case in spec["promote"]:
+        got = hm.promote_empty_headers(case["markdown"])
+        if hm.letters(got) != hm.letters(case["markdown"]) and sorted(hm.letters(got)) != sorted(hm.letters(case["markdown"])):
+            raise SystemExit(f"::error::[{case['name']}] 머리줄 올리기가 글자를 바꿨다")
+        rendered = cmark_html(got)
+        if "|" in case["markdown"].split("\n")[0] and "<table>" in cmark_html(case["markdown"]) and "<table>" not in rendered:
+            raise SystemExit(f"::error::[{case['name']}] 머리줄을 올렸더니 표가 깨졌다\n{got}")
+        promotes.append({**case, "result": got})
+
+    return {"convert": converted, "fill": fills, "keeps": keeps, "promote": promotes}
 
 
 def build_broken_cases() -> list[dict]:

@@ -11,7 +11,7 @@
     "ol": 3,
     "li": 7,
     "table": 1,
-    "td": 6,
+    "td": 3,
     "th": 3,
     "strong": 4
    }
@@ -24,7 +24,7 @@
     "h1": 1,
     "h2": 1,
     "table": 1,
-    "td": 4,
+    "td": 2,
     "li": 2,
     "strong": 1,
     "th": 2
@@ -71,7 +71,7 @@
    "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 28.0px '.AppleSystemUIFont'; color: #000000}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 22.0px '.AppleSystemUIFont'}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; min-height: 22.0px}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 15.0px Menlo}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 28.00px}\nspan.s2 {font-family: '.SFUI-Semibold'; font-weight: bold; font-style: normal; font-size: 22.00px}\nspan.s3 {text-decoration: line-through}\nspan.s4 {font-family: '.SFUI-Regular'; font-weight: normal; font-style: italic; font-size: 17.00px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa; padding: 4.0px 4.0px 4.0px 4.0px}\nul.ul1 {list-style-type: disc}\nol.ol1 {list-style-type: decimal}\n</style>\n</head>\n<body>\n<table class=\"t1\"><tbody><tr>\n<td class=\"td1\"><p class=\"p3\">한 줄</p><p class=\"p3\">두 줄</p></td>\n<td class=\"td1\"><p class=\"p3\">a | b</p></td>\n</tr></tbody></table>\n</body>\n</html>\n",
    "expect": {
     "table": 1,
-    "td": 2,
+    "td": 0,
     "th": 2
    }
   },
@@ -277,6 +277,28 @@
    "plain": "모두 2. 건",
    "converted": "모두 건",
    "want": false
+  }
+ ],
+ "promote": [
+  {
+   "name": "빈 머리줄을 첫 줄로",
+   "markdown": "앞 글\n\n|   |   |\n| --- | --- |\n| 구분 | `23년` |\n| 초급 | 76 |\n\n뒤 글"
+  },
+  {
+   "name": "머리줄이 이미 있으면 그대로",
+   "markdown": "| 이름 | 값 |\n| --- | --- |\n| 가 | 1 |"
+  },
+  {
+   "name": "빈 머리줄뿐인 표는 그대로",
+   "markdown": "|   |   |\n| --- | --- |"
+  },
+  {
+   "name": "정렬 표시가 있는 구분줄",
+   "markdown": "| | |\n|:---|---:|\n| 왼 | 오 |"
+  },
+  {
+   "name": "표가 아닌 글은 그대로",
+   "markdown": "그냥 | 글\n---\n끝"
   }
  ]
 }
