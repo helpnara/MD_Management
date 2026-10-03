@@ -1,0 +1,119 @@
+{
+  "_왜": "213 — 다른 앱의 공유 메뉴로 받은 것을 노트 글로. 값은 generate.py 가 셈한다. expect 는 사례가 지키려는 뜻이고, 셈과 다르면 멈춘다.",
+  "cases": [
+    {
+      "name": "글만 — 첫 줄이 제목, 글은 그대로",
+      "text": "장보기 목록\n우유\n빵",
+      "fallback": "받은 글 2026-10-04 07-30",
+      "expect": {
+        "title": "장보기 목록",
+        "markdown": "장보기 목록\n우유\n빵\n"
+      }
+    },
+    {
+      "name": "글 앞뒤의 빈 줄 · 줄 끝 빈칸은 뗀다",
+      "text": "\n\n  \n첫 줄  \n둘째\t\n\n",
+      "fallback": "받은 글",
+      "expect": {
+        "markdown": "첫 줄\n둘째\n"
+      }
+    },
+    {
+      "name": "제목 마커가 있는 글",
+      "text": "# 회의 메모\n\n결정 사항",
+      "fallback": "받은 글",
+      "expect": {
+        "title": "회의 메모"
+      }
+    },
+    {
+      "name": "주소와 제목 (사파리)",
+      "url": "https://example.org/article?id=3",
+      "pageTitle": "좋은 글 [요약]",
+      "fallback": "받은 글",
+      "expect": {
+        "title": "좋은 글 [요약]",
+        "markdown": "# 좋은 글 [요약]\n\n[좋은 글 \\[요약\\]](https://example.org/article?id=3)\n"
+      }
+    },
+    {
+      "name": "주소만 — 제목이 없으면 사이트 이름이 제목",
+      "url": "https://Example.org/a",
+      "fallback": "받은 글",
+      "expect": {
+        "title": "example.org"
+      }
+    },
+    {
+      "name": "글 안에 주소가 이미 있으면 또 붙이지 않는다",
+      "text": "읽어 볼 것 https://example.org/a",
+      "url": "https://example.org/a",
+      "pageTitle": "글 제목",
+      "fallback": "받은 글",
+      "expect": {
+        "markdown": "읽어 볼 것 https://example.org/a\n"
+      }
+    },
+    {
+      "name": "글 + 주소",
+      "text": "나중에 볼 글",
+      "url": "https://example.org/b",
+      "pageTitle": "예시",
+      "fallback": "받은 글",
+      "expect": {
+        "markdown": "나중에 볼 글\n\n[예시](https://example.org/b)\n"
+      }
+    },
+    {
+      "name": "사진만 — 날짜 제목",
+      "images": [
+        "assets/2026-10-04-1.jpg",
+        "assets/2026-10-04-2.png"
+      ],
+      "fallback": "받은 글 2026-10-04 07-30",
+      "expect": {
+        "title": "받은 글 2026-10-04 07-30"
+      }
+    },
+    {
+      "name": "글 + 사진",
+      "text": "오늘 찍은 것",
+      "images": [
+        "assets/2026-10-04-1.jpg"
+      ],
+      "fallback": "받은 글"
+    },
+    {
+      "name": "줄바꿈 든 주소 제목은 한 줄로",
+      "url": "https://example.org/c",
+      "pageTitle": "  두 줄\n제목  ",
+      "fallback": "받은 글",
+      "expect": {
+        "title": "두 줄 제목"
+      }
+    },
+    {
+      "name": "글이 기호뿐이면 제목이 아니다 — 주소의 제목으로",
+      "text": "---",
+      "url": "https://example.org/d",
+      "pageTitle": "기호 뒤",
+      "fallback": "받은 글"
+    },
+    {
+      "name": "CRLF 로 온 글",
+      "text": "첫 줄\r\n둘째 줄\r\n",
+      "fallback": "받은 글",
+      "expect": {
+        "markdown": "첫 줄\n둘째 줄\n"
+      }
+    },
+    {
+      "name": "www 주소만 — www 는 떼고",
+      "url": "https://www.example.org/x",
+      "fallback": "받은 글",
+      "expect": {
+        "title": "example.org"
+      }
+    }
+  ]
+}

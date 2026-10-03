@@ -8535,6 +8535,143 @@
       "viewport": 0
     }
   ],
+  "shareCases": [
+    {
+      "fallback": "받은 글 2026-10-04 07-30",
+      "images": [],
+      "markdown": "장보기 목록\n우유\n빵\n",
+      "name": "글만 — 첫 줄이 제목, 글은 그대로",
+      "pageTitle": null,
+      "text": "장보기 목록\n우유\n빵",
+      "title": "장보기 목록",
+      "url": null
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "첫 줄\n둘째\n",
+      "name": "글 앞뒤의 빈 줄 · 줄 끝 빈칸은 뗀다",
+      "pageTitle": null,
+      "text": "\n\n  \n첫 줄  \n둘째\t\n\n",
+      "title": "첫 줄",
+      "url": null
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "# 회의 메모\n\n결정 사항\n",
+      "name": "제목 마커가 있는 글",
+      "pageTitle": null,
+      "text": "# 회의 메모\n\n결정 사항",
+      "title": "회의 메모",
+      "url": null
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "# 좋은 글 [요약]\n\n[좋은 글 \\[요약\\]](https://example.org/article?id=3)\n",
+      "name": "주소와 제목 (사파리)",
+      "pageTitle": "좋은 글 [요약]",
+      "text": "",
+      "title": "좋은 글 [요약]",
+      "url": "https://example.org/article?id=3"
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "# example.org\n\n[https://Example.org/a](https://Example.org/a)\n",
+      "name": "주소만 — 제목이 없으면 사이트 이름이 제목",
+      "pageTitle": null,
+      "text": "",
+      "title": "example.org",
+      "url": "https://Example.org/a"
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "읽어 볼 것 https://example.org/a\n",
+      "name": "글 안에 주소가 이미 있으면 또 붙이지 않는다",
+      "pageTitle": "글 제목",
+      "text": "읽어 볼 것 https://example.org/a",
+      "title": "읽어 볼 것 https://example.org/a",
+      "url": "https://example.org/a"
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "나중에 볼 글\n\n[예시](https://example.org/b)\n",
+      "name": "글 + 주소",
+      "pageTitle": "예시",
+      "text": "나중에 볼 글",
+      "title": "나중에 볼 글",
+      "url": "https://example.org/b"
+    },
+    {
+      "fallback": "받은 글 2026-10-04 07-30",
+      "images": [
+        "assets/2026-10-04-1.jpg",
+        "assets/2026-10-04-2.png"
+      ],
+      "markdown": "# 받은 글 2026-10-04 07-30\n\n![](assets/2026-10-04-1.jpg)\n\n![](assets/2026-10-04-2.png)\n",
+      "name": "사진만 — 날짜 제목",
+      "pageTitle": null,
+      "text": "",
+      "title": "받은 글 2026-10-04 07-30",
+      "url": null
+    },
+    {
+      "fallback": "받은 글",
+      "images": [
+        "assets/2026-10-04-1.jpg"
+      ],
+      "markdown": "오늘 찍은 것\n\n![](assets/2026-10-04-1.jpg)\n",
+      "name": "글 + 사진",
+      "pageTitle": null,
+      "text": "오늘 찍은 것",
+      "title": "오늘 찍은 것",
+      "url": null
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "# 두 줄 제목\n\n[두 줄 제목](https://example.org/c)\n",
+      "name": "줄바꿈 든 주소 제목은 한 줄로",
+      "pageTitle": "  두 줄\n제목  ",
+      "text": "",
+      "title": "두 줄 제목",
+      "url": "https://example.org/c"
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "# 기호 뒤\n\n---\n\n[기호 뒤](https://example.org/d)\n",
+      "name": "글이 기호뿐이면 제목이 아니다 — 주소의 제목으로",
+      "pageTitle": "기호 뒤",
+      "text": "---",
+      "title": "기호 뒤",
+      "url": "https://example.org/d"
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "첫 줄\n둘째 줄\n",
+      "name": "CRLF 로 온 글",
+      "pageTitle": null,
+      "text": "첫 줄\r\n둘째 줄\r\n",
+      "title": "첫 줄",
+      "url": null
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "# example.org\n\n[https://www.example.org/x](https://www.example.org/x)\n",
+      "name": "www 주소만 — www 는 떼고",
+      "pageTitle": null,
+      "text": "",
+      "title": "example.org",
+      "url": "https://www.example.org/x"
+    }
+  ],
   "styleCases": [
     {
       "block": null,

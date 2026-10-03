@@ -2240,6 +2240,70 @@ final class LibraryModel: ObservableObject {
         refreshVaultPaths()   // 폴더가 생기고 · 바뀌고 · 지워졌을 수 있다 (177)
     }
 
+    // MARK: - 공유로 받은 글 (213)
+
+    /// **다른 앱의 공유 메뉴로 보낸 것을 `받은 글` 폴더의 새 노트로** (213). 공유 확장은 받은 것을 앱 그룹 상자에
+    /// 두기만 한다(`ShareInbox`) — 사용자 폴더는 앱만 연다. 앱이 앞으로 나올 때마다 상자를 비운다.
+    ///
+    /// 사진은 사진 넣기와 같은 길(`ImageImport` 로 다시 읽고 줄여 `받은 글/assets/` 에)로 쓰고, 노트 글은 Core 가 짠다
+    /// (`IncomingShare.note`). **노트를 만든 뒤에만** 상자의 칸을 지운다 — 중간에 실패하면 다음에 다시 한다(자료 유실 없음).
+    /// 둘러보기 자료(가짜 폴더)에는 넣지 않는다 — 진짜 폴더를 고를 때까지 상자에 둔다.
+    func importShared() async {
+        guard let store, !isSample, !importingShared else { return }
+        importingShared = true
+        defer { importingShared = false }
+        let inbox = ShareInbox()
+        let entries = await inbox.pending()
+        guard !entries.isEmpty else { return }
+        var made = 0
+        var failed = 0
+        for entry in entries {
+            do {
+                var images: [String] = []
+                for name in entry.item.images {
+                    guard let raw = await inbox.imageData(name, in: entry),
+                          let ext = ImageImport.pastedExtension(of: raw) else { continue }
+                    let data: Data?
+                    if ext == "jpg" {
+                        data = await Task.detached(priority: .userInitiated) { ImageImport.jpeg(from: raw) }.value
+                    } else {
+                        data = raw
+                    }
+                    guard let data else { continue }
+                    images.append(try await store.writeAsset(data, stem: ImageImport.stem(), ext: ext,
+                                                             besideNoteIn: IncomingShare.folder))
+                }
+                let note = IncomingShare.note(text: entry.item.text, url: entry.item.url,
+                                              pageTitle: entry.item.pageTitle, images: images,
+                                              fallback: "받은 글 " + Self.shareClock.string(from: entry.item.created))
+                let path = try await store.createNote(named: note.title, in: IncomingShare.folder, text: note.markdown)
+                await inbox.remove(entry)
+                log("공유로 받은 글을 노트로: \(path) · 사진 \(images.count)장")
+                made += 1
+            } catch {
+                log("공유로 받은 글을 넣지 못함: \(error.localizedDescription)")
+                failed += 1
+            }
+        }
+        await reloadFolders()
+        await reloadNotes()
+        if failed > 0 {
+            report("공유로 받은 글 \(failed)개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다.")
+        } else if made > 0 {
+            report("공유로 받은 글 \(made)개를 받은 글 폴더에 새 노트로 넣었습니다.")
+        }
+    }
+
+    private var importingShared = false
+
+    /// 받은 글의 이름이 될 때 — 제목이 하나도 없을 때만 쓴다 (`받은 글 2026-10-04 07-30`).
+    private static let shareClock: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH-mm"
+        return formatter
+    }()
+
     func reloadNotes() async {
         guard let store else { return }
         isLoading = true

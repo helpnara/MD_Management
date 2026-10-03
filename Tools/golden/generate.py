@@ -63,6 +63,7 @@ FOLDER_TREE_CASES = ROOT / "Tools" / "golden" / "folder-tree-cases.json"
 SCROLL_GAUGE_CASES = ROOT / "Tools" / "golden" / "scroll-gauge-cases.json"
 HTML_MARKDOWN_CASES = ROOT / "Tools" / "golden" / "html-markdown-cases.json"
 RESTYLE_CASES = ROOT / "Tools" / "golden" / "restyle-cases.json"
+SHARE_CASES = ROOT / "Tools" / "golden" / "share-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -2712,7 +2713,82 @@ def build() -> dict:
         "scrollGaugeCases": build_scroll_gauge_cases(),
         "htmlMarkdownCases": build_html_markdown_cases(),
         "restyleCases": build_restyle_cases(),
+        "shareCases": build_share_cases(),
     }
+
+
+# ── 공유로 받은 글 (213) — Swift `IncomingShare.note` 와 같은 셈 ───────────────────
+
+def _share_trim(text: str, leading: bool = True) -> str:
+    text = text.rstrip(" \t")
+    return text.lstrip(" \t") if leading else text
+
+
+def _share_one_line(text: str) -> str:
+    return _share_trim(text.replace("\r\n", " ").replace("\r", " ").replace("\n", " "))
+
+
+def incoming_share(text: str, url, page_title, images: list, fallback: str) -> dict:
+    """받은 글 · 주소 · 주소의 제목 · 사진 경로 → 노트 제목과 글.
+
+    제목은 첫 줄(`first_line` — 제목을 따라 파일 이름을 바꿀 때와 같은 셈). 첫 줄이 없으면 주소의 제목 → 주소 →
+    fallback 이고, 글 맨 위에 `# 제목` 을 넣는다. 주소는 `markdown_link` (노트 연결과 같은 꼴), 글에 이미 있으면 안 붙인다."""
+    lines = [_share_trim(l, leading=False) for l in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    while lines and not _share_trim(lines[0]):
+        lines.pop(0)
+    while lines and not lines[-1]:
+        lines.pop()
+    body = "\n".join(lines)
+    address = _share_one_line(url) if url is not None else None
+    address = address or None
+    label = _share_one_line(page_title) if page_title is not None else None
+    label = label or None
+    parts = []
+    if body:
+        parts.append(body)
+    if address and address not in body:
+        parts.append(markdown_link(label or address, address))
+    for path in images:
+        parts.append("!" + markdown_link("", path))
+    first = first_line(body)
+    if first:
+        return {"title": first, "markdown": "\n\n".join(parts) + "\n"}
+    # 주소 그대로는 제목이 링크가 되고 파일 이름이 `https---…` 가 된다 — 사이트 이름만 (Swift `siteName`).
+    site = (urllib.parse.urlsplit(address).hostname or None) if address else None
+    if site and site.startswith("www.") and len(site) > 4:
+        site = site[4:]       # `www.` 는 제목 줄에서 다시 자동 링크가 된다
+    title = label or site or fallback
+    return {"title": title, "markdown": "\n\n".join(["# " + title] + parts) + "\n"}
+
+
+def build_share_cases() -> list[dict]:
+    """정답을 셈하고, **그 글을 cmark-gfm 으로 그려 본다** — 주소는 링크 하나로, 사진은 그림으로 나와야 하고,
+    글자가 빠지면 안 된다. 제목은 노트 목록이 보여 줄 제목(`note_title`)과 같아야 한다 — 파일 이름과 첫 줄이 갈리지 않게."""
+    spec = json.loads(SHARE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        got = incoming_share(case.get("text", ""), case.get("url"), case.get("pageTitle"),
+                             case.get("images", []), case["fallback"])
+        html = cmark_html(got["markdown"])
+        if note_title(got["markdown"], "아무개.md") != got["title"]:
+            raise SystemExit(f"::error::[{case['name']}] 제목 {got['title']!r} 이 첫 줄과 다르다:\n{got['markdown']}")
+        url = case.get("url")
+        if url and url.strip() and url.strip() not in case.get("text", ""):
+            if html.count("<a href=") != 1:
+                raise SystemExit(f"::error::[{case['name']}] 주소가 링크 하나로 안 나왔다:\n{html}")
+        if html.count("<img ") != len(case.get("images", [])):
+            raise SystemExit(f"::error::[{case['name']}] 사진 수가 다르다:\n{html}")
+        for word in re.findall(r"\w+", case.get("text", "")):
+            if word not in got["markdown"]:
+                raise SystemExit(f"::error::[{case['name']}] 글자 {word!r} 가 빠졌다")
+        want = case.get("expect", {})
+        for key, value in want.items():
+            if got[key] != value:
+                raise SystemExit(f"::error::[{case['name']}] {key}: 뜻 {value!r} · 셈 {got[key]!r}")
+        out.append({"name": case["name"], "text": case.get("text", ""), "url": url,
+                    "pageTitle": case.get("pageTitle"), "images": case.get("images", []),
+                    "fallback": case["fallback"], "title": got["title"], "markdown": got["markdown"]})
+    return out
 
 
 # ── 읽기 ↔ 쓰기 자리 잇기 — 줄 지도 (176) ──────────────────────────────────────
@@ -3582,7 +3658,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]

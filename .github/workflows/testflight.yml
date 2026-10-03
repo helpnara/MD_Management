@@ -227,6 +227,29 @@ jobs:
           fi
           echo "APP_VERSION=$SHORT ($BUILD)" >> "$GITHUB_ENV"
 
+          # 213 — 공유 확장. 앱 안에 들었는지 · 앱 그룹 자격(받은 글 상자)이 둘 다에 박혔는지 ·
+          # 판 번호가 앱과 같은지(다르면 App Store 가 ITMS-90473 으로 돌려보낸다).
+          echo "── 공유 확장 (213) ──"
+          APPEX="$APP/PlugIns/ShareExtension.appex"
+          if [ ! -d "$APPEX" ]; then
+            echo "::error::공유 확장이 앱에 안 들어갔습니다 ($APPEX)"
+            exit 1
+          fi
+          for target in "$APP" "$APPEX"; do
+            APPEX_ENT=$(codesign -d --entitlements :- "$target" 2>/dev/null || true)
+            if ! printf '%s' "$APPEX_ENT" | grep -q 'group.com.helpnara.markdown'; then
+              echo "::error::앱 그룹 자격이 빠졌습니다: $target — 개발자 콘솔의 App Groups 등록 · App ID 연결을 보세요 (docs/06-ci.md §2.13)"
+              exit 1
+            fi
+          done
+          XSHORT=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APPEX/Info.plist")
+          XBUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APPEX/Info.plist")
+          echo "공유 확장 판: $XSHORT ($XBUILD)"
+          if [ "$XSHORT" != "$SHORT" ] || [ "$XBUILD" != "$BUILD" ]; then
+            echo "::error::공유 확장의 판($XSHORT · $XBUILD)이 앱($SHORT · $BUILD)과 다릅니다."
+            exit 1
+          fi
+
           echo "── iCloud 설정 (Files 앱 노출) ──"
           plutil -convert json -o - "$APP/Info.plist" | python3 -c "
           import json, sys
