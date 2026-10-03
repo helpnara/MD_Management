@@ -2016,6 +2016,20 @@ final class LibraryModel: ObservableObject {
         scheduleAutosave()
     }
 
+    /// **읽기 화면에서 체크상자를 눌렀다** (211). 그 줄의 `[ ]` · `[x]` 한 글자만 뒤집어
+    /// 편집기와 **같은 문**(`noteEdited`)으로 넣고 바로 쓴다 — 본문을 고치는 길은 하나다 (CLAUDE.md §1).
+    /// 저장이 읽기 화면을 다시 그린다 (`write` → `renderReading`). 체크상자 줄이 아니면 아무것도 안 한다.
+    func toggleTask(line: Int) async {
+        guard draftPath != nil else { return }
+        let text = isDirty ? draft : noteText
+        guard let toggled = TaskToggle.toggled(text, line: line) else {
+            log("체크상자 줄이 아님: \(line)")
+            return
+        }
+        noteEdited(toggled)
+        await save()
+    }
+
     private func scheduleAutosave() {
         autosave?.cancel()
         autosave = Task { [weak self] in

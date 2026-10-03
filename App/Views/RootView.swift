@@ -1054,6 +1054,7 @@ private struct NoteDetail: View {
             // (빌드 4 스크린샷 — 사이드바 · 목록까지 사라졌다).
             NoteWebView(
                 html: library.pageHTML,
+                pageID: library.selectedNote?.relativePath,
                 assets: library.assetProvider ?? EmptyAssetProvider(),
                 onOpen: handle,
                 spotRequest: library.spotRequest,
@@ -1140,6 +1141,8 @@ private struct NoteDetail: View {
             openURL(url)
         case .attachment(let path):
             Task { await library.previewAttachment(path) }
+        case .task(let line):
+            Task { await library.toggleTask(line: line) }
         case .missing(let path):
             // 빈 경로만 띄우면 오류처럼 보인다 — 무엇이 없는지 말한다 (빌드 20 · 10번).
             alert = "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다."

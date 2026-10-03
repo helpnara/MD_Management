@@ -410,5 +410,12 @@ enum MarkdownStyler {
                 sheet.hideMarker(in: storage, range: range)
             }
         }
+        // 코드 덩어리 (210) — 울타리 안의 줄과 울타리 줄 자신. 읽기 화면처럼 폭 전체의 회색 상자로 보인다.
+        // 네 칸 들여쓴 줄은 넣지 않는다 — 줄 하나로는 목록에 딸린 글인지 코드인지 모른다 (LineStyler T4).
+        // 울타리인지는 `BlockContext` 가 잰다 — 울타리를 세는 자리와 같은 잣대다.
+        let isFence = style.block == .codeBlock && BlockContext.isFence(lineString)
+        if role == .code || isFence {
+            sheet.codeBox(in: storage, range: paragraph, isFence: isFence)
+        }
     }
 }

@@ -310,5 +310,71 @@
    "name": "표가 아닌 글은 그대로",
    "markdown": "그냥 | 글\n---\n끝"
   }
+ ],
+ "tasks": [
+  {
+   "name": "켜기",
+   "markdown": "# 할 일\n\n- [ ] 장보기\n- [x] 청소",
+   "line": 2
+  },
+  {
+   "name": "끄기",
+   "markdown": "# 할 일\n\n- [ ] 장보기\n- [x] 청소",
+   "line": 3
+  },
+  {
+   "name": "겹친 항목",
+   "markdown": "- [ ] 위\n  - [ ] 아래\n  - [X] 대문자",
+   "line": 2
+  },
+  {
+   "name": "번호 목록의 체크상자",
+   "markdown": "1. [ ] 하나\n2) [x] 둘",
+   "line": 0
+  },
+  {
+   "name": "탭 뒤의 체크상자",
+   "markdown": "- [x]\t탭",
+   "line": 0
+  },
+  {
+   "name": "머리말 줄도 센다",
+   "markdown": "---\ntitle: 가\n---\n- [ ] 첫 일",
+   "line": 3
+  },
+  {
+   "name": "체크상자가 아닌 줄은 그대로",
+   "markdown": "- 그냥 항목\n- [ ]\n글",
+   "line": 0
+  },
+  {
+   "name": "빈 체크상자 혼자는 아니다",
+   "markdown": "- [ ]",
+   "line": 0
+  },
+  {
+   "name": "줄 밖",
+   "markdown": "- [ ] 가",
+   "line": 5
+  },
+  {
+   "name": "CRLF 줄",
+   "markdown": "- [ ] 가\r\n- [x] 나\r\n",
+   "line": 1
+  }
+ ],
+ "taskLines": [
+  {
+   "name": "읽기 화면이 누를 수 있게 만드는 줄",
+   "markdown": "# 할 일\n\n- [ ] 장보기\n- [x] 청소\n  - [ ] 겹침\n\n1. [ ] 번호\n\n글"
+  },
+  {
+   "name": "코드 안은 빼고",
+   "markdown": "- [ ] 가\n\n```\n- [ ] 코드\n```\n\n- [x] 나"
+  },
+  {
+   "name": "머리말 뒤",
+   "markdown": "---\ntitle: 가\n---\n- [ ] 첫 일\n- 그냥"
+  }
  ]
 }

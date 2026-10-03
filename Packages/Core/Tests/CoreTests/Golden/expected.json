@@ -4504,6 +4504,95 @@
         "name": "표가 아닌 글은 그대로",
         "result": "그냥 | 글\n---\n끝"
       }
+    ],
+    "taskLines": [
+      {
+        "lines": [
+          2,
+          3,
+          4,
+          6
+        ],
+        "markdown": "# 할 일\n\n- [ ] 장보기\n- [x] 청소\n  - [ ] 겹침\n\n1. [ ] 번호\n\n글",
+        "name": "읽기 화면이 누를 수 있게 만드는 줄"
+      },
+      {
+        "lines": [
+          0,
+          6
+        ],
+        "markdown": "- [ ] 가\n\n```\n- [ ] 코드\n```\n\n- [x] 나",
+        "name": "코드 안은 빼고"
+      },
+      {
+        "lines": [
+          3
+        ],
+        "markdown": "---\ntitle: 가\n---\n- [ ] 첫 일\n- 그냥",
+        "name": "머리말 뒤"
+      }
+    ],
+    "tasks": [
+      {
+        "line": 2,
+        "markdown": "# 할 일\n\n- [ ] 장보기\n- [x] 청소",
+        "name": "켜기",
+        "result": "# 할 일\n\n- [x] 장보기\n- [x] 청소"
+      },
+      {
+        "line": 3,
+        "markdown": "# 할 일\n\n- [ ] 장보기\n- [x] 청소",
+        "name": "끄기",
+        "result": "# 할 일\n\n- [ ] 장보기\n- [ ] 청소"
+      },
+      {
+        "line": 2,
+        "markdown": "- [ ] 위\n  - [ ] 아래\n  - [X] 대문자",
+        "name": "겹친 항목",
+        "result": "- [ ] 위\n  - [ ] 아래\n  - [ ] 대문자"
+      },
+      {
+        "line": 0,
+        "markdown": "1. [ ] 하나\n2) [x] 둘",
+        "name": "번호 목록의 체크상자",
+        "result": "1. [x] 하나\n2) [x] 둘"
+      },
+      {
+        "line": 0,
+        "markdown": "- [x]\t탭",
+        "name": "탭 뒤의 체크상자",
+        "result": "- [ ]\t탭"
+      },
+      {
+        "line": 3,
+        "markdown": "---\ntitle: 가\n---\n- [ ] 첫 일",
+        "name": "머리말 줄도 센다",
+        "result": "---\ntitle: 가\n---\n- [x] 첫 일"
+      },
+      {
+        "line": 0,
+        "markdown": "- 그냥 항목\n- [ ]\n글",
+        "name": "체크상자가 아닌 줄은 그대로",
+        "result": null
+      },
+      {
+        "line": 0,
+        "markdown": "- [ ]",
+        "name": "빈 체크상자 혼자는 아니다",
+        "result": null
+      },
+      {
+        "line": 5,
+        "markdown": "- [ ] 가",
+        "name": "줄 밖",
+        "result": null
+      },
+      {
+        "line": 1,
+        "markdown": "- [ ] 가\r\n- [x] 나\r\n",
+        "name": "CRLF 줄",
+        "result": "- [ ] 가\r\n- [ ] 나\r\n"
+      }
     ]
   },
   "indentCases": [

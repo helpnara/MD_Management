@@ -10,6 +10,9 @@ struct NoteWebView: UIViewRepresentable {
 
     /// 완전한 HTML 문서 (`MarkdownHTML.page`).
     let html: String
+    /// 어느 노트의 페이지인가. **같은 노트의 페이지가 새로 오면 보던 높이를 지킨다** (211 —
+    /// 체크상자를 누르면 저장이 페이지를 다시 그린다. 그때마다 맨 위로 튀면 쓸 수 없다).
+    var pageID: String? = nil
     /// 폴더 안 파일을 읽어 주는 것. 웹뷰의 `yb://` 요청이 여기로 온다.
     let assets: AssetProvider
     /// 뷰어 안에서 무언가를 탭했을 때.
@@ -63,6 +66,14 @@ struct NoteWebView: UIViewRepresentable {
             coordinator.reportSpot(webView)
         }
         guard coordinator.loadedHTML != html else { return }
+        // 같은 노트를 다시 그리는 것이면 지금 높이를 붙들어 둔다 — 다 뜬 뒤 그리로 간다.
+        if coordinator.loadedHTML != nil, pageID != nil, coordinator.loadedPageID == pageID {
+            coordinator.keptOffset = webView.scrollView.contentOffset.y
+                + webView.scrollView.adjustedContentInset.top
+        } else {
+            coordinator.keptOffset = nil
+        }
+        coordinator.loadedPageID = pageID
         coordinator.loadedHTML = html
         coordinator.isLoaded = false
         // `yb://` 를 기준 주소로 삼아야 상대 주소가 우리 스킴으로 풀린다.
@@ -74,6 +85,9 @@ struct NoteWebView: UIViewRepresentable {
         let schemeHandler = NoteSchemeHandler()
         var onOpen: (NoteLinkAction) -> Void
         var loadedHTML: String?
+        var loadedPageID: String?
+        /// 같은 노트를 다시 그릴 때 지킬 높이 (211). 페이지 맨 위에서 잰 값.
+        var keptOffset: CGFloat?
         var onSpot: @MainActor (LibraryModel.Spot?) -> Void = { _ in }
         var onRestored: @MainActor () -> Void = {}
         /// 이미 답한 물음 · 가는 중인 자리 · 페이지가 다 떴나.
@@ -163,7 +177,28 @@ struct NoteWebView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             isLoaded = true
-            restoreIfReady(webView)
+            // 쓰기에서 넘어온 자리가 있으면 그것이 먼저다.
+            if restoring != nil {
+                keptOffset = nil
+                restoreIfReady(webView)
+            } else if let kept = keptOffset {
+                keptOffset = nil
+                keepOffset(kept, in: webView)
+            }
+        }
+
+        /// 다시 그린 페이지를 **보던 높이로** 되돌린다 (211). 스크립트가 안 돌면 스크롤 뷰로 직접.
+        private func keepOffset(_ y: CGFloat, in webView: WKWebView) {
+            let value = Double(y)
+            guard value.isFinite else { return }
+            webView.evaluateJavaScript("window.scrollTo(0,\(value));") { [weak webView] _, error in
+                guard Thread.isMainThread else { return }
+                MainActor.assumeIsolated {
+                    guard error != nil, let scrollView = webView?.scrollView else { return }
+                    scrollView.setContentOffset(
+                        CGPoint(x: 0, y: y - scrollView.adjustedContentInset.top), animated: false)
+                }
+            }
         }
 
         /// **`async` 판으로 쓴다.** 클로저를 받는 판은 Xcode 26.6 의 WebKit 에서 클로저 타입이
@@ -194,6 +229,8 @@ enum NoteLinkAction {
     case external(URL)
     /// 참조했는데 없는 것 — 알린다.
     case missing(String)
+    /// 체크상자 — 그 줄의 `[ ]` · `[x]` 를 뒤집는다 (211). 줄 번호는 `LineMap` 과 같다.
+    case task(Int)
 
     init(url: URL) {
         guard url.scheme == MarkdownHTML.scheme else {
@@ -204,6 +241,13 @@ enum NoteLinkAction {
         switch url.host {
         case "missing":
             self = .missing(path)
+        case "task":
+            // `MarkdownHTML.linkTasks` 가 만든 `yb://task/<줄>`.
+            if let line = Int(path) {
+                self = .task(line)
+            } else {
+                self = .missing(path)
+            }
         case "note":
             // **`.md` 는 어디에 있든 노트로 연다** (T7, 사용자 요청 — 메모 앱의 메모 간 링크처럼).
             // 빌드 26 까지는 `assets/` 안의 것만 미리보기로 물러섰다. 노트로 열면 보고 있는

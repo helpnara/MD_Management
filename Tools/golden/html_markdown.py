@@ -1184,3 +1184,65 @@ def promote_empty_headers(markdown: str) -> str:
         out.append(lines[i])
         i += 1
     return "\n".join(out)
+
+
+# ── 읽기 화면에서 체크상자 누르기 (211) — Swift `TaskToggle` 의 쌍둥이 ──────────────────
+
+def _task_marker(line: str):
+    """체크상자가 든 목록 줄이면 `[` 다음 글자(` ` · `x` · `X`)의 자리. 아니면 None.
+
+    앞 빈칸 · 인용(`>`) 몇 겹 · 목록 기호(`-` `*` `+` · `1.` `1)`) · 빈칸 · `[ ]`/`[x]` · 그 뒤 빈칸이나 줄 끝."""
+    i, n = 0, len(line)
+
+    def spaces(k):
+        while k < n and line[k] in " \t":
+            k += 1
+        return k
+
+    i = spaces(i)
+    while i < n and line[i] == ">":
+        i = spaces(i + 1)
+    if i < n and line[i] in "-*+":
+        i += 1
+    else:
+        j = i
+        while j < n and j - i < 9 and _is_ascii_digit(line[j]):
+            j += 1
+        if j == i or j >= n or line[j] not in ".)":
+            return None
+        i = j + 1
+    if i >= n or line[i] not in " \t":
+        return None
+    i = spaces(i)
+    # `[ ]` 뒤에는 빈칸이 있어야 한다 — `- [ ]` 혼자는 체크상자가 아니다 (cmark-gfm).
+    if i + 3 < n and line[i] == "[" and line[i + 2] == "]" and line[i + 1] in " xX" and line[i + 3] in " \t":
+        return i + 1
+    return None
+
+
+def task_toggled(markdown: str, line: int):
+    """`line`(0 부터 · 머리말도 센다) 의 체크상자를 뒤집은 글. 체크상자 줄이 아니면 None."""
+    lines = markdown.split("\n")
+    if line < 0 or line >= len(lines):
+        return None
+    at = _task_marker(lines[line])
+    if at is None:
+        return None
+    text = lines[line]
+    mark = " " if text[at] in "xX" else "x"
+    lines[line] = text[:at] + mark + text[at + 1:]
+    return "\n".join(lines)
+
+
+def task_lines(markdown: str) -> list:
+    """체크상자 줄들 (코드 울타리 안은 빼고) — 읽기 화면이 누를 수 있게 만드는 줄."""
+    out = []
+    fence = False
+    for k, line in enumerate(markdown.split("\n")):
+        stripped = line.lstrip(" ")
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            fence = not fence
+            continue
+        if not fence and _task_marker(line) is not None:
+            out.append(k)
+    return out

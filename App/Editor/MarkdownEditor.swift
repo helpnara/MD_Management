@@ -261,6 +261,11 @@ struct MarkdownEditor: UIViewRepresentable {
         let view = MarkdownTextView(usingTextLayoutManager: true)
         view.delegate = context.coordinator
         view.textStorage.delegate = context.coordinator
+        // 코드 덩어리의 회색 상자 (210) — 줄 조각을 대신 만든다. 먼저 달린 대리자는 이어 받는다.
+        if let layout = view.textLayoutManager {
+            context.coordinator.codeBoxes.forwarded = layout.delegate
+            layout.delegate = context.coordinator.codeBoxes
+        }
 
         view.backgroundColor = .systemBackground
         view.alwaysBounceVertical = true
@@ -323,6 +328,8 @@ struct MarkdownEditor: UIViewRepresentable {
         var onActive: @MainActor (Formatting.Active) -> Void
         var onLinkQuery: @MainActor (NoteLinking.Query?) -> Void
         var onPasteLinks: @MainActor (MarkdownTextView.PastedItem) -> String?
+        /// 코드 덩어리 상자를 그리는 줄 조각 대리자 (210). 대리자는 약하게 잡히므로 여기서 붙든다.
+        let codeBoxes = CodeBoxLayout()
         /// 마지막으로 알린 표시 상태 (128). 바뀔 때만 알린다 — 커서가 움직일 때마다
         /// 화면을 다시 그리면 값도 없이 비싸다.
         private var lastActive: Formatting.Active?

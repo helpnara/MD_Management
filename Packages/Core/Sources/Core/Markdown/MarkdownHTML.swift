@@ -95,9 +95,36 @@ public enum MarkdownHTML {
         // 블록마다 원문 줄 범위를 붙인다 — 읽기 ↔ 쓰기를 오가도 보던 자리를 잇는다 (176).
         // 짝이 안 맞으면 `LineMap` 이 손대지 않고 돌려준다.
         return RenderedNote(
-            bodyHTML: LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown),
+            bodyHTML: linkTasks(LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown)),
             missingAttachments: rewriter.missing
         )
+    }
+
+    /// **체크상자를 누를 수 있게** (211) — 목록 항목의 줄 번호(`data-line`, `LineMap` 이 붙였다)로 `yb://task/<줄>` 링크를 씌운다.
+    /// 체크상자 자체는 그대로 두고(`disabled`), 링크가 누름을 받는다 — CSS 가 체크상자의 누름을 링크로 흘린다.
+    /// 줄 번호가 없으면(줄 지도가 안 맞았다) 손대지 않는다 — 엉뚱한 줄을 바꾸느니 못 누르는 편이 낫다.
+    static func linkTasks(_ html: String) -> String {
+        guard html.contains("type=\"checkbox\""),
+              let regex = try? NSRegularExpression(
+                pattern: #"<li\b[^>]*\bdata-line="(\d+)"[^>]*>|<input\b[^>]*type="checkbox"[^>]*>"#) else { return html }
+        let text = html as NSString
+        var out = ""
+        var cursor = 0
+        var line: String?
+        for match in regex.matches(in: html, range: NSRange(location: 0, length: text.length)) {
+            let whole = text.substring(with: match.range)
+            if whole.hasPrefix("<li") {
+                line = text.substring(with: match.range(at: 1))
+                continue
+            }
+            guard let taskLine = line else { continue }
+            line = nil          // 항목 하나에 체크상자 하나
+            out += text.substring(with: NSRange(location: cursor, length: match.range.location - cursor))
+            out += "<a class=\"yb-task\" href=\"\(scheme)://task/\(taskLine)\">" + whole + "</a>"
+            cursor = match.range.location + match.range.length
+        }
+        out += text.substring(from: cursor)
+        return out
     }
 
     /// 완전한 HTML 문서. 색 토큰(`--yb-*`)은 App 이 만들어 넘긴다 — 앱과 웹뷰의
@@ -235,6 +262,11 @@ public enum MarkdownHTML {
        빌드 4 에서 점 · 체크박스가 한 줄, 글이 다음 줄로 갈라졌다. */
     li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.15em; }
     li:has(> input[type="checkbox"]) > p { display: inline; }
+    /* 211 — 누를 수 있는 체크상자. 체크상자는 누름을 받지 않고 감싼 링크가 받는다. */
+    a.yb-task { text-decoration: none; -webkit-tap-highlight-color: transparent; }
+    a.yb-task input[type="checkbox"] { pointer-events: none; }
+    li:has(> a.yb-task) { list-style: none; margin-left: -1.15em; }
+    li:has(> a.yb-task) > p { display: inline; }
     .yb-tag {
       color: var(--yb-tag, #B88500);
       font-weight: 600;

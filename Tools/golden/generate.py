@@ -2426,7 +2426,28 @@ def build_html_markdown_cases() -> dict:
             raise SystemExit(f"::error::[{case['name']}] 머리줄을 올렸더니 표가 깨졌다\n{got}")
         promotes.append({**case, "result": got})
 
-    return {"convert": converted, "fill": fills, "keeps": keeps, "promote": promotes}
+    # 211 — 읽기 화면에서 체크상자 누르기. 뒤집은 글을 cmark-gfm 으로 그려 **켜진 체크상자 수가 하나만** 바뀌는지 본다.
+    tasks = []
+    for case in spec["tasks"]:
+        got = hm.task_toggled(case["markdown"], case["line"])
+        if got is not None:
+            body = re.sub(r"^---\n.*?\n---\n", "", got, flags=re.S)
+            before = re.sub(r"^---\n.*?\n---\n", "", case["markdown"], flags=re.S)
+            on_before = cmark_html(before).count('checked=""')
+            on_after = cmark_html(body).count('checked=""')
+            if abs(on_after - on_before) != 1 or cmark_html(body).count("checkbox") != cmark_html(before).count("checkbox"):
+                raise SystemExit(f"::error::[{case['name']}] 체크상자를 하나만 뒤집지 못했다\n{got}")
+        tasks.append({**case, "result": got})
+    task_lines = []
+    for case in spec["taskLines"]:
+        lines = hm.task_lines(case["markdown"])
+        body = re.sub(r"^---\n.*?\n---\n", "", case["markdown"], flags=re.S)
+        if len(lines) != cmark_html(body).count("checkbox"):
+            raise SystemExit(f"::error::[{case['name']}] 체크상자 줄 {lines} · cmark 체크상자 {cmark_html(body).count('checkbox')}")
+        task_lines.append({**case, "lines": lines})
+
+    return {"convert": converted, "fill": fills, "keeps": keeps, "promote": promotes,
+            "tasks": tasks, "taskLines": task_lines}
 
 
 def build_broken_cases() -> list[dict]:

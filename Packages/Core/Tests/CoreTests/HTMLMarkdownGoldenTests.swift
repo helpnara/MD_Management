@@ -37,11 +37,24 @@ final class HTMLMarkdownGoldenTests: XCTestCase {
             let markdown: String
             let result: String
         }
+        struct TaskCase: Decodable {
+            let name: String
+            let markdown: String
+            let line: Int
+            let result: String?
+        }
+        struct TaskLines: Decodable {
+            let name: String
+            let markdown: String
+            let lines: [Int]
+        }
         struct Cases: Decodable {
             let convert: [Convert]
             let fill: [Fill]
             let keeps: [Keeps]
             let promote: [Promote]
+            let tasks: [TaskCase]
+            let taskLines: [TaskLines]
         }
         let htmlMarkdownCases: Cases
     }
@@ -84,6 +97,32 @@ final class HTMLMarkdownGoldenTests: XCTestCase {
     func testPromoteEmptyHeadersMatchesGolden() throws {
         for item in try Self.goldenCases().promote {
             XCTAssertEqual(HTMLMarkdown.promoteEmptyHeaders(item.markdown), item.result, "[\(item.name)]")
+        }
+    }
+
+    /// 211 — 읽기 화면에서 누른 체크상자 하나만 뒤집는다.
+    func testTaskToggleMatchesGolden() throws {
+        for item in try Self.goldenCases().tasks {
+            XCTAssertEqual(TaskToggle.toggled(item.markdown, line: item.line), item.result, "[\(item.name)]")
+        }
+    }
+
+    /// 211 — 읽기 화면은 체크상자 줄마다 **그 줄 번호로** 누를 수 있는 링크를 단다.
+    func testReaderLinksEveryTaskLine() throws {
+        for item in try Self.goldenCases().taskLines {
+            let html = MarkdownHTML.render(markdown: item.markdown, notePath: "노트.md", existing: []).bodyHTML
+            var found: [Int] = []
+            var rest = Substring(html)
+            while let range = rest.range(of: "yb://task/") {
+                let digits = rest[range.upperBound...].prefix { $0.isNumber }
+                if let value = Int(digits) { found.append(value) }
+                rest = rest[range.upperBound...]
+            }
+            XCTAssertEqual(found, item.lines, "[\(item.name)] \(html)")
+            // 누른 줄을 뒤집으면 실제로 체크상자가 바뀐다 — 링크의 줄 번호와 뒤집기의 줄 번호가 같은 셈이다.
+            for line in found {
+                XCTAssertNotNil(TaskToggle.toggled(item.markdown, line: line), "[\(item.name)] \(line)번 줄")
+            }
         }
     }
 }
