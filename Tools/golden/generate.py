@@ -603,11 +603,16 @@ def underline_level(line: str) -> int | None:
 
 def context_roles(lines: list[str], editor: bool = True) -> list[str]:
     """`editor=False` 는 표준 그대로 (cmark-gfm 에 대어 보는 셈), `True` 는 편집기 — 치는 중인 줄(`is_tentative`)을
-    목록을 시작하는 줄로 본다 (빌드 69 · 9번). 둘이 갈리는 것은 그 줄 언저리뿐이다."""
+    목록을 시작하는 줄로 본다 (빌드 69 · 9번). 둘이 갈리는 것은 그 줄 언저리뿐이다.
+
+    `indentedCode` (빌드 78 사용자 화면) — 빈 줄 · 제목 · 울타리 뒤의 네 칸 줄은 **열린 목록 항목 안이 아니면** 코드다.
+    열린 목록(항목 글이 시작하는 칸)은 빈 줄을 건너서도 산다. Swift 는 `defer`, 여기는 `try/finally` 로 같은 자리에서 고친다."""
     roles = ["normal"] * len(lines)
     paragraph = None
     in_fence = False
     container = False
+    open_list = None
+    after_blank = True
     for i, line in enumerate(lines):
         kind = context_kind(line)
         if in_fence:
@@ -619,36 +624,87 @@ def context_roles(lines: list[str], editor: bool = True) -> list[str]:
         if kind == "blank":
             paragraph = None
             container = False
+            after_blank = True
             continue
-        if editor and is_tentative(line):
-            paragraph = None
-            container = True
-            continue
-        if paragraph is not None:
-            level = underline_level(line)
-            if level is not None:
-                for row in range(paragraph, i):
-                    roles[row] = "heading1" if level == 1 else "heading2"
-                roles[i] = "underline"
+        width = leading_width(line)
+        lazy = not after_blank and kind == "plain" and (paragraph is not None or container)
+        try:
+            if editor and is_tentative(line):
                 paragraph = None
+                container = True
                 continue
-            if kind == "plain":
-                continue
-            if kind in ("weakItem", "indented"):
-                roles[i] = "continuation"
-                continue
-            paragraph = None
-        if kind == "fence":
-            in_fence = True
-            container = False
-        elif kind == "plain":
-            if not container:
-                paragraph = i
-        elif kind in ("container", "weakItem"):
-            container = True
-        elif kind == "other":
-            container = False
+            if paragraph is not None:
+                level = underline_level(line)
+                if level is not None:
+                    for row in range(paragraph, i):
+                        roles[row] = "heading1" if level == 1 else "heading2"
+                    roles[i] = "underline"
+                    paragraph = None
+                    continue
+                if kind == "plain":
+                    continue
+                if kind in ("weakItem", "indented"):
+                    roles[i] = "continuation"
+                    continue
+                paragraph = None
+            if kind == "fence":
+                in_fence = True
+                container = False
+            elif kind == "plain":
+                if not container:
+                    paragraph = i
+            elif kind in ("container", "weakItem"):
+                container = True
+            elif kind == "indented":
+                if not container:
+                    if open_list is not None and width >= open_list:
+                        if width >= open_list + 4:
+                            roles[i] = "indentedCode"
+                    else:
+                        roles[i] = "indentedCode"
+            elif kind == "other":
+                container = False
+        finally:
+            content = item_content(line) if kind in ("container", "weakItem", "indented") else None
+            if roles[i] not in ("indentedCode", "continuation") and content is not None:
+                open_list = content
+            elif roles[i] != "indentedCode" and open_list is not None and width < open_list and not lazy:
+                open_list = None
+            after_blank = False
     return roles
+
+
+def leading_width(line: str) -> int:
+    width = 0
+    for ch in line:
+        if ch == " ":
+            width += 1
+        elif ch == "\t":
+            width += 4
+        else:
+            break
+    return width
+
+
+def item_content(line: str):
+    """목록 항목 줄이면 글이 시작하는 칸 (Swift `BlockContext.itemContent`). 인용은 목록이 아니다."""
+    i, width = 0, 0
+    while i < len(line) and line[i] in " \t":
+        width += 4 if line[i] == "\t" else 1
+        i += 1
+    m = re.match(r"[-*+]|[0-9]{1,9}[.)]", line[i:])
+    if not m:
+        return None
+    after = i + len(m.group(0))
+    if after < len(line) and line[after] not in " \t":
+        return None
+    spaces = 0
+    while after < len(line) and line[after] == " ":
+        spaces += 1
+        after += 1
+    if after == len(line) or spaces > 4:
+        spaces = 1
+    return width + len(m.group(0)) + spaces
 
 
 def is_tentative(line: str) -> bool:
@@ -690,8 +746,26 @@ def build_context_cases() -> list[dict]:
         # 200 — 코드 역할의 줄은 cmark 도 `<pre>` 안에 글자 그대로 그려야 한다.
         blocks = "".join(re.findall(r"<pre[^>]*>.*?</pre>", rendered, flags=re.S))
         for line, role in zip(lines, roles):
-            if role == "code" and line.strip() and htmllib.escape(line.strip(), quote=False) not in blocks:
+            if role in ("code", "indentedCode") and line.strip() and htmllib.escape(line.strip(), quote=False) not in blocks:
                 raise SystemExit(f"::error::[{case['name']}] 코드 줄 {line!r} 이 cmark 의 <pre> 안에 없다:\n{rendered}")
+        # 네 칸 코드 (빌드 78) — **코드 덩어리 수**가 cmark 의 `<pre>` 수와 같아야 한다. 울타리 덩어리 하나씩 + 네 칸 코드 줄의 덩어리
+        # (빈 줄만 사이에 두고 이어지면 한 덩어리). 코드가 아닌 네 칸 줄을 코드로 보거나 그 반대면 수가 갈린다.
+        groups_code = 0
+        previous = None             # 직전의 빈 줄 아닌 줄의 역할
+        fence_open = False
+        for line, role in zip(lines, roles):
+            kind = context_kind(line)
+            if not fence_open and kind == "fence" and role == "normal":
+                groups_code += 1
+                fence_open = True
+            elif fence_open and kind == "fence" and role == "normal":
+                fence_open = False
+            if role == "indentedCode" and previous != "indentedCode":
+                groups_code += 1
+            if kind != "blank":
+                previous = role
+        if rendered.count("<pre") != groups_code:
+            raise SystemExit(f"::error::[{case['name']}] 코드 덩어리 수가 다르다 — cmark {rendered.count('<pre')} · 셈 {groups_code}:\n{rendered}")
         for line, role in zip(lines, roles):
             if role == "continuation" and htmllib.escape(line.strip(" \t"), quote=True) not in rendered:
                 raise SystemExit(f"::error::[{case['name']}] 이어지는 줄 {line!r} 이 글 그대로가 아니다:\n{rendered}")

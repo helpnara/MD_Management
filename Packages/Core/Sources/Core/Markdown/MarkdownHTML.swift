@@ -286,6 +286,10 @@ public enum MarkdownHTML {
     a.yb-task input[type="checkbox"] { pointer-events: none; }
     li:has(> a.yb-task) { list-style: none; margin-left: -1.15em; }
     li:has(> a.yb-task) > p { display: inline; }
+    /* 겹친 체크상자 (빌드 78 사용자 화면) — 체크상자를 점 자리로 당기는 위의 -1.15em 이 단계마다 다시 걸려 안쪽 단계가 0.25em(4화소)만
+       들어갔다. 체크상자 항목 아래 목록은 그만큼 더 들여 **점 목록과 같은 한 단계(1.4em)** 가 되게 한다. */
+    li:has(> input[type="checkbox"]) > ul, li:has(> input[type="checkbox"]) > ol,
+    li:has(> a.yb-task) > ul, li:has(> a.yb-task) > ol { padding-left: 2.55em; }
     .yb-tag {
       color: var(--yb-tag, #B88500);
       font-weight: 600;

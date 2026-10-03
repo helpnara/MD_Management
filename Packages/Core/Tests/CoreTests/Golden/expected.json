@@ -2008,6 +2008,216 @@
         false,
         false
       ]
+    },
+    {
+      "lines": [
+        "```",
+        "가나다",
+        "```",
+        "",
+        "    가나다",
+        "",
+        "- [ ] 위",
+        "  - [ ] 안쪽 할 일"
+      ],
+      "name": "빌드 78 화면 — 빈 줄 뒤 네 칸 줄은 코드",
+      "roles": [
+        "normal",
+        "code",
+        "normal",
+        "normal",
+        "indentedCode",
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "# 제목",
+        "    코드"
+      ],
+      "name": "제목 바로 밑 네 칸 줄도 코드",
+      "roles": [
+        "normal",
+        "indentedCode"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "글",
+        "    이어짐"
+      ],
+      "name": "글 바로 밑 네 칸 줄은 이어지는 글",
+      "roles": [
+        "normal",
+        "continuation"
+      ],
+      "tentative": [
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "- 장보기",
+        "",
+        "    우유는 저지방으로"
+      ],
+      "name": "목록 밑 빈 줄 뒤 네 칸 — 항목의 글",
+      "roles": [
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "- 장보기",
+        "",
+        "      코드 줄"
+      ],
+      "name": "목록 밑 빈 줄 뒤 여섯 칸 — 항목 안의 코드",
+      "roles": [
+        "normal",
+        "normal",
+        "indentedCode"
+      ],
+      "tentative": [
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "- 장보기",
+        "",
+        "글",
+        "",
+        "    코드"
+      ],
+      "name": "목록이 끝난 뒤의 네 칸 — 코드",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "normal",
+        "indentedCode"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "1. 하나",
+        "",
+        "    둘째 문단",
+        "",
+        "       항목 안 코드"
+      ],
+      "name": "번호 목록의 글 칸 — 셋",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "normal",
+        "indentedCode"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "- 가",
+        "나",
+        "",
+        "    가의 둘째 문단"
+      ],
+      "name": "게으른 이음 뒤에도 목록이 산다",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "    첫 줄",
+        "",
+        "    둘째 줄",
+        "끝 글"
+      ],
+      "name": "네 칸 코드 사이의 빈 줄 — 한 덩어리",
+      "roles": [
+        "indentedCode",
+        "normal",
+        "indentedCode",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "- 가",
+        "  - 나",
+        "",
+        "    - 다"
+      ],
+      "name": "겹친 개요 사이 빈 줄",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
+      ]
     }
   ],
   "countCases": [
