@@ -8813,6 +8813,75 @@
         }
       ],
       "text": "- **기한**(Due)을 적는다"
+    },
+    {
+      "block": "heading2",
+      "content": "[다른 노트](다른 노트.md)",
+      "name": "209 — 빈칸 든 맨 주소는 링크가 아니다 (제목 줄)",
+      "spans": [],
+      "text": "## [다른 노트](다른 노트.md)"
+    },
+    {
+      "block": null,
+      "content": "[가](나 다)",
+      "name": "209 — 빈칸 든 맨 주소는 링크가 아니다",
+      "spans": [],
+      "text": "[가](나 다)"
+    },
+    {
+      "block": null,
+      "content": "[다른 노트](<다른 노트.md>)",
+      "name": "209 — 꺾쇠로 감싸면 빈칸도 된다",
+      "spans": [
+        {
+          "text": "다른 노트",
+          "token": "link"
+        }
+      ],
+      "text": "[다른 노트](<다른 노트.md>)"
+    },
+    {
+      "block": null,
+      "content": "[문서](https://a.example \"제목\") 뒤",
+      "name": "209 — 주소 뒤 빈칸 · 따옴표 제목은 링크",
+      "spans": [
+        {
+          "text": "문서",
+          "token": "link"
+        }
+      ],
+      "text": "[문서](https://a.example \"제목\") 뒤"
+    },
+    {
+      "block": null,
+      "content": "[문서](a.md '제목')",
+      "name": "209 — 주소 뒤 빈칸 · 홑따옴표 제목",
+      "spans": [
+        {
+          "text": "문서",
+          "token": "link"
+        }
+      ],
+      "text": "[문서](a.md '제목')"
+    },
+    {
+      "block": null,
+      "content": "[가](나(다).md)",
+      "name": "209 — 짝 맞는 괄호는 주소의 일부",
+      "spans": [
+        {
+          "text": "가",
+          "token": "link"
+        }
+      ],
+      "text": "[가](나(다).md)"
+    },
+    {
+      "block": null,
+      "content": "![](사진 1.png)",
+      "name": "209 — 빈칸 든 사진 주소도 사진이 아니다",
+      "spans": [],
+      "text": "![](사진 1.png)"
     }
   ],
   "tagCases": [

@@ -392,6 +392,14 @@ public enum LineStyler {
         } else {
             // 맨 주소: 짝을 이룬 괄호는 주소의 일부다 (CommonMark) — `[a](b(c).md)`.
             guard let balanced = findClosingParen(text, from: destination, to: end) else { return nil }
+            // **맨 주소에는 빈칸이 못 들어간다** (209, CommonMark) — 빈칸 뒤에는 따옴표 제목(`"…"` · `'…'` · `(…)`)만
+            // 올 수 있다. 예전에는 `[다른 노트](다른 노트.md)` 를 링크로 칠했는데 읽기 화면은 글자 그대로였다 (빌드 76 · 12번).
+            // 빈칸 든 파일명은 `<…>` 로 감싼다 — 위 갈래. 앱의 노트 연결 · 사진 넣기는 이미 그렇게 쓴다.
+            let inside = text[destination..<balanced]
+            if let gap = inside.firstIndex(where: { $0 == " " || $0 == "\t" }) {
+                let title = inside[gap...].trimmingCharacters(in: .whitespaces)
+                guard Self.isLinkTitle(title) else { return nil }
+            }
             paren = balanced
         }
 
@@ -404,6 +412,17 @@ public enum LineStyler {
             spans.append(contentsOf: inlineScan(text, from: inner, to: close, markers: &markers))
         }
         return (spans, finish)
+    }
+
+    /// 링크 주소 뒤의 **제목** — `"…"` · `'…'` · `(…)` 하나 (CommonMark). 비었거나 다른 글이면 아니다.
+    static func isLinkTitle(_ title: String) -> Bool {
+        guard title.count >= 2, let first = title.first, let last = title.last else { return false }
+        switch first {
+        case "\u{22}": return last == "\u{22}"
+        case "'": return last == "'"
+        case "(": return last == ")"
+        default: return false
+        }
     }
 
     /// `#태그` 하나 — 규칙은 Core 의 `Tags` 가 정한다 (T2).
