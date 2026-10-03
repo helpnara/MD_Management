@@ -13,6 +13,7 @@
 
 `docs/06-ci.md` **§2.13** — 애플 개발자 콘솔에서 ① 앱 그룹 `group.com.helpnara.markdown` 등록 ② 앱 App ID 에 연결
 ③ 새 App ID `com.helpnara.markdown.share` (App Groups 켜고 같은 그룹 연결). 빠뜨리면 테스트플라이트 배포가 서명에서 멈춘다.
+**끝 (2026-10-03 사용자 — *콘솔 등록 완료*)** — Description 은 한글이 안 돼 `Slow Markdown Sharing` · `Slow Markdown Sharing Ext` 로 적었다 (내 안내가 틀렸다 · CLAUDE.md §6 에 규칙으로 남김).
 
 ## 빌드 81 확인 목록 — 사용자 관점 (코드를 읽고 적었다)
 
