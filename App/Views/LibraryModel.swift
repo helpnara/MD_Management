@@ -343,18 +343,27 @@ final class LibraryModel: ObservableObject {
         }
         // 2. 서식 있는 글 — 글 전체를 마크다운으로
         if let html = pasted.html, let converted = HTMLMarkdown.convert(html) {
-            let keeps = HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: converted)
-            lastPaste = PasteRecord(types: pasted.types, html: html, plainLength: pasted.plain.count,
-                                    converted: keeps)
-            if keeps {
+            if HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: converted) {
                 var text = placeImages(converted, slots: HTMLMarkdown.imageSlots(html), pasted: pasted)
                 if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) { text = fixed.text }
+                recordPaste(pasted, outcome: "서식을 마크다운으로 바꿈")
                 guard text != pasted.plain else { return nil }
                 report("서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
                 return text
             }
             // 바꾼 글에 평문의 글자가 다 없다 — 바꾸지 않는다. 글을 잃느니 서식을 잃는다.
-            log("붙여넣기: 서식 바꾸기를 그만두고 평문으로 — 바꾼 글에 원래 글자가 다 담기지 않았다")
+            log("붙여넣기: 서식 바꾸기를 그만둠 — 바꾼 글에 원래 글자가 다 담기지 않았다")
+        }
+        // 2-1. 보낸 앱이 실어 준 마크다운 (메모) — 우리 변환을 못 쓸 때만. 글자가 다 있어야 쓴다.
+        if let markdown = pasted.markdown?.trimmingCharacters(in: .whitespacesAndNewlines), !markdown.isEmpty,
+           HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: markdown) {
+            recordPaste(pasted, outcome: "보낸 앱의 마크다운을 씀")
+            guard markdown != pasted.plain else { return nil }
+            report("서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
+            return markdown
+        }
+        if pasted.html != nil || pasted.markdown != nil {
+            recordPaste(pasted, outcome: "평문으로 붙임")
         }
         // 3. 평문 — 번호 겹침과 링크 고치기
         var text = pasted.plain
@@ -382,13 +391,29 @@ final class LibraryModel: ObservableObject {
     /// 메모 · 다른 앱이 실제로 무엇을 싣는지 여기서는 볼 수 없어서 (CLAUDE.md §2) 사용자가 보내 줄 길을 둔다.
     struct PasteRecord: Equatable {
         let types: [String]
-        let html: String
-        let plainLength: Int
-        /// 마크다운으로 바꿨나 (거짓이면 평문으로 붙였다).
-        let converted: Bool
+        let html: String?
+        let markdown: String?
+        let plain: String
+        /// 어떻게 붙였나 — 서식을 바꿨나 · 보낸 앱의 마크다운을 썼나 · 평문으로 붙였나.
+        let outcome: String
+
+        /// 진단 화면에서 복사할 글 — 갈래마다 머리를 달아 **있는 그대로** 잇는다.
+        var report: String {
+            var parts = ["갈래: " + types.joined(separator: ", "), "결과: " + outcome]
+            parts.append("[평문]\n" + plain)
+            if let markdown { parts.append("[마크다운 갈래]\n" + markdown) }
+            if let html { parts.append("[HTML]\n" + html) }
+            return parts.joined(separator: "\n\n")
+        }
     }
 
     @Published private(set) var lastPaste: PasteRecord?
+
+    private func recordPaste(_ pasted: MarkdownTextView.PastedItem, outcome: String) {
+        lastPaste = PasteRecord(types: pasted.types, html: pasted.html, markdown: pasted.markdown,
+                                plain: pasted.plain, outcome: outcome)
+        log("붙여넣기: " + outcome)
+    }
 
     /// **붙여넣은 글 속 사진을 파일로** (207, 2026-10-02 사용자 — *중간에 이미지가 있다면 이미지도 함께 파일로 저장하고
     /// 링크로 변환*). 사진 자리(U+FFFC)마다 노트 옆 `assets/` 의 새 이름을 **지금** 정해 링크를 넣고, 파일은 곧이어 쓴다 —

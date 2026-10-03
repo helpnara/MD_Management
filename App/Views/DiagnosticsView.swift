@@ -158,12 +158,11 @@ struct DiagnosticsView: View {
                 // 붙여넣은 글이 그대로 담기므로 **사람이 단추를 눌렀을 때만** 클립보드로 나간다.
                 if let paste = library.lastPaste {
                     Section {
-                        LabeledContent("서식", value: paste.converted ? "마크다운으로 바꿈" : "평문으로 붙임")
-                        LabeledContent("서식 글 길이", value: "\(paste.html.count)자")
+                        LabeledContent("결과", value: paste.outcome)
+                        LabeledContent("서식 글 길이", value: "\(paste.html?.count ?? 0)자")
                         LabeledContent("갈래", value: "\(paste.types.count)개")
                         Button {
-                            UIPasteboard.general.string = (["갈래: " + paste.types.joined(separator: ", "), ""]
-                                                           + [paste.html]).joined(separator: "\n")
+                            UIPasteboard.general.string = paste.report
                             pasteCopied = true
                         } label: {
                             Label(pasteCopied ? "복사했습니다" : "붙여넣은 서식 복사",

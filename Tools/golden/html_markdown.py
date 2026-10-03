@@ -1051,8 +1051,9 @@ def join_blocks(blocks: list) -> str:
             lines = [fence] + lines + [fence]
         if not lines:
             continue
-        # 같은 덩어리끼리만 붙인다 — 문단과 문단 · 같은 목록의 항목과 항목. 나머지는 빈 줄 하나.
-        together = b.group == prev.group and (b.group == "text" or b.kind == "item") if prev is not None else False
+        # 같은 목록의 항목끼리만 붙인다. 문단과 문단 사이도 빈 줄 하나 — 메모는 줄마다 `<p>` 이고, 한 줄 띄움으로
+        # 이으면 읽기 화면에서 한 문단으로 붙는다 (표준 · 199). 빌드 74 사용자 진단에서 본 실제 메모 모양이다.
+        together = b.group == prev.group and b.kind == "item" if prev is not None else False
         if prev is not None and (blank or not together):
             out.append("")
         blank = False
@@ -1120,8 +1121,27 @@ def fill_images(markdown: str, links: list) -> str:
     return "\n".join(result)
 
 
+def _drop_list_numbers(text: str) -> str:
+    """줄 첫머리의 번호(`2.` · `3)`)를 뗀다 — 안전장치가 견주지 않는 글자다.
+
+    메모는 표에 끊긴 번호 목록을 평문에서 **이어 센다**(`2.`) — HTML 은 `<ol>` 마다 1 부터다. 그 차이를 *글자가 빠졌다*
+    로 읽어 변환을 버리고 평문을 붙였다 (빌드 74 · 사용자 진단). 번호는 목록이 다시 매기는 것이라 글이 아니다."""
+    out = []
+    for line in text.split("\n"):
+        i = 0
+        while i < len(line) and line[i] in " \t":
+            i += 1
+        j = i
+        while j < len(line) and j - i < 9 and _is_ascii_digit(line[j]):
+            j += 1
+        if j > i and j < len(line) and line[j] in ".)" and (j + 1 == len(line) or line[j + 1] in " \t"):
+            line = line[:i] + line[j + 1:]
+        out.append(line)
+    return "\n".join(out)
+
+
 def letters(text: str) -> list:
-    t = unicodedata.normalize("NFC", text)
+    t = unicodedata.normalize("NFC", _drop_list_numbers(text))
     return [c for c in t if unicodedata.category(c) in ("Lu", "Ll", "Lt", "Lm", "Lo", "Nd")]
 
 

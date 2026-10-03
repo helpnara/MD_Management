@@ -100,8 +100,26 @@ public enum HTMLMarkdown {
         return at == want.count
     }
 
+    /// 줄 첫머리의 번호(`2.` · `3)`)를 뗀다 — 안전장치가 견주지 않는 글자다.
+    ///
+    /// 메모는 표에 끊긴 번호 목록을 평문에서 **이어 센다**(`2.`) — HTML 은 `<ol>` 마다 1 부터다. 그 차이를 *글자가 빠졌다*
+    /// 로 읽어 변환을 버리고 평문을 붙였다 (빌드 74 · 사용자 진단). 번호는 목록이 다시 매기는 것이라 글이 아니다.
+    static func dropListNumbers(_ text: String) -> String {
+        splitLines(text).map { line -> String in
+            let s = Array(line.unicodeScalars)
+            var i = 0
+            while i < s.count, s[i] == " " || s[i] == "\t" { i += 1 }
+            var j = i
+            while j < s.count, j - i < 9, isDigit(s[j]) { j += 1 }
+            if j > i, j < s.count, s[j] == "." || s[j] == ")", j + 1 == s.count || s[j + 1] == " " || s[j + 1] == "\t" {
+                return string(s[0..<i]) + string(s[(j + 1)...])
+            }
+            return line
+        }.joined(separator: "\n")
+    }
+
     static func letters(_ text: String) -> [Unicode.Scalar] {
-        text.precomposedStringWithCanonicalMapping.unicodeScalars.filter { scalar in
+        dropListNumbers(text).precomposedStringWithCanonicalMapping.unicodeScalars.filter { scalar in
             switch scalar.properties.generalCategory {
             case .uppercaseLetter, .lowercaseLetter, .titlecaseLetter, .modifierLetter, .otherLetter, .decimalNumber:
                 return true
@@ -1231,9 +1249,10 @@ public enum HTMLMarkdown {
                 lines = [fence] + lines + [fence]
             }
             if lines.isEmpty { continue }
-            // 같은 덩어리끼리만 붙인다 — 문단과 문단 · 같은 목록의 항목과 항목. 나머지는 빈 줄 하나.
+            // 같은 목록의 항목끼리만 붙인다. 문단과 문단 사이도 빈 줄 하나 — 메모는 줄마다 `<p>` 이고, 한 줄 띄움으로
+            // 이으면 읽기 화면에서 한 문단으로 붙는다 (표준 · 199). 빌드 74 사용자 진단에서 본 실제 메모 모양이다.
             if let previous {
-                let together = block.group == previous.group && (block.group == "text" || block.kind == "item")
+                let together = block.group == previous.group && block.kind == "item"
                 if blank || !together { out.append("") }
             }
             blank = false

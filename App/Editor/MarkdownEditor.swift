@@ -46,6 +46,8 @@ final class MarkdownTextView: UITextView {
         let plain: String
         /// `public.html` 갈래 — 표가 여기 온다.
         let html: String?
+        /// **마크다운 갈래** (`net.daringfireball.markdown`) — 메모가 HTML 과 함께 싣는다 (빌드 74 사용자 진단).
+        let markdown: String?
         /// 주소 갈래와 그 이름.
         let url: String?
         let urlName: String?
@@ -114,6 +116,7 @@ final class MarkdownTextView: UITextView {
         }
         let item = PastedItem(plain: plain,
                               html: Self.html(from: board),
+                              markdown: Self.text(from: board, type: "net.daringfireball.markdown"),
                               url: board.url?.absoluteString,
                               urlName: Self.urlName(from: board),
                               lineBefore: lineBeforeCaret(),
@@ -140,7 +143,12 @@ final class MarkdownTextView: UITextView {
 
     /// `public.html` 갈래. **글자로 못 읽으면 없는 것으로 본다** — 모르면 안 건드린다.
     private static func html(from board: UIPasteboard) -> String? {
-        guard let value = board.value(forPasteboardType: "public.html") else { return nil }
+        text(from: board, type: "public.html")
+    }
+
+    /// 글자 갈래 하나 — 글자로 못 읽으면 `nil`.
+    private static func text(from board: UIPasteboard, type: String) -> String? {
+        guard let value = board.value(forPasteboardType: type) else { return nil }
         if let text = value as? String { return text }
         if let data = value as? Data { return String(data: data, encoding: .utf8) }
         return nil
