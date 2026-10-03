@@ -39,6 +39,8 @@ struct RootView: View {
         .task {
             library.autoSelectsFirstNote = prefersPreselectedNote
             await library.start()
+            // 공유 메뉴로 받아 둔 글 (213) — 폴더가 선 뒤에.
+            await library.importShared()
             if library.launch.attachmentTest { await library.makeAttachmentTest() }
             if library.launch.newNote { await library.createNote() }
             if let term = library.launch.searchTerm { library.searchText = term }
@@ -53,6 +55,8 @@ struct RootView: View {
         .task(id: scenePhase) {
             if scenePhase == .active {
                 await library.retryICloud()
+                // 다른 앱에서 공유로 보낸 것을 받은 글 폴더에 넣는다 (213). 첫 실행은 위의 시작이 맡는다.
+                await library.importShared()
                 // 앞에 있는 동안만 다른 기기의 변경을 지켜본다. 뒤로 가면 멈춘다.
                 library.startWatching()
             } else {
@@ -1054,6 +1058,7 @@ private struct NoteDetail: View {
             // (빌드 4 스크린샷 — 사이드바 · 목록까지 사라졌다).
             NoteWebView(
                 html: library.pageHTML,
+                pageID: library.selectedNote?.relativePath,
                 assets: library.assetProvider ?? EmptyAssetProvider(),
                 onOpen: handle,
                 spotRequest: library.spotRequest,
@@ -1140,6 +1145,8 @@ private struct NoteDetail: View {
             openURL(url)
         case .attachment(let path):
             Task { await library.previewAttachment(path) }
+        case .task(let line):
+            Task { await library.toggleTask(line: line) }
         case .missing(let path):
             // 빈 경로만 띄우면 오류처럼 보인다 — 무엇이 없는지 말한다 (빌드 20 · 10번).
             alert = "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다."

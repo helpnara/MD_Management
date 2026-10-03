@@ -26,6 +26,7 @@ import urllib.parse
 
 try:
     from markdown_it import MarkdownIt
+    from mdit_py_plugins.tasklists import tasklists_plugin
     import cmarkgfm
     import yaml
 except ImportError:  # pragma: no cover
@@ -60,7 +61,9 @@ EMPHASIS_CASES = ROOT / "Tools" / "golden" / "emphasis-cases.json"
 CONTEXT_CASES = ROOT / "Tools" / "golden" / "context-cases.json"
 FOLDER_TREE_CASES = ROOT / "Tools" / "golden" / "folder-tree-cases.json"
 SCROLL_GAUGE_CASES = ROOT / "Tools" / "golden" / "scroll-gauge-cases.json"
+HTML_MARKDOWN_CASES = ROOT / "Tools" / "golden" / "html-markdown-cases.json"
 RESTYLE_CASES = ROOT / "Tools" / "golden" / "restyle-cases.json"
+SHARE_CASES = ROOT / "Tools" / "golden" / "share-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
@@ -601,50 +604,108 @@ def underline_level(line: str) -> int | None:
 
 def context_roles(lines: list[str], editor: bool = True) -> list[str]:
     """`editor=False` 는 표준 그대로 (cmark-gfm 에 대어 보는 셈), `True` 는 편집기 — 치는 중인 줄(`is_tentative`)을
-    목록을 시작하는 줄로 본다 (빌드 69 · 9번). 둘이 갈리는 것은 그 줄 언저리뿐이다."""
+    목록을 시작하는 줄로 본다 (빌드 69 · 9번). 둘이 갈리는 것은 그 줄 언저리뿐이다.
+
+    `indentedCode` (빌드 78 사용자 화면) — 빈 줄 · 제목 · 울타리 뒤의 네 칸 줄은 **열린 목록 항목 안이 아니면** 코드다.
+    열린 목록(항목 글이 시작하는 칸)은 빈 줄을 건너서도 산다. Swift 는 `defer`, 여기는 `try/finally` 로 같은 자리에서 고친다."""
     roles = ["normal"] * len(lines)
     paragraph = None
     in_fence = False
     container = False
+    open_list = None
+    after_blank = True
     for i, line in enumerate(lines):
         kind = context_kind(line)
         if in_fence:
             if kind == "fence":
                 in_fence = False
+            else:
+                roles[i] = "code"       # 200 — 울타리 안 줄은 글자 그대로 (읽기 화면도 코드로 그린다)
             continue
         if kind == "blank":
             paragraph = None
             container = False
+            after_blank = True
             continue
-        if editor and is_tentative(line):
-            paragraph = None
-            container = True
-            continue
-        if paragraph is not None:
-            level = underline_level(line)
-            if level is not None:
-                for row in range(paragraph, i):
-                    roles[row] = "heading1" if level == 1 else "heading2"
-                roles[i] = "underline"
+        width = leading_width(line)
+        lazy = not after_blank and kind == "plain" and (paragraph is not None or container)
+        try:
+            if editor and is_tentative(line):
                 paragraph = None
+                container = True
                 continue
-            if kind == "plain":
-                continue
-            if kind in ("weakItem", "indented"):
-                roles[i] = "continuation"
-                continue
-            paragraph = None
-        if kind == "fence":
-            in_fence = True
-            container = False
-        elif kind == "plain":
-            if not container:
-                paragraph = i
-        elif kind in ("container", "weakItem"):
-            container = True
-        elif kind == "other":
-            container = False
+            if paragraph is not None:
+                level = underline_level(line)
+                if level is not None:
+                    for row in range(paragraph, i):
+                        roles[row] = "heading1" if level == 1 else "heading2"
+                    roles[i] = "underline"
+                    paragraph = None
+                    continue
+                if kind == "plain":
+                    continue
+                if kind in ("weakItem", "indented"):
+                    roles[i] = "continuation"
+                    continue
+                paragraph = None
+            if kind == "fence":
+                in_fence = True
+                container = False
+            elif kind == "plain":
+                if not container:
+                    paragraph = i
+            elif kind in ("container", "weakItem"):
+                container = True
+            elif kind == "indented":
+                if not container:
+                    if open_list is not None and width >= open_list:
+                        if width >= open_list + 4:
+                            roles[i] = "indentedCode"
+                    else:
+                        roles[i] = "indentedCode"
+            elif kind == "other":
+                container = False
+        finally:
+            content = item_content(line) if kind in ("container", "weakItem", "indented") else None
+            if roles[i] not in ("indentedCode", "continuation") and content is not None:
+                open_list = content
+            elif roles[i] != "indentedCode" and open_list is not None and width < open_list and not lazy:
+                open_list = None
+            after_blank = False
     return roles
+
+
+def leading_width(line: str) -> int:
+    width = 0
+    for ch in line:
+        if ch == " ":
+            width += 1
+        elif ch == "\t":
+            width += 4
+        else:
+            break
+    return width
+
+
+def item_content(line: str):
+    """목록 항목 줄이면 글이 시작하는 칸 (Swift `BlockContext.itemContent`). 인용은 목록이 아니다."""
+    i, width = 0, 0
+    while i < len(line) and line[i] in " \t":
+        width += 4 if line[i] == "\t" else 1
+        i += 1
+    m = re.match(r"[-*+]|[0-9]{1,9}[.)]", line[i:])
+    if not m:
+        return None
+    after = i + len(m.group(0))
+    if after < len(line) and line[after] not in " \t":
+        return None
+    spaces = 0
+    while after < len(line) and line[after] == " ":
+        spaces += 1
+        after += 1
+    if after == len(line) or spaces > 4:
+        spaces = 1
+    return width + len(m.group(0)) + spaces
 
 
 def is_tentative(line: str) -> bool:
@@ -683,6 +744,29 @@ def build_context_cases() -> list[dict]:
             want = f"<h{level}>" + htmllib.escape("\n".join(content), quote=True) + f"</h{level}>"
             if want not in rendered:
                 raise SystemExit(f"::error::[{case['name']}] 제목이 cmark 와 다르다 — {want!r} 가 없다:\n{rendered}")
+        # 200 — 코드 역할의 줄은 cmark 도 `<pre>` 안에 글자 그대로 그려야 한다.
+        blocks = "".join(re.findall(r"<pre[^>]*>.*?</pre>", rendered, flags=re.S))
+        for line, role in zip(lines, roles):
+            if role in ("code", "indentedCode") and line.strip() and htmllib.escape(line.strip(), quote=False) not in blocks:
+                raise SystemExit(f"::error::[{case['name']}] 코드 줄 {line!r} 이 cmark 의 <pre> 안에 없다:\n{rendered}")
+        # 네 칸 코드 (빌드 78) — **코드 덩어리 수**가 cmark 의 `<pre>` 수와 같아야 한다. 울타리 덩어리 하나씩 + 네 칸 코드 줄의 덩어리
+        # (빈 줄만 사이에 두고 이어지면 한 덩어리). 코드가 아닌 네 칸 줄을 코드로 보거나 그 반대면 수가 갈린다.
+        groups_code = 0
+        previous = None             # 직전의 빈 줄 아닌 줄의 역할
+        fence_open = False
+        for line, role in zip(lines, roles):
+            kind = context_kind(line)
+            if not fence_open and kind == "fence" and role == "normal":
+                groups_code += 1
+                fence_open = True
+            elif fence_open and kind == "fence" and role == "normal":
+                fence_open = False
+            if role == "indentedCode" and previous != "indentedCode":
+                groups_code += 1
+            if kind != "blank":
+                previous = role
+        if rendered.count("<pre") != groups_code:
+            raise SystemExit(f"::error::[{case['name']}] 코드 덩어리 수가 다르다 — cmark {rendered.count('<pre')} · 셈 {groups_code}:\n{rendered}")
         for line, role in zip(lines, roles):
             if role == "continuation" and htmllib.escape(line.strip(" \t"), quote=True) not in rendered:
                 raise SystemExit(f"::error::[{case['name']}] 이어지는 줄 {line!r} 이 글 그대로가 아니다:\n{rendered}")
@@ -2314,6 +2398,146 @@ def build_paste_convert_cases() -> dict:
     return {"numbering": numbering, "webLink": links, "htmlTable": tables}
 
 
+# ── 붙여넣은 HTML 전체를 마크다운으로 (206 · 207) ──────────────────────────────
+#
+# 셈은 `html_markdown.py` (Swift `HTMLMarkdown` 의 쌍둥이). 여기서는 그 답을 **따로** 심판한다:
+# 1. 표준 HTML 파서(파이썬 내장)로 원문의 글자를 뽑고, 바꾼 마크다운을 cmark-gfm 으로 그려 글자를 뽑아
+#    **글자 · 숫자가 차례까지 똑같은지** 본다 — 하나라도 빠지면 그것이 206 의 사고다.
+# 2. 사례가 적어 둔 구조 수(제목 · 표 칸 · 목록 항목 · 굵게 …)가 그려진 HTML 과 맞는지 본다.
+# 3. 159 의 표 사례는 새 변환에서도 **같은 표**가 나와야 한다.
+
+def _source_letters(html: str) -> list:
+    from html.parser import HTMLParser
+    import html_markdown as hm
+
+    class Text(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.parts, self.skip = [], 0
+        def handle_starttag(self, tag, attrs):
+            if tag in hm.SKIP and tag not in hm.VOID:
+                self.skip += 1
+            if tag == "img" and not self.skip:
+                self.parts.append(hm.OBJECT)
+        def handle_endtag(self, tag):
+            if tag in hm.SKIP and tag not in hm.VOID and self.skip:
+                self.skip -= 1
+        def handle_data(self, data):
+            if not self.skip:
+                self.parts.append(data)
+
+    parser = Text()
+    parser.feed(html)
+    parser.close()
+    return hm.letters("".join(parser.parts))
+
+
+def build_html_markdown_cases() -> dict:
+    sys.path.insert(0, str(ROOT / "Tools" / "golden"))
+    import html_markdown as hm
+    spec = json.loads(HTML_MARKDOWN_CASES.read_text(encoding="utf-8"))
+
+    converted = []
+    for case in spec["convert"]:
+        got = hm.convert(case["html"])
+        slots = hm.image_slots(case["html"])
+        name = case["name"]
+        if got is None:
+            if _source_letters(case["html"]):
+                raise SystemExit(f"::error::[{name}] 글이 있는데 아무것도 안 냈다")
+        else:
+            if got.count(hm.OBJECT) != len(slots):
+                raise SystemExit(f"::error::[{name}] 사진 자리 {got.count(hm.OBJECT)} · 사진 {len(slots)}")
+            if "images" in case and len(slots) != case["images"]:
+                raise SystemExit(f"::error::[{name}] 사진 수가 뜻과 다르다: {len(slots)}")
+            rendered = cmark_html(got)
+            seen = hm.letters(html_unescape(re.sub(r"<[^>]*>", "", rendered)))
+            source = _source_letters(case["html"])
+            if seen != source:
+                raise SystemExit(f"::error::[{name}] 글자가 달라졌다\n원문: {''.join(source)}\n결과: {''.join(seen)}\n{got}")
+            for tag, want in case.get("expect", {}).items():
+                found = len(re.findall(r"<" + tag + r"[\s>]", rendered))
+                if found != want:
+                    raise SystemExit(f"::error::[{name}] <{tag}> {found}개 — 뜻은 {want}개\n{got}\n{rendered}")
+            if "plain" in case and not hm.keeps_letters(case["plain"], got):
+                raise SystemExit(f"::error::[{name}] 평문의 글자를 다 담지 못했다 — 앱은 평문으로 붙인다")
+        converted.append({"name": name, "html": case["html"], "markdown": got,
+                          "images": slots, "plain": case.get("plain"),
+                          "keeps": hm.keeps_letters(case["plain"], got or "") if "plain" in case else None})
+
+    # 159 의 표 사례 — 새 변환도 같은 표를 낸다.
+    paste = json.loads(PASTE_CONVERT_CASES.read_text(encoding="utf-8"))
+    for case in paste["htmlTable"]:
+        old = html_table_markdown(case["html"])
+        if old is None:
+            continue
+        new = hm.convert(case["html"]) or ""
+        # 159 는 머리줄이 없으면 빈 머리줄을 세웠다 — 이제 첫 줄이 머리줄이다 (2026-10-03 사용자). 예전 표를 그렇게 옮겨 견준다.
+        lines = old.split("\n")
+        if lines and not lines[0].replace("|", "").strip() and len(lines) >= 3:
+            old = "\n".join([lines[2], lines[1]] + lines[3:])
+        if old not in new:
+            raise SystemExit(f"::error::[159 {case['name']}] 표가 달라졌다\n예전:\n{old}\n새:\n{new}")
+        converted.append({"name": "159 · " + case["name"], "html": case["html"], "markdown": new,
+                          "images": hm.image_slots(case["html"]), "plain": None, "keeps": None})
+
+    fills = []
+    for case in spec["fill"]:
+        fills.append({**case, "result": hm.fill_images(case["markdown"], case["links"])})
+
+    keeps = []
+    for case in spec["keeps"]:
+        got = hm.keeps_letters(case["plain"], case["converted"])
+        if got != case["want"]:
+            raise SystemExit(f"::error::[{case['name']}] 안전장치: 뜻 {case['want']} · 셈 {got}")
+        keeps.append({"name": case["name"], "plain": case["plain"], "converted": case["converted"], "result": got})
+
+    promotes = []
+    for case in spec["promote"]:
+        got = hm.promote_empty_headers(case["markdown"])
+        if hm.letters(got) != hm.letters(case["markdown"]) and sorted(hm.letters(got)) != sorted(hm.letters(case["markdown"])):
+            raise SystemExit(f"::error::[{case['name']}] 머리줄 올리기가 글자를 바꿨다")
+        rendered = cmark_html(got)
+        if "|" in case["markdown"].split("\n")[0] and "<table>" in cmark_html(case["markdown"]) and "<table>" not in rendered:
+            raise SystemExit(f"::error::[{case['name']}] 머리줄을 올렸더니 표가 깨졌다\n{got}")
+        promotes.append({**case, "result": got})
+
+    # 211 — 읽기 화면에서 체크상자 누르기. 뒤집은 글을 그려 **켜진 체크상자 수가 하나만** 바뀌는지 본다.
+    #
+    # **심판은 markdown-it 의 체크상자 확장이다** (빌드 78 · 4번 사용자 화면). cmark-gfm 은 **인용(`>`) 안의 체크상자**를
+    # 글자 `[ ]` 로 남긴다 — GFM 규격은 인용 안의 목록 항목을 막지 않는다(렌더러의 한계). 앱은 그 자리를 체크상자로 고쳐 그린다
+    # (`MarkdownHTML.linkTasks`). **인용이 없는 글은 cmark-gfm 이 심판이다** — 앱이 그리는 것과 같은 계열이고, markdown-it 의
+    # 확장은 `]` 뒤의 탭을 안 받는 등 cmark-gfm 과 작은 데서 다르다. 인용이 든 글만 markdown-it 에 묻는다.
+    task_md = MarkdownIt("commonmark").use(tasklists_plugin)
+
+    def boxes(markdown: str) -> tuple:
+        body = re.sub(r"^---\n.*?\n---\n", "", markdown, flags=re.S)
+        if ">" not in body:
+            plain = cmark_html(body)
+            return plain.count("checkbox"), plain.count('checked=""')
+        html = task_md.render(body)
+        return html.count('type="checkbox"'), html.count('checked="checked"')
+
+    tasks = []
+    for case in spec["tasks"]:
+        got = hm.task_toggled(case["markdown"], case["line"])
+        if got is not None:
+            total_before, on_before = boxes(case["markdown"])
+            total_after, on_after = boxes(got)
+            if abs(on_after - on_before) != 1 or total_after != total_before:
+                raise SystemExit(f"::error::[{case['name']}] 체크상자를 하나만 뒤집지 못했다\n{got}")
+        tasks.append({**case, "result": got})
+    task_lines = []
+    for case in spec["taskLines"]:
+        lines = hm.task_lines(case["markdown"])
+        if len(lines) != boxes(case["markdown"])[0]:
+            raise SystemExit(f"::error::[{case['name']}] 체크상자 줄 {lines} · 심판의 체크상자 {boxes(case['markdown'])[0]}")
+        task_lines.append({**case, "lines": lines})
+
+    return {"convert": converted, "fill": fills, "keeps": keeps, "promote": promotes,
+            "tasks": tasks, "taskLines": task_lines}
+
+
 def build_broken_cases() -> list[dict]:
     spec = json.loads(BROKEN_CASES.read_text(encoding="utf-8"))
     out = []
@@ -2487,8 +2711,84 @@ def build() -> dict:
         "contextCases": build_context_cases(),
         "folderTreeCases": build_folder_tree_cases(),
         "scrollGaugeCases": build_scroll_gauge_cases(),
+        "htmlMarkdownCases": build_html_markdown_cases(),
         "restyleCases": build_restyle_cases(),
+        "shareCases": build_share_cases(),
     }
+
+
+# ── 공유로 받은 글 (213) — Swift `IncomingShare.note` 와 같은 셈 ───────────────────
+
+def _share_trim(text: str, leading: bool = True) -> str:
+    text = text.rstrip(" \t")
+    return text.lstrip(" \t") if leading else text
+
+
+def _share_one_line(text: str) -> str:
+    return _share_trim(text.replace("\r\n", " ").replace("\r", " ").replace("\n", " "))
+
+
+def incoming_share(text: str, url, page_title, images: list, fallback: str) -> dict:
+    """받은 글 · 주소 · 주소의 제목 · 사진 경로 → 노트 제목과 글.
+
+    제목은 첫 줄(`first_line` — 제목을 따라 파일 이름을 바꿀 때와 같은 셈). 첫 줄이 없으면 주소의 제목 → 주소 →
+    fallback 이고, 글 맨 위에 `# 제목` 을 넣는다. 주소는 `markdown_link` (노트 연결과 같은 꼴), 글에 이미 있으면 안 붙인다."""
+    lines = [_share_trim(l, leading=False) for l in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    while lines and not _share_trim(lines[0]):
+        lines.pop(0)
+    while lines and not lines[-1]:
+        lines.pop()
+    body = "\n".join(lines)
+    address = _share_one_line(url) if url is not None else None
+    address = address or None
+    label = _share_one_line(page_title) if page_title is not None else None
+    label = label or None
+    parts = []
+    if body:
+        parts.append(body)
+    if address and address not in body:
+        parts.append(markdown_link(label or address, address))
+    for path in images:
+        parts.append("!" + markdown_link("", path))
+    first = first_line(body)
+    if first:
+        return {"title": first, "markdown": "\n\n".join(parts) + "\n"}
+    # 주소 그대로는 제목이 링크가 되고 파일 이름이 `https---…` 가 된다 — 사이트 이름만 (Swift `siteName`).
+    site = (urllib.parse.urlsplit(address).hostname or None) if address else None
+    if site and site.startswith("www.") and len(site) > 4:
+        site = site[4:]       # `www.` 는 제목 줄에서 다시 자동 링크가 된다
+    title = label or site or fallback
+    return {"title": title, "markdown": "\n\n".join(["# " + title] + parts) + "\n"}
+
+
+def build_share_cases() -> list[dict]:
+    """정답을 셈하고, **그 글을 cmark-gfm 으로 그려 본다** — 주소는 링크 하나로, 사진은 그림으로 나와야 하고,
+    글자가 빠지면 안 된다. 제목은 노트 목록이 보여 줄 제목(`note_title`)과 같아야 한다 — 파일 이름과 첫 줄이 갈리지 않게."""
+    spec = json.loads(SHARE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        got = incoming_share(case.get("text", ""), case.get("url"), case.get("pageTitle"),
+                             case.get("images", []), case["fallback"])
+        html = cmark_html(got["markdown"])
+        if note_title(got["markdown"], "아무개.md") != got["title"]:
+            raise SystemExit(f"::error::[{case['name']}] 제목 {got['title']!r} 이 첫 줄과 다르다:\n{got['markdown']}")
+        url = case.get("url")
+        if url and url.strip() and url.strip() not in case.get("text", ""):
+            if html.count("<a href=") != 1:
+                raise SystemExit(f"::error::[{case['name']}] 주소가 링크 하나로 안 나왔다:\n{html}")
+        if html.count("<img ") != len(case.get("images", [])):
+            raise SystemExit(f"::error::[{case['name']}] 사진 수가 다르다:\n{html}")
+        for word in re.findall(r"\w+", case.get("text", "")):
+            if word not in got["markdown"]:
+                raise SystemExit(f"::error::[{case['name']}] 글자 {word!r} 가 빠졌다")
+        want = case.get("expect", {})
+        for key, value in want.items():
+            if got[key] != value:
+                raise SystemExit(f"::error::[{case['name']}] {key}: 뜻 {value!r} · 셈 {got[key]!r}")
+        out.append({"name": case["name"], "text": case.get("text", ""), "url": url,
+                    "pageTitle": case.get("pageTitle"), "images": case.get("images", []),
+                    "fallback": case["fallback"], "title": got["title"], "markdown": got["markdown"]})
+    return out
 
 
 # ── 읽기 ↔ 쓰기 자리 잇기 — 줄 지도 (176) ──────────────────────────────────────
@@ -2707,6 +3007,21 @@ def incoming_links(folder: str, notes: dict) -> int:
     return count
 
 
+def backlinks(note: str, notes: dict) -> list:
+    """이 노트를 가리키는 노트 (212) — 폴더 링크 셈(168)과 같은 해석(`extract_links` · `resolve`).
+    자기 자신은 빼고, 여러 번 가리켜도 한 번. 못 읽은 노트는 뺀다. 코드 포인트 순 (Swift `ordered`)."""
+    note = nfc(note)
+    found = []
+    for path, text in notes.items():
+        if text is None or path == note:
+            continue
+        targets = [r["value"] for r in (resolve(link["destination"], path) for link in extract_links(text))
+                   if r["kind"] == "relative"]
+        if note in targets:
+            found.append(path)
+    return sorted(found)
+
+
 def build_attachment_cases() -> list[dict]:
     spec = json.loads(ATTACHMENT_CASES.read_text(encoding="utf-8"))
     out = []
@@ -2728,10 +3043,13 @@ def build_attachment_cases() -> list[dict]:
         if "folder" in case:
             entry["folder"] = nfc(case["folder"])
             entry["incoming"] = incoming_links(entry["folder"], notes)
+        if "backlinksOf" in case:
+            entry["backlinksOf"] = nfc(case["backlinksOf"])
+            entry["backlinks"] = backlinks(entry["backlinksOf"], notes)
         if "purge" in case:
             entry["purge"] = nfc(case["purge"])
             entry["purging"] = purging_with(entry["purge"], notes, trashed, files)
-        for key in ("unused", "trashing", "purging", "incoming"):
+        for key in ("unused", "trashing", "purging", "incoming", "backlinks"):
             want = case.get("expect", {}).get(key, "없음")
             if want != "없음" and want != entry.get(key):
                 # 사람이 적은 것은 **뜻**(이 사례가 무엇을 지키나)이고, 값은 위 셈이 낸다.
@@ -3340,7 +3658,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]

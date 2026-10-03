@@ -53,6 +53,22 @@ enum ImageImport {
 
     /// `2026-09-13` — 저장소가 뒤에 `-1.jpg` `-2.jpg` 를 붙인다. 공백이 없어 링크에
     /// 꺾쇠가 필요 없다.
+    /// **붙여넣은 사진의 확장자** (207) — 앞 몇 바이트로 본다. PNG · GIF 는 그대로 두고, JPEG · HEIC 처럼 사진기
+    /// 사진은 사진 넣기와 같이 줄여 JPEG 로 쓴다 (`jpg`). 사진이 아니면 `nil`.
+    static func pastedExtension(of data: Data) -> String? {
+        let head = [UInt8](data.prefix(12))
+        if head.starts(with: [0x89, 0x50, 0x4E, 0x47]) { return "png" }
+        if head.starts(with: [0x47, 0x49, 0x46, 0x38]) { return "gif" }
+        if head.starts(with: [0xFF, 0xD8, 0xFF]) { return "jpg" }
+        // HEIC · HEIF 등 — `ftyp` 상자. 줄여서 JPEG 로.
+        if head.count >= 8, head[4] == 0x66, head[5] == 0x74, head[6] == 0x79, head[7] == 0x70 { return "jpg" }
+        // 그 밖에 이 기기가 읽을 수 있는 사진이면 JPEG 로.
+        if CGImageSourceCreateWithData(data as CFData, nil).map({ CGImageSourceGetCount($0) > 0 }) == true {
+            return "jpg"
+        }
+        return nil
+    }
+
     static func stem(for date: Date = Date()) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")

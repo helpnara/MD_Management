@@ -24,11 +24,18 @@ struct EditorStyleSheet {
     /// `#태그` 의 색 (T2). 노란색은 흰 바탕에서 옅으므로 **다크 모드와 라이트 모드를 따로** 잡는다.
     let tagInk: UIColor
     let codeBackground: UIColor
+    /// 코드 덩어리의 바탕 (210). 읽기 화면의 `pre` 바탕(`secondarySystemBackground`)과 거의 같은 색을
+    /// **비치는 색**으로 낸다 — 고른 글의 표시가 바탕 밑에 깔려도 가려지지 않게.
+    let codeBoxFill: UIColor
 
     let plainParagraph: NSParagraphStyle
     let headingParagraph: NSParagraphStyle
     let quoteParagraph: NSParagraphStyle
     let monoParagraph: NSParagraphStyle
+    /// 코드 덩어리 줄 (210) — 줄 사이를 띄우지 않고(상자 하나로 보이게) 상자 안쪽으로 조금 들인다.
+    /// 울타리 줄은 그 아래(여는 줄) · 위(닫는 줄)에 여백을 둔다.
+    let codeParagraph: NSParagraphStyle
+    let fenceParagraph: NSParagraphStyle
 
     /// 목록은 겹친 단계마다 새로 만든다. 값만 미리 재어 둔다 (주 액터 밖에서 쓰므로).
     let lineSpacing: CGFloat
@@ -62,6 +69,11 @@ struct EditorStyleSheet {
                 : UIColor(red: 0.72, green: 0.52, blue: 0.00, alpha: 1)     // 밝은 바탕 — 짙은 겨자
         }
         codeBackground = .secondarySystemBackground
+        codeBoxFill = UIColor { traits in
+            traits.userInterfaceStyle == .dark
+                ? UIColor(white: 1, alpha: 0.11)     // 검은 바탕 위 — 읽기 화면의 #1C1C1E 언저리
+                : UIColor(red: 0.12, green: 0.12, blue: 0.35, alpha: 0.05)  // 흰 바탕 위 — #F2F2F7 언저리
+        }
 
         let spacing = Metrics.scaledLength(2)
         let after = Metrics.scaledLength(6)
@@ -86,6 +98,21 @@ struct EditorStyleSheet {
         }
         // 코드와 표는 접히면 읽을 수 없다. 글자 단위로 접어 표 칸이 어긋나지 않게 한다.
         monoParagraph = paragraph { $0.lineBreakMode = .byCharWrapping }
+        let inset = Metrics.scaledLength(8)
+        codeParagraph = paragraph {
+            $0.lineBreakMode = .byCharWrapping
+            $0.paragraphSpacing = 0
+            $0.firstLineHeadIndent = inset
+            $0.headIndent = inset
+            $0.tailIndent = -inset
+        }
+        fenceParagraph = paragraph {
+            $0.lineBreakMode = .byCharWrapping
+            $0.paragraphSpacing = spacing * 2
+            $0.firstLineHeadIndent = inset
+            $0.headIndent = inset
+            $0.tailIndent = -inset
+        }
     }
 
     // MARK: - 문단 전체
@@ -167,6 +194,15 @@ struct EditorStyleSheet {
         default:
             break
         }
+    }
+
+    /// 코드 덩어리 줄 (210) — 상자 표시(`CodeBoxLayout` 이 폭 전체를 칠한다)와 상자 안 문단 모양.
+    /// `range` 는 줄바꿈까지 든 문단 전체라야 한다 — 줄 조각이 문단 첫 글자의 속성을 본다.
+    func codeBox(in text: NSMutableAttributedString, range: NSRange, isFence: Bool) {
+        text.addAttributes([
+            .ybCodeBox: codeBoxFill,
+            .paragraphStyle: isFence ? fenceParagraph : codeParagraph,
+        ], range: range)
     }
 
     /// 마커를 흐리게 — 커서가 있는 문단 (L1).

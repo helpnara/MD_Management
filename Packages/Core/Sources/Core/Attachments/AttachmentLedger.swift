@@ -99,14 +99,31 @@ public enum AttachmentLedger {
         var count = 0
         for (path, text) in notes {
             guard let text, !path.hasPrefix(inside) else { continue }
-            for link in MarkdownLinks.extract(from: text) {
-                if case .relative(let target) = Paths.resolve(link: link.destination, fromNoteAt: path),
-                   target.hasPrefix(inside) {
-                    count += 1
-                }
-            }
+            count += linkTargets(of: path, text: text).filter { $0.hasPrefix(inside) }.count
         }
         return count
+    }
+
+    /// **이 노트를 가리키는 노트** (212, 2026-10-03 사용자 — 거꾸로 링크). 폴더 안 다른 노트의 링크가 이 노트로
+    /// 풀리면 그 노트다. 자기 자신은 빼고, 여러 번 가리켜도 한 번. 못 읽은 노트(아직 안 내려받음)는 셀 수 없어 뺀다.
+    /// **폴더 링크 셈(168)과 같은 셈이다** — 둘 다 `linkTargets` 를 부른다 (CLAUDE.md §1, 같은 것을 재는 곳은 하나).
+    public static func backlinks(to note: String, notes: [String: String?]) -> [String] {
+        let note = Paths.normalized(note)
+        var found: [String] = []
+        for (path, text) in notes {
+            guard let text, path != note, linkTargets(of: path, text: text).contains(note) else { continue }
+            found.append(path)
+        }
+        return ordered(found)
+    }
+
+    /// 노트의 링크가 가리키는 **폴더 안 경로** — 링크마다 하나 (같은 곳을 두 번 가리키면 두 번).
+    /// 바깥 주소 · 폴더 밖 · 빈 링크는 뺀다. 168 · 212 가 같이 부른다.
+    static func linkTargets(of path: String, text: String) -> [String] {
+        MarkdownLinks.extract(from: text).compactMap { link in
+            if case .relative(let target) = Paths.resolve(link: link.destination, fromNoteAt: path) { return target }
+            return nil
+        }
     }
 
     // MARK: - 셈의 속

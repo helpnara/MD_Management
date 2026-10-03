@@ -13,7 +13,8 @@ import Foundation
 /// | `가나다` 바로 밑 `2. 나` | 번호 목록 | **같은 문단** — 1 이 아닌 번호는 글을 끊고 목록을 못 연다 |
 /// | `가나다` 바로 밑 `    나` (네 칸) | 코드 | **같은 문단** — 코드는 글을 못 끊는다 |
 ///
-/// 여기서는 **줄마다 역할만** 정한다. 칠하기는 편집기가 이 역할을 보고 한다. 울타리(```) 안은 건드리지 않는다.
+/// 여기서는 **줄마다 역할만** 정한다. 칠하기는 편집기가 이 역할을 보고 한다. 울타리(```) 안의 줄은 **코드** 역할이다 —
+/// 줄 하나만 보면 `# 주석` 이 제목, `- 항목` 이 목록처럼 칠해졌다 (200). 읽기 화면은 코드로 그린다.
 /// 목록 · 인용 바로 밑의 글줄은 그 항목에 딸린 줄(게으른 이음)이라 문단을 새로 열지 않는다.
 ///
 /// **파이썬 `context_roles` 와 같은 셈이다** (`Tools/golden`, `contextCases`) — 파이썬은 그 답을 cmark-gfm 이 그린
@@ -29,6 +30,12 @@ public enum BlockContext {
         case underline
         /// 앞 문단에 이어지는 줄 — 목록 · 코드처럼 보여도 **보통 글**이다.
         case continuation
+        /// 코드 울타리(```` ``` ````) **안**의 줄 (200) — `# 주석` · `- 항목` 도 글자 그대로. 울타리 줄 자신은 아니다.
+        case code
+        /// **네 칸 들여쓴 코드** (빌드 78 사용자 화면) — 빈 줄 · 제목 · 울타리 뒤의 네 칸 줄이 **열린 목록 항목 안이 아니면** 코드다
+        /// (읽기 화면은 회색 덩어리로 그렸는데 쓰기 화면은 상자가 없었다). 목록 항목 안이면 그 항목의 글이고, 항목 글 칸에서
+        /// 네 칸 더 들어가야 항목 안의 코드다. `code` 와 따로 둔다 — 엔터가 목록을 잇는 판정(`continuesText`)은 울타리 안만 본다.
+        case indentedCode
     }
 
     /// `lines` 는 **머리말 뒤** 의 줄들 (줄바꿈 없이). 첫 줄 위는 빈 줄로 본다.
@@ -38,17 +45,33 @@ public enum BlockContext {
         var paragraph: Int? = nil       // 열린 문단의 첫 줄
         var inFence = insideFence
         var container = false           // 바로 위가 목록 · 인용 — 글줄은 거기 딸린다
+        var list: Int? = nil            // 열린 목록 항목의 글이 시작하는 칸 — 빈 줄을 건너서도 산다
+        var afterBlank = true           // 첫 줄 위는 빈 줄로 본다
 
         for (index, line) in lines.enumerated() {
             let kind = kind(of: line)
             if inFence {
-                if kind == .fence { inFence = false }
+                if kind == .fence { inFence = false } else { roles[index] = .code }
                 continue
             }
             if kind == .blank {
                 paragraph = nil
                 container = false
+                afterBlank = true
                 continue
+            }
+            let width = leadingWidth(line)
+            // 목록 글에 빈칸 없이 붙어 오는 글줄(게으른 이음)은 덜 들여써도 그 항목에 남는다.
+            let lazy = !afterBlank && kind == .plain && (paragraph != nil || container)
+            defer {
+                // 열린 목록 — 항목 줄이면 그 글 칸으로, 항목 글 칸보다 덜 들여쓴 줄이 오면 목록 밖이다.
+                let itemKind = kind == .container || kind == .weakItem || kind == .indented
+                if itemKind, roles[index] != .indentedCode, roles[index] != .continuation, let content = itemContent(line) {
+                    list = content
+                } else if roles[index] != .indentedCode, let open = list, width < open, !lazy {
+                    list = nil
+                }
+                afterBlank = false
             }
             // **치는 중일 수 있는 줄은 목록을 시작하는 줄로 본다** (빌드 69 · 9번). 표준은 글 바로 밑의 `-` · 빈 `- ` 를
             // 제목 밑줄로 읽지만, 그렇게 칠하면 글 밑에서 목록을 시작하는 순간 윗글이 제목으로 커진다.
@@ -83,7 +106,15 @@ public enum BlockContext {
             case .container, .weakItem:
                 container = true
             case .indented:
-                break                   // 목록 아래면 그 항목의 줄, 아니면 코드 — 어느 쪽도 문단이 아니다
+                // 목록 · 인용 바로 밑이면 그 항목의 줄이다 — 어느 쪽도 문단이 아니다.
+                // 빈 줄 · 제목 · 울타리 뒤라면 열린 목록 항목 안인지 본다 (`indentedCode`).
+                if !container {
+                    if let open = list, width >= open {
+                        if width >= open + 4 { roles[index] = .indentedCode }
+                    } else {
+                        roles[index] = .indentedCode
+                    }
+                }
             case .other:
                 container = false
             case .blank:
@@ -91,6 +122,43 @@ public enum BlockContext {
             }
         }
         return roles
+    }
+
+    /// 줄 앞 빈칸의 폭 (탭은 넷).
+    static func leadingWidth(_ line: String) -> Int {
+        var width = 0
+        for scalar in line.unicodeScalars {
+            if scalar == " " { width += 1 } else if scalar == "\t" { width += 4 } else { break }
+        }
+        return width
+    }
+
+    /// 목록 항목 줄이면 **글이 시작하는 칸** (앞 빈칸 · 기호 · 뒤 빈칸 한~넷). 기호 뒤 빈칸이 다섯 이상이면 하나로 본다 (표준).
+    /// 인용(`>`)은 목록이 아니다 — 빈 줄에서 끝난다.
+    static func itemContent(_ line: String) -> Int? {
+        let scalars = Array(line.unicodeScalars)
+        var index = 0
+        var width = 0
+        while index < scalars.count, scalars[index] == " " || scalars[index] == "\t" {
+            width += scalars[index] == "\t" ? 4 : 1
+            index += 1
+        }
+        var marker = 0
+        if index < scalars.count, scalars[index] == "-" || scalars[index] == "*" || scalars[index] == "+" {
+            marker = 1
+        } else {
+            while index + marker < scalars.count, marker < 9,
+                  (48...57).contains(scalars[index + marker].value) { marker += 1 }
+            guard marker > 0, index + marker < scalars.count,
+                  scalars[index + marker] == "." || scalars[index + marker] == ")" else { return nil }
+            marker += 1
+        }
+        var after = index + marker
+        guard after == scalars.count || scalars[after] == " " || scalars[after] == "\t" else { return nil }
+        var spaces = 0
+        while after < scalars.count, scalars[after] == " " { spaces += 1; after += 1 }
+        if after == scalars.count || spaces > 4 { spaces = 1 }
+        return width + marker + spaces
     }
 
     /// **치는 중일 수 있는 줄** — 빈 항목(`- ` · `1. `) · 짧은 밑줄(`-` · `--`).

@@ -319,29 +319,20 @@ final class LibraryModel: ObservableObject {
         }
     }
 
-    /// **붙여넣을 글의 링크를 이 노트 기준으로** (144). 고칠 것이 없으면 `nil`.
-    ///
-    /// 앱이 본문을 고치는 자리이므로 **고쳤다고 알리고**, 되돌리기 한 번으로 무를 수 있다
-    /// (편집기가 한 번의 바꾸기로 넣는다).
-    /// **붙여넣을 것을 이 자리에 맞게 바꾼다** (144 · 157 · 158 · 159).
+    /// **붙여넣을 것을 이 자리에 맞게 바꾼다** (144 · 157 · 158 · 159 · 206 · 207). 고칠 것이 없으면 `nil`.
     ///
     /// 순서가 뜻을 정한다.
     ///
-    /// 1. **표** (159) — HTML 에 표가 있으면 그것이 붙을 것이다. 평문 갈래에는 칸 구분이
-    ///    뭉개진 글자만 오므로, 표가 있으면 평문을 볼 까닭이 없다.
-    /// 2. **주소** (157) — 붙일 것이 주소 하나면 링크로 만든다. 글이 섞여 있으면 아니다 —
+    /// 1. **주소** (157) — 붙일 것이 주소 하나면 링크로 만든다. 글이 섞여 있으면 아니다 —
     ///    글 속의 주소까지 건드리면 **무엇을 할지 모르는 자리**가 된다.
-    /// 3. **번호 겹침** (158) 과 **링크 고치기** (144) — 둘 다 평문에 건다. 서로 다른
-    ///    자리를 만지므로 겹치지 않는다.
+    /// 2. **서식 있는 글** (206) — HTML 갈래가 있으면 **글 전체**를 마크다운으로 바꾼다 (제목 · 목록 · 표 · 굵게 · 링크 …).
+    ///    예전(159)에는 표 하나만 꺼내 붙여 **나머지 글이 사라졌다.** 바꾼 글에 평문의 글자가 차례대로 다 있을 때만 쓴다
+    ///    (`HTMLMarkdown.keepsLetters`) — 아니면 평문 그대로 붙인다. 사진은 노트 옆 `assets/` 에 저장하고 링크로 (207).
+    /// 3. **번호 겹침** (158) 과 **링크 고치기** (144) — 평문에 건다. 서로 다른 자리를 만지므로 겹치지 않는다.
     ///
     /// **바꿨으면 알린다.** 사람이 모르게 본문이 달라지지 않는다. 되돌리기는 한 번이다.
     func repairPastedLinks(_ pasted: MarkdownTextView.PastedItem) -> String? {
-        // 1. 표
-        if let html = pasted.html, let table = HTMLTable.markdown(from: html) {
-            report("표를 마크다운 표로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
-            return table
-        }
-        // 2. 주소 하나
+        // 1. 주소 하나
         let address = pasted.url ?? pasted.plain
         if Pasting.isWebAddress(pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines))
             || (pasted.url != nil && pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty),
@@ -349,6 +340,32 @@ final class LibraryModel: ObservableObject {
                                       selection: pasted.selection) {
             report("주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다.")
             return link
+        }
+        // 2. 서식 있는 글 — 글 전체를 마크다운으로
+        if let html = pasted.html, let converted = HTMLMarkdown.convert(html) {
+            if HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: converted) {
+                var text = placeImages(converted, slots: HTMLMarkdown.imageSlots(html), pasted: pasted)
+                if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) { text = fixed.text }
+                recordPaste(pasted, outcome: "서식을 마크다운으로 바꿈")
+                guard text != pasted.plain else { return nil }
+                report("서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
+                return text
+            }
+            // 바꾼 글에 평문의 글자가 다 없다 — 바꾸지 않는다. 글을 잃느니 서식을 잃는다.
+            log("붙여넣기: 서식 바꾸기를 그만둠 — 바꾼 글에 원래 글자가 다 담기지 않았다")
+        }
+        // 2-1. 보낸 앱이 실어 준 마크다운 (메모) — 우리 변환을 못 쓸 때만. 글자가 다 있어야 쓴다.
+        if let given = pasted.markdown?.trimmingCharacters(in: .whitespacesAndNewlines), !given.isEmpty,
+           HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: given) {
+            // 표의 빈 머리줄은 첫 줄로 — 우리 변환과 같은 모양 (2026-10-03 사용자).
+            let markdown = HTMLMarkdown.promoteEmptyHeaders(given)
+            recordPaste(pasted, outcome: "보낸 앱의 마크다운을 씀")
+            guard markdown != pasted.plain else { return nil }
+            report("서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
+            return markdown
+        }
+        if pasted.html != nil || pasted.markdown != nil {
+            recordPaste(pasted, outcome: "평문으로 붙임")
         }
         // 3. 평문 — 번호 겹침과 링크 고치기
         var text = pasted.plain
@@ -370,6 +387,124 @@ final class LibraryModel: ObservableObject {
         guard !notes.isEmpty, text != pasted.plain else { return nil }
         report(notes.joined(separator: ". ") + ". 되돌리기로 무를 수 있습니다.")
         return text
+    }
+
+    /// **마지막 붙여넣기** (206) — 클립보드의 갈래와 HTML. 메모리에만 두고, 진단 화면에서 사람이 복사할 때만 밖으로 나간다.
+    /// 메모 · 다른 앱이 실제로 무엇을 싣는지 여기서는 볼 수 없어서 (CLAUDE.md §2) 사용자가 보내 줄 길을 둔다.
+    struct PasteRecord: Equatable {
+        let types: [String]
+        let html: String?
+        let markdown: String?
+        let plain: String
+        /// 어떻게 붙였나 — 서식을 바꿨나 · 보낸 앱의 마크다운을 썼나 · 평문으로 붙였나.
+        let outcome: String
+
+        /// 진단 화면에서 복사할 글 — 갈래마다 머리를 달아 **있는 그대로** 잇는다.
+        var report: String {
+            var parts = ["갈래: " + types.joined(separator: ", "), "결과: " + outcome]
+            parts.append("[평문]\n" + plain)
+            if let markdown { parts.append("[마크다운 갈래]\n" + markdown) }
+            if let html { parts.append("[HTML]\n" + html) }
+            return parts.joined(separator: "\n\n")
+        }
+    }
+
+    @Published private(set) var lastPaste: PasteRecord?
+
+    private func recordPaste(_ pasted: MarkdownTextView.PastedItem, outcome: String) {
+        lastPaste = PasteRecord(types: pasted.types, html: pasted.html, markdown: pasted.markdown,
+                                plain: pasted.plain, outcome: outcome)
+        log("붙여넣기: " + outcome)
+    }
+
+    /// **붙여넣은 글 속 사진을 파일로** (207, 2026-10-02 사용자 — *중간에 이미지가 있다면 이미지도 함께 파일로 저장하고
+    /// 링크로 변환*). 사진 자리(U+FFFC)마다 노트 옆 `assets/` 의 새 이름을 **지금** 정해 링크를 넣고, 파일은 곧이어 쓴다 —
+    /// 붙여넣기는 한 번의 바꾸기로 끝나야 되돌리기가 한 번에 걸린다.
+    ///
+    /// 사진은 `data:` 주소에 든 것 · 클립보드의 서식 있는 글(RTFD)에 든 것을 **문서 차례대로** 맞춘다. 웹 주소의 사진은
+    /// 받아오지 않고(이 앱은 통신하지 않는다) 주소 그대로 링크로 둔다. 짝을 못 찾은 자리는 지운다 —
+    /// 엉뚱한 사진을 엉뚱한 자리에 넣지 않는다 (`HTMLMarkdown.fillImages`).
+    private func placeImages(_ markdown: String, slots: [HTMLMarkdown.ImageSlot],
+                             pasted: MarkdownTextView.PastedItem) -> String {
+        guard !slots.isEmpty else { return HTMLMarkdown.fillImages(markdown, links: []) }
+        var attachments: [Data]?
+        var nextAttachment = 0
+        let folder = noteFolderForLink
+        let assets = folder.isEmpty ? "assets" : folder + "/assets"
+        let taken = Set(vaultPaths.map { $0.lowercased() })
+        let stem = ImageImport.stem() + "-" + Self.pasteClock.string(from: Date())
+        var sequence = 0
+        var writes: [(path: String, data: Data, ext: String)] = []
+        var links: [String?] = []
+        for slot in slots {
+            var data: Data?
+            if slot.src.lowercased().hasPrefix("data:image/") {
+                data = Self.dataURIContents(slot.src)
+            } else if slot.src.lowercased().hasPrefix("http://") || slot.src.lowercased().hasPrefix("https://") {
+                links.append(ImageImport.markdownImage(path: slot.src))
+                continue
+            } else {
+                if attachments == nil { attachments = pasted.loadImages() }
+                if let all = attachments, nextAttachment < all.count { data = all[nextAttachment] }
+                nextAttachment += 1
+            }
+            guard let data, let ext = ImageImport.pastedExtension(of: data) else {
+                links.append(nil)
+                continue
+            }
+            var path = ""
+            repeat {
+                sequence += 1
+                path = assets + "/" + stem + "-\(sequence)." + ext
+            } while taken.contains(path.lowercased())
+            writes.append((path, data, ext))
+            links.append(ImageImport.markdownImage(path: String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))))
+        }
+        if !writes.isEmpty { writePastedImages(writes) }
+        return HTMLMarkdown.fillImages(markdown, links: links)
+    }
+
+    private static let pasteClock: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HHmmss"
+        return formatter
+    }()
+
+    /// `data:image/png;base64,…` 의 사진. base64 가 아니면 읽지 않는다.
+    private static func dataURIContents(_ uri: String) -> Data? {
+        guard let comma = uri.firstIndex(of: ","), uri[..<comma].lowercased().hasSuffix(";base64") else { return nil }
+        return Data(base64Encoded: String(uri[uri.index(after: comma)...]), options: .ignoreUnknownCharacters)
+    }
+
+    /// 정해 둔 이름으로 사진을 쓴다. JPEG · HEIC 처럼 줄일 수 있는 것은 사진 넣기와 같이 줄여 JPEG 로, PNG · GIF 는 그대로.
+    private func writePastedImages(_ writes: [(path: String, data: Data, ext: String)]) {
+        guard let store else { return }
+        Task { [weak self] in
+            var failed = 0
+            for item in writes {
+                let data: Data?
+                if item.ext == "jpg" {
+                    let original = item.data
+                    data = await Task.detached(priority: .userInitiated) { ImageImport.jpeg(from: original) }.value
+                } else {
+                    data = item.data
+                }
+                guard let data else {
+                    failed += 1
+                    continue
+                }
+                do {
+                    try await store.writeData(data, to: item.path)
+                } catch {
+                    failed += 1
+                }
+            }
+            guard let self else { return }
+            self.log("붙여넣기: 사진 \(writes.count - failed)장 저장" + (failed > 0 ? " · \(failed)장 실패" : ""))
+            if failed > 0 { self.report("붙여넣은 사진 \(failed)장을 저장하지 못했습니다.") }
+            self.refreshVaultPaths()
+        }
     }
 
     /// 지금 노트가 든 폴더 — 링크는 여기서 보는 상대 경로다.
@@ -521,6 +656,14 @@ final class LibraryModel: ObservableObject {
 
     let launch: LaunchOptions
     private var store: FolderStore?
+    /// **이 노트를 가리키는 노트** (212). 폴더 전체를 읽어 세므로 **노트가 바뀌거나 읽기로 넘어갈 때만** 다시 센다 —
+    /// 2초마다 도는 자동 저장이 읽기 화면을 다시 그릴 때는 센 것을 그대로 쓴다.
+    /// `backlinksOwner` — 지금 목록이 누구의 것인가 (그 노트일 때만 그린다). `backlinksCounted` — 어느 노트를 세기 시작했나
+    /// (지금 노트가 아니면 다시 센다 · 읽기로 넘어갈 때 비운다).
+    private var backlinks: [String] = []
+    private var backlinksOwner: String?
+    private var backlinksCounted: String?
+    private var backlinksTask: Task<Void, Never>?
     /// 검색 색인 — 폴더마다 하나. 캐시다 (ADR-0003).
     private var index: SearchIndex?
 
@@ -1473,11 +1616,15 @@ final class LibraryModel: ObservableObject {
             spotRequest = nil
             return
         }
+        // 다른 노트를 고치고 왔을 수 있다 — 읽기로 넘어갈 때 이 노트를 가리키는 노트를 다시 센다 (212).
+        backlinksCounted = nil
         // **읽기로 넘기기 전에 쓰고, 다 쓴 뒤에 넘긴다.** 읽기 화면은 쓴 글로 다시 렌더한다 —
         // 먼저 넘기면 옛 페이지가 떠서 자리를 잡은 뒤 새 페이지가 다시 떠 맨 위로 간다.
         // 그동안 `spotRequest` 를 쥐고 있어 단추를 또 눌러도 겹치지 않는다.
         Task {
             await save()
+            // 쓸 글이 없었으면 저장이 다시 그리지 않는다 — 그래도 세기는 다시 한다.
+            if let path = draftPath, backlinksCounted != path { refreshBacklinks(for: path) }
             spotToRestore = restore
             isReading = true
             spotRequest = nil
@@ -1881,6 +2028,20 @@ final class LibraryModel: ObservableObject {
         scheduleAutosave()
     }
 
+    /// **읽기 화면에서 체크상자를 눌렀다** (211). 그 줄의 `[ ]` · `[x]` 한 글자만 뒤집어
+    /// 편집기와 **같은 문**(`noteEdited`)으로 넣고 바로 쓴다 — 본문을 고치는 길은 하나다 (CLAUDE.md §1).
+    /// 저장이 읽기 화면을 다시 그린다 (`write` → `renderReading`). 체크상자 줄이 아니면 아무것도 안 한다.
+    func toggleTask(line: Int) async {
+        guard draftPath != nil else { return }
+        let text = isDirty ? draft : noteText
+        guard let toggled = TaskToggle.toggled(text, line: line) else {
+            log("체크상자 줄이 아님: \(line)")
+            return
+        }
+        noteEdited(toggled)
+        await save()
+    }
+
     private func scheduleAutosave() {
         autosave?.cancel()
         autosave = Task { [weak self] in
@@ -2079,6 +2240,70 @@ final class LibraryModel: ObservableObject {
         refreshVaultPaths()   // 폴더가 생기고 · 바뀌고 · 지워졌을 수 있다 (177)
     }
 
+    // MARK: - 공유로 받은 글 (213)
+
+    /// **다른 앱의 공유 메뉴로 보낸 것을 `받은 글` 폴더의 새 노트로** (213). 공유 확장은 받은 것을 앱 그룹 상자에
+    /// 두기만 한다(`ShareInbox`) — 사용자 폴더는 앱만 연다. 앱이 앞으로 나올 때마다 상자를 비운다.
+    ///
+    /// 사진은 사진 넣기와 같은 길(`ImageImport` 로 다시 읽고 줄여 `받은 글/assets/` 에)로 쓰고, 노트 글은 Core 가 짠다
+    /// (`IncomingShare.note`). **노트를 만든 뒤에만** 상자의 칸을 지운다 — 중간에 실패하면 다음에 다시 한다(자료 유실 없음).
+    /// 둘러보기 자료(가짜 폴더)에는 넣지 않는다 — 진짜 폴더를 고를 때까지 상자에 둔다.
+    func importShared() async {
+        guard let store, !isSample, !importingShared else { return }
+        importingShared = true
+        defer { importingShared = false }
+        let inbox = ShareInbox()
+        let entries = await inbox.pending()
+        guard !entries.isEmpty else { return }
+        var made = 0
+        var failed = 0
+        for entry in entries {
+            do {
+                var images: [String] = []
+                for name in entry.item.images {
+                    guard let raw = await inbox.imageData(name, in: entry),
+                          let ext = ImageImport.pastedExtension(of: raw) else { continue }
+                    let data: Data?
+                    if ext == "jpg" {
+                        data = await Task.detached(priority: .userInitiated) { ImageImport.jpeg(from: raw) }.value
+                    } else {
+                        data = raw
+                    }
+                    guard let data else { continue }
+                    images.append(try await store.writeAsset(data, stem: ImageImport.stem(), ext: ext,
+                                                             besideNoteIn: IncomingShare.folder))
+                }
+                let note = IncomingShare.note(text: entry.item.text, url: entry.item.url,
+                                              pageTitle: entry.item.pageTitle, images: images,
+                                              fallback: "받은 글 " + Self.shareClock.string(from: entry.item.created))
+                let path = try await store.createNote(named: note.title, in: IncomingShare.folder, text: note.markdown)
+                await inbox.remove(entry)
+                log("공유로 받은 글을 노트로: \(path) · 사진 \(images.count)장")
+                made += 1
+            } catch {
+                log("공유로 받은 글을 넣지 못함: \(error.localizedDescription)")
+                failed += 1
+            }
+        }
+        await reloadFolders()
+        await reloadNotes()
+        if failed > 0 {
+            report("공유로 받은 글 \(failed)개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다.")
+        } else if made > 0 {
+            report("공유로 받은 글 \(made)개를 받은 글 폴더에 새 노트로 넣었습니다.")
+        }
+    }
+
+    private var importingShared = false
+
+    /// 받은 글의 이름이 될 때 — 제목이 하나도 없을 때만 쓴다 (`받은 글 2026-10-04 07-30`).
+    private static let shareClock: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd HH-mm"
+        return formatter
+    }()
+
     func reloadNotes() async {
         guard let store else { return }
         isLoading = true
@@ -2215,9 +2440,32 @@ final class LibraryModel: ObservableObject {
         let existing = await store.existingPaths(among: referenced)
         let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing)
 
-        pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML, css: Palette.cssTokens())
+        let pointing = backlinksOwner == path ? backlinks : []
+        pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML + MarkdownHTML.backlinksHTML(pointing),
+                                     css: Palette.cssTokens())
         attachmentCount = existing.count
         missingAttachments = rendered.missingAttachments
+        if backlinksCounted != path { refreshBacklinks(for: path) }
+    }
+
+    /// 이 노트를 가리키는 노트를 **뒤에서** 센다 (212). 다 세면 읽기 화면을 한 번 더 그린다 — 같은 노트라
+    /// 보던 높이는 지킨다 (`NoteWebView.pageID`). 그사이 다른 노트로 갔으면 버린다.
+    private func refreshBacklinks(for path: String) {
+        backlinksTask?.cancel()
+        backlinksCounted = path
+        guard let store else { return }
+        backlinksTask = Task { [weak self] in
+            let found = await store.backlinks(to: path)
+            guard let self, !Task.isCancelled, self.backlinksCounted == path, self.draftPath == path else { return }
+            // 이미 그린 것과 같으면 다시 그리지 않는다 — 웹뷰가 한 번 깜빡인다.
+            if self.backlinksOwner == path, found == self.backlinks { return }
+            let drawn = self.backlinksOwner == path ? self.backlinks : []
+            self.backlinks = found
+            self.backlinksOwner = path
+            if found != drawn {
+                await self.renderReading(path: path, text: self.isDirty ? self.draft : self.noteText)
+            }
+        }
     }
 
     /// 폴더 안의 다른 노트를 뷰어에서 탭했을 때.

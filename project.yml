@@ -24,7 +24,7 @@ packages:
 
 settings:
   base:
-    MARKETING_VERSION: "1.0.4"
+    MARKETING_VERSION: "1.0.6"
     # CI 가 실행 번호를 넣는다 — 빌드 번호와 실행 번호가 늘 같게.
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "6.0"
@@ -39,9 +39,14 @@ targets:
       # 리소스 단계에 넣으므로 번들에 그대로 들어간다.
       # .entitlements 는 어느 빌드 단계에도 안 들어간다 — 서명이 경로로만 읽는다.
       - App
+      # 213 — 공유 확장과 함께 쓰는 받은 글 상자.
+      - Shared
     dependencies:
       - package: Core
         product: Core
+      # 213 — 공유 메뉴의 **느린 여백에 보내기**. 앱 번들의 PlugIns 에 넣는다.
+      - target: ShareExtension
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.helpnara.markdown
@@ -142,3 +147,39 @@ targets:
             NSUbiquitousContainerSupportedFolderLevels: Any
             # Files 앱에 보이는 폴더 이름.
             NSUbiquitousContainerName: 느린 여백
+
+  # 213 — 다른 앱의 공유 메뉴에서 **느린 여백에 보내기** (2026-10-03 사용자 — 1.0.6 에 넣어 낸다).
+  # 받은 것을 앱 그룹 상자에 두기만 한다 — 사용자 폴더는 앱이 연다 (Shared/ShareInbox.swift).
+  # Core 를 쓰지 않는다 — 노트 글은 앱이 짠다 (IncomingShare). 확장은 작고 가벼워야 한다.
+  ShareExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - ShareExtension
+      - Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.helpnara.markdown.share
+        CODE_SIGN_ENTITLEMENTS: ShareExtension/ShareExtension.entitlements
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_STRICT_CONCURRENCY: complete
+        # 확장은 앱 밖의 API 만 쓸 수 있다 (UIApplication.shared 등 금지).
+        APPLICATION_EXTENSION_API_ONLY: YES
+    info:
+      path: ShareExtension/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: ko
+        CFBundleDisplayName: 느린 여백
+        # 앱과 **같은** 판 · 빌드 번호여야 App Store 검증을 지난다 (ITMS-90473).
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          # `@objc(ShareViewController)` 로 이름을 못 박았다 — 모듈 이름 없이 찾는다.
+          NSExtensionPrincipalClass: ShareViewController
+          NSExtensionAttributes:
+            # 받는 것: 글 · 웹 주소 하나 · 사진 열 장까지. 파일은 받지 않는다(마크다운 파일은 파일 앱의 열기로).
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsImageWithMaxCount: 10

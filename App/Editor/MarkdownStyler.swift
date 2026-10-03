@@ -30,9 +30,13 @@ enum MarkdownStyler {
     /// `cursor: nil` 과는 다르다 — 그쪽은 **커서를 모른다**는 뜻이라 다 드러낸다.
     static let noCursor = -1
 
+    ///
+    /// `fences` 는 지난번 **코드 울타리 줄 수** (200). 수가 바뀌면(```` ``` ```` 를 치거나 지웠다) 고친 자리부터
+    /// **글 끝까지** 한 번 다시 칠한다 — 그 아래 줄들이 코드 안팎을 오간다. 새 수를 여기 적어 돌려준다.
     @discardableResult
     static func restyle(_ storage: NSTextStorage, touching range: NSRange,
                         with sheet: EditorStyleSheet, previousHeader: Int = 0,
+                        fences: UnsafeMutablePointer<Int>? = nil,
                         cursor: Int? = nil) -> Int {
         let text = storage.string as NSString
         guard text.length > 0 else { return 0 }
@@ -59,6 +63,13 @@ enum MarkdownStyler {
         // 바꿔야 했다.**
         if let run = listRun(in: text, covering: touched) {
             touched = NSUnionRange(touched, run)
+        }
+        // **코드 울타리가 생기거나 없어지면 그 아래가 다 바뀐다** (200). 울타리 줄 수가 달라졌을 때만 글 끝까지 —
+        // 코드 안에서 글자를 칠 때마다 아래를 다 칠하지는 않는다 (S11).
+        let fenceCount = countFences(in: text, from: header)
+        if let fences, fences.pointee != fenceCount {
+            touched = NSUnionRange(touched, NSRange(location: touched.location, length: text.length - touched.location))
+            fences.pointee = fenceCount
         }
         // **줄 문맥** (198) — 밑줄(`---` · `===`)이 받친 글은 제목이고, 글 바로 밑의 `2. ` 는 목록이 아니다. 줄 하나로는
         // 모르는 일이라 **글 덩이**(빈 줄 사이)를 함께 본다. 다만 덩이 전체를 칠하지는 않는다 — 한 번 엔터로만 줄을 나눈
@@ -97,15 +108,19 @@ enum MarkdownStyler {
             location = next
         } while location < limit && location < text.length
         // 고친 자리에서 먼 **역할 있는 줄** — 여러 줄짜리 밑줄 제목의 윗줄들 · 글에 이어지는 줄.
-        for start in roles.keys.sorted() where start < touched.location || start >= limit {
+        // 코드 줄은 빼고 — 울타리 수가 그대로면 코드 안팎은 안 바뀐다. 긴 코드 덩이를 글자마다 칠하지 않는다 (200 · S11).
+        for start in roles.keys.sorted() where (start < touched.location || start >= limit)
+            && roles[start] != .code && roles[start] != .indentedCode {
             paint(text.paragraphRange(for: NSRange(location: start, length: 0)))
         }
         return header
     }
 
     @discardableResult
-    static func restyleAll(_ storage: NSTextStorage, with sheet: EditorStyleSheet, cursor: Int? = nil) -> Int {
-        restyle(storage, touching: NSRange(location: 0, length: storage.length), with: sheet, cursor: cursor)
+    static func restyleAll(_ storage: NSTextStorage, with sheet: EditorStyleSheet,
+                           fences: UnsafeMutablePointer<Int>? = nil, cursor: Int? = nil) -> Int {
+        restyle(storage, touching: NSRange(location: 0, length: storage.length), with: sheet,
+                fences: fences, cursor: cursor)
     }
 
     private static func clamp(_ range: NSRange, to length: Int) -> NSRange {
@@ -246,9 +261,20 @@ enum MarkdownStyler {
         let begin = max(range.location, header)
         let limit = min(NSMaxRange(range), text.length)
         guard begin < limit else { return [:] }
+        // **네 칸 코드는 위쪽에 목록이 열려 있는지를 봐야 안다** (빌드 78) — 열린 목록은 빈 줄을 건너서도 산다. 덩이 위로 줄 200개까지
+        // 함께 넘겨 같은 셈(`BlockContext.roles`)이 목록을 따라오게 하고, 역할은 덩이 안의 줄만 쓴다. 덩이 바로 위는 빈 줄이라
+        // 제목 · 이어지는 줄 판정은 위쪽 줄과 상관이 없다.
+        var from = begin
+        var counted = 0
+        while from > header, counted < 200 {
+            let above = text.paragraphRange(for: NSRange(location: from - 1, length: 0))
+            if above.location >= from || above.location < header { break }
+            from = above.location
+            counted += 1
+        }
         var starts: [Int] = []
         var lines: [String] = []
-        var at = begin
+        var at = from
         while at < limit {
             let paragraph = text.paragraphRange(for: NSRange(location: at, length: 0))
             starts.append(paragraph.location)
@@ -257,12 +283,29 @@ enum MarkdownStyler {
             if next <= at { break }
             at = next
         }
-        let roles = BlockContext.roles(of: lines, insideFence: fenceIsOpen(in: text, from: header, to: begin))
+        let roles = BlockContext.roles(of: lines, insideFence: fenceIsOpen(in: text, from: header, to: from))
         var map: [Int: BlockContext.Role] = [:]
-        for (index, location) in starts.enumerated() where index < roles.count && roles[index] != .normal {
+        for (index, location) in starts.enumerated() where location >= begin && index < roles.count && roles[index] != .normal {
             map[location] = roles[index]
         }
         return map
+    }
+
+    /// 머리말 뒤 **코드 울타리 줄의 수** (200). 울타리 글자가 아예 없으면 훑지 않는다.
+    private static func countFences(in text: NSString, from start: Int) -> Int {
+        guard text.range(of: "```").location != NSNotFound || text.range(of: "~~~").location != NSNotFound else {
+            return 0
+        }
+        var count = 0
+        var at = min(start, text.length)
+        while at < text.length {
+            let paragraph = text.paragraphRange(for: NSRange(location: at, length: 0))
+            if BlockContext.isFence(lineText(text, paragraph)) { count += 1 }
+            let next = NSMaxRange(paragraph)
+            if next <= at { break }
+            at = next
+        }
+        return count
     }
 
     /// `start ..< end` 사이에 코드 울타리 줄이 홀수 개면 `end` 는 울타리 안이다.
@@ -302,6 +345,10 @@ enum MarkdownStyler {
         let lineString = text.substring(with: line)
         // 제목 글줄 · 이어지는 줄은 **보통 글로** 읽는다 (198) — `2. 나` 가 목록 마커를 갖지 않게.
         var style = LineStyler.style(paragraph: lineString, asText: role != .normal && role != .underline)
+        if role == .code || role == .indentedCode {
+            // 코드 울타리 안의 줄 (200) · 네 칸 코드 (빌드 78) — 마크다운으로 읽지 않는다. 고정폭 · 글자 그대로, 숨기는 것도 없다.
+            style = ParagraphStyle(block: .codeBlock, contentStart: 0, inlineSpans: [], markers: [])
+        }
         if role == .underline {
             // 밑줄 줄은 **줄 전체가 마커**이고 **늘 흐리게** 보인다 — 수평선 줄과 같다. 커서가 없을 때 숨기면 커서가 그 줄에
             // 와도 다시 안 드러나 빈 줄 위에서 치게 됐다 (빌드 69 · 9번 녹화). 커서 따라 드러내는 장치(`MarkerFocus`)는
@@ -374,6 +421,13 @@ enum MarkdownStyler {
             } else {
                 sheet.hideMarker(in: storage, range: range)
             }
+        }
+        // 코드 덩어리 (210) — 울타리 안의 줄과 울타리 줄 자신, 그리고 **네 칸 코드** (빌드 78 — 읽기 화면은 회색 덩어리로 그렸는데
+        // 쓰기 화면은 상자가 없었다). 네 칸 줄이 코드인지는 줄 하나로는 모른다(목록에 딸린 글일 수 있다 — LineStyler T4) —
+        // `BlockContext` 가 위쪽에 목록이 열려 있는지까지 보고 정한다. 울타리인지도 `BlockContext` 가 잰다 — 울타리를 세는 자리와 같은 잣대다.
+        let isFence = style.block == .codeBlock && BlockContext.isFence(lineString)
+        if role == .code || role == .indentedCode || isFence {
+            sheet.codeBox(in: storage, range: paragraph, isFence: isFence)
         }
     }
 }

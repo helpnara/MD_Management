@@ -20,6 +20,8 @@ final class AttachmentGoldenTests: XCTestCase {
             let purging: [String]?
             let folder: String?
             let incoming: Int?
+            let backlinksOf: String?
+            let backlinks: [String]?
         }
         let attachmentCases: [Case]
     }
@@ -48,6 +50,28 @@ final class AttachmentGoldenTests: XCTestCase {
             if let folder = item.folder {
                 XCTAssertEqual(AttachmentLedger.incomingLinks(to: folder, notes: item.notes),
                                item.incoming, "폴더를 가리키는 링크 — [\(item.name)]")
+            }
+            if let note = item.backlinksOf {
+                XCTAssertEqual(AttachmentLedger.backlinks(to: note, notes: item.notes),
+                               item.backlinks, "이 노트를 가리키는 노트 — [\(item.name)]")
+            }
+        }
+    }
+
+    /// 212 — 읽기 화면 아래 칸은 **셈이 낸 목록 그대로** 그린다: 노트마다 줄 하나, 주소는 본문의 노트 링크와 같은 꼴.
+    /// 없으면 칸을 아예 안 그린다.
+    func testBacklinksSectionDrawsEveryNote() throws {
+        for item in try Self.load().attachmentCases {
+            guard let note = item.backlinksOf else { continue }
+            let found = AttachmentLedger.backlinks(to: note, notes: item.notes)
+            let html = MarkdownHTML.backlinksHTML(found)
+            if found.isEmpty {
+                XCTAssertEqual(html, "", "[\(item.name)]")
+                continue
+            }
+            XCTAssertEqual(html.components(separatedBy: "<li>").count - 1, found.count, "[\(item.name)]")
+            for path in found {
+                XCTAssertTrue(html.contains("href=\"\(MarkdownHTML.assetURL(path))\""), "[\(item.name)] \(path)")
             }
         }
     }

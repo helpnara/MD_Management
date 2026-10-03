@@ -87,14 +87,82 @@ public enum MarkdownHTML {
         let document = Document(parsing: body, options: [.disableSmartOpts])
 
         var rewriter = NoteRewriter(notePath: Paths.normalized(notePath), existing: existing)
-        let rewritten = rewriter.visit(document) ?? document
+        var rewritten = rewriter.visit(document) ?? document
+        // 제목 안의 굵게 · 기울임 · 코드 · 링크를 살린다 (201) — 위에서 링크 · 이스케이프를 다 고친 **뒤에** 한다.
+        var headings = HeadingRewriter()
+        rewritten = headings.visit(rewritten) ?? rewritten
 
         // 블록마다 원문 줄 범위를 붙인다 — 읽기 ↔ 쓰기를 오가도 보던 자리를 잇는다 (176).
         // 짝이 안 맞으면 `LineMap` 이 손대지 않고 돌려준다.
         return RenderedNote(
-            bodyHTML: LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown),
+            bodyHTML: linkTasks(LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown),
+                                markdown: markdown),
             missingAttachments: rewriter.missing
         )
+    }
+
+    /// **체크상자를 누를 수 있게** (211) — 목록 항목의 줄 번호(`data-line`, `LineMap` 이 붙였다)로 `yb://task/<줄>` 링크를 씌운다.
+    /// 체크상자 자체는 그대로 두고(`disabled`), 링크가 누름을 받는다 — CSS 가 체크상자의 누름을 링크로 흘린다.
+    /// 줄 번호가 없으면(줄 지도가 안 맞았다) 손대지 않는다 — 엉뚱한 줄을 바꾸느니 못 누르는 편이 낫다.
+    ///
+    /// **인용(`>`) 안의 체크상자** (빌드 78 · 4번 사용자 화면) — cmark-gfm 은 이것을 체크상자로 안 읽고 글자 `[ ]` 로 남긴다.
+    /// GFM 규격은 인용 안의 목록 항목을 막지 않는다(렌더러의 한계 — markdown-it 의 확장은 체크상자로 읽는다). 그래서 목록 항목이
+    /// 글자 `[ ]` · `[x]` 로 시작하고 **그 원문 줄이 체크상자 줄이면**(`TaskToggle.marker` — 뒤집을 때와 같은 잣대) 체크상자로 그린다.
+    /// `\[ ]` 로 막은 줄은 원문 줄이 체크상자 줄이 아니라 글자 그대로 둔다. 느슨한 목록(`<li><p>[ ] …`)은 체크상자를 `<p>` 앞으로 —
+    /// cmark-gfm 이 보통 체크상자를 두는 자리와 같게 해 CSS 가 같은 규칙으로 맞춘다.
+    static func linkTasks(_ html: String, markdown: String) -> String {
+        guard html.contains("data-line=\""),
+              let regex = try? NSRegularExpression(
+                pattern: #"(<li\b[^>]*\bdata-line="(\d+)"[^>]*>)(?:(<input\b[^>]*type="checkbox"[^>]*>)|(\s*<p\b[^>]*>)?\[([ xX])\](?=[ \t]))"#)
+        else { return html }
+        let lines = TaskToggle.split(markdown)
+        let text = html as NSString
+        var out = ""
+        var cursor = 0
+        for match in regex.matches(in: html, range: NSRange(location: 0, length: text.length)) {
+            let open = text.substring(with: match.range(at: 1))
+            let line = text.substring(with: match.range(at: 2))
+            let link = "<a class=\"yb-task\" href=\"\(scheme)://task/\(line)\">"
+            var replaced: String
+            if match.range(at: 3).location != NSNotFound {
+                // cmark-gfm 이 그린 체크상자.
+                replaced = open + link + text.substring(with: match.range(at: 3)) + "</a>"
+            } else {
+                // 글자로 남은 `[ ]` — 원문 줄이 정말 체크상자 줄일 때만.
+                guard let row = Int(line), row < lines.count,
+                      TaskToggle.marker(Array(lines[row].unicodeScalars)) != nil else { continue }
+                let checked = text.substring(with: match.range(at: 5)) != " "
+                let box = "<input type=\"checkbox\" disabled=\"\"" + (checked ? " checked=\"\"" : "") + " />"
+                replaced = open + link + box + "</a>"
+                if match.range(at: 4).location != NSNotFound {
+                    replaced += " " + text.substring(with: match.range(at: 4)).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
+            out += text.substring(with: NSRange(location: cursor, length: match.range.location - cursor))
+            out += replaced
+            cursor = match.range.location + match.range.length
+        }
+        out += text.substring(from: cursor)
+        return out
+    }
+
+    /// **이 노트를 가리키는 노트** 칸 (212) — 읽기 화면 맨 아래. 없으면 빈 글 (칸을 아예 안 그린다).
+    /// 줄마다 노트 이름(노트 목록의 제목과 같은 `Paths.baseName`)과, 맨 위 폴더가 아니면 흐린 폴더 경로. 누르면 `yb://note/…` —
+    /// 본문의 노트 링크와 같은 길로 그 노트가 열린다 (`NoteLinkAction.note`). 파일에는 아무것도 안 쓴다.
+    /// 목록은 `AttachmentLedger.backlinks` 가 정한다 — 여기서는 그리기만.
+    public static func backlinksHTML(_ paths: [String]) -> String {
+        guard !paths.isEmpty else { return "" }
+        var html = "<section class=\"yb-backlinks\">\n<p class=\"yb-backlinks-title\">이 노트를 가리키는 노트 · \(paths.count)</p>\n<ul>\n"
+        for path in paths {
+            let normalized = Paths.normalized(path)
+            // 이름은 노트 목록과 같은 셈 (`Paths.baseName` — 목록의 제목이 이것이다).
+            let name = normalized.split(separator: "/").last.map(String.init) ?? normalized
+            let folder = Paths.directory(of: normalized)
+            html += "<li><a href=\"\(assetURL(normalized))\">\(escape(Paths.baseName(name)))</a>"
+            if !folder.isEmpty { html += " <span class=\"yb-backlinks-folder\">\(escape(folder))</span>" }
+            html += "</li>\n"
+        }
+        return html + "</ul>\n</section>\n"
     }
 
     /// 완전한 HTML 문서. 색 토큰(`--yb-*`)은 App 이 만들어 넘긴다 — 앱과 웹뷰의
@@ -232,6 +300,21 @@ public enum MarkdownHTML {
        빌드 4 에서 점 · 체크박스가 한 줄, 글이 다음 줄로 갈라졌다. */
     li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.15em; }
     li:has(> input[type="checkbox"]) > p { display: inline; }
+    /* 211 — 누를 수 있는 체크상자. 체크상자는 누름을 받지 않고 감싼 링크가 받는다. */
+    a.yb-task { text-decoration: none; -webkit-tap-highlight-color: transparent; }
+    a.yb-task input[type="checkbox"] { pointer-events: none; }
+    li:has(> a.yb-task) { list-style: none; margin-left: -1.15em; }
+    li:has(> a.yb-task) > p { display: inline; }
+    /* 겹친 체크상자 (빌드 78 사용자 화면) — 체크상자를 점 자리로 당기는 위의 -1.15em 이 단계마다 다시 걸려 안쪽 단계가 0.25em(4화소)만
+       들어갔다. 체크상자 항목 아래 목록은 그만큼 더 들여 **점 목록과 같은 한 단계(1.4em)** 가 되게 한다. */
+    li:has(> input[type="checkbox"]) > ul, li:has(> input[type="checkbox"]) > ol,
+    li:has(> a.yb-task) > ul, li:has(> a.yb-task) > ol { padding-left: 2.55em; }
+    /* 212 — 이 노트를 가리키는 노트. 본문과 가는 선으로 가르고, 제목은 작고 흐리게. */
+    .yb-backlinks { margin-top: 3em; padding-top: 1em; border-top: 1px solid var(--yb-rule); }
+    .yb-backlinks-title { font-size: 0.85em; font-weight: 600; color: var(--yb-ink-faint); margin: 0 0 0.5em; }
+    .yb-backlinks ul { list-style: none; padding-left: 0; margin: 0; }
+    .yb-backlinks li { margin: 0.45em 0; }
+    .yb-backlinks-folder { font-size: 0.8em; color: var(--yb-ink-faint); margin-left: 0.35em; }
     .yb-tag {
       color: var(--yb-tag, #B88500);
       font-weight: 600;
@@ -287,6 +370,24 @@ public enum MarkdownHTML {
 /// **왜 AST 를 고치나.** `HTMLFormatter` 가 내보낸 HTML 을 나중에 문자열로
 /// 손보면 따옴표 · 중첩 때문에 반드시 틀린다. 트리에서 고치면 형식 생성은
 /// 라이브러리에 맡기고 우리는 뜻만 바꾼다.
+/// **제목 안의 글 모양** (201, 2026-10-01 자동 검사가 찾았다). `HTMLFormatter` 는 제목을 글자만(`plainText`) 그린다 —
+/// `## **설계**` 의 굵게, `## [회의록](회의.md)` 의 링크가 읽기 화면에서 사라졌다 (쓰기 화면 · 다른 앱은 그린다).
+///
+/// 제목의 글을 **본문 문단과 같은 길**(`HTMLFormatter`)로 그리고 `<hN>` 으로 감싼 날 HTML 덩이로 바꾼다. 날 HTML 덩이는
+/// `HTMLFormatter` 가 글자 그대로 내보내므로 링크 고치기 · 이스케이프는 앞의 `NoteRewriter` 가 이미 한 그대로 남는다.
+/// 블록 차례와 `<hN>` 여는 태그는 그대로라 줄 지도(`LineMap`)도 그대로 맞는다.
+private struct HeadingRewriter: MarkupRewriter {
+    mutating func visitHeading(_ heading: Heading) -> Markup? {
+        let paragraph = Paragraph(heading.inlineChildren.map { $0 })
+        var inner = HTMLFormatter.format(paragraph)
+        if inner.hasPrefix("<p>") { inner.removeFirst(3) }
+        while inner.hasSuffix("\n") { inner.removeLast() }
+        if inner.hasSuffix("</p>") { inner.removeLast(4) }
+        let level = min(max(heading.level, 1), 6)
+        return HTMLBlock("<h\(level)>" + inner + "</h\(level)>\n")
+    }
+}
+
 private struct NoteRewriter: MarkupRewriter {
     let notePath: String
     /// 폴더 안에 실제로 있는 상대경로들. 클로저가 아니라 값이라 저장해도 안전하다.
