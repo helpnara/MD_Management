@@ -1953,15 +1953,21 @@ final class LibraryModel: ObservableObject {
         // **치는 중 · 쓰는 중에는 미룬다** (216) — 다시 읽기는 열린 노트까지 다시 읽는 길이다. 시각은 그대로 두었다가 손을 멈추면 본다.
         if let known = folderStamp, let folderNow, folderNow != known, !isDirty, !isWriting {
             folderStamp = folderNow
-            // **무엇이 왔고 갔는지 적는다.** iCloud 는 같은 이름이 만나면 판본 대신 `A 2` 로
-            // 이름을 바꾸기도 한다 — 그때 최근 일에 이 줄이 없으면 무슨 일인지 알 길이 없다 (빌드 20 · 1번).
-            let before = Set(notes.map(\.relativePath))
-            await reloadFolders()
-            await reloadNotes()
-            let after = Set(notes.map(\.relativePath))
-            for path in after.subtracting(before).sorted() { log("다른 기기에서 온 새 노트: \(path)") }
-            for path in before.subtracting(after).sorted() { log("다른 기기에서 사라진 노트: \(path)") }
-            if after == before { log("폴더가 바뀌어 목록을 다시 읽음: \(selectedFolder.isEmpty ? "최상위" : selectedFolder)") }
+            // **목록이 정말 달라졌을 때만 다시 읽는다** (216, 빌드 83 사용자 진단). 내 저장 몇 초 뒤 iCloud 가 폴더를 한 번 더
+            // 만진다 — 올리기를 마치며 폴더 시각이 또 움직인다. 시각만 보고 다시 읽으면 저장할 때마다 목록 · 열린 노트 · 색인을
+            // 다시 돌았다. 목록을 먼저 견주고 같으면 시각만 받아 둔다. 안쪽 폴더가 새로 생긴 것은 15초 훑기가 잡는다.
+            let fresh = await store.notes(in: selectedFolder)
+            if Self.fingerprint(fresh) != Self.fingerprint(notes) {
+                // **무엇이 왔고 갔는지 적는다.** iCloud 는 같은 이름이 만나면 판본 대신 `A 2` 로
+                // 이름을 바꾸기도 한다 — 그때 최근 일에 이 줄이 없으면 무슨 일인지 알 길이 없다 (빌드 20 · 1번).
+                let before = Set(notes.map(\.relativePath))
+                await reloadFolders()
+                await reloadNotes()
+                let after = Set(notes.map(\.relativePath))
+                for path in after.subtracting(before).sorted() { log("다른 기기에서 온 새 노트: \(path)") }
+                for path in before.subtracting(after).sorted() { log("다른 기기에서 사라진 노트: \(path)") }
+                if after == before { log("폴더가 바뀌어 목록을 다시 읽음: \(selectedFolder.isEmpty ? "최상위" : selectedFolder)") }
+            }
         } else if folderStamp == nil {
             folderStamp = folderNow
         }
@@ -1971,8 +1977,10 @@ final class LibraryModel: ObservableObject {
             let rootNow = await store.stamp(of: "")
             if let known = rootStamp, let rootNow, rootNow != known {
                 rootStamp = rootNow
-                log("최상위가 바뀌어 폴더 목록을 다시 읽음")
+                // 폴더가 정말 생기거나 없어졌을 때만 적는다 (216) — iCloud 가 최상위를 만지는 일은 잦다.
+                let before = folders
                 await reloadFolders()
+                if folders != before { log("최상위가 바뀌어 폴더 목록을 다시 읽음") }
             } else if rootStamp == nil {
                 rootStamp = rootNow
             }
@@ -2145,9 +2153,12 @@ final class LibraryModel: ObservableObject {
             // 위로 안 올라온다 (48). 그 한 줄만 새 시각으로 바꿔 다시 정렬한다.
             if let index = notes.firstIndex(where: { $0.relativePath == path }) {
                 let old = notes[index]
+                // **시각과 크기는 방금 잰 파일 도장으로** (216) — 목록을 읽는 쪽(`FolderStore.notes`)과 같은 값이라야 한다.
+                // 예전에는 지금 시각 · 글자 수(UTF-16)를 넣어, 한글 노트는 바이트 수와 늘 달랐다 — 15초 목록 견주기가 저장할 때마다
+                // *목록이 달라져 다시 읽음* 으로 읽었다 (2026-10-06 사용자 진단). 같은 것을 재는 곳이 둘이면 갈린다 (CLAUDE.md §1).
                 notes[index] = NoteSummary(relativePath: old.relativePath, title: old.title,
-                                           preview: old.preview, modifiedAt: Date(),
-                                           size: (written as NSString).length, isDownloaded: old.isDownloaded)
+                                           preview: old.preview, modifiedAt: draftStamp?.modifiedAt ?? Date(),
+                                           size: draftStamp?.size ?? old.size, isDownloaded: old.isDownloaded)
                 notes.sort { $0.modifiedAt > $1.modifiedAt }
             }
             await renderReading(path: path, text: written)
