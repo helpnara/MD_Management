@@ -547,7 +547,15 @@ struct MarkdownEditor: UIViewRepresentable {
             loadedText = text
             lastCaret = nil
             lastPath = "갈아 끼우기"
+            // **같은 노트의 글을 갈아 끼울 때는 커서 · 화면 자리를 지킨다** (216). 글을 통째로 넣으면 UIKit 은 커서를 글 끝으로 보낸다 —
+            // 다른 기기의 고침을 받아도 보던 자리에 머문다. 이 길을 탔다는 것은 최근 일에 남긴다 (커서가 튀면 여기부터 의심한다).
+            let selection = view.selectedRange
+            let offset = view.contentOffset
+            note("열린 노트의 글을 갈아 끼움 — \((view.text as NSString).length)자 → \((text as NSString).length)자")
             view.text = text
+            let length = (text as NSString).length
+            view.selectedRange = NSRange(location: min(selection.location, length), length: 0)
+            view.setContentOffset(offset, animated: false)
             // **갈아 끼운 뒤에 한 번 맞춘다** (162). 글을 통째로 넣으면 저장소 대리자가
             // 첫 문단을 드러낸 채 칠하는데, 초점이 없으면 그 뒤에 아무도 정리를 안 부른다.
             refreshFocus(view)

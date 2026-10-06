@@ -1843,7 +1843,8 @@ final class LibraryModel: ObservableObject {
 
     func log(_ message: String) {
         events.insert("\(Self.eventClock.string(from: Date())) \(message)", at: 0)
-        if events.count > 40 { events.removeLast(events.count - 40) }
+        // 80줄 (216) — 40줄은 목록 다시 읽기 몇 번에 밀려 정작 볼 줄이 1분 만에 사라졌다.
+        if events.count > 80 { events.removeLast(events.count - 80) }
     }
 
     // MARK: - 다른 기기의 변경 지켜보기
@@ -1916,9 +1917,12 @@ final class LibraryModel: ObservableObject {
         }
         // 열린 노트
         // 치는 중(`isDirty`)이면 손대지 않는다 — 저장이 견주고 필요하면 충돌 사본을 만든다.
+        let shownBefore = noteText
         if !isDirty, let path = draftPath, let known = draftStamp,
            let now = await store.stamp(of: path), now != known,
-           let text = try? await store.readText(at: path) {
+           let text = try? await store.readText(at: path),
+           // **기다리는 사이에 치기 시작했거나 저장이 돌았으면 물러난다** (216) — 남의 글로 지금 친 글을 덮지 않는다. 다음 바퀴에 다시 본다.
+           !isDirty, !isWriting, noteText == shownBefore, path == draftPath {
             draftStamp = now
             if text != noteText {
                 noteText = text
@@ -1946,7 +1950,8 @@ final class LibraryModel: ObservableObject {
         }
         // 보고 있는 폴더 — 노트가 생기거나 없어졌나
         let folderNow = await store.stamp(of: selectedFolder)
-        if let known = folderStamp, let folderNow, folderNow != known {
+        // **치는 중 · 쓰는 중에는 미룬다** (216) — 다시 읽기는 열린 노트까지 다시 읽는 길이다. 시각은 그대로 두었다가 손을 멈추면 본다.
+        if let known = folderStamp, let folderNow, folderNow != known, !isDirty, !isWriting {
             folderStamp = folderNow
             // **무엇이 왔고 갔는지 적는다.** iCloud 는 같은 이름이 만나면 판본 대신 `A 2` 로
             // 이름을 바꾸기도 한다 — 그때 최근 일에 이 줄이 없으면 무슨 일인지 알 길이 없다 (빌드 20 · 1번).
@@ -2118,6 +2123,13 @@ final class LibraryModel: ObservableObject {
                 log("충돌: \(name) 이 디스크에서 바뀌어 내 글을 \(shown) 로 저장")
             }
             draftStamp = await store.stamp(of: path)
+            // **내 저장도 폴더 시각을 바꾼다** (216, 2026-10-06 사용자 진단 — 최근 일에 *폴더가 바뀌어 목록을 다시 읽음* 이 3~4초마다).
+            // 파일을 원자적으로 갈아 끼우면 폴더 안의 항목이 바뀌어 폴더 시각이 움직인다. 적어 두지 않으면 3초 지켜보기가 그것을
+            // 다른 기기의 변화로 읽고, 치는 동안 저장할 때마다 목록 · 열린 노트를 다시 읽었다. 그 사이에 진짜 남의 변화가 섞였다면
+            // 15초 목록 견주기가 잡는다.
+            if Paths.directory(of: path) == selectedFolder {
+                folderStamp = await store.stamp(of: selectedFolder)
+            }
             noteText = written
             // 쓰는 동안 더 쳤으면 **아직 더럽다.** 무턱대고 내리면 그 글자들이 다음
             // 편집 때까지 파일에 안 들어간다 (빌드 29 · 4번).
@@ -2337,8 +2349,9 @@ final class LibraryModel: ObservableObject {
     }
 
     func loadSelectedText() async {
-        // 노트를 떠난다 — 제목 줄에 커서가 있었어도 여기서 확정한다 (89).
-        cursorOnTitleLine = false
+        // 노트를 떠난다 — 제목 줄에 커서가 있었어도 여기서 확정한다 (89). **같은 노트를 다시 읽을 때는 아니다** (216) —
+        // 목록 다시 읽기가 이 길로 오는데, 제목 줄에서 치는 중에 이것이 내려가면 다음 자동 저장이 치다 만 제목으로 이름을 바꿨다.
+        if selectedNote?.relativePath != draftPath { cursorOnTitleLine = false }
         // 붙여넣을 때 쓸 금고 목록을 뒤에서 읽어 둔다 (144 · 177).
         refreshVaultPaths()
         // **읽기 전에 쓴다.** 노트를 바꾸는 길목이 여기다 — 남은 글을 먼저 파일에
@@ -2357,6 +2370,14 @@ final class LibraryModel: ObservableObject {
            await store.stamp(of: note.relativePath) == stamp {
             return
         }
+        // **쓰는 중인 그 노트는 다시 읽지 않는다** (216). 위의 저장은 다른 저장이 도는 중이면 그냥 물러나고(`isWriting`), 그때
+        // 디스크 도장은 이미 새것인데 `draftStamp` 는 아직 옛것이라 *디스크가 바뀌었다* 로 읽혔다. 다시 읽으면 그 사이 친 글자를
+        // 모델이 잊고(`isDirty = false`) 편집기는 글을 통째로 갈아 끼워 **커서가 글 끝으로** 갔다. 다른 기기의 변화는 저장이 견주고
+        // (충돌 사본), 손을 멈추면 3초 지켜보기가 가져온다.
+        if note.relativePath == draftPath, isDirty || isWriting {
+            log("쓰는 중이라 열린 노트를 다시 읽지 않음: \(note.relativePath)")
+            return
+        }
         // **커서가 튀면 여기를 의심한다.** 열려 있는 노트를 다시 읽으면 편집기가 글을
         // 통째로 갈아 끼우고, 그때 커서는 글 끝으로 가며 화면이 그리로 끌려간다.
         // 제자리 걸음이면 위에서 이미 물러났으므로, 여기까지 왔다는 것은 디스크가 정말
@@ -2364,11 +2385,18 @@ final class LibraryModel: ObservableObject {
         if note.relativePath == draftPath {
             log("열려 있는 노트를 다시 읽음 — 편집기가 글을 갈아 끼운다: \(note.relativePath)")
         }
+        let textBefore = noteText
         do {
             let text = try await store.readText(at: note.relativePath)
             // **이 파일이 UTF-8 이었나.** 아니면 예전 인코딩으로 읽어 낸 것이고,
             // 여는 것만으로 고쳐 쓰면 남의 파일을 바꾸는 셈이다 (62를 건너뛴다).
             let encoding = await store.encoding(of: note.relativePath)
+            // **읽는 사이에 글이 바뀌었으면 물러난다** (216). 기다리는 동안 사용자가 쳤거나 저장이 끝났다 — 지금 읽은 글이
+            // 더 옛것일 수 있다. 옛 글을 넣으면 편집기가 그것으로 갈아 끼운다.
+            if note.relativePath == draftPath, isDirty || isWriting || noteText != textBefore {
+                log("다시 읽는 사이에 글이 바뀌어 물러남: \(note.relativePath)")
+                return
+            }
             let isUTF8 = encoding == .utf8
             if let encoding, !isUTF8 {
                 log("UTF-8 이 아닌 파일을 \(FolderStore.encodingName(encoding)) 로 읽음: \(note.relativePath)")
