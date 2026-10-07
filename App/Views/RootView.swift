@@ -318,6 +318,9 @@ struct StatusBanner: View {
 private struct FolderSidebar: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// 바깥 화면이 좁은가 (218 · 빌드 85 · 5번). **폴더 칸 자신의 size class 는 아이패드에서도 compact 다** — 칸이 좁기 때문이다.
+    /// 그것을 보고 *아이폰* 으로 갈랐더니 아이패드 폴더 칸의 새 폴더가 최상위에 생겼다 (빌드 24 · 13번 · 125 와 같은 함정).
+    @Environment(\.rootIsCompact) private var rootIsCompact
 
     /// 목록의 선택은 `library.selectedFolder` 와 따로 둔다.
     ///
@@ -390,7 +393,7 @@ private struct FolderSidebar: View {
                 Button {
                     // **아이패드는 고른 폴더 안에** (218) — 폴더 칸에 고른 폴더가 늘 보인다. **아이폰은 최상위에** — 폴더 화면으로
                     // 돌아오면 고른 폴더가 안 보여, 보이지 않는 폴더 안에 만들면 헷갈린다. 아이폰은 노트 목록 화면의 단추가 그 몫이다.
-                    if horizontalSizeClass == .compact {
+                    if rootIsCompact {
                         library.beginCreateFolder()
                     } else {
                         library.beginCreateFolderHere()

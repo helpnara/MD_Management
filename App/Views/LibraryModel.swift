@@ -128,7 +128,10 @@ final class LibraryModel: ObservableObject {
         guard FolderTree.depth(of: parent) < FolderTree.creatableDepth else { return }
         newFolderParent = parent
         newFolderName = ""
-        newFolderMessage = "\(parent.isEmpty ? folderName : parent) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다."
+        // 맨 위는 **맨 위** 라고 말한다 (빌드 85 · 5번) — *<맨 위 폴더 이름> 안에* 는 하위 폴더를 만든다는 말로 읽혔다.
+        newFolderMessage = parent.isEmpty
+            ? "맨 위에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다."
+            : "\(parent) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다."
         creatingFolder = true
     }
 
