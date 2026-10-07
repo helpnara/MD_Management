@@ -3381,6 +3381,47 @@
       "targets": {
         "회의": []
       }
+    },
+    {
+      "children": {},
+      "create": {
+        "": "",
+        "독서": "독서",
+        "회의": "회의",
+        "회의/2026": "회의",
+        "회의/2026/1월": "회의",
+        "회의/2026/1월/주간": "회의"
+      },
+      "depths": [
+        1,
+        2,
+        3,
+        1
+      ],
+      "name": "고른 폴더 안에 새 폴더 (218)",
+      "paths": [
+        "회의",
+        "회의/2026",
+        "회의/2026/1월",
+        "독서"
+      ],
+      "sidebar": [
+        {
+          "depth": 1,
+          "path": "회의",
+          "subfolders": 1
+        },
+        {
+          "depth": 2,
+          "path": "회의/2026",
+          "subfolders": 1
+        },
+        {
+          "depth": 1,
+          "path": "독서",
+          "subfolders": 0
+        }
+      ]
     }
   ],
   "formatCases": [
@@ -4923,6 +4964,66 @@
       }
     ]
   },
+  "inboxCases": [
+    {
+      "existing": {},
+      "name": "아무것도 없음 — 한국어 기기",
+      "preferred": "받은 글",
+      "result": "받은 글"
+    },
+    {
+      "existing": {
+        "회의": 3
+      },
+      "name": "아무것도 없음 — 영어 기기",
+      "preferred": "Inbox",
+      "result": "Inbox"
+    },
+    {
+      "existing": {
+        "받은 글": 2,
+        "회의": 5
+      },
+      "name": "받은 글만 있음 — 영어 기기도 그리로",
+      "preferred": "Inbox",
+      "result": "받은 글"
+    },
+    {
+      "existing": {
+        "Inbox": 0
+      },
+      "name": "Inbox 만 있음 — 한국어 기기도 그리로",
+      "preferred": "받은 글",
+      "result": "Inbox"
+    },
+    {
+      "existing": {
+        "Inbox": 4,
+        "받은 글": 1
+      },
+      "name": "둘 다 — 노트 많은 쪽",
+      "preferred": "받은 글",
+      "result": "Inbox"
+    },
+    {
+      "existing": {
+        "Inbox": 2,
+        "받은 글": 2
+      },
+      "name": "둘 다 같은 수 — 기기 언어 쪽",
+      "preferred": "Inbox",
+      "result": "Inbox"
+    },
+    {
+      "existing": {
+        "Inbox": 0,
+        "받은 글": 0
+      },
+      "name": "둘 다 같은 수 · 기기 언어가 다른 말 — 앞엣것",
+      "preferred": "Boîte",
+      "result": "받은 글"
+    }
+  ],
   "indentCases": [
     {
       "indented": {

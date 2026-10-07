@@ -72,9 +72,9 @@ enum FolderKind: String, Sendable {
     var label: String {
         switch self {
         case .iCloudContainer: return "iCloud"
-        case .userChosen: return "고른 폴더"
-        case .localDocuments: return "이 기기"
-        case .sample: return "임시 폴더"
+        case .userChosen: return String(localized: "고른 폴더")
+        case .localDocuments: return String(localized: "이 기기")
+        case .sample: return String(localized: "임시 폴더")
         }
     }
 }

@@ -241,6 +241,14 @@ jobs:
               sys.exit('::error::NSUbiquitousContainerName 이 비어 있습니다')
           print('iCloud 설정 정상:', entry['NSUbiquitousContainerName'])
           "
+          # **Files 의 겉이름은 언어마다 다르게 두지 않는다** (221). 언어 문구 파일에 같은 열쇠가 끼면
+          # 그 언어로 앱을 연 기기가 이름을 바꿔 올린다 (빌드 90 · 5) — 끼어 있으면 막는다.
+          for f in "$APP"/*.lproj/InfoPlist.strings; do
+            [ -f "$f" ] || continue
+            if plutil -convert json -o - "$f" | grep -q NSUbiquitousContainerName; then
+              echo "::error::$f 에 NSUbiquitousContainerName 이 있습니다 — Files 이름은 project.yml 한 곳 (221)"; exit 1
+            fi
+          done
 
       # **화소 검사를 스크린샷 앞에 깐다.** 다시 찍는 고리가 심판과 **같은 것**을
       # 봐야 한다 — 크기만 보면 사이드바가 그려진 아이패드 3단 화면은 오른쪽 칸이
@@ -398,6 +406,15 @@ jobs:
           shoot 05-reading.png -sampleFolder -readingMode
           shoot 06-reading-large-text.png -sampleFolder -readingMode \
             -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+          # **영어** (219) — 이 앱만 English 로 띄운다 (설정 → 앱 → 언어 와 같은 것). 영어 견본 노트 ·
+          # 영어 화면 문구가 함께 나와야 한다. 한국어 글자가 보이면 번역이 빠진 자리다. 영어 스토어 화면에도 쓴다.
+          EN=(-AppleLanguages "(en)" -AppleLocale en_US)
+          mkdir -p screenshots/en
+          shoot en/01-list.png -sampleFolder "${EN[@]}"
+          shoot en/02-note.png -sampleFolder -openFirstNote "${EN[@]}"
+          shoot en/05-reading.png -sampleFolder -readingMode "${EN[@]}"
+          shoot en/09-settings.png -sampleFolder -settings "${EN[@]}"
+          shoot en/13-search.png -sampleFolder -search Meeting "${EN[@]}"
 
           # ── 다크 모드 ──
           xcrun simctl ui "$UDID" appearance dark
@@ -492,12 +509,14 @@ jobs:
             shoot ipad/02-reading.png -sampleFolder -readingMode
             shoot ipad/03-large-text.png -sampleFolder \
               -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+            mkdir -p screenshots/en/ipad
+            shoot en/ipad/01-split.png -sampleFolder "${EN[@]}"
             UDID="${{ steps.sim.outputs.udid }}"
           else
             echo "::warning::iPad 시뮬레이터가 없어 iPad 스크린샷을 건너뜁니다"
           fi
 
-          ls -la screenshots screenshots/dark screenshots/ipad 2>/dev/null || true
+          ls -la screenshots screenshots/dark screenshots/ipad screenshots/en screenshots/en/ipad 2>/dev/null || true
 
           # 한 장이라도 못 찍었으면 막는다. 스크린샷은 원격 세션에서 앱이 실제로
           # 도는지 보는 유일한 창구라, 못 찍은 채 초록이면 그게 제일 위험하다.

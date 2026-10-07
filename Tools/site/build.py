@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""개인정보 처리방침 **한 장만** 정적 사이트로 만든다.
+"""개인정보 처리방침 **한 장만** (언어마다 한 장) 정적 사이트로 만든다.
 
 `/docs` 폴더를 통째로 GitHub Pages 에 올리면 설계 문서가 다 공개된다.
-그래서 이 스크립트가 `docs/privacy.md` 하나만 HTML 로 바꾼다.
+그래서 이 스크립트가 `docs/privacy.md` (한국어 → `/privacy/`) 와 `docs/privacy.en.md`
+(영어 → `/en/privacy/`, 219) 만 HTML 로 바꾼다. 두 쪽은 서로를 가리키는 줄을 맨 위에 단다.
 
   SUPPORT_EMAIL=… python3 Tools/site/build.py _site     # 게시용 (site.yml)
   python3 Tools/site/build.py _site --preview            # 미리 보기 — 자리표시자 그대로
@@ -24,7 +25,11 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "docs" / "privacy.md"
+# (원문, 게시 자리, html lang, 다른 말 쪽으로 가는 줄, 마지막 수정 글)
+PAGES = (
+    (ROOT / "docs" / "privacy.md", "privacy", "ko", '<a href="../en/privacy/" lang="en">English</a>', "마지막 수정"),
+    (ROOT / "docs" / "privacy.en.md", "en/privacy", "en", '<a href="../../privacy/" lang="ko">한국어</a>', "Last updated"),
+)
 
 PLACEHOLDER = "{{SUPPORT_EMAIL}}"
 # 게시된 페이지에 **이것이 하나라도 남으면** 실패한다.
@@ -32,7 +37,7 @@ LEFTOVERS = (PLACEHOLDER, "example.com", "TODO", "SUPPORT_EMAIL", "--&gt;")
 EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 PAGE = """<!doctype html>
-<html lang="ko">
+<html lang="{lang}">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
@@ -49,9 +54,11 @@ PAGE = """<!doctype html>
   th, td {{ text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #8884; }}
   code {{ font-size: 0.92em; }}
   footer {{ margin-top: 3rem; font-size: 0.85rem; opacity: 0.7; }}
+  nav {{ text-align: right; font-size: 0.9rem; }}
 </style>
+<nav>{switch}</nav>
 {body}
-<footer>마지막 수정 {updated}</footer>
+<footer>{updated_label} {updated}</footer>
 </html>
 """
 
@@ -131,6 +138,11 @@ def render(markdown: str) -> str:
                 out.append("<tr>" + "".join(f"<td>{inline(c)}</td>" for c in cells) + "</tr>")
             continue
 
+        # **목록 항목의 이어지는 줄**(들여 쓴 줄)은 그 항목에 붙인다. 예전에는 새 문단이 되어 목록이 둘로 끊겼다 (219 에서 보임).
+        if in_list and line[:1].isspace() and not stripped.startswith("- ") and out[-1].endswith("</li>"):
+            out[-1] = out[-1][:-len("</li>")] + " " + inline(stripped) + "</li>"
+            continue
+
         if stripped.startswith("- "):
             if not in_list:
                 close_blocks()
@@ -168,18 +180,21 @@ def main() -> int:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     preview = "--preview" in sys.argv[1:]
     destination = pathlib.Path(args[0] if args else "_site")
-    meta, body = strip_front_matter(SOURCE.read_text(encoding="utf-8"))
-
-    page = PAGE.format(
-        title=meta.get("title", "개인정보 처리방침"),
-        body=render(body),
-        updated=meta.get("updated", ""),
-    )
-    page = fill_contact(page, preview)
-
-    privacy = destination / "privacy"
-    privacy.mkdir(parents=True, exist_ok=True)
-    (privacy / "index.html").write_text(page, encoding="utf-8")
+    for source, folder, lang, switch, updated_label in PAGES:
+        meta, body = strip_front_matter(source.read_text(encoding="utf-8"))
+        page = PAGE.format(
+            lang=lang,
+            switch=switch,
+            title=meta.get("title", "개인정보 처리방침"),
+            body=render(body),
+            updated_label=updated_label,
+            updated=meta.get("updated", ""),
+        )
+        page = fill_contact(page, preview)
+        target = destination / folder
+        target.mkdir(parents=True, exist_ok=True)
+        (target / "index.html").write_text(page, encoding="utf-8")
+        print(f"{destination}/{folder}/index.html — {len(page)}바이트")
 
     # 루트로 오면 방침으로 보낸다. **다른 문서는 올리지 않는다.**
     (destination / "index.html").write_text(
@@ -188,7 +203,6 @@ def main() -> int:
         '<a href="privacy/">개인정보 처리방침</a>\n',
         encoding="utf-8")
 
-    print(f"{destination}/privacy/index.html — {len(page)}바이트")
     return 0
 
 

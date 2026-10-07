@@ -59,28 +59,28 @@ struct DiagnosticsView: View {
                 }
 
                 Section("폴더") {
-                    row("쓰는 곳", library.kind.label)
-                    row("iCloud 를 잡았나", library.iCloudAvailable ? "예" : "아니오")
-                    row("폴더 이름", library.folderName)
-                    row("노트", "\(library.notes.count)개")
-                    row("하위 폴더", "\(library.folders.count)개")
+                    row(String(localized: "쓰는 곳"), library.kind.label)
+                    row(String(localized: "iCloud 를 잡았나"), library.iCloudAvailable ? String(localized: "예") : String(localized: "아니오"))
+                    row(String(localized: "폴더 이름"), library.folderName)
+                    row(String(localized: "노트"), String(localized: "\(library.notes.count)개"))
+                    row(String(localized: "하위 폴더"), String(localized: "\(library.folders.count)개"))
                 }
 
 
                 Section {
 
-                    row("색인된 노트", "\(library.indexStatus.noteCount)개")
+                    row(String(localized: "색인된 노트"), String(localized: "\(library.indexStatus.noteCount)개"))
 
-                    row("trigram", library.indexStatus.trigramAvailable ? "있음" : "없음 — LIKE 만")
+                    row("trigram", library.indexStatus.trigramAvailable ? String(localized: "있음") : String(localized: "없음 — LIKE 만"))
 
-                    row("색인 크기", "\(library.indexStatus.fileBytes / 1024)KB")
+                    row(String(localized: "색인 크기"), "\(library.indexStatus.fileBytes / 1024)KB")
 
-                    row("마지막 갱신", String(format: "%.2f초", library.indexStatus.lastRefreshSeconds))
+                    row(String(localized: "마지막 갱신"), String(format: String(localized: "%.2f초"), library.indexStatus.lastRefreshSeconds))
 
                     // 앱이 스스로 잰 값이다 — 사람이 초시계를 들 수는 없다 (S1 · A5c).
-                    row("목록 읽기", String(format: "%.2f초", library.listSeconds))
+                    row(String(localized: "목록 읽기"), String(format: String(localized: "%.2f초"), library.listSeconds))
 
-                    row("마지막 검색", String(format: "%.2f초", library.searchSeconds))
+                    row(String(localized: "마지막 검색"), String(format: String(localized: "%.2f초"), library.searchSeconds))
 
                     if library.isIndexing {
                         HStack {
@@ -115,8 +115,8 @@ struct DiagnosticsView: View {
                 }
 
                 Section("앱") {
-                    row("판", "\(Bundle.appVersion) (\(Bundle.appBuild))")
-                    row("번들 ID", Bundle.main.bundleIdentifier ?? "—")
+                    row(String(localized: "판"), "\(Bundle.appVersion) (\(Bundle.appBuild))")
+                    row(String(localized: "번들 ID"), Bundle.main.bundleIdentifier ?? "—")
                 }
 
                 if let error = library.lastError {
@@ -137,7 +137,7 @@ struct DiagnosticsView: View {
                                 .foregroundStyle(Palette.ink)
                         }
                         if library.events.count > 5 {
-                            Button(showsAllEvents ? "접기" : "더 보기 (\(library.events.count)줄)") {
+                            Button(showsAllEvents ? String(localized: "접기") : String(localized: "더 보기 (\(library.events.count)줄)")) {
                                 showsAllEvents.toggle()
                             }
                         }
@@ -165,7 +165,7 @@ struct DiagnosticsView: View {
                             UIPasteboard.general.string = paste.report
                             pasteCopied = true
                         } label: {
-                            Label(pasteCopied ? "복사했습니다" : "붙여넣은 서식 복사",
+                            Label(pasteCopied ? String(localized: "복사했습니다") : String(localized: "붙여넣은 서식 복사"),
                                   systemImage: pasteCopied ? "checkmark" : "doc.on.clipboard")
                         }
                     } header: {
@@ -195,7 +195,7 @@ struct DiagnosticsView: View {
                         UIPasteboard.general.string = library.diagnosticsText
                         copied = true
                     } label: {
-                        Label(copied ? "복사했습니다" : "진단 정보 복사",
+                        Label(copied ? String(localized: "복사했습니다") : String(localized: "진단 정보 복사"),
                               systemImage: copied ? "checkmark" : "doc.on.doc")
                     }
                 } footer: {
@@ -269,7 +269,7 @@ struct TestToolsView: View {
             // **진짜 실패**를 만들 수 있다. 시험 도구가 바로 이런 자리다.
             Section {
                 Button {
-                    library.report("시험용 안내 띠입니다. 눌러서 지우세요.")
+                    library.report(String(localized: "시험용 안내 띠입니다. 눌러서 지우세요."))
                 } label: {
                     Label("안내 띠 띄워 보기", systemImage: "exclamationmark.bubble")
                 }

@@ -12,7 +12,7 @@ updated: 2026-09-27
 
 ---
 
-## 0. 지금 상태 (2026-10-07 — **1.0.7 (빌드 84) 승인** · `main` = 1.0.7)
+## 0. 지금 상태 (2026-10-07 — **1.1 (빌드 92) 심사 준비** · 1.0.7 승인 · 1.0.8(빌드 86)은 내지 않고 1.1 에 합침)
 
 | | |
 |---|---|
@@ -151,6 +151,124 @@ https://helpnara.github.io/MD_Management/privacy/
 
 > ✅ 처리방침 페이지(지원 URL 과 같은 주소)의 `문의` 칸은 **게시할 때 저장소 변수 `SUPPORT_EMAIL` 로 채운다.**
 > 2026-09-27 까지 `support@example.com` 자리표시자였다 — 고쳐서 게시했고 사용자가 페이지에서 확인했다 (**171** 🟢).
+
+## 1-영어. 영어 칸 (219 · 1.1)
+
+> **2026-10-07 사용자 결정** — 영어 이름 **Slow Margin** (앱 스토어에 같은 이름이 없는 것을 사용자가 확인). 문구는 세션이 쓰고 다듬어 바로 싣는다
+> (사용자 — *너가 나보다 영어 실력이 좋을테니 … 검토해주고, 앱에 반영하면 될 것 같아*). 한국어 칸과 **같은 것만** 말한다 — 없는 기능을 팔지 않는다 (§6).
+> App Store Connect → 앱 정보 → 오른쪽 위 언어에서 **English (U.S.)** 를 더하면 칸이 하나 더 생긴다. 한국어 칸은 그대로 둔다.
+> 글자 수는 `python3 Tools/store/count.py` 가 이 칸들도 센다. 다른 앱 이름은 쓰지 않는다 (애플의 `Files` · 맥은 한국어 칸에도 쓴 말이다).
+
+### 1.1 제출 순서 — 영어 칸 더하기 (2026-10-07 사용자 — *빌드 하고 심사 제출하자*)
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1` (한국어 칸은 지난 판에서 따라온다)
+2. 한국어 칸: *이 버전의 새로운 기능* 에 §6 아래 울타리를 붙인다 · **빌드** 칸에서 **92** 를 고른다 (91 은 새 아이콘 전 — 고르지 않는다)
+3. 오른쪽 위 언어 메뉴 → **English (U.S.)** 더하기 → 아래 *Name* ~ *What’s New* 를 칸마다 붙인다
+   - **앱 정보** 쪽(이름 · 부제 · 개인정보 처리방침 URL)과 **버전** 쪽(프로모션 · 설명 · 키워드 · 지원 URL · 새로운 기능 · 스크린샷)이 다른 화면이다 — 둘 다 English 로 바꿔 채운다
+   - 개인정보 처리방침 URL · 지원 URL 은 영어 쪽 주소 (아래)
+4. **영어 스크린샷.** 영어 칸에 안 올리면 **한국어 스크린샷이 그대로 보인다.** 영어 견본 노트 `docs/samples/en/` 으로 한국어 때와 같은 차례로 찍는다
+   (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
+5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
+
+### Name
+
+```
+Slow Margin
+```
+
+### Subtitle
+
+```
+Markdown notes kept as files
+```
+
+### Promotional Text
+
+```
+Your writing lives as Markdown files in your own iCloud folder, not inside the app. Delete the app or switch apps, and your notes stay right where they are.
+```
+
+### Keywords
+
+쉼표 뒤에 빈칸을 넣지 않는다 — 빈칸도 글자로 센다. 이름에 든 말(slow · margin)은 넣지 않는다 — 이름은 이미 검색된다.
+
+```
+markdown,md,notes,journal,diary,writing,editor,plaintext,icloud,files,checklist,tags,outline
+```
+
+### Description
+
+```
+Your writing stays as files.
+
+Slow Margin opens the Markdown (.md) files in your iCloud folder and lets you read and edit them directly. Nothing is tucked away inside the app, so your notes are still there if you delete the app, move to another app, or come back years from now.
+
+The same files show up in the Files app and on your Mac. If you already keep a folder of Markdown notes, just open it.
+
+— Write without fighting the syntax
+
+Only the line with the cursor shows its Markdown. Everything else looks the way it reads, so there’s no switching between edit and preview.
+
+The toolbar above the keyboard has bold, italic, strikethrough, links, quotes, tables, and indent. Press Return in a list and the next item follows; use Tab to indent and outdent.
+
+In Read mode, tap a checkbox to check it off. It’s saved to the note file without switching to editing.
+
+— Photos and attachments stay with your notes
+
+Photos from your library or camera go into an assets folder next to the note, with a link in the text. You can attach documents like PDFs too, and tap to open them.
+
+— Link your notes
+
+Type [[ and pick a note by title. If the title doesn’t exist yet, a new note is created and linked. Files keep standard Markdown links only.
+
+At the bottom of Read mode you’ll find the notes that link to the one you’re reading. Tap to jump there.
+
+There’s also a place that gathers every link that doesn’t open.
+
+— Paste, and it fits
+
+Paste a web address and it becomes a link. Copy a table and it becomes a Markdown table. Paste a list onto lines you’ve already numbered, and the numbers won’t double up.
+
+— Send from other apps
+
+Choose Slow Margin in another app’s share menu to send text, web links, or photos. Open the app and they arrive as new notes in your Inbox folder.
+
+— Search
+
+Search titles and text at once, starting from two characters.
+
+— No account
+
+No sign-up. No server. No ads or tracking. Your writing lives only on your device and in your iCloud, and not even the developer can see it.
+
+— iPhone and iPad
+
+One app for both. On iPad, folders, notes, and the editor sit side by side, with keyboard shortcuts for a hardware keyboard.
+```
+
+> **영어 판의 받은 글 폴더 이름은 `Inbox`** (ADR-0009) — 설명의 *Inbox folder* 와 같다. 한국어 기기와 함께 써서 `받은 글` 이 이미 있으면 그리로 간다 —
+> 설명에는 적지 않는다 (드문 경우를 설명에 넣으면 더 헷갈린다).
+
+### Privacy Policy URL · Support URL (English)
+
+```
+https://helpnara.github.io/MD_Management/en/privacy/
+```
+
+> **영어 쪽** (219 · `docs/privacy.en.md` → `Tools/site/build.py` → `/en/privacy/`). 두 쪽은 맨 위에서 서로를 가리킨다.
+> ✅ **열리는 것을 확인했다** (2026-10-07 사용자 — 빌드 89 사이트 할 일). 처리방침 URL 은 언어마다 따로 넣을 수 있다.
+
+### What’s New in This Version
+
+> **1.1** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다.
+
+```
+• Slow Margin now speaks English. To use it in English, open Settings, find Slow Margin, and set its Language to English.
+• With a folder selected, New Folder now creates the new folder inside it (up to two levels).
+• Touch and hold a button in the formatting toolbar to see its name.
+• In the Files app, the iCloud Drive folder is now named Slow Margin. It’s the same folder, and your notes stay right where they are.
+• A new app icon.
+```
 
 ---
 
@@ -348,15 +466,15 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.0.7** (빌드 84 — 2026-10-06 사용자 — *1.0.7 앱스토어 심사 준비하자*). 216 · 217. 1.0.6 의 글은 `docs/store/1.0.6-새로운-기능.txt`.
-> 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다.
-> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6). 영어 자동 수정은 같은 까닭으로 돌아왔을 것이나 **확인하지 않아** 적지 않았다.
+> **1.1** (2026-10-07 — 219 영문판 · 218 폴더 안에 폴더 · 220 도구 띠 이름). 1.0.7 의 글은 `docs/store/1.0.7-새로운-기능.txt`.
+> 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
+> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6). 1.1 에 더 실리면 여기에 더한다.
 
 ```
-• 쓰기 화면에서 글을 쓰다 멈추다 할 때 커서가 가끔 글 끝으로 가던 문제를 고쳤습니다.
-• 글을 치자마자 다른 노트로 넘어가도 마지막에 친 글자까지 저장됩니다.
-• 다른 기기에서 고친 글을 받아 올 때도 커서가 보던 자리에 머뭅니다.
-• 스페이스를 두 번 누르면 마침표가 찍히는 키보드 기능이 쓰기 화면에서도 아이폰 설정대로 동작합니다.
-• 글을 쓰는 동안 노트 목록을 불필요하게 다시 읽지 않습니다.
+• 영어를 지원합니다. 설정 앱에서 느린 여백을 찾아 언어를 English 로 바꾸면 이 앱만 영어로 쓸 수 있습니다.
+• 폴더를 고른 채 새 폴더를 만들면 그 폴더 안에 만들어집니다 (두 단계까지).
+• 아래 도구 띠의 단추를 길게 누르면 단추 이름이 뜹니다.
+• 파일 앱의 iCloud Drive 에 보이는 폴더 이름이 Slow Margin 으로 바뀝니다. 같은 폴더이고 노트는 그대로입니다.
+• 앱 아이콘이 새로 바뀌었습니다.
 ```
 

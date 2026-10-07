@@ -23,9 +23,9 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section {
-                    row("쓰는 곳", library.kind.label)
-                    row("폴더 이름", library.folderName)
-                    row("노트", "\(library.notes.count)개")
+                    row(String(localized: "쓰는 곳"), library.kind.label)
+                    row(String(localized: "폴더 이름"), library.folderName)
+                    row(String(localized: "노트"), String(localized: "\(library.notes.count)개"))
                     // (b) 임의 폴더 — 남이 만든 볼트 · iCloud Drive 의 다른 폴더 (ADR-0002).
                     //
                     // **사용자가 보는 글에는 다른 앱 이름을 쓰지 않는다** (2026-09-22 사용자
@@ -47,8 +47,8 @@ struct SettingsView: View {
                     Text("폴더")
                 } footer: {
                     Text(library.kind == .userChosen
-                         ? "고른 폴더를 쓰고 있습니다. 앱을 지워도 그 폴더는 그대로 남습니다. 돌아가기를 눌러도 파일은 지워지지 않습니다 — 앱이 보는 곳만 바뀝니다."
-                         : "**이미 마크다운을 모아 둔 폴더**가 있다면 그대로 열 수 있습니다. 점으로 시작하는 숨김 폴더는 목록에 보이지 않습니다. 고른 폴더는 다른 앱과 같이 쓰는 곳이므로, 아래 **파일을 바꾸는 설정** 을 끄는 편이 안전합니다.")
+                         ? String(localized: "고른 폴더를 쓰고 있습니다. 앱을 지워도 그 폴더는 그대로 남습니다. 돌아가기를 눌러도 파일은 지워지지 않습니다 — 앱이 보는 곳만 바뀝니다.")
+                         : String(localized: "**이미 마크다운을 모아 둔 폴더**가 있다면 그대로 열 수 있습니다. 점으로 시작하는 숨김 폴더는 목록에 보이지 않습니다. 고른 폴더는 다른 앱과 같이 쓰는 곳이므로, 아래 **파일을 바꾸는 설정** 을 끄는 편이 안전합니다."))
                 }
 
                 Section {
@@ -173,7 +173,7 @@ struct SettingsView: View {
                 case .success(let url):
                     Task { await library.chooseFolder(url) }
                 case .failure(let error):
-                    library.report("폴더를 고르지 못했습니다: \(error.localizedDescription)")
+                    library.report(String(localized: "폴더를 고르지 못했습니다: \(error.localizedDescription)"))
                 }
             }
         }
@@ -213,16 +213,16 @@ struct FilesHelpView: View {
     var body: some View {
         List {
             Section {
-                step(1, "`파일` 앱에서 `.md` 파일을 **길게 누릅니다**.")
-                step(2, "**공유** → 목록에서 **느린 여백** 을 고릅니다.")
-                step(3, "**느린 여백 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다.")
+                step(1, String(localized: "`파일` 앱에서 `.md` 파일을 **길게 누릅니다**."))
+                step(2, String(localized: "**공유** → 목록에서 **느린 여백** 을 고릅니다."))
+                step(3, String(localized: "**Slow Margin 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다."))
             } footer: {
                 Text("""
                 iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.
 
                 느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.
 
-                평소 쓰는 노트는 **느린 여백 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다.
+                평소 쓰는 노트는 **Slow Margin 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다.
                 """)
             }
         }
@@ -261,7 +261,7 @@ struct IncomingFileSheet: View {
                         VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
                             Text(file.name)
                                 .font(.scaled(.body, weight: .semibold))
-                            Text("이 파일은 **느린 여백 폴더 밖**에 있습니다.")
+                            Text("이 파일은 **Slow Margin 폴더 밖**에 있습니다.")
                                 .font(.scaled(.callout))
                                 .foregroundStyle(Palette.inkFaint)
                         }
@@ -274,7 +274,7 @@ struct IncomingFileSheet: View {
                 }
 
                 Section("미리보기") {
-                    Text(file.text.isEmpty ? "(빈 파일)" : String(file.text.prefix(1200)))
+                    Text(file.text.isEmpty ? String(localized: "(빈 파일)") : String(file.text.prefix(1200)))
                         .font(.scaledMono(.caption))
                         .foregroundStyle(Palette.ink)
                         .textSelection(.enabled)
@@ -556,9 +556,10 @@ struct UnusedAttachmentsView: View {
     }
 
     private var confirmTitle: String {
-        confirming.count == 1
-            ? "\(confirming[0].relativePath.split(separator: "/").last.map(String.init) ?? "") 을 휴지통으로 옮길까요?"
-            : "첨부 \(confirming.count)개를 휴지통으로 옮길까요?"
+        let first = confirming.first.map { $0.relativePath.split(separator: "/").last.map(String.init) ?? "" } ?? ""
+        return confirming.count == 1
+            ? String(localized: "\(first) 을 휴지통으로 옮길까요?")
+            : String(localized: "첨부 \(confirming.count)개를 휴지통으로 옮길까요?")
     }
 
     private var confirmPresented: Binding<Bool> {

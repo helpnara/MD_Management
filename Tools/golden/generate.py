@@ -850,6 +850,12 @@ def folder_move_targets(path: str, paths: list[str]) -> list[str]:
     return out
 
 
+def folder_creation_parent(selected: str) -> str:
+    """218 — 새 폴더를 만들 자리: 고른 폴더 안, 두 단계(만들 수 있는 끝)면 최상위 조상 안."""
+    parts = [p for p in selected.split("/") if p]
+    return "/".join(parts[:min(len(parts), 2 - 1)])
+
+
 def build_folder_tree_cases() -> list[dict]:
     spec = json.loads(FOLDER_TREE_CASES.read_text(encoding="utf-8"))
     out = []
@@ -869,6 +875,12 @@ def build_folder_tree_cases() -> list[dict]:
             for m in item["move"]:
                 if folder_depth(m["result"]) > 2:
                     raise SystemExit(f"::error::[{case['name']}] 옮긴 폴더가 두 단계보다 깊다: {m}")
+        if "create" in case:
+            item["create"] = {f: folder_creation_parent(f) for f in case["create"]}
+            for f, parent in item["create"].items():
+                # 만든 폴더(자리 + 1)는 두 단계를 넘지 않고, 자리는 고른 폴더거나 그 조상이다.
+                if folder_depth(parent) + 1 > 2 or not (parent == "" or f == parent or f.startswith(parent + "/")):
+                    raise SystemExit(f"::error::[{case['name']}] 새 폴더 자리가 틀렸다: {f} → {parent}")
         if "targets" in case:
             item["targets"] = {f: folder_move_targets(f, paths) for f in case["targets"]}
             for f, ts in item["targets"].items():
@@ -2710,6 +2722,7 @@ def build() -> dict:
         "emphasisCases": build_emphasis_cases(),
         "contextCases": build_context_cases(),
         "folderTreeCases": build_folder_tree_cases(),
+        "inboxCases": build_inbox_cases(),
         "scrollGaugeCases": build_scroll_gauge_cases(),
         "htmlMarkdownCases": build_html_markdown_cases(),
         "restyleCases": build_restyle_cases(),
@@ -2759,6 +2772,30 @@ def incoming_share(text: str, url, page_title, images: list, fallback: str) -> d
         site = site[4:]       # `www.` 는 제목 줄에서 다시 자동 링크가 된다
     title = label or site or fallback
     return {"title": title, "markdown": "\n\n".join(["# " + title] + parts) + "\n"}
+
+
+INBOX_NAMES = ["받은 글", "Inbox"]
+
+
+def inbox_folder(existing: dict, preferred: str) -> str:
+    """219 · ADR-0009 — 받은 글 폴더: 이미 있는 이름 먼저, 둘 다면 노트 많은 쪽, 같으면 기기 언어 쪽, 없으면 기기 언어."""
+    present = [n for n in INBOX_NAMES if n in existing]
+    if not present:
+        return preferred
+    most = max(existing[n] for n in present)
+    top = [n for n in present if existing[n] == most]
+    return preferred if preferred in top else top[0]
+
+
+def build_inbox_cases() -> list[dict]:
+    spec = json.loads(SHARE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec.get("inbox", []):
+        got = inbox_folder(case["existing"], case["preferred"])
+        if "expect" in case and got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 받은 글 폴더: 뜻 {case['expect']!r} · 셈 {got!r}")
+        out.append({"name": case["name"], "existing": case["existing"], "preferred": case["preferred"], "result": got})
+    return out
 
 
 def build_share_cases() -> list[dict]:
@@ -3659,7 +3696,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
-        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
     # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.

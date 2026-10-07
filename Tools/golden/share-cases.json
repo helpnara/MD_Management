@@ -115,5 +115,65 @@
         "title": "example.org"
       }
     }
+  ],
+  "inbox": [
+    {
+      "name": "아무것도 없음 — 한국어 기기",
+      "existing": {},
+      "preferred": "받은 글",
+      "expect": "받은 글"
+    },
+    {
+      "name": "아무것도 없음 — 영어 기기",
+      "existing": {
+        "회의": 3
+      },
+      "preferred": "Inbox",
+      "expect": "Inbox"
+    },
+    {
+      "name": "받은 글만 있음 — 영어 기기도 그리로",
+      "existing": {
+        "받은 글": 2,
+        "회의": 5
+      },
+      "preferred": "Inbox",
+      "expect": "받은 글"
+    },
+    {
+      "name": "Inbox 만 있음 — 한국어 기기도 그리로",
+      "existing": {
+        "Inbox": 0
+      },
+      "preferred": "받은 글",
+      "expect": "Inbox"
+    },
+    {
+      "name": "둘 다 — 노트 많은 쪽",
+      "existing": {
+        "받은 글": 1,
+        "Inbox": 4
+      },
+      "preferred": "받은 글",
+      "expect": "Inbox"
+    },
+    {
+      "name": "둘 다 같은 수 — 기기 언어 쪽",
+      "existing": {
+        "받은 글": 2,
+        "Inbox": 2
+      },
+      "preferred": "Inbox",
+      "expect": "Inbox"
+    },
+    {
+      "name": "둘 다 같은 수 · 기기 언어가 다른 말 — 앞엣것",
+      "existing": {
+        "받은 글": 0,
+        "Inbox": 0
+      },
+      "preferred": "Boîte",
+      "expect": "받은 글"
+    }
   ]
 }

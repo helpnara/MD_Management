@@ -74,6 +74,15 @@ struct RootView: View {
         // **시트는 하나로 모은다.** 한 뷰에 `.sheet` 를 여러 개 걸면 마지막
         // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
         .modifier(NoteActionAlerts())
+        // 새 폴더 (52) — 최상위에, 또는 폴더 안에 (203 · 218). 두 단계에서 멈춘다. **바깥에 건다** (218) — 폴더 화면과 노트 목록
+        // 화면 둘 다 이 창을 띄운다. 폴더 화면에만 걸면 아이폰에서 노트 목록을 보는 동안 안 떴다.
+        .alert("새 폴더", isPresented: $library.creatingFolder) {
+            TextField("폴더 이름", text: $library.newFolderName)
+            Button("만들기") { Task { await library.finishCreateFolder() } }
+            Button("취소", role: .cancel) { library.creatingFolder = false }
+        } message: {
+            Text(library.newFolderMessage)
+        }
         .sheet(item: $library.sheet) { sheet in
             // **시트에 바깥 화면의 폭을 알려 준다.** 아이패드의 시트는 자기 폭이 compact 라
             // 자기 size class 만 보면 아이폰인 줄 안다 — 그래서 띠가 둘이 됐다 (빌드 24 · 13번).
@@ -142,9 +151,8 @@ private struct NoteActionAlerts: ViewModifier {
     }
 
     private func moveMessage(_ move: LibraryModel.Move) -> some View {
-        Text("이 노트에는 폴더 안을 가리키는 링크가 \(move.links)개 있습니다. "
-             + "옮기면 자리가 달라지므로 링크도 새 자리에 맞춰 고쳐야 사진과 첨부가 보입니다. "
-             + "**그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다.")
+        // **한 덩이 글자로 둔다** (219) — 예전처럼 `+` 로 이으면 `Text` 가 번역 목록을 거치지 않고 `**…**` 도 굵게 안 그린다.
+        Text("이 노트에는 폴더 안을 가리키는 링크가 \(move.links)개 있습니다. 옮기면 자리가 달라지므로 링크도 새 자리에 맞춰 고쳐야 사진과 첨부가 보입니다. **그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다.")
     }
 
     private var renamePresented: Binding<Bool> {
@@ -212,14 +220,14 @@ private struct FolderActionAlerts: ViewModifier {
     private var renameLinkNotice: String {
         let count = library.folderLinkNotice
         guard count > 0 else { return "" }
-        return "\n\n다른 폴더의 노트에 이 폴더 안을 가리키는 링크가 \(count)개 있습니다. 이름을 바꾸면서 함께 고칩니다."
+        return String(localized: "\n\n다른 폴더의 노트에 이 폴더 안을 가리키는 링크가 \(count)개 있습니다. 이름을 바꾸면서 함께 고칩니다.")
     }
 
     /// 폴더 밖 노트가 이 폴더를 가리키는 링크 (168). 없으면 아무 말도 안 붙인다.
     private func linkNotice(verb: String) -> String {
         let count = library.folderLinkNotice
         guard count > 0 else { return "" }
-        return "\n\n다른 폴더의 노트에 이 폴더 안을 가리키는 링크가 \(count)개 있습니다. \(verb) 그 링크는 열리지 않습니다."
+        return String(localized: "\n\n다른 폴더의 노트에 이 폴더 안을 가리키는 링크가 \(count)개 있습니다. \(verb) 그 링크는 열리지 않습니다.")
     }
 
     @ViewBuilder
@@ -229,7 +237,7 @@ private struct FolderActionAlerts: ViewModifier {
     }
 
     private func trashMessage(_ folder: FolderSummary) -> some View {
-        Text("\(folder.name) 폴더와 안의 노트 \(library.noteCountInside(folder.relativePath))개를 폴더 안 .trash 로 옮깁니다. 안의 폴더도 함께 갑니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.\(linkNotice(verb: "지우면"))")
+        Text("\(folder.name) 폴더와 안의 노트 \(library.noteCountInside(folder.relativePath))개를 폴더 안 .trash 로 옮깁니다. 안의 폴더도 함께 갑니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.\(linkNotice(verb: String(localized: "지우면")))")
     }
 }
 
@@ -309,6 +317,9 @@ struct StatusBanner: View {
 private struct FolderSidebar: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    /// 바깥 화면이 좁은가 (218 · 빌드 85 · 5번). **폴더 칸 자신의 size class 는 아이패드에서도 compact 다** — 칸이 좁기 때문이다.
+    /// 그것을 보고 *아이폰* 으로 갈랐더니 아이패드 폴더 칸의 새 폴더가 최상위에 생겼다 (빌드 24 · 13번 · 125 와 같은 함정).
+    @Environment(\.rootIsCompact) private var rootIsCompact
 
     /// 목록의 선택은 `library.selectedFolder` 와 따로 둔다.
     ///
@@ -379,7 +390,13 @@ private struct FolderSidebar: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    library.beginCreateFolder()
+                    // **아이패드는 고른 폴더 안에** (218) — 폴더 칸에 고른 폴더가 늘 보인다. **아이폰은 최상위에** — 폴더 화면으로
+                    // 돌아오면 고른 폴더가 안 보여, 보이지 않는 폴더 안에 만들면 헷갈린다. 아이폰은 노트 목록 화면의 단추가 그 몫이다.
+                    if rootIsCompact {
+                        library.beginCreateFolder()
+                    } else {
+                        library.beginCreateFolderHere()
+                    }
                 } label: {
                     Label("새 폴더", systemImage: "folder.badge.plus")
                 }
@@ -397,14 +414,6 @@ private struct FolderSidebar: View {
         .sheet(item: $library.movingFolder) { folder in
             FolderMoveView(folder: folder)
                 .environmentObject(library)
-        }
-        // 새 폴더 (52) — 최상위에, 또는 최상위 폴더 안에 (203). 두 단계에서 멈춘다.
-        .alert("새 폴더", isPresented: $library.creatingFolder) {
-            TextField("폴더 이름", text: $library.newFolderName)
-            Button("만들기") { Task { await library.finishCreateFolder() } }
-            Button("취소", role: .cancel) { library.creatingFolder = false }
-        } message: {
-            Text("\(library.newFolderParent.isEmpty ? library.folderName : library.newFolderParent) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.")
         }
     }
 
@@ -494,7 +503,7 @@ private struct FolderSidebar: View {
                     Image(systemName: collapsed.contains(path) ? "chevron.right" : "chevron.down")
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(collapsed.contains(path) ? "펼치기" : "접기")
+                .accessibilityLabel(collapsed.contains(path) ? String(localized: "펼치기") : String(localized: "접기"))
             } else {
                 Image(systemName: isRoot ? "tray.full" : "folder")
             }
@@ -590,6 +599,15 @@ private struct NoteList: View {
                 .hidden()
         }
         .toolbar {
+            // **이 폴더 안에 새 폴더** (218) — 노트 목록의 폴더가 곧 고른 폴더다. 아이폰은 여기가 하위 폴더를 만드는 길.
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    library.beginCreateFolderHere()
+                } label: {
+                    Label(FolderTree.depth(of: library.selectedFolder) == 1 ? String(localized: "이 폴더 안에 새 폴더") : String(localized: "새 폴더"),
+                          systemImage: "folder.badge.plus")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     Task { await library.createNote() }
@@ -705,7 +723,7 @@ private struct NoteList: View {
             Task { await library.togglePin(note) }
         } label: {
             let isPinned = library.pinned.contains(note.relativePath)
-            Label(isPinned ? "고정 해제" : "고정", systemImage: isPinned ? "pin.slash" : "pin")
+            Label(isPinned ? String(localized: "고정 해제") : String(localized: "고정"), systemImage: isPinned ? "pin.slash" : "pin")
         }
         .tint(Palette.accent)
     }
@@ -733,7 +751,7 @@ private struct NoteList: View {
                             // 않으므로, 아무도 받고 있지 않은 파일에 *받는 중* 이라고
                             // 적혀 있었다 — 눌러서 열면 그때 받기 시작한다.
                             let asked = library.isDownloading(note.relativePath)
-                            Label(asked ? "받는 중" : "아직 안 받음",
+                            Label(asked ? String(localized: "받는 중") : String(localized: "아직 안 받음"),
                                   systemImage: asked ? "icloud.and.arrow.down" : "icloud")
                                 .font(.scaled(.caption))
                                 .foregroundStyle(Palette.inkFaint)
@@ -794,8 +812,8 @@ private struct FolderCounts: View {
 
     private var spoken: String {
         var parts: [String] = []
-        if folders > 0 { parts.append("폴더 \(folders)개") }
-        if notes > 0 { parts.append("노트 \(notes)개") }
+        if folders > 0 { parts.append(String(localized: "폴더 \(folders)개")) }
+        if notes > 0 { parts.append(String(localized: "노트 \(notes)개")) }
         return parts.joined(separator: ", ")
     }
 }
@@ -818,7 +836,7 @@ private struct FolderMoveView: View {
                             Task { await library.finishMoveFolder(folder, into: path) }
                         } label: {
                             Label {
-                                Text(path.isEmpty ? "\(library.folderName) (맨 위)" : path)
+                                Text(path.isEmpty ? String(localized: "\(library.folderName) (맨 위)") : path)
                                     .font(.scaled(.body))
                                     .foregroundStyle(Palette.ink)
                             } icon: {
@@ -844,12 +862,12 @@ private struct FolderMoveView: View {
 
     private func footer(isEmpty: Bool) -> String {
         if isEmpty {
-            return "옮겨 넣을 폴더가 없습니다. 먼저 폴더 화면 위의 새 폴더 단추로 담을 폴더를 만드세요."
+            return String(localized: "옮겨 넣을 폴더가 없습니다. 먼저 폴더 화면 위의 새 폴더 단추로 담을 폴더를 만드세요.")
         }
-        var text = "**\(folder.name)** 폴더를 안의 노트 · 폴더와 함께 옮깁니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. 노트 안의 링크는 새 자리에 맞게 고칩니다."
+        var text = String(localized: "**\(folder.name)** 폴더를 안의 노트 · 폴더와 함께 옮깁니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. 노트 안의 링크는 새 자리에 맞게 고칩니다.")
         let links = library.folderLinkNotice
         if links > 0 {
-            text += " 다른 폴더의 노트에서 이 폴더 안을 가리키는 링크 \(links)개도 함께 고칩니다."
+            text += String(localized: " 다른 폴더의 노트에서 이 폴더 안을 가리키는 링크 \(links)개도 함께 고칩니다.")
         }
         return text
     }
@@ -983,7 +1001,7 @@ private struct NoteDetail: View {
             case .success(let urls):
                 Task { await library.attachDocuments(urls) }
             case .failure(let error):
-                library.report("문서를 고르지 못했습니다: \(error.localizedDescription)")
+                library.report(String(localized: "문서를 고르지 못했습니다: \(error.localizedDescription)"))
             }
         }
         .fullScreenCover(isPresented: $showsCamera) {
@@ -1150,7 +1168,7 @@ private struct NoteDetail: View {
             Task { await library.toggleTask(line: line) }
         case .missing(let path):
             // 빈 경로만 띄우면 오류처럼 보인다 — 무엇이 없는지 말한다 (빌드 20 · 10번).
-            alert = "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다."
+            alert = String(localized: "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다.")
         }
     }
 
@@ -1287,7 +1305,7 @@ private struct NoteDetail: View {
                 // 보던 자리를 물은 뒤 바꾼다 (176). 저장도 거기서 한다.
                 library.toggleReading()
             } label: {
-                Label(library.isReading ? "쓰기" : "읽기",
+                Label(library.isReading ? String(localized: "쓰기") : String(localized: "읽기"),
                       systemImage: library.isReading ? "pencil" : "book")
             }
             .keyboardShortcut("e", modifiers: .command)
@@ -1332,7 +1350,8 @@ private struct LinkPickerBar: View {
                     }
                     // **없으면 만든다** (147, 사용자 — 애플 메모처럼). 지금 노트와 같은 폴더에.
                     Button { library.createNoteAndLink(named: query.text) } label: {
-                        Label(query.text + " — 새 노트", systemImage: "plus")
+                        // `+` 로 이으면 번역 목록을 비껴간다 (219 · 빌드 89 에서 찾음) — 한 덩이 문구로.
+                        Label(String(localized: "\(query.text) — 새 노트"), systemImage: "plus")
                             .font(Font.scaled(.body))
                             .lineLimit(1)
                             .padding(.horizontal, Metrics.rowSpacing)
@@ -1441,7 +1460,7 @@ private struct BrokenLinkList: View {
                                 .foregroundStyle(Palette.ink)
                                 .lineLimit(2)
                             Text(broken.resolved.isEmpty
-                                 ? "폴더 밖을 가리킵니다" : broken.resolved)
+                                 ? String(localized: "폴더 밖을 가리킵니다") : broken.resolved)
                                 .font(Font.scaled(.caption))
                                 .foregroundStyle(Palette.inkFaint)
                         }
@@ -1450,7 +1469,7 @@ private struct BrokenLinkList: View {
                 }
             }
             .navigationTitle(library.brokenLinks.isEmpty
-                             ? "링크 살펴보기" : "안 열리는 링크 \(library.brokenLinks.count)개")
+                             ? String(localized: "링크 살펴보기") : String(localized: "안 열리는 링크 \(library.brokenLinks.count)개"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1465,30 +1484,33 @@ private struct FormatBar: View {
     /// **모델을 여기서 바로 본다.** 클로저로 넘기면 주 액터 격리가 벗겨져 Swift 6 가
     /// 막는다 — 이 화면의 다른 단추들과 같은 꼴로 둔다.
     @EnvironmentObject private var library: LibraryModel
+    /// 길게 눌러 띄운 단추 이름 (220). 몇 초 뒤 저절로 걷힌다.
+    @State private var shownName: String?
+    @State private var hideNameTask: Task<Void, Never>?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Metrics.rowSpacing) {
-                button("굵게", "bold", .wrap(.bold), on: library.activeFormats.bold)
-                button("기울임", "italic", .wrap(.italic), on: library.activeFormats.italic)
-                button("취소선", "strikethrough", .wrap(.strikethrough),
+                button(String(localized: "굵게"), "bold", .wrap(.bold), on: library.activeFormats.bold)
+                button(String(localized: "기울임"), "italic", .wrap(.italic), on: library.activeFormats.italic)
+                button(String(localized: "취소선"), "strikethrough", .wrap(.strikethrough),
                        on: library.activeFormats.strikethrough)
                 // **코드** (166, 2026-09-25 사용자 — *입력하는게 너무 불편해*). 역따옴표는
                 // 아이폰 자판에서 세 번 파고 들어가야 나온다. 한 줄이면 감싸고, 여러 줄이면
                 // 울타리로, 빈 줄이면 울타리를 세워 그 안에 커서를 둔다.
-                button("코드", "chevron.left.forwardslash.chevron.right", .code,
+                button(String(localized: "코드"), "chevron.left.forwardslash.chevron.right", .code,
                        on: library.activeFormats.code)
                 rule
                 // **링크** (메뉴 검토 3, 2026-09-22 사용자). 띠에 굵게 · 기울임은 있는데
                 // 링크가 없었다 — 메모 앱에서 링크는 굵게만큼 자주 쓴다. 누르면 지금
                 // 쓰던 **파일 고르기**가 그대로 뜬다 (145) — 길을 새로 만들지 않는다.
-                button("링크", "link") { library.startLinkingExistingFile() }
-                button("인용", "text.quote", .quote, on: library.activeFormats.quote)
-                button("표 넣기", "tablecells", .table)
+                button(String(localized: "링크"), "link") { library.startLinkingExistingFile() }
+                button(String(localized: "인용"), "text.quote", .quote, on: library.activeFormats.quote)
+                button(String(localized: "표 넣기"), "tablecells", .table)
                 rule
                 listButton
-                button("내어쓰기", "decrease.indent", .shift(deeper: false))
-                button("들여쓰기", "increase.indent", .shift(deeper: true))
+                button(String(localized: "내어쓰기"), "decrease.indent", .shift(deeper: false))
+                button(String(localized: "들여쓰기"), "increase.indent", .shift(deeper: true))
             }
             .padding(.horizontal, Metrics.gutter)
             .padding(.vertical, Metrics.rowSpacing)
@@ -1501,6 +1523,34 @@ private struct FormatBar: View {
         .overlay(alignment: .top) {
             Rectangle().fill(Palette.rule).frame(height: 0.5)
         }
+        // **길게 누른 단추의 이름** (220) — 띠 바로 위 가운데에 잠깐 띄운다. 띠 높이를 바꾸지 않으려고
+        // 덧씌우기로 그리고, 말풍선의 아래 끝을 띠 위 끝에 맞춘다 (숫자로 못 박지 않는다).
+        .overlay(alignment: .top) {
+            if let shownName {
+                Text(shownName)
+                    .font(.scaled(.footnote))
+                    .foregroundStyle(Palette.paper)
+                    .padding(.horizontal, Metrics.gutter * 0.75)
+                    .padding(.vertical, Metrics.rowSpacing)
+                    .background(Capsule().fill(Palette.ink.opacity(0.85)))
+                    .alignmentGuide(VerticalAlignment.top) { $0[.bottom] + Metrics.rowSpacing }
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+        .animation(.easeOut(duration: 0.15), value: shownName)
+    }
+
+    /// 단추 이름을 잠깐 띄운다 (220). 연달아 누르면 앞의 것을 거두고 새 이름으로 다시 센다.
+    private func showName(_ name: String) {
+        hideNameTask?.cancel()
+        shownName = name
+        hideNameTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(1500))
+            guard !Task.isCancelled else { return }
+            shownName = nil
+        }
     }
 
     private var rule: some View {
@@ -1509,8 +1559,9 @@ private struct FormatBar: View {
             .frame(width: 0.5, height: Metrics.scaledLength(20))
     }
 
-    /// 글자는 안 보이고 **아이콘만** 선다 — 띠가 한 줄을 넘지 않게. 이름은 보이스오버와
-    /// 길게 누르기가 읽는다.
+    /// 글자는 안 보이고 **아이콘만** 선다 — 띠가 한 줄을 넘지 않게. 이름은 보이스오버가 읽고,
+    /// **길게 누르면 띠 위에 잠깐 뜬다** (220 — 빌드 88 · 7번에서 사용자가 없는 동작을 찾았다). 길게 누른 것은
+    /// 이름만 보려는 것이라 **서식은 걸지 않는다.** 목록 모양 단추(`listButton`)는 길게 누르면 메뉴가 뜬다 — 그대로 둔다.
     ///
     /// **걸려 있으면 눌린 모습**이다 (128) — 파란 칸에 흰 글자. 색만으로 가르지 않으려고
     /// 보이스오버에는 `켜짐` 을 함께 읽힌다 (색을 못 가리는 사람도 있다).
@@ -1522,13 +1573,19 @@ private struct FormatBar: View {
 
     /// **모양은 한 자리에만 적는다.** 링크 단추를 더하면서 크기 · 색을 옆에 또 적었다가
     /// 곧 갈릴 뻔했다 (`CLAUDE.md` §1 — 같은 것을 재는 곳이 둘이면 갈린다).
+    ///
+    /// **`Button` 이 아니라 두 손짓이다** (220). `Button` 은 오래 누르다 떼어도 동작을 하므로 *이름만 보기* 가 안 된다.
+    /// 짧게 누르기와 길게 누르기를 함께 걸면 길게 누르기가 이긴 때 짧게 누르기는 오지 않는다. 손짓은 편집기의
+    /// 입력 초점을 빼앗지 않는다 — `Button(.plain)` 때와 같다. 보이스오버에는 단추로 읽히고 두 번 누르면 동작한다.
     private func button(_ name: String, _ symbol: String, on isOn: Bool = false,
                         action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            face(name, symbol, on: isOn)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(isOn ? "\(name) 켜짐" : name)
+        face(name, symbol, on: isOn)
+            .onTapGesture(perform: action)
+            .onLongPressGesture(minimumDuration: 0.4) { showName(name) }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(isOn ? String(localized: "\(name) 켜짐") : name)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(.default, action)
     }
 
     /// 단추의 얼굴 — 일반 단추와 목록 단추(193)가 같이 쓴다.
@@ -1556,7 +1613,7 @@ private struct FormatBar: View {
             Button { library.format(.list(.checkbox)) } label: { Label("체크상자", systemImage: "checklist") }
             Button { library.format(.list(.plain)) } label: { Label("목록 해제", systemImage: "text.alignleft") }
         } label: {
-            face("목록 모양", "list.bullet", on: false)
+            face(String(localized: "목록 모양"), "list.bullet", on: false)
         } primaryAction: {
             library.format(.list(nil))
         }

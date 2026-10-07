@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """보내 주신 그림을 App Store 규격 아이콘으로 굽는다.
 
-    python3 Tools/icon/bake-icon.py [원본경로]
+    python3 Tools/icon/bake-icon.py [원본경로] [--fill]
+
+`--fill` — 잘라내지 않고 메운다. 둘레에 잃으면 안 되는 것이 있는 장면 그림에 (2026-10-07 아이콘이 이것으로 구워졌다).
 
 원본 기본값은 `Tools/icon/icon-source.png` 이고,
 결과는 `App/Assets.xcassets/AppIcon.appiconset/icon-1024.png` 다.
@@ -42,6 +44,10 @@ SIZE = 1024
 WHITE_THRESHOLD = 24
 # 늘여 채운 자리를 살짝 뭉개는 반경. 늘인 자국(줄무늬)이 안 보이게 한다.
 FILL_BLUR = 6
+# 되메우기 전에 그림 가장자리를 이만큼(원본 화소) 안쪽으로 더 '바깥' 으로 본다.
+# 둥근 사각형 원본은 둘레가 **흰빛으로 번진 테**를 갖고 오는데(2026-10-07 새 아이콘), 문턱보다 진해 그림으로 남으면
+# 그 흐린 테가 늘여져 아이콘 둘레에 흰 띠가 선다. 그 테를 넘겨 안쪽 색으로 메운다. iOS 가 깎는 자리라 거의 안 보인다.
+FILL_INSET = 20
 
 
 def flatten(image: Image.Image) -> Image.Image:
@@ -85,7 +91,7 @@ def crop_rounded_corners(image: Image.Image, known: Image.Image, limit: float = 
     return None
 
 
-def trim_and_fill(image: Image.Image) -> Image.Image:
+def trim_and_fill(image: Image.Image, prefer_fill: bool = False) -> Image.Image:
     """흰 여백을 잘라내고, 테두리와 이어진 흰 모서리를 가장자리 색으로 메운다."""
     white = Image.new("RGB", image.size, (255, 255, 255))
     ink = ImageChops.difference(image, white).convert("L")
@@ -99,14 +105,17 @@ def trim_and_fill(image: Image.Image) -> Image.Image:
         print("  흰 모서리 없음 — 그대로 씁니다")
         return image
 
-    # 되도록 잘라낸다. 늘인 자국이 안 남는 쪽이다.
-    cropped = crop_rounded_corners(image, known)
+    # 되도록 잘라낸다. 늘인 자국이 안 남는 쪽이다. `--fill` 이면 잘라내지 않는다 —
+    # 장면 그림은 둘레에 소품(끈 · 펜 끝)이 있어 잘라내면 잃는다 (2026-10-07 새 아이콘 — 잘라내기는 20% 를 잃었다).
+    cropped = None if prefer_fill else crop_rounded_corners(image, known)
     if cropped is not None:
         lost = 100 * (1 - min(cropped.size) / min(image.size))
         print(f"  깎여 온 모서리를 잘라냈습니다 (가장자리 {lost:.1f}% 손실)")
         return cropped
 
-    print("  너무 많이 잘려서 대신 가장자리 색을 늘여 메웁니다")
+    print(("  --fill — " if prefer_fill else "  너무 많이 잘려서 대신 ") + f"가장자리 색을 늘여 메웁니다 (흐린 테 {FILL_INSET}px 포함)")
+    for _ in range(FILL_INSET // 5):
+        known = known.filter(ImageFilter.MinFilter(11))
 
     # 가장자리 색을 한 픽셀씩 바깥으로 민다. 채워질 자리가 다 채워질 때까지.
     filled = image
@@ -138,14 +147,16 @@ def square(image: Image.Image) -> Image.Image:
 
 
 def main() -> None:
-    source_path = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_SOURCE
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    prefer_fill = "--fill" in sys.argv[1:]
+    source_path = Path(args[0]) if args else DEFAULT_SOURCE
     if not source_path.exists():
         raise SystemExit(
             f"원본이 없습니다: {source_path}\n"
             "그림 파일을 그 자리에 두고 다시 돌리세요."
         )
 
-    icon = square(trim_and_fill(flatten(Image.open(source_path)))) \
+    icon = square(trim_and_fill(flatten(Image.open(source_path)), prefer_fill)) \
         .resize((SIZE, SIZE), Image.LANCZOS)
 
     assert icon.mode == "RGB", "알파 채널이 있으면 App Store 가 반려한다"

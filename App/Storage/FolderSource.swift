@@ -57,13 +57,19 @@ enum FolderSource {
         let names = (try? FileManager.default.contentsOfDirectory(atPath: documents.path)) ?? []
         guard names.allSatisfy({ $0.hasPrefix(".") }) else { return }  // 이미 쓰던 폴더
 
-        let note = documents.appendingPathComponent("첫 노트.md")
+        // 이름도 글도 앱의 언어를 따른다 (219 · ADR-0009) — 견본(`SampleFolder`)과 같은 판단.
+        let english = AppLanguage.isEnglish
+        let note = documents.appendingPathComponent(english ? "First Note.md" : "첫 노트.md")
         guard !FileManager.default.fileExists(atPath: note.path) else { return }
-        try? firstNote.write(to: note, atomically: true, encoding: .utf8)
+        try? (english ? firstNoteEnglish : firstNote).write(to: note, atomically: true, encoding: .utf8)
     }
 
     /// `Files` 앱에 보이는 폴더 이름. `project.yml` 의 `NSUbiquitousContainerName`
     /// 을 읽으므로 **이름이 사는 곳이 늘지 않는다** (docs/roadmap.md §4).
+    ///
+    /// **언어마다 다르게 두지 않는다** (221). 앱이 열릴 때 그때의 앱 언어로 이 이름을 iCloud 에 올리는지, 이 앱만 English 로 연 순간
+    /// `Files` 의 이름이 바뀌었다 (빌드 90 · 5). 두 언어 기기를 함께 쓰면 이름표가 오가므로 `Slow Margin` 하나로 정했다.
+    /// 이 이름은 겉이름일 뿐이다 — 폴더는 열쇠(`iCloud.com.helpnara.markdown`)로 찾으므로 이름이 바뀌어도 폴더는 하나다.
     static var iCloudFolderName: String? {
         guard let containers = Bundle.main.object(forInfoDictionaryKey: "NSUbiquitousContainers")
                 as? [String: Any] else { return nil }
@@ -81,8 +87,8 @@ enum FolderSource {
     private static let firstNote = """
     # 첫 노트
 
-    이 폴더가 **느린 여백**이 쓰는 곳입니다. `파일` 앱의 iCloud Drive 에서도
-    같은 폴더가 보입니다 — 거기에 `.md` 파일을 넣으면 여기 목록에 뜹니다.
+    이 폴더가 **느린 여백**이 쓰는 곳입니다. `파일` 앱의 iCloud Drive 에서는
+    `Slow Margin` 폴더로 보입니다 — 거기에 `.md` 파일을 넣으면 여기 목록에 뜹니다.
 
     ## 해 볼 것
 
@@ -112,6 +118,34 @@ enum FolderSource {
     이름에 **공백이 있으면 꺾쇠로 감쌉니다** — `![](<assets/내 사진.jpg>)`.
 
     > 파일은 당신의 것입니다. 앱을 지워도 이 폴더는 그대로 남습니다.
+    """
+
+    /// 영어 첫 노트 (219). 한국어 판의 *겹친 목록* 절은 화면 시험용이라 옮기지 않는다 — 겹친 목록은 한 줄로 보여 준다.
+    /// 따옴표는 둥근 것(’)만 쓴다.
+    private static let firstNoteEnglish = """
+    # First Note
+
+    This folder is where **Slow Margin** keeps your notes. You’ll find it as the `Slow Margin`
+    folder in iCloud Drive in the `Files` app — drop a `.md` file there and it shows up in this list.
+
+    ## Things to try
+
+    - [ ] Edit this line
+    - [ ] Tap the book icon at the top right to switch to **Read** mode
+    - [ ] Add another `.md` file to this folder from the `Files` app
+      - [ ] Then come back and find it in the list
+
+    ## Adding photos
+
+    Create an `assets` folder inside this folder, put a photo in it, and write this in your note:
+
+    ```
+    ![](assets/photo.jpg)
+    ```
+
+    If the name **has spaces, wrap it in angle brackets** — `![](<assets/my photo.jpg>)`.
+
+    > Your files are yours. Delete the app and this folder stays right where it is.
     """
 
     // MARK: - 그 밖의 폴더

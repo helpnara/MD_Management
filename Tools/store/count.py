@@ -28,6 +28,13 @@ LIMITS = {
     "설명": 4000,
     # 업데이트 판마다 새로 적는 칸 (12-submission §6). 판이 바뀌면 글만 갈아 끼운다.
     "이 버전의 새로운 기능": 4000,
+    # 영어 칸 (219 · §1-영어). 한도는 한국어 칸과 같다 — 칸이 같고 언어만 다르다.
+    "Name": 30,
+    "Subtitle": 30,
+    "Promotional Text": 170,
+    "Keywords": 100,
+    "Description": 4000,
+    "What’s New in This Version": 4000,
 }
 
 

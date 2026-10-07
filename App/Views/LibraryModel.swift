@@ -121,11 +121,28 @@ final class LibraryModel: ObservableObject {
     /// 새 폴더를 만들 자리 — 최상위면 빈 문자열 (203).
     @Published var newFolderParent = ""
 
+    /// 새 폴더 창에 보일 말 — **어디에 만드는지 늘 말한다** (218). 숨은 규칙이 되지 않게.
+    @Published private(set) var newFolderMessage = ""
+
     func beginCreateFolder(in parent: String = "") {
         guard FolderTree.depth(of: parent) < FolderTree.creatableDepth else { return }
         newFolderParent = parent
         newFolderName = ""
+        // 맨 위는 **맨 위** 라고 말한다 (빌드 85 · 5번) — *<맨 위 폴더 이름> 안에* 는 하위 폴더를 만든다는 말로 읽혔다.
+        newFolderMessage = parent.isEmpty
+            ? String(localized: "맨 위에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.")
+            : String(localized: "\(parent) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.")
         creatingFolder = true
+    }
+
+    /// **지금 고른 폴더 안에** 새 폴더 (218, 2026-10-07 사용자). 자리는 Core `FolderTree.creationParent` 하나가 정한다 —
+    /// 고른 폴더가 이미 두 단계면 그 위 폴더 안(고른 폴더와 같은 줄)에 만들고 창이 그렇게 말한다.
+    func beginCreateFolderHere() {
+        let parent = FolderTree.creationParent(for: selectedFolder)
+        beginCreateFolder(in: parent)
+        if FolderTree.depth(of: selectedFolder) >= FolderTree.creatableDepth {
+            newFolderMessage = String(localized: "폴더는 두 단계까지라 \(parent) 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.")
+        }
     }
 
     /// **목록에 없는데 상세 칸에 떠 있는 노트** (T7). 링크를 따라온 것 — `assets/` 안의
@@ -338,7 +355,7 @@ final class LibraryModel: ObservableObject {
             || (pasted.url != nil && pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty),
            let link = Pasting.webLink(url: address, name: pasted.urlName,
                                       selection: pasted.selection) {
-            report("주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다.")
+            report(String(localized: "주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다."))
             return link
         }
         // 2. 서식 있는 글 — 글 전체를 마크다운으로
@@ -348,7 +365,7 @@ final class LibraryModel: ObservableObject {
                 if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) { text = fixed.text }
                 recordPaste(pasted, outcome: "서식을 마크다운으로 바꿈")
                 guard text != pasted.plain else { return nil }
-                report("서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
+                report(String(localized: "서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다."))
                 return text
             }
             // 바꾼 글에 평문의 글자가 다 없다 — 바꾸지 않는다. 글을 잃느니 서식을 잃는다.
@@ -361,7 +378,7 @@ final class LibraryModel: ObservableObject {
             let markdown = HTMLMarkdown.promoteEmptyHeaders(given)
             recordPaste(pasted, outcome: "보낸 앱의 마크다운을 씀")
             guard markdown != pasted.plain else { return nil }
-            report("서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다.")
+            report(String(localized: "서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다."))
             return markdown
         }
         if pasted.html != nil || pasted.markdown != nil {
@@ -372,7 +389,7 @@ final class LibraryModel: ObservableObject {
         var notes: [String] = []
         if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) {
             text = fixed.text
-            notes.append("겹친 번호를 지웠습니다")
+            notes.append(String(localized: "겹친 번호를 지웠습니다"))
         }
         // **어디서 복사했는지 알면 그 셈으로** (177 둘째) — 원래 폴더에서 이 폴더로 정확히 옮긴다.
         // 모를 때만(다른 앱 · 다른 곳) 이름으로 찾는다. 사진 이름은 폴더마다 `날짜-1` 부터라
@@ -382,10 +399,10 @@ final class LibraryModel: ObservableObject {
         } ?? MarkdownLinks.repaired(pasted: text, noteFolder: noteFolderForLink, files: vaultPaths)
         if repair.fixed > 0 {
             text = repair.text
-            notes.append("링크 \(repair.fixed)개를 이 노트에서 열리도록 고쳤습니다")
+            notes.append(String(localized: "링크 \(repair.fixed)개를 이 노트에서 열리도록 고쳤습니다"))
         }
         guard !notes.isEmpty, text != pasted.plain else { return nil }
-        report(notes.joined(separator: ". ") + ". 되돌리기로 무를 수 있습니다.")
+        report(notes.joined(separator: ". ") + String(localized: ". 되돌리기로 무를 수 있습니다."))
         return text
     }
 
@@ -402,8 +419,8 @@ final class LibraryModel: ObservableObject {
         /// 진단 화면에서 복사할 글 — 갈래마다 머리를 달아 **있는 그대로** 잇는다.
         var report: String {
             var parts = ["갈래: " + types.joined(separator: ", "), "결과: " + outcome]
-            parts.append("[평문]\n" + plain)
-            if let markdown { parts.append("[마크다운 갈래]\n" + markdown) }
+            parts.append(String(localized: "[평문]\n") + plain)
+            if let markdown { parts.append(String(localized: "[마크다운 갈래]\n") + markdown) }
             if let html { parts.append("[HTML]\n" + html) }
             return parts.joined(separator: "\n\n")
         }
@@ -502,7 +519,7 @@ final class LibraryModel: ObservableObject {
             }
             guard let self else { return }
             self.log("붙여넣기: 사진 \(writes.count - failed)장 저장" + (failed > 0 ? " · \(failed)장 실패" : ""))
-            if failed > 0 { self.report("붙여넣은 사진 \(failed)장을 저장하지 못했습니다.") }
+            if failed > 0 { self.report(String(localized: "붙여넣은 사진 \(failed)장을 저장하지 못했습니다.")) }
             self.refreshVaultPaths()
         }
     }
@@ -528,7 +545,7 @@ final class LibraryModel: ObservableObject {
                 self.linkCandidates = []
                 await self.reloadNotes()
             } catch {
-                self?.report("새 노트를 만들지 못했습니다. " + error.localizedDescription)
+                self?.report(String(localized: "새 노트를 만들지 못했습니다. ") + error.localizedDescription)
             }
         }
     }
@@ -605,7 +622,7 @@ final class LibraryModel: ObservableObject {
     }
 
     /// 영구 삭제 확인 문구. 화면과 검사가 같은 값을 본다.
-    static let purgeConfirmation = "지우기"
+    static let purgeConfirmation = String(localized: "지우기")
 
     /// 편집기가 커서 자리에 넣어야 할 글. 사진을 고르면 여기 링크가 실린다.
     /// `Identifiable` 인 이유: 같은 글을 두 번 넣어도 새 요청으로 보이게.
@@ -715,9 +732,9 @@ final class LibraryModel: ObservableObject {
         if kind == .iCloudContainer, let name = FolderSource.iCloudFolderName {
             return name
         }
-        guard let root = store?.root else { return "기록" }
+        guard let root = store?.root else { return String(localized: "기록") }
         let name = Paths.normalized(root.lastPathComponent)
-        return name.isEmpty ? "기록" : name
+        return name.isEmpty ? String(localized: "기록") : name
     }
 
     func start() async {
@@ -726,7 +743,7 @@ final class LibraryModel: ObservableObject {
         if choice.staleBookmark {
             // **조용히 넘어가지 않는다.** 폴더가 옮겨졌거나 지워졌거나 권한이 끊긴 것이다.
             log("고른 폴더를 더는 열 수 없어 \(choice.kind.label) 폴더로 돌아옴")
-            lastError = "고른 폴더를 더는 열 수 없어 \(choice.kind.label) 폴더로 돌아왔습니다. 설정 → 폴더에서 다시 고를 수 있습니다."
+            lastError = String(localized: "고른 폴더를 더는 열 수 없어 \(choice.kind.label) 폴더로 돌아왔습니다. 설정 → 폴더에서 다시 고를 수 있습니다.")
         }
         await use(choice)
     }
@@ -744,7 +761,7 @@ final class LibraryModel: ObservableObject {
             lastError = nil
             sheet = nil
         } catch {
-            lastError = "그 폴더를 열지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "그 폴더를 열지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -812,7 +829,7 @@ final class LibraryModel: ObservableObject {
     func makeAttachmentTest() async {
         guard let store else { return }
         guard let png = SampleFolder.testPNG() else {
-            lastError = "시험 그림을 만들지 못했습니다"
+            lastError = String(localized: "시험 그림을 만들지 못했습니다")
             return
         }
         do {
@@ -829,7 +846,7 @@ final class LibraryModel: ObservableObject {
             sheet = nil
             lastError = nil
         } catch {
-            lastError = "시험 파일을 만들지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "시험 파일을 만들지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -857,7 +874,7 @@ final class LibraryModel: ObservableObject {
             log("큰 노트 시험 만듦 — \(text.components(separatedBy: "\n").count)줄 · "
                 + "\(Self.readableBytes(text.utf8.count)) · \(path)")
         } catch {
-            lastError = "큰 노트를 만들지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "큰 노트를 만들지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -928,7 +945,7 @@ final class LibraryModel: ObservableObject {
             lastError = nil
         } catch {
             scaleProgress = nil
-            lastError = "규모 시험 자료를 만들지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "규모 시험 자료를 만들지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -942,9 +959,9 @@ final class LibraryModel: ObservableObject {
             await reloadFolders()
             await reloadNotes()
             await reloadTrash()
-            lastError = "규모 시험 폴더를 휴지통으로 옮겼습니다. 설정 → 휴지통에서 영구히 지울 수 있습니다."
+            lastError = String(localized: "규모 시험 폴더를 휴지통으로 옮겼습니다. 설정 → 휴지통에서 영구히 지울 수 있습니다.")
         } catch {
-            lastError = "규모 시험 폴더를 지우지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "규모 시험 폴더를 지우지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1048,7 +1065,7 @@ final class LibraryModel: ObservableObject {
                                            name: Paths.normalized(url.lastPathComponent),
                                            text: text))
         } catch {
-            lastError = "파일을 읽지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "파일을 읽지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1065,7 +1082,7 @@ final class LibraryModel: ObservableObject {
             isReading = false
             lastError = nil
         } catch {
-            lastError = "가져오지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "가져오지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1076,15 +1093,16 @@ final class LibraryModel: ObservableObject {
         guard let store else { return }
         await save()
         do {
-            let path = try await store.createNote(named: "새 노트", in: selectedFolder,
-                                                  text: "# 새 노트\n\n")
+            // 파일 이름이 되는 말도 기기 언어를 따른다 (219 · ADR-0009) — 한 번 만들면 파일이 원본이고 다시 바꾸지 않는다.
+            let name = String(localized: "새 노트")
+            let path = try await store.createNote(named: name, in: selectedFolder, text: "# \(name)\n\n")
             await reloadNotes()
             modeAlreadyChosen = true      // 쓰려고 만든 노트다 (124)
             selectedNoteID = path
             isReading = false
             lastError = nil
         } catch {
-            lastError = "노트를 만들지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "노트를 만들지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1104,7 +1122,7 @@ final class LibraryModel: ObservableObject {
             selectedFolder = path
             lastError = nil
         } catch {
-            lastError = "폴더를 만들지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "폴더를 만들지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1144,9 +1162,9 @@ final class LibraryModel: ObservableObject {
         do {
             // **이 폴더를 가리키던 링크도 같이 고친다** (179). 확인창이 몇 개인지 먼저 알렸다(168).
             let renamed = try await store.renameFolderFixingLinks(folder.relativePath, to: name)
-            await followFolder(from: folder.relativePath, renamed, what: "폴더 이름", fixedSaying: "새 이름에 맞게")
+            await followFolder(from: folder.relativePath, renamed, what: "폴더 이름", fixedSaying: String(localized: "새 이름에 맞게"))
         } catch {
-            lastError = "폴더 이름을 바꾸지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "폴더 이름을 바꾸지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1158,9 +1176,9 @@ final class LibraryModel: ObservableObject {
         await save()
         do {
             let moved = try await store.moveFolderFixingLinks(folder.relativePath, into: parent)
-            await followFolder(from: folder.relativePath, moved, what: "폴더 옮김", fixedSaying: "새 자리에 맞게")
+            await followFolder(from: folder.relativePath, moved, what: "폴더 옮김", fixedSaying: String(localized: "새 자리에 맞게"))
         } catch {
-            lastError = "폴더를 옮기지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "폴더를 옮기지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1186,10 +1204,10 @@ final class LibraryModel: ObservableObject {
         scheduleIndexRefresh()
         log("\(what): \(old) → \(moved) · 링크 \(renamed.fixed)개(노트 \(renamed.notes)) · 못 고침 \(renamed.failed) · 못 봄 \(renamed.unread)")
         var said: [String] = []
-        if renamed.fixed > 0 { said.append("링크 \(renamed.fixed)개를 \(fixedSaying) 고쳤습니다") }
-        if renamed.failed > 0 { said.append("노트 \(renamed.failed)개는 그 사이 바뀌어 고치지 못했습니다") }
+        if renamed.fixed > 0 { said.append(String(localized: "링크 \(renamed.fixed)개를 \(fixedSaying) 고쳤습니다")) }
+        if renamed.failed > 0 { said.append(String(localized: "노트 \(renamed.failed)개는 그 사이 바뀌어 고치지 못했습니다")) }
         if renamed.unread > 0, renamed.fixed + renamed.failed > 0 || folderLinkNotice > 0 {
-            said.append("아직 받지 않은 노트 \(renamed.unread)개는 확인하지 못했습니다")
+            said.append(String(localized: "아직 받지 않은 노트 \(renamed.unread)개는 확인하지 못했습니다"))
         }
         if said.isEmpty { lastError = nil } else { report(said.joined(separator: ". ") + ".") }
     }
@@ -1209,7 +1227,7 @@ final class LibraryModel: ObservableObject {
             if wasViewing { selectedFolder = "" }
             lastError = nil
         } catch {
-            lastError = "폴더를 지우지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "폴더를 지우지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1295,7 +1313,7 @@ final class LibraryModel: ObservableObject {
                                                  rebasesLinks: rebasesLinks)
             pinned = await store.followPins(from: move.note.relativePath, to: moved)
             log("옮김: \(move.note.relativePath) → \(moved)"
-                + (rebasesLinks && move.links > 0 ? " (링크 \(move.links)개 고침)" : ""))
+                + (rebasesLinks && move.links > 0 ? String(localized: " (링크 \(move.links)개 고침)") : ""))
             if draftPath == move.note.relativePath { clearNote() }
             if selectedNoteID == move.note.relativePath { selectedNoteID = nil }
             await reloadFolders()
@@ -1303,7 +1321,7 @@ final class LibraryModel: ObservableObject {
             scheduleIndexRefresh()
             lastError = nil
         } catch {
-            lastError = "옮기지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "옮기지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1334,7 +1352,7 @@ final class LibraryModel: ObservableObject {
             await reloadNotes()
             lastError = nil
         } catch {
-            lastError = "이름을 바꾸지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "이름을 바꾸지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1350,7 +1368,7 @@ final class LibraryModel: ObservableObject {
             await reloadNotes()
             lastError = nil
         } catch {
-            lastError = "지우지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "지우지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1388,7 +1406,7 @@ final class LibraryModel: ObservableObject {
             insertion = Insertion(text: lines.joined(separator: "\n"))
             refreshVaultPaths()   // 방금 넣은 사진 줄을 곧바로 다른 폴더에 붙여도 고쳐지게 (177)
         }
-        lastError = failed == 0 ? nil : "사진 \(failed)장을 넣지 못했습니다"
+        lastError = failed == 0 ? nil : String(localized: "사진 \(failed)장을 넣지 못했습니다")
     }
 
     /// 문서 첨부 — 사진과 같은 길로 (78). 고른 파일을 `assets/` 에 **복사**하고 커서 자리에
@@ -1440,7 +1458,7 @@ final class LibraryModel: ObservableObject {
             }
             // 그 밖의 파일은 **메모리에 올리지 않고 복사한다** (181) — 수 GB 영상도 넣을 수 있게.
             let ext = Paths.fileExtension(name).lowercased()
-            let stem = Paths.safeFileName(Paths.baseName(name), fallback: "문서")
+            let stem = Paths.safeFileName(Paths.baseName(name), fallback: String(localized: "문서"))
             do {
                 let relative = try await store.copyAsset(from: url, stem: stem, ext: ext.isEmpty ? "bin" : ext,
                                                          besideNoteIn: folder)
@@ -1454,7 +1472,7 @@ final class LibraryModel: ObservableObject {
             await reloadNotes()   // 밖에서 들여온 노트가 목록에 서야 한다 (111)
             log("문서 첨부 \(lines.count)개: \(note.relativePath)")
         }
-        lastError = failed.isEmpty ? nil : "첨부하지 못했습니다: \(failed.joined(separator: ", "))"
+        lastError = failed.isEmpty ? nil : String(localized: "첨부하지 못했습니다: \(failed.joined(separator: ", "))")
     }
 
     // MARK: - 공유 (설계서 §7.6)
@@ -1473,9 +1491,9 @@ final class LibraryModel: ObservableObject {
                 sharePrompt = SharePrompt(package: package)
             }
         } catch ReadError.notDownloaded {
-            lastError = "iCloud 에서 받는 중입니다. 다 받은 뒤에 공유할 수 있습니다."
+            lastError = String(localized: "iCloud 에서 받는 중입니다. 다 받은 뒤에 공유할 수 있습니다.")
         } catch {
-            lastError = "공유할 파일을 만들지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "공유할 파일을 만들지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1524,7 +1542,7 @@ final class LibraryModel: ObservableObject {
     func previewAttachment(_ relativePath: String) async {
         guard let store else { return }
         guard await store.existingPaths(among: [relativePath]).contains(relativePath) else {
-            lastError = "첨부가 폴더에 없습니다: \(relativePath)"
+            lastError = String(localized: "첨부가 폴더에 없습니다: \(relativePath)")
             return
         }
         sheet = .preview(store.root.appendingPathComponent(relativePath))
@@ -1553,7 +1571,7 @@ final class LibraryModel: ObservableObject {
             await reloadTrash()
             lastError = nil
         } catch {
-            lastError = "첨부를 되돌리지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "첨부를 되돌리지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1645,7 +1663,7 @@ final class LibraryModel: ObservableObject {
         } else if let block = spot.block {
             out.line = LineMap.line(forBlock: block, fraction: spot.fraction, in: blocks)
         }
-        let way = toReading ? "쓰기 → 읽기" : "읽기 → 쓰기"
+        let way = toReading ? String(localized: "쓰기 → 읽기") : String(localized: "읽기 → 쓰기")
         let line = (toReading ? spot.line : out.line).map(String.init) ?? "없음"
         let block = (toReading ? out.block : spot.block).map(String.init) ?? "없음"
         let percent = spot.ratio.isFinite ? Int((spot.ratio * 100).rounded()) : 0   // NaN 이면 Int 가 끈다 (184)
@@ -1684,7 +1702,7 @@ final class LibraryModel: ObservableObject {
         let moved = await store.trashAttachments(files.map(\.relativePath))
         log("안 쓰는 첨부 휴지통으로: \(moved)/\(files.count)")
         if moved < files.count {
-            lastError = "첨부 \(files.count - moved)개를 옮기지 못했습니다."
+            lastError = String(localized: "첨부 \(files.count - moved)개를 옮기지 못했습니다.")
         }
         await reloadTrash()
         await countUnusedAttachments()
@@ -1707,7 +1725,7 @@ final class LibraryModel: ObservableObject {
             await reloadNotes()
             lastError = nil
         } catch {
-            lastError = "되돌리지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "되돌리지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1719,7 +1737,7 @@ final class LibraryModel: ObservableObject {
         let typed = purgeText.trimmingCharacters(in: .whitespacesAndNewlines)
         purgeText = ""
         guard typed == Self.purgeConfirmation else {
-            lastError = "확인 문구가 다릅니다. \(Self.purgeConfirmation) 라고 그대로 입력해야 지웁니다."
+            lastError = String(localized: "확인 문구가 다릅니다. \(Self.purgeConfirmation) 라고 그대로 입력해야 지웁니다.")
             return
         }
         do {
@@ -1730,7 +1748,7 @@ final class LibraryModel: ObservableObject {
             await reloadTrash()
             lastError = nil
         } catch {
-            lastError = "영구 삭제하지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "영구 삭제하지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -1900,7 +1918,7 @@ final class LibraryModel: ObservableObject {
             switch FolderSource.bookmarkedFolder() {
             case .stale, .none:
                 log("고른 폴더가 휴지통에 가거나 사라져 기본 폴더로 돌아옴")
-                lastError = "고른 폴더가 휴지통에 가거나 사라져 기본 iCloud 폴더로 돌아왔습니다. 설정 → 폴더에서 다시 고를 수 있습니다."
+                lastError = String(localized: "고른 폴더가 휴지통에 가거나 사라져 기본 iCloud 폴더로 돌아왔습니다. 설정 → 폴더에서 다시 고를 수 있습니다.")
                 await save()
                 FolderSource.forget()
                 await use(await FolderSource.current(launch: launch))
@@ -1938,7 +1956,7 @@ final class LibraryModel: ObservableObject {
             if let sweep = try? await store.surfaceConflictVersions(of: path) {
                 if !sweep.made.isEmpty {
                     log("iCloud 충돌 판본 \(sweep.made.count)개를 사본으로 꺼냄: \(path)")
-                    lastError = "iCloud 가 다른 기기의 글을 따로 두었습니다. \(sweep.made.count)개를 (충돌 …) 사본으로 꺼냈습니다."
+                    lastError = String(localized: "iCloud 가 다른 기기의 글을 따로 두었습니다. \(sweep.made.count)개를 (충돌 …) 사본으로 꺼냈습니다.")
                     await reloadNotes()
                 }
                 if sweep.pending > 0 {
@@ -2015,12 +2033,12 @@ final class LibraryModel: ObservableObject {
         판: \(Bundle.appVersion) (\(Bundle.appBuild))
         번들: \(Bundle.main.bundleIdentifier ?? "-")
         폴더 종류: \(kind.rawValue) (\(kind.label))
-        iCloud 잡음: \(iCloudAvailable ? "예" : "아니오")
-        물러남: \(isFallenBackFromICloud ? "예" : "아니오")
+        iCloud 잡음: \(iCloudAvailable ? String(localized: "예") : String(localized: "아니오"))
+        물러남: \(isFallenBackFromICloud ? String(localized: "예") : String(localized: "아니오"))
         경로: \(rootPath)
         노트: \(notes.count)개 · 하위 폴더: \(folders.count)개
-        색인: \(indexStatus.noteCount)개 · trigram \(indexStatus.trigramAvailable ? "있음" : "없음(LIKE 만)") · \(indexStatus.fileBytes / 1024)KB · 마지막 갱신 \(String(format: "%.2f", indexStatus.lastRefreshSeconds))초
-        저장 안 된 글: \(isDirty ? "있음" : "없음")
+        색인: \(indexStatus.noteCount)개 · trigram \(indexStatus.trigramAvailable ? String(localized: "있음") : String(localized: "없음(LIKE 만)")) · \(indexStatus.fileBytes / 1024)KB · 마지막 갱신 \(String(format: "%.2f", indexStatus.lastRefreshSeconds))초
+        저장 안 된 글: \(isDirty ? String(localized: "있음") : String(localized: "없음"))
         마지막 저장: \(lastSaved.map { $0.formatted(date: .omitted, time: .standard) } ?? "없음")
         마지막 오류: \(lastError ?? "없음")
         최근 일:
@@ -2127,7 +2145,7 @@ final class LibraryModel: ObservableObject {
                 path = conflict
                 conflictPath = conflict
                 let shown = conflict.split(separator: "/").last.map(String.init) ?? conflict
-                lastError = "다른 기기에서 고친 노트입니다. 내 글은 \(shown) 로 나란히 저장했습니다."
+                lastError = String(localized: "다른 기기에서 고친 노트입니다. 내 글은 \(shown) 로 나란히 저장했습니다.")
                 log("충돌: \(name) 이 디스크에서 바뀌어 내 글을 \(shown) 로 저장")
             }
             draftStamp = await store.stamp(of: path)
@@ -2171,11 +2189,11 @@ final class LibraryModel: ObservableObject {
         } catch ReadError.notDownloaded {
             // 디스크를 확인할 수 없어 **덮지 않았다.** `isDirty` 를 그대로 둬 다음 기회에 다시 쓴다 (86).
             saveFailed = true
-            lastError = "iCloud 에서 받는 중이라 아직 저장하지 않았습니다. 잠시 뒤 다시 저장합니다."
+            lastError = String(localized: "iCloud 에서 받는 중이라 아직 저장하지 않았습니다. 잠시 뒤 다시 저장합니다.")
             log("내려받는 중이라 저장을 미룸: \(path)")
         } catch {
             saveFailed = true
-            lastError = "저장하지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "저장하지 못했습니다: \(error.localizedDescription)")
             log("저장 실패: \(path) — \(error.localizedDescription)")
         }
     }
@@ -2207,7 +2225,7 @@ final class LibraryModel: ObservableObject {
             }
             if selectedNoteID == path { selectedNoteID = moved }
         } catch {
-            lastError = "제목대로 이름을 바꾸지 못했습니다: \(error.localizedDescription)"
+            lastError = String(localized: "제목대로 이름을 바꾸지 못했습니다: \(error.localizedDescription)")
         }
     }
 
@@ -2280,6 +2298,12 @@ final class LibraryModel: ObservableObject {
         guard !entries.isEmpty else { return }
         var made = 0
         var failed = 0
+        // **받은 글 폴더는 이미 있는 이름을 쓴다** (219 · ADR-0009) — 한국어 아이폰과 영어 아이패드가 한 iCloud 를 쓸 때
+        // `받은 글` 과 `Inbox` 로 갈리지 않게. 셈은 폴더 화면의 숫자(`noteCount(of:)`)를 그대로 쓴다 — 따로 세지 않는다.
+        let existing = Dictionary(uniqueKeysWithValues: folders
+            .filter { FolderTree.depth(of: $0.relativePath) == 1 }
+            .map { ($0.relativePath, noteCount(of: $0.relativePath)) })
+        let folder = IncomingShare.inboxFolder(existing: existing, preferred: String(localized: "받은 글"))
         for entry in entries {
             do {
                 var images: [String] = []
@@ -2294,12 +2318,12 @@ final class LibraryModel: ObservableObject {
                     }
                     guard let data else { continue }
                     images.append(try await store.writeAsset(data, stem: ImageImport.stem(), ext: ext,
-                                                             besideNoteIn: IncomingShare.folder))
+                                                             besideNoteIn: folder))
                 }
                 let note = IncomingShare.note(text: entry.item.text, url: entry.item.url,
                                               pageTitle: entry.item.pageTitle, images: images,
-                                              fallback: "받은 글 " + Self.shareClock.string(from: entry.item.created))
-                let path = try await store.createNote(named: note.title, in: IncomingShare.folder, text: note.markdown)
+                                              fallback: String(localized: "받은 글 \(Self.shareClock.string(from: entry.item.created))"))
+                let path = try await store.createNote(named: note.title, in: folder, text: note.markdown)
                 await inbox.remove(entry)
                 log("공유로 받은 글을 노트로: \(path) · 사진 \(images.count)장")
                 made += 1
@@ -2311,15 +2335,15 @@ final class LibraryModel: ObservableObject {
         await reloadFolders()
         await reloadNotes()
         if failed > 0 {
-            report("공유로 받은 글 \(failed)개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다.")
+            report(String(localized: "공유로 받은 글 \(failed)개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다."))
         } else if made > 0 {
-            report("공유로 받은 글 \(made)개를 받은 글 폴더에 새 노트로 넣었습니다.")
+            report(String(localized: "공유로 받은 글 \(made)개를 \(folder) 폴더에 새 노트로 넣었습니다."))
         }
     }
 
     private var importingShared = false
 
-    /// 받은 글의 이름이 될 때 — 제목이 하나도 없을 때만 쓴다 (`받은 글 2026-10-04 07-30`).
+    /// 받은 글의 이름이 될 때 — 제목이 하나도 없을 때만 쓴다 (`받은 글 2026-10-04 07-30` · 영어 `Shared 2026-10-04 07-30`).
     private static let shareClock: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -2417,7 +2441,7 @@ final class LibraryModel: ObservableObject {
             let broken = text.contains("\u{FFFD}")
             if broken {
                 log("이미 깨진 글자가 든 파일: \(note.relativePath)")
-                lastError = "이 노트에는 이미 깨진 글자가 있습니다. 파일이 그렇게 저장돼 있어 앱이 되살릴 수 없습니다."
+                lastError = String(localized: "이 노트에는 이미 깨진 글자가 있습니다. 파일이 그렇게 저장돼 있어 앱이 되살릴 수 없습니다.")
                 errorIsAboutNote = true
             }
             // **앱은 본문을 고치지 않는다** (T6, 2026-09-16 사용자 결정). 예전에는 여기서
@@ -2462,7 +2486,7 @@ final class LibraryModel: ObservableObject {
         } catch CocoaError.fileReadInapplicableStringEncoding {
             clearNote()
             log("글자 인코딩을 못 알아본 파일: \(note.relativePath)")
-            lastError = "이 파일의 글자 인코딩을 알아보지 못했습니다. UTF-8 로 저장한 뒤 다시 열어 주세요."
+            lastError = String(localized: "이 파일의 글자 인코딩을 알아보지 못했습니다. UTF-8 로 저장한 뒤 다시 열어 주세요.")
         } catch {
             clearNote()
             lastError = error.localizedDescription
@@ -2521,7 +2545,7 @@ final class LibraryModel: ObservableObject {
         guard let store else { return }
         guard await store.existingPaths(among: [relativePath]).contains(relativePath) else {
             log("링크가 가리키는 노트가 없음: \(relativePath)")
-            lastError = "링크가 가리키는 노트가 폴더에 없습니다: \(relativePath)"
+            lastError = String(localized: "링크가 가리키는 노트가 폴더에 없습니다: \(relativePath)")
             return
         }
         guard relativePath != selectedNoteID else { return }
