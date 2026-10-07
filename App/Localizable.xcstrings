@@ -97,12 +97,32 @@
         }
       }
     },
+    "%@ (충돌 %@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (Conflict %@)"
+          }
+        }
+      }
+    },
     "%@ · %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ · %@"
+          }
+        }
+      }
+    },
+    "%@ — 새 노트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ — New Note"
           }
         }
       }
@@ -679,6 +699,16 @@
         }
       }
     },
+    "공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added shared items to the %2$@ folder as new notes (%1$lld)."
+          }
+        }
+      }
+    },
     "공유로 받은 글 %lld개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다." : {
       "localizations" : {
         "en" : {
@@ -694,28 +724,6 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "Couldn't add %lld shared items. The app will try again next time it opens."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "공유로 받은 글 %lld개를 받은 글 폴더에 새 노트로 넣었습니다." : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Added %lld shared item to the Inbox folder as a new note."
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Added %lld shared items to the Inbox folder as new notes."
                 }
               }
             }
@@ -1359,6 +1367,16 @@
         }
       }
     },
+    "문서" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Document"
+          }
+        }
+      }
+    },
     "문서 첨부" : {
       "localizations" : {
         "en" : {
@@ -1425,6 +1443,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Downloading"
+          }
+        }
+      }
+    },
+    "받은 글" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inbox"
+          }
+        }
+      }
+    },
+    "받은 글 %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shared %@"
           }
         }
       }

@@ -22,11 +22,14 @@ def main(path):
         table = "InfoPlist" if "InfoPlist" in original else original.rsplit("/", 1)[-1].split(".")[0]
         target = original.split("/", 1)[0]
         for unit in file.iter("{urn:oasis:names:tc:xliff:document:1.2}trans-unit"):
-            key = unit.get("id")
+            raw = unit.get("id")
+            # 단수 · 복수 꼴은 `열쇠|==|plural.one` 처럼 꼴마다 따로 나온다 — 열쇠 하나로 모은다.
+            # (l10n.yml 이 번역 목록을 비우고 뽑으므로 나오지 않아야 한다 — 지켜 두기.)
+            key = raw.split("|==|", 1)[0]
             source = unit.find("x:source", NS)
             note = unit.find("x:note", NS)
             out.setdefault(target, {}).setdefault(table, {})[key] = {
-                "source": source.text if source is not None else key,
+                "source": key if raw != key or source is None else source.text,
                 "note": note.text if note is not None else "",
             }
     json.dump(out, sys.stdout, ensure_ascii=False, indent=1, sort_keys=True)

@@ -14,7 +14,9 @@
 |  (링크 %lld개 고침) | one:  (%lld link updated) / other:  (%lld links updated) |
 |  다른 폴더의 노트에서 이 폴더 안을 가리키는 링크 %lld개도 함께 고칩니다. | one:  %lld link from notes in other folders that points inside this folder will also be updated. / other:  %lld links from notes in other folders that point inside this folder will also be updated. |
 | %.2f초 | %.2fs |
+| %@ (충돌 %@) | %@ (Conflict %@) |
 | %@ · %@ | %@ · %@ |
+| %@ — 새 노트 | %@ — New Note |
 | %@ 과 그 노트만 쓰던 첨부를 완전히 지웁니다. 되돌릴 수 없습니다. 지우려면 %@ 라고 입력하세요. | Permanently deletes %@ and any attachments used only by that note. This can't be undone. To delete, type %@. |
 | %@ 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | The folder will be created in %@. If the name is taken, a number is added. |
 | %@ 을 폴더 안 .trash 로 옮깁니다. 설정 → 휴지통에서 되돌릴 수 있습니다. | Moves %@ to the hidden .trash folder. You can restore it from Settings → Trash. |
@@ -71,8 +73,8 @@
 | 고정된 노트 | Pinned Notes |
 | 고치고 옮기기 | Update and Move |
 | 공유 | Share |
+| 공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다. | Added shared items to the %2$@ folder as new notes (%1$lld). |
 | 공유로 받은 글 %lld개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다. | one: Couldn't add %lld shared item. The app will try again next time it opens. / other: Couldn't add %lld shared items. The app will try again next time it opens. |
-| 공유로 받은 글 %lld개를 받은 글 폴더에 새 노트로 넣었습니다. | one: Added %lld shared item to the Inbox folder as a new note. / other: Added %lld shared items to the Inbox folder as new notes. |
 | 공유할 때 링크된 노트도 넣기 | Include Linked Notes When Sharing |
 | 공유할 파일을 만들지 못했습니다: %@ | Couldn't create the file to share: %@ |
 | 굵게 | Bold |
@@ -133,6 +135,7 @@
 | 목록 모양 | List Style |
 | 목록 읽기 | List Load Time |
 | 목록 해제 | Remove List |
+| 문서 | Document |
 | 문서 첨부 | Attach Document |
 | 문서를 고르지 못했습니다: %@ | Couldn't pick the document: %@ |
 | 문제 | Issues |
@@ -140,6 +143,8 @@
 | 미리보기 | Preview |
 | 바꾸기 | Rename |
 | 받는 중 | Downloading |
+| 받은 글 | Inbox |
+| 받은 글 %@ | Shared %@ |
 | 번들 ID | Bundle ID |
 | 번호 | Numbered List |
 | 복사했습니다 | Copied |
