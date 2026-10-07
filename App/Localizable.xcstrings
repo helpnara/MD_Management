@@ -16,7 +16,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "\n\nLinks from notes in other folders that point inside this folder: %lld. %@ they will stop working."
+            "value" : "\n\nLinks from notes in other folders that point inside this folder: %lld. %@ these links will stop working."
           }
         }
       }
@@ -29,13 +29,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "\n\nNotes in other folders have %lld link pointing inside this folder. It will be updated along with the new name."
+                  "value" : "\n\n%lld link from notes in other folders points inside this folder. It will be updated to match the new name."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "\n\nNotes in other folders have %lld links pointing inside this folder. They will be updated along with the new name."
+                  "value" : "\n\n%lld links from notes in other folders point inside this folder. They will be updated to match the new name."
                 }
               }
             }
@@ -73,13 +73,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : " %lld link in notes in other folders that points inside this folder will be updated too."
+                  "value" : " %lld link from notes in other folders that points inside this folder will also be updated."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : " %lld links in notes in other folders that point inside this folder will be updated too."
+                  "value" : " %lld links from notes in other folders that point inside this folder will also be updated."
                 }
               }
             }
@@ -112,7 +112,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permanently deletes %@ and the attachments only it used. This can't be undone. To delete, type %@."
+            "value" : "Permanently deletes %@ and any attachments used only by that note. This can't be undone. To delete, type %@."
           }
         }
       }
@@ -122,7 +122,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Creates a folder in %@. If the name is taken, a number is added."
+            "value" : "The folder will be created in %@. If the name is taken, a number is added."
           }
         }
       }
@@ -132,7 +132,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Moves %@ to the .trash folder inside your folder. You can restore it from Settings → Trash."
+            "value" : "Moves %@ to the hidden .trash folder. You can restore it from Settings → Trash."
           }
         }
       }
@@ -142,7 +142,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Move %@ to the Trash?"
+            "value" : "Move %@ to Trash?"
           }
         }
       }
@@ -152,7 +152,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New name for %@. You can leave out the extension."
+            "value" : "Enter a new name for %@. You don't need to include the extension."
           }
         }
       }
@@ -162,7 +162,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Moves the folder %@ and the notes inside it (%lld) to the .trash folder inside your folder. Folders inside go along. Restoring a note from Settings → Trash brings its folder back.%@"
+            "value" : "Moves the folder %@ and the notes inside it (%lld) to the hidden .trash folder, along with any folders inside. Restoring a note from Settings → Trash brings its folder back.%@"
           }
         }
       }
@@ -172,7 +172,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New name for the folder %@. The notes inside move with it.%@"
+            "value" : "Enter a new name for the folder %@. The notes inside move with it.%@"
           }
         }
       }
@@ -222,7 +222,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Moving **%@**. You can't pick the folder it's already in."
+            "value" : "Moving **%@**. The folder it's in now can't be chosen."
           }
         }
       }
@@ -232,7 +232,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Moves the folder **%@** together with its notes and folders. If the name is taken, a number is added. Links inside the notes are updated for the new location."
+            "value" : "Moves the folder **%@** with all its notes and folders. If the name is taken, a number is added. Links inside the notes are updated for the new location."
           }
         }
       }
@@ -242,7 +242,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap **Share**, then choose **Slow Margin** from the list."
+            "value" : "Tap **Share**, then choose **Slow Margin**."
           }
         }
       }
@@ -252,7 +252,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**If the file is inside the Slow Margin folder, the note opens right away.** If it's outside, you'll be asked whether to import it."
+            "value" : "**Files inside the Slow Margin folder open right away.** For files outside it, you'll be asked whether to import them."
           }
         }
       }
@@ -262,7 +262,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "**Restore** puts a note back in the folder it came from. Swipe a row left to **delete it permanently**. Permanent deletion can't be undone, so you'll need to type a confirmation. Permanently deleting a note also deletes **the attachments only that note used**."
+            "value" : "**Restore** puts a note back in its original folder. Swipe left on a row to **delete it permanently**. Because this can't be undone, you'll be asked to type a confirmation word. Permanently deleting a note also deletes **any attachments used only by that note**."
           }
         }
       }
@@ -282,7 +282,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "If you **already keep Markdown files in a folder**, you can open it as is. Hidden folders (names starting with a dot) aren't listed. A chosen folder is shared with other apps, so it's safer to turn off the **settings that change files** below."
+            "value" : "If you **already keep Markdown files in a folder**, you can open it as is. Hidden folders (names that start with a dot) aren't shown. Since a chosen folder is shared with other apps, it's safer to turn off the **Settings That Change Files** below."
           }
         }
       }
@@ -302,7 +302,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "CP949 (older Korean Windows)"
+            "value" : "CP949 (legacy Korean Windows)"
           }
         }
       }
@@ -312,7 +312,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "[Markdown flavor]\n"
+            "value" : "[Markdown]\n"
           }
         }
       }
@@ -332,7 +332,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Creates 300 notes (about 20 MB in total) in a `Scale test` folder. **iCloud will upload all of it** — it takes data and time. Afterwards, check `List read` · `Last update` · `Index size` · `Last search` above to measure S1 and A5 in one go. Deleting moves it to the Trash."
+            "value" : "Creates 300 notes (about 20 MB in total) in a folder named `규모 시험`. **iCloud will upload all of it**, which uses data and takes time. Afterwards, check List Load Time · Last Index Update · Index Size · Last Search Time above to measure S1 and A5 at once. Deleting moves it to the Trash."
           }
         }
       }
@@ -342,7 +342,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Creates about 20 MB in a `Scale test` folder. iCloud will upload all of it — it takes data and time. Deleting moves it to the Trash."
+            "value" : "Creates about 20 MB in a folder named `규모 시험`. iCloud will upload all of it, which uses data and takes time. Deleting moves it to the Trash."
           }
         }
       }
@@ -372,7 +372,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In the `Files` app, **touch and hold** a `.md` file."
+            "value" : "In the Files app, **touch and hold** a `.md` file."
           }
         }
       }
@@ -382,7 +382,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open in the `Files` app"
+            "value" : "Open in the Files App"
           }
         }
       }
@@ -395,13 +395,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "iCloud kept another device's version separately. %lld copy was brought out as a (conflict …) copy."
+                  "value" : "iCloud kept a separate version from another device. It was saved as %lld (conflict …) copy."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "iCloud kept other devices' versions separately. %lld copies were brought out as (conflict …) copies."
+                  "value" : "iCloud kept separate versions from other devices. They were saved as %lld (conflict …) copies."
                 }
               }
             }
@@ -414,7 +414,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iCloud connected"
+            "value" : "iCloud Available"
           }
         }
       }
@@ -424,7 +424,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Still downloading from iCloud, so it isn't saved yet. It will be saved again shortly."
+            "value" : "This note is still downloading from iCloud, so it hasn't been saved yet. It will be saved shortly."
           }
         }
       }
@@ -434,7 +434,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Downloading from iCloud"
+            "value" : "Downloading from iCloud…"
           }
         }
       }
@@ -454,7 +454,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Some notes haven't been downloaded from iCloud yet, so they can't be counted — they may use these attachments. Open this again after all notes are downloaded."
+            "value" : "Some notes haven't downloaded from iCloud yet, so attachments can't be counted — they may be used by those notes. Open this again once all notes have downloaded."
           }
         }
       }
@@ -464,7 +464,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find the iCloud folder again"
+            "value" : "Look for iCloud Folder Again"
           }
         }
       }
@@ -474,7 +474,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Can't use the iCloud folder"
+            "value" : "Can't Access the iCloud Folder"
           }
         }
       }
@@ -484,7 +484,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Can't use the iCloud folder · Tap to see why"
+            "value" : "Can't access the iCloud folder · Tap for details"
           }
         }
       }
@@ -494,7 +494,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iOS **has no setting for choosing a default app per file type.** `Settings → Apps → Default Apps` only covers browsers, mail, messaging and the like, and apps can't make themselves the default.\n\nSlow Margin tells iOS it can handle Markdown, so it appears in the **Share** and **Open in** lists. If the `Files` app shows `Open in`, you can pick it there too.\n\nIt's best to keep your everyday notes **inside the Slow Margin folder**. Files there are edited and saved in place."
+            "value" : "iOS **doesn't let you choose a default app for each file type.** Settings → Apps → Default Apps only covers things like browsers, mail and messaging, and apps can't set themselves as the default.\n\nSlow Margin tells iOS that it can open Markdown, so it appears in the **Share** and **Open In** lists. If the Files app offers Open In, you can choose it there too.\n\nFor everyday notes, it's best to keep them **inside the Slow Margin folder**, where the app edits and saves files in place."
           }
         }
       }
@@ -514,7 +514,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Importing creates a **copy** in your folder and leaves the original as is. If the name is taken, a number is added."
+            "value" : "Importing adds a **copy** to your folder and leaves the original as is. If the name is taken, a number is added."
           }
         }
       }
@@ -534,7 +534,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Import this file?"
+            "value" : "Import This File?"
           }
         }
       }
@@ -544,7 +544,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Flavor"
+            "value" : "Types"
           }
         }
       }
@@ -554,7 +554,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Search index"
+            "value" : "Search Index"
           }
         }
       }
@@ -574,7 +574,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Removed doubled numbering"
+            "value" : "Removed duplicate numbering"
           }
         }
       }
@@ -614,7 +614,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The chosen folder can no longer be opened, so the app went back to the %@ folder. You can choose again in Settings → Folder."
+            "value" : "The chosen folder can no longer be opened, so the app switched back to: %@. You can choose again in Settings → Folder."
           }
         }
       }
@@ -624,7 +624,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You're using a folder you chose. It stays even if you delete the app. Going back doesn't delete any files — it only changes where the app looks."
+            "value" : "You're using a folder you chose. It stays even if you delete the app. Switching back doesn't delete any files — it only changes where the app looks."
           }
         }
       }
@@ -654,7 +654,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pinned notes"
+            "value" : "Pinned Notes"
           }
         }
       }
@@ -664,7 +664,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Update and move"
+            "value" : "Update and Move"
           }
         }
       }
@@ -687,13 +687,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Couldn't add %lld shared item. It will be added the next time you open the app."
+                  "value" : "Couldn't add %lld shared item. The app will try again next time it opens."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Couldn't add %lld shared items. They will be added the next time you open the app."
+                  "value" : "Couldn't add %lld shared items. The app will try again next time it opens."
                 }
               }
             }
@@ -709,13 +709,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Added %lld shared item as a new note in the Inbox folder."
+                  "value" : "Added %lld shared item to the Inbox folder as a new note."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Added %lld shared items as new notes in the Inbox folder."
+                  "value" : "Added %lld shared items to the Inbox folder as new notes."
                 }
               }
             }
@@ -728,7 +728,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Include linked notes when sharing"
+            "value" : "Include Linked Notes When Sharing"
           }
         }
       }
@@ -758,7 +758,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scale test"
+            "value" : "Scale Test"
           }
         }
       }
@@ -778,7 +778,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete the scale test folder"
+            "value" : "Delete Scale Test Folder"
           }
         }
       }
@@ -818,7 +818,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Just move"
+            "value" : "Just Move"
           }
         }
       }
@@ -828,7 +828,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Send anyway"
+            "value" : "Send Anyway"
           }
         }
       }
@@ -838,7 +838,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bullets"
+            "value" : "Bulleted List"
           }
         }
       }
@@ -858,7 +858,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Back to the default iCloud folder"
+            "value" : "Back to Default iCloud Folder"
           }
         }
       }
@@ -878,7 +878,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Outdent"
+            "value" : "Decrease Indent"
           }
         }
       }
@@ -952,7 +952,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Create 300 notes (about 20 MB)"
+            "value" : "Create 300 Notes (about 20 MB)"
           }
         }
       }
@@ -962,7 +962,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Create 300 notes?"
+            "value" : "Create 300 Notes?"
           }
         }
       }
@@ -972,7 +972,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No notes"
+            "value" : "No Notes"
           }
         }
       }
@@ -982,7 +982,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose a note"
+            "value" : "Select a Note"
           }
         }
       }
@@ -1002,7 +1002,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open notes in reading mode"
+            "value" : "Open Notes in Reading Mode"
           }
         }
       }
@@ -1012,7 +1012,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Just opening a note can change its file"
+            "value" : "Opening a Note Can Change Its File"
           }
         }
       }
@@ -1022,7 +1022,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reading notes to count"
+            "value" : "Counting notes…"
           }
         }
       }
@@ -1032,7 +1032,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap to switch between numbers and bullets. Touch and hold to pick a style"
+            "value" : "Tap to switch between numbered and bulleted. Touch and hold to choose a style."
           }
         }
       }
@@ -1042,7 +1042,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap to preview, swipe a row left to move it **to the Trash**. Files whose names appear in any note count as used and aren't listed here."
+            "value" : "Tap to preview. Swipe left on a row to move it **to the Trash**. Files whose names appear in any note are considered in use and aren't listed."
           }
         }
       }
@@ -1052,7 +1052,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This note was edited on another device. Your version was saved alongside as %@."
+            "value" : "This note was changed on another device. Your version was saved alongside it as %@."
           }
         }
       }
@@ -1062,7 +1062,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose another folder"
+            "value" : "Choose Another Folder"
           }
         }
       }
@@ -1072,7 +1072,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Move to another folder"
+            "value" : "Move to Another Folder"
           }
         }
       }
@@ -1102,7 +1102,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show more (%lld lines)"
+            "value" : "Show More (%lld Lines)"
           }
         }
       }
@@ -1142,7 +1142,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sample content · Not real files"
+            "value" : "Sample notes · Not your files"
           }
         }
       }
@@ -1152,7 +1152,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Indent"
+            "value" : "Increase Indent"
           }
         }
       }
@@ -1162,7 +1162,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Banner test"
+            "value" : "Banner Test"
           }
         }
       }
@@ -1214,7 +1214,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Review links"
+            "value" : "Review Links"
           }
         }
       }
@@ -1234,7 +1234,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Update the links?"
+            "value" : "Update Links?"
           }
         }
       }
@@ -1244,7 +1244,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Last update"
+            "value" : "Last Index Update"
           }
         }
       }
@@ -1254,7 +1254,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Last search"
+            "value" : "Last Search Time"
           }
         }
       }
@@ -1264,7 +1264,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Last paste"
+            "value" : "Last Paste"
           }
         }
       }
@@ -1284,7 +1284,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Creating %lld / %lld"
+            "value" : "Creating %lld of %lld…"
           }
         }
       }
@@ -1304,7 +1304,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Creates a folder at the top level. If the name is taken, a number is added."
+            "value" : "The folder will be created at the top level. If the name is taken, a number is added."
           }
         }
       }
@@ -1314,7 +1314,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Move all to Trash"
+            "value" : "Move All to Trash"
           }
         }
       }
@@ -1324,7 +1324,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Every photo and file is used by some note."
+            "value" : "Every photo and file is linked from at least one note."
           }
         }
       }
@@ -1334,7 +1334,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "List style"
+            "value" : "List Style"
           }
         }
       }
@@ -1344,7 +1344,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "List read"
+            "value" : "List Load Time"
           }
         }
       }
@@ -1354,7 +1354,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No list"
+            "value" : "Remove List"
           }
         }
       }
@@ -1364,7 +1364,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Attach document"
+            "value" : "Attach Document"
           }
         }
       }
@@ -1384,7 +1384,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Problems"
+            "value" : "Issues"
           }
         }
       }
@@ -1394,7 +1394,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paste this when reporting a problem. It doesn't include your writing or photos — only the folder type, file counts and version."
+            "value" : "Include this when reporting a problem. It doesn't contain your writing or photos — only the folder type, file counts and app version."
           }
         }
       }
@@ -1444,7 +1444,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Numbers"
+            "value" : "Numbered List"
           }
         }
       }
@@ -1464,7 +1464,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "If a paste turned out wrong, copy this and send it. **It contains the pasted text as is** — it disappears when you quit the app."
+            "value" : "If a paste came out wrong, copy this and send it to us. **It contains the pasted text as is** — it's cleared when you quit the app."
           }
         }
       }
@@ -1496,7 +1496,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy pasted formatting"
+            "value" : "Copy Pasted Formatting"
           }
         }
       }
@@ -1538,7 +1538,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "From Photos"
+            "value" : "Photo Library"
           }
         }
       }
@@ -1608,7 +1608,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rebuild index"
+            "value" : "Rebuild Index"
           }
         }
       }
@@ -1618,7 +1618,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Index size"
+            "value" : "Index Size"
           }
         }
       }
@@ -1628,7 +1628,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Indexed notes"
+            "value" : "Indexed Notes"
           }
         }
       }
@@ -1638,7 +1638,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The index is a cache. If search acts up, rebuild it — your files aren't touched (A4 · A5)."
+            "value" : "The index is just a cache. If search isn't working right, rebuild it — your files aren't touched (A4 · A5)."
           }
         }
       }
@@ -1648,7 +1648,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Building the index"
+            "value" : "Building the index…"
           }
         }
       }
@@ -1658,7 +1658,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Formatted text length"
+            "value" : "Formatted Text Length"
           }
         }
       }
@@ -1698,7 +1698,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In the Settings app → your name → iCloud, check that **iCloud Drive** is on. If it is and this still happens, try deleting and reinstalling the app."
+            "value" : "In the Settings app, tap your name → iCloud and make sure **iCloud Drive** is on. If it's on and this still happens, try deleting and reinstalling the app."
           }
         }
       }
@@ -1718,7 +1718,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Test tools"
+            "value" : "Test Tools"
           }
         }
       }
@@ -1728,7 +1728,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show test tools"
+            "value" : "Show Test Tools"
           }
         }
       }
@@ -1758,7 +1758,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Write"
+            "value" : "Edit"
           }
         }
       }
@@ -1778,7 +1778,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Location"
+            "value" : "Storage"
           }
         }
       }
@@ -1788,7 +1788,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Writing"
+            "value" : "Saving…"
           }
         }
       }
@@ -1840,7 +1840,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unused attachments"
+            "value" : "Unused Attachments"
           }
         }
       }
@@ -1850,7 +1850,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No unused attachments"
+            "value" : "No Unused Attachments"
           }
         }
       }
@@ -1882,7 +1882,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find broken links"
+            "value" : "Find Broken Links"
           }
         }
       }
@@ -1892,7 +1892,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No broken links"
+            "value" : "No Broken Links"
           }
         }
       }
@@ -1902,7 +1902,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show a test banner"
+            "value" : "Show Test Banner"
           }
         }
       }
@@ -1912,7 +1912,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New folder inside"
+            "value" : "New Folder Inside"
           }
         }
       }
@@ -1942,7 +1942,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Into which folder"
+            "value" : "Move Folder Into"
           }
         }
       }
@@ -1952,7 +1952,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To which folder"
+            "value" : "Move to Folder"
           }
         }
       }
@@ -1992,7 +1992,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete permanently"
+            "value" : "Delete Permanently"
           }
         }
       }
@@ -2022,7 +2022,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "There's no folder to move it into. First create a folder with the New Folder button at the top of the folder list."
+            "value" : "There's no folder to move it into. First create one with the New Folder button at the top of the folder list."
           }
         }
       }
@@ -2042,7 +2042,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Came from"
+            "value" : "Previous Note"
           }
         }
       }
@@ -2072,7 +2072,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This note already contains broken characters. The file was saved that way, so the app can't recover them."
+            "value" : "This note already contains corrupted characters. They're saved that way in the file, so the app can't recover them."
           }
         }
       }
@@ -2085,13 +2085,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "This note has %lld link pointing inside its folder. Moving changes its location, so the link has to be updated too for photos and attachments to show. Choose **Just move** to leave the text untouched."
+                  "value" : "This note has %lld link to files in its folder. Moving the note changes where it lives, so the link needs updating for photos and attachments to keep showing. Choose **Just Move** to leave the text exactly as it is."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "This note has %lld links pointing inside its folder. Moving changes its location, so the links have to be updated too for photos and attachments to show. Choose **Just move** to leave the text untouched."
+                  "value" : "This note has %lld links to files in its folder. Moving the note changes where it lives, so the links need updating for photos and attachments to keep showing. Choose **Just Move** to leave the text exactly as it is."
                 }
               }
             }
@@ -2104,7 +2104,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Every link in this note points to an existing file."
+            "value" : "Every link in this note points to a file that exists."
           }
         }
       }
@@ -2124,7 +2124,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "With this on, opening a note matches its first line and file name. Files may change even if you don't edit them.\n\nDon't turn this on for a folder shared with other apps."
+            "value" : "With this on, opening a note makes its first line and file name match. Files may change even if you don't edit them.\n\nDon't turn this on for folders shared with other apps."
           }
         }
       }
@@ -2144,7 +2144,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't recognize this file's text encoding. Save it as UTF-8 and open it again."
+            "value" : "Couldn't detect this file's text encoding. Save it as UTF-8 and open it again."
           }
         }
       }
@@ -2154,7 +2154,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New folder in this folder"
+            "value" : "New Folder in This Folder"
           }
         }
       }
@@ -2164,7 +2164,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "There are no Markdown files in this folder."
+            "value" : "This folder has no Markdown files."
           }
         }
       }
@@ -2224,7 +2224,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Link an existing file"
+            "value" : "Link an Existing File"
           }
         }
       }
@@ -2284,7 +2284,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't save"
+            "value" : "Save Failed"
           }
         }
       }
@@ -2346,7 +2346,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Title · text · tag: · path:"
+            "value" : "Title, text, tag:, path:"
           }
         }
       }
@@ -2366,7 +2366,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Turned the address into a link. You can undo this."
+            "value" : "Turned the URL into a link. You can undo this."
           }
         }
       }
@@ -2376,7 +2376,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This note isn't in the current list — a file in **%@**"
+            "value" : "This note isn't in the current list — it's a file in **%@**"
           }
         }
       }
@@ -2386,7 +2386,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Notes are being kept **on this device**. No folder appears in iCloud Drive in the `Files` app, and nothing syncs with other devices."
+            "value" : "Your notes are stored **on this device**. No folder appears in iCloud Drive in the Files app, and nothing syncs with your other devices."
           }
         }
       }
@@ -2426,7 +2426,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deleted notes collect here."
+            "value" : "Deleted notes appear here."
           }
         }
       }
@@ -2436,7 +2436,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deleted notes are moved to the `.trash` folder inside your folder. The `Files` app doesn't show hidden folders, so you see them here. **Unused attachments** are photos and files that no note points to."
+            "value" : "Deleted notes are moved to the `.trash` folder inside your folder. The Files app doesn't show hidden folders, so you can see them here. **Unused attachments** are photos and files that no note links to."
           }
         }
       }
@@ -2466,7 +2466,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diagnostic info"
+            "value" : "Diagnostic Info"
           }
         }
       }
@@ -2476,7 +2476,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy diagnostic info"
+            "value" : "Copy Diagnostic Info"
           }
         }
       }
@@ -2486,7 +2486,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The diagnostics screen shows what went wrong, and you can copy it to send. Turning on **Test tools** adds buttons for attachment, large-note and scale tests below — they **create files**, so they're hidden by default."
+            "value" : "Diagnostics shows what went wrong, and you can copy it to send to us. Turning on **Test Tools** adds attachment, large-note and scale test buttons below — they **create files**, so they're hidden by default."
           }
         }
       }
@@ -2506,7 +2506,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No matching files"
+            "value" : "No Matching Files"
           }
         }
       }
@@ -2516,7 +2516,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Some attachments can't be found"
+            "value" : "Some Attachments Are Missing"
           }
         }
       }
@@ -2571,13 +2571,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Move %lld attachment to the Trash?"
+                  "value" : "Move %lld Attachment to Trash?"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Move %lld attachments to the Trash?"
+                  "value" : "Move %lld Attachments to Trash?"
                 }
               }
             }
@@ -2590,7 +2590,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Attachment, large-note and scale tests. **These buttons create files.** Turn off `Show test tools` in Settings to hide this section."
+            "value" : "Attachment, large-note and scale tests. **These buttons create files.** Turn off Show Test Tools in Settings to hide this section."
           }
         }
       }
@@ -2600,7 +2600,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Attachment test"
+            "value" : "Attachment Test"
           }
         }
       }
@@ -2610,7 +2610,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Create attachment test files"
+            "value" : "Create Attachment Test Files"
           }
         }
       }
@@ -2620,7 +2620,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sends a single `.md` if there are no attachments, or a single `.zip` if there are. With this on, other notes linked from the text are included too — **one level only**."
+            "value" : "Sends a single `.md` file, or a `.zip` if the note has attachments. With this on, notes linked from the text are included too — **one level deep only**."
           }
         }
       }
@@ -2660,7 +2660,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "First line as file name"
+            "value" : "First Line as File Name"
           }
         }
       }
@@ -2670,7 +2670,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Checkboxes"
+            "value" : "Checklist"
           }
         }
       }
@@ -2680,7 +2680,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recent events"
+            "value" : "Recent Events"
           }
         }
       }
@@ -2690,7 +2690,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear recent events"
+            "value" : "Clear Recent Events"
           }
         }
       }
@@ -2700,7 +2700,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conflicts, save failures and changes from other devices pile up here. If a red banner appeared and you don't know why, copy this and send it. **The copy button copies everything, even when collapsed.**"
+            "value" : "Conflicts, save failures and changes from other devices are logged here. If a red banner appeared and you're not sure why, copy this and send it to us. **The copy button copies everything, even when the list is collapsed.**"
           }
         }
       }
@@ -2750,7 +2750,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "With this on, **just opening** a note may change its file. If the first line `# Title` differs from the file name, it's matched to the file name; if there's no title, one is added; if there's a different title, it's lowered one level to `##`. Editing the title in the app makes the file name follow.\n\n**Turn this off for a folder shared with other apps.**"
+            "value" : "When this is on, **just opening** a note may change its file: if the first line `# Title` doesn't match the file name, it's changed to match; if there's no title, one is added; if there's a different title, it's moved down a level to `##`. Editing the title in the app renames the file to match.\n\n**Turn this off for folders shared with other apps.**"
           }
         }
       }
@@ -2760,7 +2760,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "With this on, notes open in reading mode. You can switch to editing from the toolbar at any time, and new notes still open in editing mode."
+            "value" : "When this is on, notes open in reading mode. You can switch to editing from the toolbar at any time. New notes always open in editing mode."
           }
         }
       }
@@ -2780,7 +2780,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Create a large note (300 lines)"
+            "value" : "Create Large Note (300 Lines)"
           }
         }
       }
@@ -2790,7 +2790,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Large note test"
+            "value" : "Large Note Test"
           }
         }
       }
@@ -2830,7 +2830,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "File name"
+            "value" : "File Name"
           }
         }
       }
@@ -2840,7 +2840,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Settings that change files"
+            "value" : "Settings That Change Files"
           }
         }
       }
@@ -2932,7 +2932,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Folder name"
+            "value" : "Folder Name"
           }
         }
       }
@@ -2962,7 +2962,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Folders go two levels deep, so it's created in %@. If the name is taken, a number is added."
+            "value" : "Folders can only go two levels deep, so it will be created in %@. If the name is taken, a number is added."
           }
         }
       }
@@ -3012,7 +3012,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete the folder?"
+            "value" : "Delete Folder?"
           }
         }
       }
@@ -3022,7 +3022,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Insert table"
+            "value" : "Insert Table"
           }
         }
       }
@@ -3042,7 +3042,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shows a **red banner** at the bottom of the screen. Use it to check that it doesn't overlap the formatting bar or get cut off with large text. Tap the banner to dismiss it."
+            "value" : "Shows a **red banner** at the bottom of the screen, to check that it doesn't overlap the formatting bar or get cut off with large text. Tap the banner to dismiss it."
           }
         }
       }
@@ -3062,7 +3062,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Confirmation"
+            "value" : "Confirmation Word"
           }
         }
       }
@@ -3072,7 +3072,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The confirmation doesn't match. Type %@ exactly to delete."
+            "value" : "That doesn't match. Type %@ exactly to delete."
           }
         }
       }
@@ -3092,7 +3092,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To Trash"
+            "value" : "Move to Trash"
           }
         }
       }
@@ -3112,7 +3112,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The Trash is empty"
+            "value" : "Trash Is Empty"
           }
         }
       }
