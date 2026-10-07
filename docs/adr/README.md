@@ -14,3 +14,4 @@
 | [0005](0005-live-editor.md) | 라이브 편집 — 커서 줄만 원문 | 확정 |
 | [0006](0006-universal-app.md) | 유니버설 앱 하나 (아이폰 · 아이패드) | 확정 |
 | [0007](0007-no-uidocument.md) | `UIDocument` 를 쓰지 않고 `NSFileCoordinator` 를 직접 쓴다 | 확정 |
+| [0008](0008-share-extension-inbox.md) | 공유 확장은 사용자 폴더를 열지 않고 앱 그룹 상자에 맡긴다 (213) | 확정 |

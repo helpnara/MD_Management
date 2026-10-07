@@ -244,6 +244,8 @@ struct MarkdownEditor: UIViewRepresentable {
     /// 읽기에서 넘어왔을 때 **맨 위에 둘 줄.** 키보드는 올리지 않는다.
     var restore: LibraryModel.SpotRestore? = nil
     var onRestored: @MainActor () -> Void = {}
+    /// 최근 일에 한 줄 남긴다 (216 — 화면이 저절로 크게 움직이면 그 직전에 무엇이 돌았는지).
+    var onLog: @MainActor (String) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
@@ -312,6 +314,7 @@ struct MarkdownEditor: UIViewRepresentable {
         if let insertion, coordinator.insert(insertion) { onInserted() }
         if let format, coordinator.apply(format) { onFormatted() }
         coordinator.onRestored = onRestored
+        coordinator.onLog = onLog
         if let restore { coordinator.restore(restore, in: view) }
         if let spotRequest, coordinator.answeredSpot != spotRequest {
             coordinator.answeredSpot = spotRequest
@@ -344,6 +347,36 @@ struct MarkdownEditor: UIViewRepresentable {
         private var wasOnTitleLine = false
         weak var view: UITextView?
         var sheet: EditorStyleSheet?
+
+        // MARK: 화면 튐 기록 (216)
+
+        var onLog: @MainActor (String) -> Void = { _ in }
+        /// **직전에 돈 길** — 칠하기 · 드러내기 · 커서 맞추기 · 갈아 끼우기 · 자리 되돌리기. 화면이 저절로 크게 움직이면
+        /// 이것을 최근 일에 적는다. 짐작으로 고치지 않고 기록으로 가르려고 둔다 (190 의 교훈 · CLAUDE.md §3-4).
+        var lastPath = "" { didSet { lastPathAt = Date() } }
+        private var lastPathAt = Date.distantPast
+        /// 지난번 커서 맞추기가 잰 커서 자리 (글자 자리 · 세로 자리). 어림 자리를 가려내는 데 쓴다.
+        var lastCaret: (location: Int, y: CGFloat)?
+        private var lastOffsetY: CGFloat?
+
+        func note(_ message: String) {
+            onLog("쓰기 화면 — \(message)")
+        }
+
+        /// 손으로 밀지 않았는데 화면이 **한 화면 가까이** 움직였으면 적는다. 키보드가 올라와 있을 때만 — 그때가 쓰는 중이다.
+        func scrollViewDidScroll(_ scrollView: UIScrollView) {
+            let y = scrollView.contentOffset.y
+            defer { lastOffsetY = y }
+            guard let last = lastOffsetY, let textView = scrollView as? UITextView, textView.isFirstResponder,
+                  !scrollView.isTracking, !scrollView.isDragging, !scrollView.isDecelerating else { return }
+            let jump = y - last
+            let screen = scrollView.bounds.height - scrollView.adjustedContentInset.top
+                - scrollView.adjustedContentInset.bottom
+            guard screen > 0, abs(jump) > screen * 0.8 else { return }
+            let age = Date().timeIntervalSince(lastPathAt)
+            let path = lastPath.isEmpty || age > 5 ? "모름" : "\(lastPath) (\(String(format: "%.1f", age))초 전)"
+            note("화면이 저절로 \(Int(jump))pt 움직임 · 커서 \(textView.selectedRange.location) · 직전: \(path)")
+        }
 
         private var loadedNoteID: String?
         private var loadedText = ""
@@ -497,6 +530,8 @@ struct MarkdownEditor: UIViewRepresentable {
                 // 조합 중에 노트를 바꾸면 **조합 기억도 끝낸다** (184) — 남아 있으면 새 노트에서
                 // 칠하기 · 번호 맞추기가 조합 중인 줄 알고 멈춘다.
                 commitComposition(view)
+                lastCaret = nil
+                lastPath = "노트 열기"
                 view.text = text
                 refreshFocus(view)
                 return
@@ -510,7 +545,17 @@ struct MarkdownEditor: UIViewRepresentable {
             // 손댄 뒤라면 그것이 최신이고, 덮으면 자료가 사라진다.
             guard view.text == loadedText else { return }
             loadedText = text
+            lastCaret = nil
+            lastPath = "갈아 끼우기"
+            // **같은 노트의 글을 갈아 끼울 때는 커서 · 화면 자리를 지킨다** (216). 글을 통째로 넣으면 UIKit 은 커서를 글 끝으로 보낸다 —
+            // 다른 기기의 고침을 받아도 보던 자리에 머문다. 이 길을 탔다는 것은 최근 일에 남긴다 (커서가 튀면 여기부터 의심한다).
+            let selection = view.selectedRange
+            let offset = view.contentOffset
+            note("열린 노트의 글을 갈아 끼움 — \((view.text as NSString).length)자 → \((text as NSString).length)자")
             view.text = text
+            let length = (text as NSString).length
+            view.selectedRange = NSRange(location: min(selection.location, length), length: 0)
+            view.setContentOffset(offset, animated: false)
             // **갈아 끼운 뒤에 한 번 맞춘다** (162). 글을 통째로 넣으면 저장소 대리자가
             // 첫 문단을 드러낸 채 칠하는데, 초점이 없으면 그 뒤에 아무도 정리를 안 부른다.
             refreshFocus(view)
@@ -542,6 +587,7 @@ struct MarkdownEditor: UIViewRepresentable {
             guard restoredID != request.id else { return }
             restoredID = request.id
             let spot = request.spot
+            lastPath = "자리 되돌리기"
             DispatchQueue.main.async { [weak self, weak view] in
                 guard let view else { return }
                 self?.scroll(view, to: spot)
@@ -812,6 +858,7 @@ struct MarkdownEditor: UIViewRepresentable {
                       !isComposing, !isStyling,
                       let sheet, let storage = view?.textStorage else { return }
                 isStyling = true
+                lastPath = "칠하기"
                 // 고치는 중인 문단에 커서가 있다 — 선택값은 아직 옛것일 수 있으므로 고친 자리를 쓴다.
                 let cursor = edited.location
                 headerLength = MarkdownStyler.restyle(storage, touching: edited, with: sheet,
@@ -933,37 +980,17 @@ struct MarkdownEditor: UIViewRepresentable {
             if text == "\n", !isComposing, continueList(in: textView, at: range) {
                 return false
             }
-            // 빈칸은 되돌리기 묶음을 끊는다 (53).
-            if text == " ", !isComposing, insertWordBreak(in: textView, at: range) {
-                return false
-            }
+            // 빈칸은 **키보드가 넣는다** (217) — 가로채면 마침표 단축키 · 영어 자동 수정이 깨진다. 아래 `되돌리기` 메모.
             return true
         }
 
-        /// **되돌리기를 낱말 단위로** (53). UIKit 은 쉬지 않고 친 글을 한 묶음으로
-        /// 되돌려 `가나다 라마` 가 한 번에 사라진다 (빌드 14 · 12번). 맥의 편집기처럼
-        /// 빈칸에서 끊고 싶은데 `breakUndoCoalescing` 이 UIKit 에는 없다.
-        ///
-        /// 빈칸을 `replace(_:withText:)` 로 넣는다 — 타이핑(`insertText`)이 아닌 길이라
-        /// UIKit 이 **제 이름으로 따로** 되돌리기에 올리고, 다음 글자부터 새 묶음이 된다.
-        ///
-        /// **텍스트 저장소를 직접 고치지 않는다.** 빌드 17 은 `textStorage.replaceCharacters`
-        /// 로 넣고 되돌리기를 우리가 등록했는데, UIKit 은 제 손을 거치지 않은 변경을 보면
-        /// **그 전에 쌓아 둔 되돌리기를 버린다** — 낱말 하나와 빈칸까지만 물러나고 멈췄다
-        /// (빌드 17 · 11번). 편집기의 글은 언제나 UIKit 의 입력 경로로만 바꾼다.
-        private func insertWordBreak(in textView: UITextView, at range: NSRange) -> Bool {
-            guard let target = textRange(textView, range) else { return false }
-            textView.replace(target, withText: " ")
-            textView.selectedRange = NSRange(location: range.location + 1, length: 0)
-            // `1.` 뒤의 빈칸이 첫 항목을 만드는 글자다 — 여기서 바로 맞춘다 (195). 이 길은 우리가 넣으므로
-            // `textViewDidChange` 가 온다고 믿지 않는다.
-            if let location = pendingFollow {
-                pendingFollow = nil
-                renumberList(around: location, in: textView)
-            }
-            onEdit(textView.text)
-            return true
-        }
+        // MARK: 되돌리기 (53 → 217)
+        //
+        // **되돌리기는 아이폰 기본을 따른다** (2026-10-06 사용자 결정 — *마침표 유지*). 빌드 16~81 은 빈칸을 앱이 직접 넣어
+        // 되돌리기를 낱말 단위로 끊었는데(53), 그 길이 키보드의 *방금 빈칸을 쳤다* 기억을 지워 스페이스 두 번 → 마침표가 안 됐다 (217).
+        // UIKit 은 쉬지 않고 친 글을 **맨 위 타이핑 기록에 이어 붙여** 묶는다 — 되돌리기 모음을 닫았다 여는 것(빌드 82)으로는
+        // 안 끊긴다 (빌드 82 · 4번). 끊으려면 기록 하나를 따로 올려야 하고, 그것이 곧 키보드의 기억을 지운다. 두 기능이 한 손잡이다.
+        // 둘 다 가지려면 되돌리기를 앱이 직접 관리해야 한다 — 한글 조합 중의 고침까지 기록하는 일이라 186~190 과 같은 땅이다 (뺐다).
 
         /// **목록에서 줄바꿈** — 아이폰 메모처럼. 규칙은 Core 의 `ListEditing` 이 정한다.
         /// 여기서는 그 결과를 넣고 커서를 옮기기만 한다. `replace(_:withText:)` 를
@@ -1295,12 +1322,12 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 끌어오면 손가락을 따라 화면이 잘게 떨린다. 가장자리에서 **한 줄 남짓 남았을 때만**
         /// 움직이고, 그때도 딱 그만큼만 움직인다.
         private func keepVisible(_ textView: UITextView, at location: Int) {
-            DispatchQueue.main.async { [weak textView] in
+            DispatchQueue.main.async { [weak self, weak textView] in
                 guard let textView, textView.isFirstResponder else { return }
                 let length = (textView.textStorage.string as NSString).length
                 let safe = max(0, min(location, length))
                 guard let position = textView.position(from: textView.beginningOfDocument, offset: safe) else { return }
-                let caret = textView.caretRect(for: position)
+                var caret = textView.caretRect(for: position)
                 guard caret.height.isFinite, !caret.isNull, !caret.isInfinite else { return }
 
                 // 지금 눈에 보이는 칸 — 키보드와 아래 띠가 먹은 만큼을 뺀다.
@@ -1309,10 +1336,21 @@ struct MarkdownEditor: UIViewRepresentable {
                                      y: textView.contentOffset.y + insets.top,
                                      width: textView.bounds.width,
                                      height: textView.bounds.height - insets.top - insets.bottom)
+                // **어림 자리를 믿지 않는다** (216). 커서는 몇 글자만 옮겼는데 잰 자리가 한 화면 넘게 뛰었다면, 그 사이 글자 배치가
+                // 화면 밖 줄의 높이를 어림으로 잡고 있다는 뜻이다. 그대로 따라가면 화면이 엉뚱한 곳으로 간다 — 배치를 확정하고 다시 잰다.
+                if let last = self?.lastCaret, abs(safe - last.location) <= 4,
+                   abs(caret.midY - last.y) > visible.height, let layout = textView.textLayoutManager {
+                    self?.note("커서 자리가 어림이라 배치를 확정 — \(Int(last.y)) → \(Int(caret.midY))")
+                    layout.ensureLayout(for: layout.documentRange)
+                    caret = textView.caretRect(for: position)
+                    guard caret.height.isFinite, !caret.isNull, !caret.isInfinite else { return }
+                }
+                self?.lastCaret = (safe, caret.midY)
                 // 가장자리에 붙기 전에 조금 미리 움직인다 — 한 줄 반쯤.
                 let margin = caret.height * 1.5
                 let room = visible.insetBy(dx: 0, dy: margin)
                 guard !room.contains(CGPoint(x: caret.midX, y: caret.midY)) else { return }
+                self?.lastPath = "커서 맞추기"
                 textView.scrollRectToVisible(caret.insetBy(dx: 0, dy: -margin), animated: false)
             }
         }
@@ -1368,6 +1406,7 @@ struct MarkdownEditor: UIViewRepresentable {
             // 움직이지 않도록 스크롤 자리를 붙들었다 놓는다 (빌드 29 · 2번).
             let offset = textView.contentOffset
             isStyling = true
+            lastPath = plan.show == nil ? "원문 기호 숨기기" : "원문 기호 드러내기"
             textView.textStorage.beginEditing()
             if let hide = plan.hide, let range = live(hide, in: text) {
                 headerLength = MarkdownStyler.restyle(textView.textStorage, touching: range, with: sheet,

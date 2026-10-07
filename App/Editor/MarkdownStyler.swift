@@ -82,20 +82,31 @@ enum MarkdownStyler {
         let depths = listDepths(in: text, covering: touched)
         let limit = NSMaxRange(touched)
 
+        // **모양이 그대로인 문단은 칠하지 않는다** (216, 2026-10-06 사용자 — *개요 중간에서 천천히 치다 보면 화면이 다른 곳으로*).
+        // 목록 덩이 · 줄 문맥 때문에 글자 하나에도 화면 **훨씬 위**의 문단까지 다시 칠하는데, 같은 값이라도 저장소에 넣으면
+        // 아이폰의 글자 배치(TextKit 2)는 그 문단의 잰 높이를 버리고 어림으로 돌아간다. 위쪽 높이의 합이 달라지면 스크롤 자리는
+        // 그대로인 채 보던 글이 밀린다. 그래서 문단마다 **따로 칠해 보고**(`fresh`) 지금 모양과 다를 때만 저장소에 옮긴다.
+        // 다르다고 잘못 보면 지금처럼 칠할 뿐이다 — 틀려도 예전보다 나빠지지 않는 쪽으로 견준다.
         func paint(_ paragraph: NSRange) {
+            let fresh = NSMutableAttributedString(string: text.substring(with: paragraph))
             if paragraph.location < header {
-                storage.setAttributes(sheet.frontMatter(), range: paragraph)
-                return
+                fresh.setAttributes(sheet.frontMatter(), range: NSRange(location: 0, length: fresh.length))
+            } else {
+                // 커서가 이 문단에 있나. 문단 끝(줄바꿈 앞)까지, 마지막 문단은 글 끝까지.
+                let hasCursor = cursor.map { at in
+                    at >= paragraph.location
+                        && (at < NSMaxRange(paragraph) || NSMaxRange(paragraph) == text.length)
+                } ?? true
+                style(paragraph: paragraph, in: text, into: fresh, origin: paragraph.location, sheet: sheet,
+                      hasCursor: hasCursor, isTitle: paragraph.location == titleStart,
+                      depth: depths[paragraph.location] ?? 0,
+                      role: roles[paragraph.location] ?? .normal)
             }
-            // 커서가 이 문단에 있나. 문단 끝(줄바꿈 앞)까지, 마지막 문단은 글 끝까지.
-            let hasCursor = cursor.map { at in
-                at >= paragraph.location
-                    && (at < NSMaxRange(paragraph) || NSMaxRange(paragraph) == text.length)
-            } ?? true
-            style(paragraph: paragraph, in: text, storage: storage, sheet: sheet,
-                  hasCursor: hasCursor, isTitle: paragraph.location == titleStart,
-                  depth: depths[paragraph.location] ?? 0,
-                  role: roles[paragraph.location] ?? .normal)
+            guard !looksSame(fresh, in: storage, at: paragraph.location) else { return }
+            fresh.enumerateAttributes(in: NSRange(location: 0, length: fresh.length), options: []) { attributes, range, _ in
+                storage.setAttributes(attributes, range: NSRange(location: paragraph.location + range.location,
+                                                                 length: range.length))
+            }
         }
 
         var location = touched.location
@@ -121,6 +132,36 @@ enum MarkdownStyler {
                            fences: UnsafeMutablePointer<Int>? = nil, cursor: Int? = nil) -> Int {
         restyle(storage, touching: NSRange(location: 0, length: storage.length), with: sheet,
                 fences: fences, cursor: cursor)
+    }
+
+    /// 글꼴에 없는 글자(한글 등)를 만나면 텍스트 저장소가 대신 그릴 글꼴로 바꾸고 원래 글꼴을 이 이름으로 남긴다.
+    /// 견줄 때는 원래 글꼴을 본다 — 안 그러면 한글 문단은 늘 *다르다* 가 된다.
+    private static let originalFont = NSAttributedString.Key("NSOriginalFont")
+
+    /// 따로 칠해 본 문단(`fresh`)이 저장소의 `origin` 자리와 **같은 모양인가** (216).
+    ///
+    /// 속성 묶음을 **통째로** 견준다 — 저장소에 우리가 안 거는 속성(붙여넣기에 딸려 온 밑줄 · 받아쓰기 후보 등)이 남아 있어도
+    /// *다르다* 가 되어 예전처럼 칠하고, 칠하기가 그것을 걷어 낸다. 글꼴 바꿔 그리기(`NSOriginalFont`)만 원래 글꼴로 되돌려 본다.
+    static func looksSame(_ fresh: NSAttributedString, in storage: NSAttributedString, at origin: Int) -> Bool {
+        guard origin >= 0, origin + fresh.length <= storage.length else { return false }
+        var same = true
+        fresh.enumerateAttributes(in: NSRange(location: 0, length: fresh.length), options: []) { want, range, stop in
+            var at = range.location
+            while at < NSMaxRange(range) {
+                var run = NSRange()
+                var have = storage.attributes(at: origin + at, effectiveRange: &run)
+                if let original = have.removeValue(forKey: originalFont) { have[.font] = original }
+                let haveAll = NSDictionary(dictionary: have as [AnyHashable: Any])
+                if !haveAll.isEqual(to: want as [AnyHashable: Any]) {
+                    same = false
+                    stop.pointee = true
+                    return
+                }
+                // 저장소의 한 덩이가 끝나는 자리까지 건너뛴다. 덩이는 `at` 을 품으므로 늘 앞으로 간다.
+                at = min(NSMaxRange(range), max(at + 1, NSMaxRange(run) - origin))
+            }
+        }
+        return same
     }
 
     private static func clamp(_ range: NSRange, to length: Int) -> NSRange {
@@ -333,8 +374,10 @@ enum MarkdownStyler {
         return text.substring(with: line)
     }
 
+    /// 문단 하나를 `target` 에 칠한다. `target` 은 그 문단만 담은 글이고 `origin` 은 그 문단이 원문에서 시작하는 자리 (216) —
+    /// 자리 셈은 원문 기준으로 하고 쓸 때만 `origin` 을 뺀다.
     private static func style(paragraph: NSRange, in text: NSString,
-                              storage: NSTextStorage, sheet: EditorStyleSheet,
+                              into target: NSMutableAttributedString, origin: Int, sheet: EditorStyleSheet,
                               hasCursor: Bool, isTitle: Bool = false, depth: Int = 0,
                               role: BlockContext.Role = .normal) {
         // `paragraphRange` 는 끝의 줄바꿈까지 준다. `LineStyler` 는 줄 하나만 본다.
@@ -384,13 +427,14 @@ enum MarkdownStyler {
         case .heading2: block = .heading(level: 2)
         default: block = (isTitle && style.block == nil) ? StyleToken.heading(level: 1) : style.block
         }
-        storage.setAttributes(sheet.base(for: block, depth: depth, contentInset: contentInset),
-                              range: paragraph)
+        func local(_ range: NSRange) -> NSRange { NSRange(location: range.location - origin, length: range.length) }
+        target.setAttributes(sheet.base(for: block, depth: depth, contentInset: contentInset),
+                             range: local(paragraph))
 
         for span in style.inlineSpans {
             let range = NSRange(location: line.location + span.start, length: span.length)
             guard NSMaxRange(range) <= NSMaxRange(line) else { continue }
-            sheet.apply(span.token, to: storage, range: range)
+            sheet.apply(span.token, to: target, range: local(range))
         }
         // L2 — 커서가 없는 문단은 **읽기 모드에 가깝게** (163, 2026-09-25 사용자).
         // 규칙 하나: **숨길 수 있는 마커는 숨긴다. 숨길 수 없는 마커는 본문 색으로 둔다.
@@ -412,14 +456,14 @@ enum MarkdownStyler {
             guard NSMaxRange(range) <= NSMaxRange(line) else { continue }
             let isBlockMarker = mark.start < style.contentStart
             if keepsAll || isTable {
-                sheet.dimMarker(in: storage, range: range)
+                sheet.dimMarker(in: target, range: local(range))
             } else if isList && isBlockMarker {
                 // 본문 색은 이미 문단 바탕에 깔려 있다 — 켜진 체크상자만 따로 칠한다.
                 if text.substring(with: range).hasPrefix("[x") || text.substring(with: range).hasPrefix("[X") {
-                    sheet.checkedMarker(in: storage, range: range)
+                    sheet.checkedMarker(in: target, range: local(range))
                 }
             } else {
-                sheet.hideMarker(in: storage, range: range)
+                sheet.hideMarker(in: target, range: local(range))
             }
         }
         // 코드 덩어리 (210) — 울타리 안의 줄과 울타리 줄 자신, 그리고 **네 칸 코드** (빌드 78 — 읽기 화면은 회색 덩어리로 그렸는데
@@ -427,7 +471,7 @@ enum MarkdownStyler {
         // `BlockContext` 가 위쪽에 목록이 열려 있는지까지 보고 정한다. 울타리인지도 `BlockContext` 가 잰다 — 울타리를 세는 자리와 같은 잣대다.
         let isFence = style.block == .codeBlock && BlockContext.isFence(lineString)
         if role == .code || role == .indentedCode || isFence {
-            sheet.codeBox(in: storage, range: paragraph, isFence: isFence)
+            sheet.codeBox(in: target, range: local(paragraph), isFence: isFence)
         }
     }
 }
