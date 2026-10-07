@@ -244,8 +244,8 @@ One app for both. On iPad, folders, notes, and the editor sit side by side, with
 https://helpnara.github.io/MD_Management/en/privacy/
 ```
 
-> **영어 쪽은 새로 생긴다** (219 · `docs/privacy.en.md` → `Tools/site/build.py` → `/en/privacy/`). 두 쪽은 맨 위에서 서로를 가리킨다.
-> 여기서는 열어 볼 수 없다 (`CLAUDE.md` §2) — **게시된 뒤 사람이 한 번 연다.** 처리방침 URL 은 언어마다 따로 넣을 수 있다.
+> **영어 쪽** (219 · `docs/privacy.en.md` → `Tools/site/build.py` → `/en/privacy/`). 두 쪽은 맨 위에서 서로를 가리킨다.
+> ✅ **열리는 것을 확인했다** (2026-10-07 사용자 — 빌드 89 사이트 할 일). 처리방침 URL 은 언어마다 따로 넣을 수 있다.
 
 ### What’s New in This Version
 
