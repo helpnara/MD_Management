@@ -1,0 +1,124 @@
+name: 번역 열쇠 뽑기
+
+# 219 — 영문판. 번역 목록의 **열쇠 글자**(`노트 %lld개` 처럼 끼워 넣는 값이 바뀐 꼴)는 컴파일러만 정확히 안다.
+# 이 워크플로가 macOS 에서 `xcodebuild -exportLocalizations` 로 뽑아 `Tools/l10n/extracted.json` 에 커밋한다.
+# 리눅스 세션은 그 파일로 영어 번역(`Tools/l10n/en.json`)을 맞추고 번역 목록(`*.xcstrings`)을 만든다.
+# 손으로 돌린다 — 문구를 바꾼 뒤에.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: l10n-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  export:
+    name: 열쇠 뽑기
+    runs-on: macos-26
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Xcode 26 이상 선택
+        run: |
+          set -uo pipefail
+
+          # 러너가 기본으로 선택해 둔 Xcode 에만 시뮬레이터 런타임이 갖춰져 있다.
+          # 그래서 **이미 26 이상이면 손대지 않는다.** 예전에 major 만 비교해
+          # 다른 26.x 로 바꿨다가 iOS 26.0 is not installed 로 막혔다.
+          xcver() {
+            [ -f "$1/Contents/version.plist" ] || return 1
+            /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+              "$1/Contents/version.plist" 2>/dev/null
+          }
+
+          CUR_APP=$(xcode-select -p 2>/dev/null || true)
+          CUR_APP=${CUR_APP%/Contents/Developer}
+          CUR_V=$(xcver "$CUR_APP" || true)
+          echo "현재 선택: ${CUR_APP:-(없음)} ${CUR_V:-(?)}"
+
+          NEED=1
+          case "${CUR_V%%.*}" in
+            ''|*[!0-9]*) ;;
+            *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;;
+          esac
+
+          if [ "$NEED" -eq 1 ]; then
+            BEST=""; BEST_K=0; BEST_V=""
+            for app in /Applications/Xcode*.app; do
+              v=$(xcver "$app" || true)
+              [ -n "$v" ] || continue
+              k=$(echo "$v" | awk -F. '{printf "%d", ($1*10000)+($2*100)+$3}')
+              echo "  $app → $v"
+              if [ "$k" -gt "$BEST_K" ]; then BEST_K=$k; BEST="$app"; BEST_V="$v"; fi
+            done
+            if [ -n "$BEST" ]; then
+              echo "전환: $BEST ($BEST_V)"
+              sudo xcode-select -s "$BEST/Contents/Developer"
+            fi
+          fi
+
+          xcodebuild -version
+          swift --version
+
+      - name: XcodeGen 설치
+        run: brew install xcodegen
+
+      - name: Xcode 프로젝트 생성
+        run: xcodegen generate
+
+      - name: 열쇠 뽑기
+        run: |
+          set -o pipefail
+          if ! xcodebuild -exportLocalizations \
+            -project Notebook.xcodeproj \
+            -localizationPath build/l10n \
+            -exportLanguage en \
+            -sdk iphonesimulator \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee /tmp/l10n.log; then
+            echo "::group::오류 줄만"
+            grep -E "error:|error " /tmp/l10n.log | head -40 || echo "오류 줄을 못 찾았습니다"
+            echo "::endgroup::"
+            exit 1
+          fi
+          XLIFF=$(find build/l10n -name 'en.xliff' | head -1)
+          echo "xliff: $XLIFF"
+          test -n "$XLIFF"
+          python3 Tools/l10n/xliff_to_json.py "$XLIFF" > Tools/l10n/extracted.json
+          python3 - <<'PY'
+          import json
+          d = json.load(open("Tools/l10n/extracted.json"))
+          for target, tables in d.items():
+              for table, keys in tables.items():
+                  print(f"{target} / {table}: {len(keys)}")
+          PY
+
+      # 아티팩트를 커밋보다 앞에 (CLAUDE.md §5) — 커밋이 실패해도 결과물은 받는다.
+      - name: 결과 보관
+        uses: actions/upload-artifact@v4
+        with:
+          name: l10n-export
+          path: |
+            build/l10n
+            Tools/l10n/extracted.json
+
+      - name: 열쇠를 브랜치에 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Tools/l10n/extracted.json
+          if git diff --cached --quiet; then
+            echo "열쇠 변화 없음"
+            exit 0
+          fi
+          git commit -m "chore: 번역 열쇠 뽑기 (xcodebuild -exportLocalizations) [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then exit 0; fi
+            git fetch origin ${{ github.ref_name }}
+            git rebase origin/${{ github.ref_name }} || { git rebase --abort || true; sleep $((attempt * 5)); continue; }
+          done
+          exit 1

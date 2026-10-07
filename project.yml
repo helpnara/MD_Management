@@ -13,6 +13,8 @@ name: Notebook
 
 options:
   bundleIdPrefix: com.helpnara
+  # 219 — 영문판. 개발 언어는 한국어, 영어를 더한다 (knownRegions).
+  developmentLanguage: ko
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -24,11 +26,14 @@ packages:
 
 settings:
   base:
-    MARKETING_VERSION: "1.0.8"
+    MARKETING_VERSION: "1.1"
     # CI 가 실행 번호를 넣는다 — 빌드 번호와 실행 번호가 늘 같게.
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "6.0"
     DEVELOPMENT_LANGUAGE: ko
+    # 219 — 영문판. 화면 글자 · String(localized:) 를 컴파일러가 뽑아 번역 목록(Localizable.xcstrings)에 잇는다.
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
 
 targets:
   Notebook:
@@ -61,7 +66,7 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDevelopmentRegion: ko
-        CFBundleLocalizations: [ko]
+        CFBundleLocalizations: [ko, en]
 
         # **빌드 설정을 참조하게 한다.** 안 적으면 XcodeGen 이 Info.plist 에
         # 1 과 1.0 을 글자 그대로 박아 넣어, 워크플로가 넘긴 실행 번호가 앱에
@@ -169,6 +174,7 @@ targets:
       path: ShareExtension/Info.plist
       properties:
         CFBundleDevelopmentRegion: ko
+        CFBundleLocalizations: [ko, en]
         CFBundleDisplayName: 느린 여백
         # 앱과 **같은** 판 · 빌드 번호여야 App Store 검증을 지난다 (ITMS-90473).
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)

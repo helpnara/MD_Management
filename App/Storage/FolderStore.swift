@@ -256,8 +256,8 @@ actor FolderStore {
         switch encoding {
         case .utf8: return "UTF-8"
         case .utf16: return "UTF-16"
-        case cp949: return "CP949 (예전 한글 윈도)"
-        default: return "알 수 없음"
+        case cp949: return String(localized: "CP949 (예전 한글 윈도)")
+        default: return String(localized: "알 수 없음")
         }
     }
 

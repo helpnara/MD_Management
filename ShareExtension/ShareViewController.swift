@@ -98,7 +98,7 @@ final class ShareModel: ObservableObject {
             onFinish(true)
         } catch {
             if let opened { await inbox.discard(opened) }
-            failure = "보내지 못했습니다. 잠시 뒤 다시 해 주세요."
+            failure = String(localized: "보내지 못했습니다. 잠시 뒤 다시 해 주세요.")
             isSending = false
         }
     }
