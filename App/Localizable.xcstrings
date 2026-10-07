@@ -97,6 +97,16 @@
         }
       }
     },
+    "%@ (맨 위)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ (Top Level)"
+          }
+        }
+      }
+    },
     "%@ (충돌 %@)" : {
       "localizations" : {
         "en" : {
@@ -177,6 +187,16 @@
         }
       }
     },
+    "%@ 켜짐" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, On"
+          }
+        }
+      }
+    },
     "%@ 폴더와 안의 노트 %lld개를 폴더 안 .trash 로 옮깁니다. 안의 폴더도 함께 갑니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.%@" : {
       "localizations" : {
         "en" : {
@@ -233,6 +253,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Line %lld"
+          }
+        }
+      }
+    },
+    "(빈 파일)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(Empty File)"
           }
         }
       }
