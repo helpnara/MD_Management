@@ -122,6 +122,10 @@ jobs:
             exit 0
           fi
           git commit -m "chore: 번역 열쇠 뽑기 (xcodebuild -exportLocalizations) [skip ci]"
+          # 뽑기가 번역 목록(.xcstrings)도 고쳐 둔다 — 그것은 build.py 가 만드는 것이라 버린다.
+          # 남겨 두면 리베이스가 *커밋 안 한 변경* 으로 막힌다 (첫 뽑기 실패, 2026-10-07).
+          git reset -q --hard HEAD
+          git clean -qfd
           for attempt in 1 2 3; do
             if git push origin HEAD:${{ github.ref_name }}; then exit 0; fi
             git fetch origin ${{ github.ref_name }}
