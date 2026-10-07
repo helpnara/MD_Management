@@ -3,5 +3,3 @@
 "NSPhotoLibraryUsageDescription" = "Slow Margin uses your photo library to pick photos for your notes. It reads only the photos you choose.";
 "NSCameraUsageDescription" = "Slow Margin uses the camera to take photos for your notes.";
 "마크다운 문서" = "Markdown document";
-/* 221 — Files 앱의 iCloud 폴더 겉이름. 폴더는 열쇠로 찾으므로 이름이 달라도 폴더는 하나다. */
-"NSUbiquitousContainerName" = "Slow Margin";

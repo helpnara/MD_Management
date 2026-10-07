@@ -236,7 +236,7 @@ A8(아이패드 3단) · A9(API 키) · **A13(한글 이름)**. **1주차 가정
 | 자리 | 파일 | 값 |
 |---|---|---|
 | 스토어 · 홈 화면 이름 | `project.yml` → `CFBundleDisplayName` | `느린 여백` |
-| `Files` 앱의 폴더 이름 | `project.yml` → `NSUbiquitousContainerName` | `느린 여백` |
+| `Files` 앱의 폴더 이름 | `project.yml` → `NSUbiquitousContainerName` | `Slow Margin` — 한국어 · 영어 하나 (221 · 2026-10-07 사용자) |
 
 **Xcode 타깃 · 스킴 이름(`Notebook`)과 번들 ID(`com.helpnara.markdown`)는 이름과
 무관하게 고정**이다. 번들 ID 는 App Store 등록 후 바꿀 수 없으므로 일부러 이름을

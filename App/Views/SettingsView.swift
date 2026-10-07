@@ -215,14 +215,14 @@ struct FilesHelpView: View {
             Section {
                 step(1, String(localized: "`파일` 앱에서 `.md` 파일을 **길게 누릅니다**."))
                 step(2, String(localized: "**공유** → 목록에서 **느린 여백** 을 고릅니다."))
-                step(3, String(localized: "**느린 여백 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다."))
+                step(3, String(localized: "**Slow Margin 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다."))
             } footer: {
                 Text("""
                 iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.
 
                 느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.
 
-                평소 쓰는 노트는 **느린 여백 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다.
+                평소 쓰는 노트는 **Slow Margin 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다.
                 """)
             }
         }
@@ -261,7 +261,7 @@ struct IncomingFileSheet: View {
                         VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
                             Text(file.name)
                                 .font(.scaled(.body, weight: .semibold))
-                            Text("이 파일은 **느린 여백 폴더 밖**에 있습니다.")
+                            Text("이 파일은 **Slow Margin 폴더 밖**에 있습니다.")
                                 .font(.scaled(.callout))
                                 .foregroundStyle(Palette.inkFaint)
                         }

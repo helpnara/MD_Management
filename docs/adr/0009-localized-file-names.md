@@ -45,5 +45,7 @@
 - **언어는 기기 언어가 아니라 이 앱의 언어**다 (설정 → 앱 → 언어). 번역 목록이 고른 화면 언어와 같은 것을 보려고 `String(localized:)` 와
   `AppLanguage.isEnglish` (`Bundle.main.preferredLocalizations`) 를 쓴다 — 화면은 영어인데 견본이 한국어인 일이 없게.
 - 받은 글 폴더를 셀 때는 폴더 화면의 숫자(`LibraryModel.noteCount(of:)`)를 그대로 쓴다 — 따로 세지 않는다 (CLAUDE.md §1).
-- **`Files` 앱의 iCloud 폴더 이름**(`NSUbiquitousContainerName` = `느린 여백`)은 이번에 바꾸지 않았다. 여러 단계 안쪽 값이라 언어별 문구 파일로
-  바뀌는지 여기서 확인할 수 없고, iCloud 가 이름을 오래 붙들고 있어 실기기 시험도 헷갈린다. 영어 사용자에게 한국어 폴더 이름이 보인다 — 따로 연다.
+- **`Files` 앱의 iCloud 폴더 이름**(`NSUbiquitousContainerName`)은 **언어 구분 없이 `Slow Margin` 하나** (221 · 2026-10-07 사용자 — 나).
+  빌드 90 에서 언어별 이름(`느린 여백` / `Slow Margin`)을 넣었더니 **이 앱만 English 로 연 순간** `Files` 의 이름이 바뀌었다 — 앱이 열릴 때 그때의
+  앱 언어로 이름을 올리는 것으로 보인다. 두 언어 기기를 함께 쓰면 이름표가 오가므로 하나로 정했다. 폴더는 열쇠로 찾으므로 이름이 바뀌어도 폴더는 하나다
+  (빌드 90 · 5 확인). 앱 안 맨 위 폴더 제목도 같은 값을 읽어 한국어에서도 `Slow Margin`.

@@ -67,14 +67,10 @@ enum FolderSource {
     /// `Files` 앱에 보이는 폴더 이름. `project.yml` 의 `NSUbiquitousContainerName`
     /// 을 읽으므로 **이름이 사는 곳이 늘지 않는다** (docs/roadmap.md §4).
     ///
-    /// **앱의 언어로 먼저 읽는다** (221). 영어 이름은 `en.lproj/InfoPlist.strings` 의 같은 열쇠에 있다 — 문구 파일은
-    /// 맨 위 열쇠만 바꿔 끼우므로 `localizedInfoDictionary` 에 맨 위 열쇠로 들어온다. 그것이 없으면(한국어) 원래 자리에서 읽는다.
-    /// 이 이름은 겉이름일 뿐이다 — 폴더는 열쇠(`iCloud.com.helpnara.markdown`)로 찾으므로 이름이 달라도 폴더는 하나다.
+    /// **언어마다 다르게 두지 않는다** (221). 앱이 열릴 때 그때의 앱 언어로 이 이름을 iCloud 에 올리는지, 이 앱만 English 로 연 순간
+    /// `Files` 의 이름이 바뀌었다 (빌드 90 · 5). 두 언어 기기를 함께 쓰면 이름표가 오가므로 `Slow Margin` 하나로 정했다.
+    /// 이 이름은 겉이름일 뿐이다 — 폴더는 열쇠(`iCloud.com.helpnara.markdown`)로 찾으므로 이름이 바뀌어도 폴더는 하나다.
     static var iCloudFolderName: String? {
-        if let localized = Bundle.main.localizedInfoDictionary?["NSUbiquitousContainerName"] as? String,
-           !localized.isEmpty {
-            return localized
-        }
         guard let containers = Bundle.main.object(forInfoDictionaryKey: "NSUbiquitousContainers")
                 as? [String: Any] else { return nil }
         for value in containers.values {
@@ -91,8 +87,8 @@ enum FolderSource {
     private static let firstNote = """
     # 첫 노트
 
-    이 폴더가 **느린 여백**이 쓰는 곳입니다. `파일` 앱의 iCloud Drive 에서도
-    같은 폴더가 보입니다 — 거기에 `.md` 파일을 넣으면 여기 목록에 뜹니다.
+    이 폴더가 **느린 여백**이 쓰는 곳입니다. `파일` 앱의 iCloud Drive 에서는
+    `Slow Margin` 폴더로 보입니다 — 거기에 `.md` 파일을 넣으면 여기 목록에 뜹니다.
 
     ## 해 볼 것
 
@@ -129,8 +125,8 @@ enum FolderSource {
     private static let firstNoteEnglish = """
     # First Note
 
-    This folder is where **Slow Margin** keeps your notes. You’ll find the same folder
-    in iCloud Drive in the `Files` app — drop a `.md` file there and it shows up in this list.
+    This folder is where **Slow Margin** keeps your notes. You’ll find it as the `Slow Margin`
+    folder in iCloud Drive in the `Files` app — drop a `.md` file there and it shows up in this list.
 
     ## Things to try
 

@@ -3,7 +3,7 @@
 #
 # **앱 이름은 아래 두 줄에만 있다** (docs/roadmap.md §4):
 #   · CFBundleDisplayName          — 홈 화면 · 스토어
-#   · NSUbiquitousContainerName    — Files 앱의 폴더 이름
+#   · NSUbiquitousContainerName    — Files 앱의 폴더 이름 (언어 구분 없이 Slow Margin 하나 · 221)
 # 타깃 이름(Notebook)과 번들 ID 는 이름과 무관하게 고정한다.
 #
 # Info.plist 를 파일로 두지 않고 여기서 만든다 — `sources: App` 이 그 파일을
@@ -151,7 +151,9 @@ targets:
             NSUbiquitousContainerIsDocumentScopePublic: true
             NSUbiquitousContainerSupportedFolderLevels: Any
             # Files 앱에 보이는 폴더 이름.
-            NSUbiquitousContainerName: 느린 여백
+            # 221 (2026-10-07 사용자 — 나): 한국어 · 영어 모두 이 이름 하나. 언어마다 다르게 두면 마지막으로 앱을 연
+            # 기기의 언어에 따라 Files 의 이름표가 오간다 (빌드 90 · 5 — 이 앱만 English 로 연 순간 바뀌었다).
+            NSUbiquitousContainerName: Slow Margin
 
   # 213 — 다른 앱의 공유 메뉴에서 **느린 여백에 보내기** (2026-10-03 사용자 — 1.0.6 에 넣어 낸다).
   # 받은 것을 앱 그룹 상자에 두기만 한다 — 사용자 폴더는 앱이 연다 (Shared/ShareInbox.swift).
