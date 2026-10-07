@@ -2,3 +2,4 @@
 "CFBundleDisplayName" = "Slow Margin";
 "NSPhotoLibraryUsageDescription" = "Slow Margin uses your photo library to pick photos for your notes. It reads only the photos you choose.";
 "NSCameraUsageDescription" = "Slow Margin uses the camera to take photos for your notes.";
+"마크다운 문서" = "Markdown document";

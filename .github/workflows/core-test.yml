@@ -13,6 +13,9 @@ on:
     paths:
       - "Packages/Core/**"
       - "Tools/golden/**"
+      - "Tools/l10n/**"
+      - "App/Localizable.xcstrings"
+      - "ShareExtension/Localizable.xcstrings"
       - ".github/workflows/core-test.yml"
   pull_request:
     paths:
@@ -45,6 +48,14 @@ jobs:
         run: |
           .venv/bin/python Tools/golden/generate.py --check || {
             echo "::error::Tools/golden/generate.py 를 돌리고 결과를 커밋하세요."
+            exit 1
+          }
+
+      # 219 — 영문판. 뽑은 열쇠마다 영어가 있고, 숫자 · 이름 자리가 맞고, 번역 목록이 en.json 에서 만든 그대로인가.
+      - name: 영어 번역이 빠짐없고 번역 목록이 최신인가
+        run: |
+          python3 Tools/l10n/build.py --check || {
+            echo "::error::Tools/l10n/en.json 을 채우고 python3 Tools/l10n/build.py 를 돌려 커밋하세요."
             exit 1
           }
 

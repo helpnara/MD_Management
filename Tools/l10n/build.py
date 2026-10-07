@@ -23,7 +23,7 @@ EN = ROOT / "Tools/l10n/en.json"
 REVIEW = ROOT / "docs/en/strings-review.md"
 # xliff 의 대상(target) 이름 → 번역 목록 파일. 대상 이름은 xcodebuild 가 정한다 — 모르는 이름이면 멈춘다.
 CATALOGS = {
-    "Notebook": ROOT / "App/Localizable.xcstrings",
+    "App": ROOT / "App/Localizable.xcstrings",
     "ShareExtension": ROOT / "ShareExtension/Localizable.xcstrings",
 }
 
@@ -78,10 +78,26 @@ def build(extracted, en):
                     strings[key] = {}
                     review_rows.append((target, key, "❓"))
                     continue
-                if placeholders(key) != placeholders(value):
-                    problems.append(f"자리표시자 어긋남 [{target}] {key!r} → {value!r}")
-                strings[key] = {"localizations": {"en": {"stringUnit": {"state": "translated", "value": value}}}}
-                review_rows.append((target, key, value))
+                # 단수 · 복수 (`{"one": …, "other": …}`) — 숫자 자리가 **하나뿐인** 문구에만 쓴다. 자리가 여럿이면 어느 숫자로
+                # 고를지 모호하다 — 그런 문구는 *Links updated …: 3* 처럼 숫자를 뒤로 빼서 단수 · 복수가 필요 없게 쓴다.
+                forms = value if isinstance(value, dict) else {"": value}
+                if isinstance(value, dict):
+                    if set(value) - {"zero", "one", "two", "few", "many", "other"} or "other" not in value:
+                        problems.append(f"단수 · 복수 꼴이 틀렸다 [{target}] {key!r}")
+                    if len(placeholders(key)) != 1 or placeholders(key)[0][1] != "lld":
+                        problems.append(f"단수 · 복수는 숫자 자리 하나뿐인 문구에만 [{target}] {key!r}")
+                for form in forms.values():
+                    if placeholders(key) != placeholders(form):
+                        problems.append(f"자리표시자 어긋남 [{target}] {key!r} → {form!r}")
+                if isinstance(value, dict):
+                    unit = {"variations": {"plural": {
+                        name: {"stringUnit": {"state": "translated", "value": text}} for name, text in value.items()}}}
+                    shown = " / ".join(f"{name}: {text}" for name, text in value.items())
+                else:
+                    unit = {"stringUnit": {"state": "translated", "value": value}}
+                    shown = value
+                strings[key] = {"localizations": {"en": unit}}
+                review_rows.append((target, key, shown))
         catalogs[target] = {"sourceLanguage": "ko", "strings": strings, "version": "1.0"}
     stale = sorted(set(en) - used)
     for key in stale:
@@ -107,7 +123,7 @@ def render_review(rows):
         "",
     ]
     for target in sorted({r[0] for r in rows}):
-        title = "앱" if target == "Notebook" else "공유 메뉴 (확장)"
+        title = "앱" if target == "App" else "공유 메뉴 (확장)"
         out += [f"## {title}", "", "| 한국어 | English |", "|---|---|"]
         out += [f"| {cell(k)} | {cell(v)} |" for t, k, v in rows if t == target]
         out.append("")
