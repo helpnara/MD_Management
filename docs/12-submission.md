@@ -12,7 +12,7 @@ updated: 2026-09-27
 
 ---
 
-## 0. 지금 상태 (2026-10-07 — **1.0.7 (빌드 84) 승인** · `main` = 1.0.7)
+## 0. 지금 상태 (2026-10-07 — **1.1 (빌드 92) 심사 준비** · 1.0.7 승인 · 1.0.8(빌드 86)은 내지 않고 1.1 에 합침)
 
 | | |
 |---|---|
@@ -159,6 +159,17 @@ https://helpnara.github.io/MD_Management/privacy/
 > App Store Connect → 앱 정보 → 오른쪽 위 언어에서 **English (U.S.)** 를 더하면 칸이 하나 더 생긴다. 한국어 칸은 그대로 둔다.
 > 글자 수는 `python3 Tools/store/count.py` 가 이 칸들도 센다. 다른 앱 이름은 쓰지 않는다 (애플의 `Files` · 맥은 한국어 칸에도 쓴 말이다).
 
+### 1.1 제출 순서 — 영어 칸 더하기 (2026-10-07 사용자 — *빌드 하고 심사 제출하자*)
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1` (한국어 칸은 지난 판에서 따라온다)
+2. 한국어 칸: *이 버전의 새로운 기능* 에 §6 아래 울타리를 붙인다 · **빌드** 칸에서 **92** 를 고른다 (91 은 새 아이콘 전 — 고르지 않는다)
+3. 오른쪽 위 언어 메뉴 → **English (U.S.)** 더하기 → 아래 *Name* ~ *What’s New* 를 칸마다 붙인다
+   - **앱 정보** 쪽(이름 · 부제 · 개인정보 처리방침 URL)과 **버전** 쪽(프로모션 · 설명 · 키워드 · 지원 URL · 새로운 기능 · 스크린샷)이 다른 화면이다 — 둘 다 English 로 바꿔 채운다
+   - 개인정보 처리방침 URL · 지원 URL 은 영어 쪽 주소 (아래)
+4. **영어 스크린샷.** 영어 칸에 안 올리면 **한국어 스크린샷이 그대로 보인다.** 영어 견본 노트 `docs/samples/en/` 으로 한국어 때와 같은 차례로 찍는다
+   (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
+5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
+
 ### Name
 
 ```
@@ -255,6 +266,8 @@ https://helpnara.github.io/MD_Management/en/privacy/
 • Slow Margin now speaks English. To use it in English, open Settings, find Slow Margin, and set its Language to English.
 • With a folder selected, New Folder now creates the new folder inside it (up to two levels).
 • Touch and hold a button in the formatting toolbar to see its name.
+• In the Files app, the iCloud Drive folder is now named Slow Margin. It’s the same folder, and your notes stay right where they are.
+• A new app icon.
 ```
 
 ---
@@ -461,5 +474,7 @@ python3 Tools/store/count.py
 • 영어를 지원합니다. 설정 앱에서 느린 여백을 찾아 언어를 English 로 바꾸면 이 앱만 영어로 쓸 수 있습니다.
 • 폴더를 고른 채 새 폴더를 만들면 그 폴더 안에 만들어집니다 (두 단계까지).
 • 아래 도구 띠의 단추를 길게 누르면 단추 이름이 뜹니다.
+• 파일 앱의 iCloud Drive 에 보이는 폴더 이름이 Slow Margin 으로 바뀝니다. 같은 폴더이고 노트는 그대로입니다.
+• 앱 아이콘이 새로 바뀌었습니다.
 ```
 
