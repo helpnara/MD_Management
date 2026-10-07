@@ -850,6 +850,12 @@ def folder_move_targets(path: str, paths: list[str]) -> list[str]:
     return out
 
 
+def folder_creation_parent(selected: str) -> str:
+    """218 — 새 폴더를 만들 자리: 고른 폴더 안, 두 단계(만들 수 있는 끝)면 최상위 조상 안."""
+    parts = [p for p in selected.split("/") if p]
+    return "/".join(parts[:min(len(parts), 2 - 1)])
+
+
 def build_folder_tree_cases() -> list[dict]:
     spec = json.loads(FOLDER_TREE_CASES.read_text(encoding="utf-8"))
     out = []
@@ -869,6 +875,12 @@ def build_folder_tree_cases() -> list[dict]:
             for m in item["move"]:
                 if folder_depth(m["result"]) > 2:
                     raise SystemExit(f"::error::[{case['name']}] 옮긴 폴더가 두 단계보다 깊다: {m}")
+        if "create" in case:
+            item["create"] = {f: folder_creation_parent(f) for f in case["create"]}
+            for f, parent in item["create"].items():
+                # 만든 폴더(자리 + 1)는 두 단계를 넘지 않고, 자리는 고른 폴더거나 그 조상이다.
+                if folder_depth(parent) + 1 > 2 or not (parent == "" or f == parent or f.startswith(parent + "/")):
+                    raise SystemExit(f"::error::[{case['name']}] 새 폴더 자리가 틀렸다: {f} → {parent}")
         if "targets" in case:
             item["targets"] = {f: folder_move_targets(f, paths) for f in case["targets"]}
             for f, ts in item["targets"].items():

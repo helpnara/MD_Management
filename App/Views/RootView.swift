@@ -74,6 +74,15 @@ struct RootView: View {
         // **시트는 하나로 모은다.** 한 뷰에 `.sheet` 를 여러 개 걸면 마지막
         // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
         .modifier(NoteActionAlerts())
+        // 새 폴더 (52) — 최상위에, 또는 폴더 안에 (203 · 218). 두 단계에서 멈춘다. **바깥에 건다** (218) — 폴더 화면과 노트 목록
+        // 화면 둘 다 이 창을 띄운다. 폴더 화면에만 걸면 아이폰에서 노트 목록을 보는 동안 안 떴다.
+        .alert("새 폴더", isPresented: $library.creatingFolder) {
+            TextField("폴더 이름", text: $library.newFolderName)
+            Button("만들기") { Task { await library.finishCreateFolder() } }
+            Button("취소", role: .cancel) { library.creatingFolder = false }
+        } message: {
+            Text(library.newFolderMessage)
+        }
         .sheet(item: $library.sheet) { sheet in
             // **시트에 바깥 화면의 폭을 알려 준다.** 아이패드의 시트는 자기 폭이 compact 라
             // 자기 size class 만 보면 아이폰인 줄 안다 — 그래서 띠가 둘이 됐다 (빌드 24 · 13번).
@@ -379,7 +388,13 @@ private struct FolderSidebar: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    library.beginCreateFolder()
+                    // **아이패드는 고른 폴더 안에** (218) — 폴더 칸에 고른 폴더가 늘 보인다. **아이폰은 최상위에** — 폴더 화면으로
+                    // 돌아오면 고른 폴더가 안 보여, 보이지 않는 폴더 안에 만들면 헷갈린다. 아이폰은 노트 목록 화면의 단추가 그 몫이다.
+                    if horizontalSizeClass == .compact {
+                        library.beginCreateFolder()
+                    } else {
+                        library.beginCreateFolderHere()
+                    }
                 } label: {
                     Label("새 폴더", systemImage: "folder.badge.plus")
                 }
@@ -397,14 +412,6 @@ private struct FolderSidebar: View {
         .sheet(item: $library.movingFolder) { folder in
             FolderMoveView(folder: folder)
                 .environmentObject(library)
-        }
-        // 새 폴더 (52) — 최상위에, 또는 최상위 폴더 안에 (203). 두 단계에서 멈춘다.
-        .alert("새 폴더", isPresented: $library.creatingFolder) {
-            TextField("폴더 이름", text: $library.newFolderName)
-            Button("만들기") { Task { await library.finishCreateFolder() } }
-            Button("취소", role: .cancel) { library.creatingFolder = false }
-        } message: {
-            Text("\(library.newFolderParent.isEmpty ? library.folderName : library.newFolderParent) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.")
         }
     }
 
@@ -590,6 +597,15 @@ private struct NoteList: View {
                 .hidden()
         }
         .toolbar {
+            // **이 폴더 안에 새 폴더** (218) — 노트 목록의 폴더가 곧 고른 폴더다. 아이폰은 여기가 하위 폴더를 만드는 길.
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    library.beginCreateFolderHere()
+                } label: {
+                    Label(FolderTree.depth(of: library.selectedFolder) == 1 ? "이 폴더 안에 새 폴더" : "새 폴더",
+                          systemImage: "folder.badge.plus")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     Task { await library.createNote() }

@@ -121,11 +121,25 @@ final class LibraryModel: ObservableObject {
     /// 새 폴더를 만들 자리 — 최상위면 빈 문자열 (203).
     @Published var newFolderParent = ""
 
+    /// 새 폴더 창에 보일 말 — **어디에 만드는지 늘 말한다** (218). 숨은 규칙이 되지 않게.
+    @Published private(set) var newFolderMessage = ""
+
     func beginCreateFolder(in parent: String = "") {
         guard FolderTree.depth(of: parent) < FolderTree.creatableDepth else { return }
         newFolderParent = parent
         newFolderName = ""
+        newFolderMessage = "\(parent.isEmpty ? folderName : parent) 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다."
         creatingFolder = true
+    }
+
+    /// **지금 고른 폴더 안에** 새 폴더 (218, 2026-10-07 사용자). 자리는 Core `FolderTree.creationParent` 하나가 정한다 —
+    /// 고른 폴더가 이미 두 단계면 그 위 폴더 안(고른 폴더와 같은 줄)에 만들고 창이 그렇게 말한다.
+    func beginCreateFolderHere() {
+        let parent = FolderTree.creationParent(for: selectedFolder)
+        beginCreateFolder(in: parent)
+        if FolderTree.depth(of: selectedFolder) >= FolderTree.creatableDepth {
+            newFolderMessage = "폴더는 두 단계까지라 \(parent) 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다."
+        }
     }
 
     /// **목록에 없는데 상세 칸에 떠 있는 노트** (T7). 링크를 따라온 것 — `assets/` 안의

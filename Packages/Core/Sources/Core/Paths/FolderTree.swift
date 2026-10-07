@@ -95,6 +95,15 @@ public enum FolderTree {
         return new + String(path.dropFirst(old.count))
     }
 
+    /// **새 폴더를 만들 자리** (218, 2026-10-07 사용자 — *다른 폴더를 클릭한 상태에서 새폴더를 만들면 하위 폴더를*).
+    /// 지금 고른 폴더 안 — 다만 이 앱이 만드는 폴더는 `creatableDepth` 에서 멈추므로, 고른 폴더가 이미 그 단계(또는 다른 앱이
+    /// 만든 더 깊은 폴더)면 **그 폴더의 조상 가운데 안에 만들 수 있는 가장 깊은 폴더** 안이다. 두 단계면 최상위 조상 — 고른 폴더와 같은 줄.
+    /// 최상위(빈 문자열)면 최상위.
+    public static func creationParent(for selected: String) -> String {
+        let parts = selected.split(separator: "/", omittingEmptySubsequences: true)
+        return parts.prefix(min(parts.count, creatableDepth - 1)).joined(separator: "/")
+    }
+
     /// `path` 가 `folder` 이거나 그 안인가.
     public static func isInside(_ path: String, _ folder: String) -> Bool {
         !folder.isEmpty && (path == folder || path.hasPrefix(folder + "/"))
