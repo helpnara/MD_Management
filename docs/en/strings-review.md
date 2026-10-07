@@ -33,8 +33,8 @@
 | (빈 파일) | (Empty File) |
 | **%@** 을 옮깁니다. 지금 있는 폴더는 고를 수 없습니다. | Moving **%@**. The folder it's in now can't be chosen. |
 | **%@** 폴더를 안의 노트 · 폴더와 함께 옮깁니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. 노트 안의 링크는 새 자리에 맞게 고칩니다. | Moves the folder **%@** with all its notes and folders. If the name is taken, a number is added. Links inside the notes are updated for the new location. |
+| **Slow Margin 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다. | **Files inside the Slow Margin folder open right away.** For files outside it, you'll be asked whether to import them. |
 | **공유** → 목록에서 **느린 여백** 을 고릅니다. | Tap **Share**, then choose **Slow Margin**. |
-| **느린 여백 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다. | **Files inside the Slow Margin folder open right away.** For files outside it, you'll be asked whether to import them. |
 | **되돌리기**는 원래 있던 폴더로 돌려놓습니다. 줄을 왼쪽으로 밀면 **영구 삭제**할 수 있습니다. 영구 삭제는 되돌릴 수 없어 확인 문구를 입력해야 합니다. 노트를 영구 삭제하면 **그 노트만 쓰던 첨부**도 함께 지워집니다. | **Restore** puts a note back in its original folder. Swipe left on a row to **delete it permanently**. Because this can't be undone, you'll be asked to type a confirmation word. Permanently deleting a note also deletes **any attachments used only by that note**. |
 | **비우기**를 하면 첨부도 모두 지워집니다. | **Empty** also deletes all attachments. |
 | **이미 마크다운을 모아 둔 폴더**가 있다면 그대로 열 수 있습니다. 점으로 시작하는 숨김 폴더는 목록에 보이지 않습니다. 고른 폴더는 다른 앱과 같이 쓰는 곳이므로, 아래 **파일을 바꾸는 설정** 을 끄는 편이 안전합니다. | If you **already keep Markdown files in a folder**, you can open it as is. Hidden folders (names that start with a dot) aren't shown. Since a chosen folder is shared with other apps, it's safer to turn off the **Settings That Change Files** below. |
@@ -57,7 +57,7 @@
 | iCloud 폴더 다시 찾기 | Look for iCloud Folder Again |
 | iCloud 폴더를 쓰지 못하고 있습니다 | Can't Access the iCloud Folder |
 | iCloud 폴더를 쓰지 못하고 있습니다 · 눌러서 보기 | Can't access the iCloud folder · Tap for details |
-| iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.↵↵느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.↵↵평소 쓰는 노트는 **느린 여백 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다. | iOS **doesn't let you choose a default app for each file type.** Settings → Apps → Default Apps only covers things like browsers, mail and messaging, and apps can't set themselves as the default.↵↵Slow Margin tells iOS that it can open Markdown, so it appears in the **Share** and **Open In** lists. If the Files app offers Open In, you can choose it there too.↵↵For everyday notes, it's best to keep them **inside the Slow Margin folder**, where the app edits and saves files in place. |
+| iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.↵↵느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.↵↵평소 쓰는 노트는 **Slow Margin 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다. | iOS **doesn't let you choose a default app for each file type.** Settings → Apps → Default Apps only covers things like browsers, mail and messaging, and apps can't set themselves as the default.↵↵Slow Margin tells iOS that it can open Markdown, so it appears in the **Share** and **Open In** lists. If the Files app offers Open In, you can choose it there too.↵↵For everyday notes, it's best to keep them **inside the Slow Margin folder**, where the app edits and saves files in place. |
 | 가져오기 | Import |
 | 가져오면 **복사본**이 내 폴더에 생깁니다. 원본은 그대로 둡니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | Importing adds a **copy** to your folder and leaves the original as is. If the name is taken, a number is added. |
 | 가져오지 못했습니다: %@ | Couldn't import: %@ |
@@ -212,7 +212,7 @@
 | 이 노트의 링크가 모두 제 파일을 가리킵니다. | Every link in this note points to a file that exists. |
 | 이 링크가 가리키는 파일이 폴더에 없습니다.↵%@↵↵링크의 경로는 노트가 있는 폴더 기준입니다. | The file this link points to isn't in the folder.↵%@↵↵Link paths are relative to the note's folder. |
 | 이 설정을 켜면 노트를 열 때 첫 줄과 파일명을 맞춥니다. 고치지 않아도 파일이 달라질 수 있습니다.↵↵다른 앱과 같이 쓰는 폴더라면 켜지 마세요. | With this on, opening a note makes its first line and file name match. Files may change even if you don't edit them.↵↵Don't turn this on for folders shared with other apps. |
-| 이 파일은 **느린 여백 폴더 밖**에 있습니다. | This file is **outside the Slow Margin folder**. |
+| 이 파일은 **Slow Margin 폴더 밖**에 있습니다. | This file is **outside the Slow Margin folder**. |
 | 이 파일의 글자 인코딩을 알아보지 못했습니다. UTF-8 로 저장한 뒤 다시 열어 주세요. | Couldn't detect this file's text encoding. Save it as UTF-8 and open it again. |
 | 이 폴더 안에 새 폴더 | New Folder in This Folder |
 | 이 폴더에 마크다운 파일이 없습니다. | This folder has no Markdown files. |
