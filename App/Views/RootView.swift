@@ -836,7 +836,7 @@ private struct FolderMoveView: View {
                             Task { await library.finishMoveFolder(folder, into: path) }
                         } label: {
                             Label {
-                                Text(path.isEmpty ? "\(library.folderName) (맨 위)" : path)
+                                Text(path.isEmpty ? String(localized: "\(library.folderName) (맨 위)") : path)
                                     .font(.scaled(.body))
                                     .foregroundStyle(Palette.ink)
                             } icon: {
@@ -1583,7 +1583,7 @@ private struct FormatBar: View {
             .onTapGesture(perform: action)
             .onLongPressGesture(minimumDuration: 0.4) { showName(name) }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(isOn ? "\(name) 켜짐" : name)
+            .accessibilityLabel(isOn ? String(localized: "\(name) 켜짐") : name)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction(.default, action)
     }

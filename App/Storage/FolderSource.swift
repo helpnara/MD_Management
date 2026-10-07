@@ -66,7 +66,15 @@ enum FolderSource {
 
     /// `Files` 앱에 보이는 폴더 이름. `project.yml` 의 `NSUbiquitousContainerName`
     /// 을 읽으므로 **이름이 사는 곳이 늘지 않는다** (docs/roadmap.md §4).
+    ///
+    /// **앱의 언어로 먼저 읽는다** (221). 영어 이름은 `en.lproj/InfoPlist.strings` 의 같은 열쇠에 있다 — 문구 파일은
+    /// 맨 위 열쇠만 바꿔 끼우므로 `localizedInfoDictionary` 에 맨 위 열쇠로 들어온다. 그것이 없으면(한국어) 원래 자리에서 읽는다.
+    /// 이 이름은 겉이름일 뿐이다 — 폴더는 열쇠(`iCloud.com.helpnara.markdown`)로 찾으므로 이름이 달라도 폴더는 하나다.
     static var iCloudFolderName: String? {
+        if let localized = Bundle.main.localizedInfoDictionary?["NSUbiquitousContainerName"] as? String,
+           !localized.isEmpty {
+            return localized
+        }
         guard let containers = Bundle.main.object(forInfoDictionaryKey: "NSUbiquitousContainers")
                 as? [String: Any] else { return nil }
         for value in containers.values {

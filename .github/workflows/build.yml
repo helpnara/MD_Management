@@ -241,6 +241,17 @@ jobs:
               sys.exit('::error::NSUbiquitousContainerName 이 비어 있습니다')
           print('iCloud 설정 정상:', entry['NSUbiquitousContainerName'])
           "
+          # **영어 겉이름도 번들에 들어갔나** (221). 문구 파일은 빌드가 이진 plist 로 바꿔 넣는다.
+          EN="$APP/en.lproj/InfoPlist.strings"
+          test -f "$EN" || { echo "::error::en.lproj/InfoPlist.strings 가 번들에 없습니다"; exit 1; }
+          plutil -convert json -o - "$EN" | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          name = d.get('NSUbiquitousContainerName')
+          if not name:
+              sys.exit('::error::영어 NSUbiquitousContainerName 이 번들에 없습니다: ' + repr(sorted(d)))
+          print('영어 iCloud 폴더 이름:', name, '· 홈 화면:', d.get('CFBundleDisplayName'))
+          "
 
       # **화소 검사를 스크린샷 앞에 깐다.** 다시 찍는 고리가 심판과 **같은 것**을
       # 봐야 한다 — 크기만 보면 사이드바가 그려진 아이패드 3단 화면은 오른쪽 칸이

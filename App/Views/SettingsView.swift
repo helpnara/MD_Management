@@ -274,7 +274,7 @@ struct IncomingFileSheet: View {
                 }
 
                 Section("미리보기") {
-                    Text(file.text.isEmpty ? "(빈 파일)" : String(file.text.prefix(1200)))
+                    Text(file.text.isEmpty ? String(localized: "(빈 파일)") : String(file.text.prefix(1200)))
                         .font(.scaledMono(.caption))
                         .foregroundStyle(Palette.ink)
                         .textSelection(.enabled)
