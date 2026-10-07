@@ -9,24 +9,42 @@ import UIKit
 @MainActor
 enum SampleFolder {
 
+    /// 견본 한 벌 — 폴더 · 파일 이름과 글. **이름도 글이다** (219) — 영어 화면에 한국어 파일 이름이 서면 견본이 아니다.
+    private struct SampleSet {
+        let folder, image, welcome, meeting, ideas, idea: String
+        let welcomeText, meetingText, ideaText: String
+    }
+
+    private static let korean = SampleSet(
+        folder: "둘러보기", image: "스케치.png", welcome: "반가워요.md", meeting: "2026-09-13 회의.md",
+        ideas: "아이디어", idea: "앱 구상.md",
+        welcomeText: sampleWelcome, meetingText: sampleMeeting, ideaText: sampleIdea)
+
+    private static let english = SampleSet(
+        folder: "Sample Notes", image: "sketch.png", welcome: "Welcome.md", meeting: "2026-09-13 Meeting.md",
+        ideas: "Ideas", idea: "App Concept.md",
+        welcomeText: englishWelcome, meetingText: englishMeeting, ideaText: englishIdea)
+
     static func make() -> URL {
+        // 앱이 지금 보여 주는 언어를 따른다 — 화면 문구와 같은 판단(`AppLanguage`)이다.
+        let set = AppLanguage.isEnglish ? english : korean
         let root = FileManager.default.temporaryDirectory
             // 폴더 이름이 곧 화면 상단 제목이다 (설계서 §0). `sample-folder` 가
             // 제목으로 뜨던 것을 고쳤다 (빌드 2 스크린샷).
-            .appendingPathComponent("둘러보기", isDirectory: true)
+            .appendingPathComponent(set.folder, isDirectory: true)
         try? FileManager.default.removeItem(at: root)
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
 
         let assets = root.appendingPathComponent("assets", isDirectory: true)
         try? FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
-        writePlaceholderImage(to: assets.appendingPathComponent("스케치.png"))
+        writePlaceholderImage(to: assets.appendingPathComponent(set.image))
 
-        write(sampleWelcome, to: root.appendingPathComponent("반가워요.md"))
-        write(sampleMeeting, to: root.appendingPathComponent("2026-09-13 회의.md"))
+        write(set.welcomeText, to: root.appendingPathComponent(set.welcome))
+        write(set.meetingText, to: root.appendingPathComponent(set.meeting))
 
-        let ideas = root.appendingPathComponent("아이디어", isDirectory: true)
+        let ideas = root.appendingPathComponent(set.ideas, isDirectory: true)
         try? FileManager.default.createDirectory(at: ideas, withIntermediateDirectories: true)
-        write(sampleIdea, to: ideas.appendingPathComponent("앱 구상.md"))
+        write(set.ideaText, to: ideas.appendingPathComponent(set.idea))
 
         return root
     }
@@ -132,4 +150,77 @@ enum SampleFolder {
 
     *기울임* 과 **굵게** 와 `인라인 코드` 가 어떻게 보이는지 보세요.
     """
+
+    // MARK: - 영어 견본 (219) — 한국어 견본과 같은 자리에 같은 것을 둔다 (목록 · 표 · 체크상자 · 사진 · 코드 · 링크).
+    // 따옴표는 둥근 것(’)만 쓴다 — 곧은 따옴표 규칙(CLAUDE.md §5).
+
+    private static let englishWelcome = """
+    # Welcome
+
+    These are **sample notes**. Nothing has been added to your own folders.
+
+    Everything here is temporary while the banner at the top is showing. It goes away when you close the app.
+
+    ## Things to try
+
+    - [ ] Tap a line to place the cursor — only that line shows its Markdown
+    - [ ] Tap the book icon at the top to see how tables and code look
+    - [x] Browse the list
+
+    | What | Where |
+    |---|---|
+    | View and edit | Open any note |
+    | Find | Search below |
+    | Send | Share at the top |
+
+    > Your files are yours. Delete the app and they stay right where they are.
+    """
+
+    private static let englishMeeting = """
+    ---
+    title: 2026-09-13 Meeting
+    tags: [meeting, planning]
+    created: 2026-09-13
+    ---
+
+    # 2026-09-13 Meeting
+
+    ![Sketch](assets/sketch.png)
+
+    ## Decisions
+
+    1. Files are the source of truth — the app keeps no copy of its own
+    2. Search works from two characters
+    3. Sharing sends a single file
+
+    ## Next steps
+
+    - [ ] Test typing on a real device
+    - [ ] Three-column layout on iPad
+
+    ```swift
+    // Code blocks keep their fixed-width font
+    let note = try store.readText(at: "2026-09-13 Meeting.md")
+    let summary = note.split(separator: "\\n").filter { !$0.isEmpty }.prefix(3).joined(separator: " / ") // long lines wrap to the screen width
+    ```
+    """
+
+    private static let englishIdea = """
+    # App Concept
+
+    This note lives in a subfolder. Link to a nearby note, like the [meeting notes](<../2026-09-13 Meeting.md>),
+    and it travels along when you share — one level deep.
+
+    ---
+
+    See how *italic*, **bold**, and `inline code` look.
+    """
+}
+
+/// 앱이 지금 보여 주는 언어 (219). 화면 문구는 번역 목록이 고르고, 앱이 **스스로 짓는 글**(견본 · 첫 노트)은 이것을 본다 —
+/// 같은 판단이어야 영어 화면에 한국어 견본이 서지 않는다. 기기 언어가 아니라 **이 앱의 언어**다 (설정 → 앱 → 언어).
+enum AppLanguage {
+    static var isEnglish: Bool {
+        Bundle.main.preferredLocalizations.first?.hasPrefix("en") == true
+    }
 }

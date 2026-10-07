@@ -1350,7 +1350,8 @@ private struct LinkPickerBar: View {
                     }
                     // **없으면 만든다** (147, 사용자 — 애플 메모처럼). 지금 노트와 같은 폴더에.
                     Button { library.createNoteAndLink(named: query.text) } label: {
-                        Label(query.text + " — 새 노트", systemImage: "plus")
+                        // `+` 로 이으면 번역 목록을 비껴간다 (219 · 빌드 89 에서 찾음) — 한 덩이 문구로.
+                        Label(String(localized: "\(query.text) — 새 노트"), systemImage: "plus")
                             .font(Font.scaled(.body))
                             .lineLimit(1)
                             .padding(.horizontal, Metrics.rowSpacing)
@@ -1483,6 +1484,9 @@ private struct FormatBar: View {
     /// **모델을 여기서 바로 본다.** 클로저로 넘기면 주 액터 격리가 벗겨져 Swift 6 가
     /// 막는다 — 이 화면의 다른 단추들과 같은 꼴로 둔다.
     @EnvironmentObject private var library: LibraryModel
+    /// 길게 눌러 띄운 단추 이름 (220). 몇 초 뒤 저절로 걷힌다.
+    @State private var shownName: String?
+    @State private var hideNameTask: Task<Void, Never>?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -1519,6 +1523,34 @@ private struct FormatBar: View {
         .overlay(alignment: .top) {
             Rectangle().fill(Palette.rule).frame(height: 0.5)
         }
+        // **길게 누른 단추의 이름** (220) — 띠 바로 위 가운데에 잠깐 띄운다. 띠 높이를 바꾸지 않으려고
+        // 덧씌우기로 그리고, 말풍선의 아래 끝을 띠 위 끝에 맞춘다 (숫자로 못 박지 않는다).
+        .overlay(alignment: .top) {
+            if let shownName {
+                Text(shownName)
+                    .font(.scaled(.footnote))
+                    .foregroundStyle(Palette.paper)
+                    .padding(.horizontal, Metrics.gutter * 0.75)
+                    .padding(.vertical, Metrics.rowSpacing)
+                    .background(Capsule().fill(Palette.ink.opacity(0.85)))
+                    .alignmentGuide(VerticalAlignment.top) { $0[.bottom] + Metrics.rowSpacing }
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+        .animation(.easeOut(duration: 0.15), value: shownName)
+    }
+
+    /// 단추 이름을 잠깐 띄운다 (220). 연달아 누르면 앞의 것을 거두고 새 이름으로 다시 센다.
+    private func showName(_ name: String) {
+        hideNameTask?.cancel()
+        shownName = name
+        hideNameTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(1500))
+            guard !Task.isCancelled else { return }
+            shownName = nil
+        }
     }
 
     private var rule: some View {
@@ -1527,9 +1559,9 @@ private struct FormatBar: View {
             .frame(width: 0.5, height: Metrics.scaledLength(20))
     }
 
-    /// 글자는 안 보이고 **아이콘만** 선다 — 띠가 한 줄을 넘지 않게. 이름은 **보이스오버만** 읽는다 —
-    /// 길게 눌러도 이름이 뜨지 않는다 (예전 주석은 *길게 누르기가 읽는다* 고 적어, 빌드 88 · 7번 확인 목록이 없는 동작을 물었다).
-    /// 길게 누르면 메뉴가 뜨는 것은 목록 모양 단추(`listButton`) 하나뿐이다.
+    /// 글자는 안 보이고 **아이콘만** 선다 — 띠가 한 줄을 넘지 않게. 이름은 보이스오버가 읽고,
+    /// **길게 누르면 띠 위에 잠깐 뜬다** (220 — 빌드 88 · 7번에서 사용자가 없는 동작을 찾았다). 길게 누른 것은
+    /// 이름만 보려는 것이라 **서식은 걸지 않는다.** 목록 모양 단추(`listButton`)는 길게 누르면 메뉴가 뜬다 — 그대로 둔다.
     ///
     /// **걸려 있으면 눌린 모습**이다 (128) — 파란 칸에 흰 글자. 색만으로 가르지 않으려고
     /// 보이스오버에는 `켜짐` 을 함께 읽힌다 (색을 못 가리는 사람도 있다).
@@ -1541,13 +1573,19 @@ private struct FormatBar: View {
 
     /// **모양은 한 자리에만 적는다.** 링크 단추를 더하면서 크기 · 색을 옆에 또 적었다가
     /// 곧 갈릴 뻔했다 (`CLAUDE.md` §1 — 같은 것을 재는 곳이 둘이면 갈린다).
+    ///
+    /// **`Button` 이 아니라 두 손짓이다** (220). `Button` 은 오래 누르다 떼어도 동작을 하므로 *이름만 보기* 가 안 된다.
+    /// 짧게 누르기와 길게 누르기를 함께 걸면 길게 누르기가 이긴 때 짧게 누르기는 오지 않는다. 손짓은 편집기의
+    /// 입력 초점을 빼앗지 않는다 — `Button(.plain)` 때와 같다. 보이스오버에는 단추로 읽히고 두 번 누르면 동작한다.
     private func button(_ name: String, _ symbol: String, on isOn: Bool = false,
                         action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            face(name, symbol, on: isOn)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(isOn ? "\(name) 켜짐" : name)
+        face(name, symbol, on: isOn)
+            .onTapGesture(perform: action)
+            .onLongPressGesture(minimumDuration: 0.4) { showName(name) }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(isOn ? "\(name) 켜짐" : name)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(.default, action)
     }
 
     /// 단추의 얼굴 — 일반 단추와 목록 단추(193)가 같이 쓴다.

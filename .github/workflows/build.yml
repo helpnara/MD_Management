@@ -398,6 +398,15 @@ jobs:
           shoot 05-reading.png -sampleFolder -readingMode
           shoot 06-reading-large-text.png -sampleFolder -readingMode \
             -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+          # **영어** (219) — 이 앱만 English 로 띄운다 (설정 → 앱 → 언어 와 같은 것). 영어 견본 노트 ·
+          # 영어 화면 문구가 함께 나와야 한다. 한국어 글자가 보이면 번역이 빠진 자리다. 영어 스토어 화면에도 쓴다.
+          EN=(-AppleLanguages "(en)" -AppleLocale en_US)
+          mkdir -p screenshots/en
+          shoot en/01-list.png -sampleFolder "${EN[@]}"
+          shoot en/02-note.png -sampleFolder -openFirstNote "${EN[@]}"
+          shoot en/05-reading.png -sampleFolder -readingMode "${EN[@]}"
+          shoot en/09-settings.png -sampleFolder -settings "${EN[@]}"
+          shoot en/13-search.png -sampleFolder -search Meeting "${EN[@]}"
 
           # ── 다크 모드 ──
           xcrun simctl ui "$UDID" appearance dark
@@ -492,12 +501,14 @@ jobs:
             shoot ipad/02-reading.png -sampleFolder -readingMode
             shoot ipad/03-large-text.png -sampleFolder \
               -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+            mkdir -p screenshots/en/ipad
+            shoot en/ipad/01-split.png -sampleFolder "${EN[@]}"
             UDID="${{ steps.sim.outputs.udid }}"
           else
             echo "::warning::iPad 시뮬레이터가 없어 iPad 스크린샷을 건너뜁니다"
           fi
 
-          ls -la screenshots screenshots/dark screenshots/ipad 2>/dev/null || true
+          ls -la screenshots screenshots/dark screenshots/ipad screenshots/en screenshots/en/ipad 2>/dev/null || true
 
           # 한 장이라도 못 찍었으면 막는다. 스크린샷은 원격 세션에서 앱이 실제로
           # 도는지 보는 유일한 창구라, 못 찍은 채 초록이면 그게 제일 위험하다.

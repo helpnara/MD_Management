@@ -16,7 +16,14 @@ final class IncomingShareGoldenTests: XCTestCase {
             let title: String
             let markdown: String
         }
+        struct Inbox: Decodable {
+            let name: String
+            let existing: [String: Int]
+            let preferred: String
+            let result: String
+        }
         let shareCases: [Case]
+        let inboxCases: [Inbox]
     }
 
     func testMatchesGolden() throws {
@@ -31,6 +38,18 @@ final class IncomingShareGoldenTests: XCTestCase {
             XCTAssertEqual(got.markdown, item.markdown, "글 — [\(item.name)]")
             // 파일 이름과 첫 줄이 갈리지 않는다 — 목록의 제목과 같은 셈.
             XCTAssertEqual(FrontMatterParser.title(of: got.markdown, fileName: "아무개.md"), got.title, "[\(item.name)]")
+        }
+    }
+
+    /// 219 · ADR-0009 — **받은 글 폴더 고르기.** 한국어 · 영어 이름이 둘 다 있을 때 갈라지지 않게 고른다.
+    func testInboxFolderMatchesGolden() throws {
+        let here = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let url = here.appendingPathComponent("Golden/expected.json")
+        let cases = try JSONDecoder().decode(Golden.self, from: try Data(contentsOf: url)).inboxCases
+        XCTAssertFalse(cases.isEmpty, "정답표가 비었다")
+        for item in cases {
+            XCTAssertEqual(IncomingShare.inboxFolder(existing: item.existing, preferred: item.preferred),
+                           item.result, "[\(item.name)]")
         }
     }
 }

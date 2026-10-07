@@ -16,8 +16,23 @@ import Foundation
 /// 파이썬 쌍둥이: `Tools/golden/generate.py` 의 `incoming_share` (`shareCases`).
 public enum IncomingShare {
 
-    /// 받은 글이 들어갈 폴더 (금고 맨 위).
+    /// 받은 글이 들어갈 폴더의 한국어 이름 (금고 맨 위). 영어 기기는 `Inbox` — 실제로 쓸 폴더는 `inboxFolder` 가 고른다.
     public static let folder = "받은 글"
+
+    /// 받은 글 폴더가 될 수 있는 이름 — 앱이 아는 언어마다 하나 (219 · ADR-0009).
+    public static let folderNames = ["받은 글", "Inbox"]
+
+    /// **받은 글을 넣을 폴더** (219 · ADR-0009). `existing` 은 맨 위 폴더 이름 → 그 안 노트 수.
+    /// 받은 글 폴더가 될 수 있는 이름 가운데 **이미 있는 것**을 쓴다 — 한국어 아이폰과 영어 아이패드가 한 iCloud 를 쓸 때
+    /// `받은 글` 과 `Inbox` 로 갈리지 않게. 둘 다 있으면 노트가 많은 쪽, 같으면 기기 언어 쪽(`preferred`). 없으면 `preferred` 로 새로 만든다.
+    /// 한 번 고른 것을 기억하지 않는다 — 기억은 앱 DB 가 된다 (ADR-0001). 폴더 목록이 곧 기억이다.
+    /// 파이썬 쌍둥이: `inbox_folder` (`inboxCases`).
+    public static func inboxFolder(existing: [String: Int], preferred: String) -> String {
+        let present = folderNames.filter { existing[$0] != nil }
+        guard let most = present.map({ existing[$0] ?? 0 }).max() else { return preferred }
+        let top = present.filter { (existing[$0] ?? 0) == most }
+        return top.contains(preferred) ? preferred : top[0]
+    }
 
     public struct Note: Equatable, Sendable {
         /// 파일 이름이 될 제목 (`FolderStore.createNote` 가 파일 이름으로 다듬는다).

@@ -283,12 +283,13 @@ actor FolderStore {
         return stamp
     }
 
-    /// 충돌 사본의 이름. 파일 이름이라 `:` 를 못 쓴다 — `이름 (충돌 2026-09-14 14.02)`.
+    /// 충돌 사본의 이름. 파일 이름이라 `:` 를 못 쓴다 — `이름 (충돌 2026-09-14 14.02)` · 영어 `이름 (Conflict 2026-09-14 14.02)`.
+    /// 기기 언어를 따른다 (219 · ADR-0009) — 이 이름을 알아보는 코드는 없다. 사람이 읽고 합치는 이름이다.
     static func conflictName(for fileName: String, at date: Date = Date()) -> String {
         let clock = DateFormatter()
         clock.locale = Locale(identifier: "en_US_POSIX")
         clock.dateFormat = "yyyy-MM-dd HH.mm"
-        return "\(Paths.baseName(fileName)) (충돌 \(clock.string(from: date)))"
+        return String(localized: "\(Paths.baseName(fileName)) (충돌 \(clock.string(from: date)))")
     }
 
     /// **iCloud 가 스스로 만든 충돌 판본**을 끌어낸다 (설계서 §7.2). 두 기기가 같은 파일을
@@ -733,7 +734,7 @@ actor FolderStore {
         guard FolderTree.depth(of: parent) < FolderTree.creatableDepth else {
             throw CocoaError(.fileWriteNoPermission)
         }
-        let safe = Paths.safeFileName(name, fallback: "새 폴더")
+        let safe = Paths.safeFileName(name, fallback: String(localized: "새 폴더"))
         let base = parent.isEmpty ? safe : parent + "/" + safe
         var chosen = base
         for attempt in 2...999 {
@@ -747,7 +748,7 @@ actor FolderStore {
     /// 폴더 이름을 바꾼다 — **같은 부모 안에서** (203). 같은 이름이 있으면 `이름 2`. 새 상대경로를 준다.
     /// 예전에는 새 이름을 최상위에 만들었다 — 하위 폴더에 쓰면 최상위로 빠져나갔을 것이다.
     func renameFolder(_ relativePath: String, to newName: String) throws -> String {
-        let safe = Paths.safeFileName(newName, fallback: "새 폴더")
+        let safe = Paths.safeFileName(newName, fallback: String(localized: "새 폴더"))
         return try relocateFolder(relativePath, to: FolderTree.renamed(relativePath, to: safe))
     }
 
@@ -1123,7 +1124,7 @@ actor FolderStore {
         }
 
         let fileName = notePath.split(separator: "/").last.map(String.init) ?? notePath
-        let title = Paths.safeFileName(Paths.baseName(fileName), fallback: "노트")
+        let title = Paths.safeFileName(Paths.baseName(fileName), fallback: String(localized: "노트"))
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("share-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

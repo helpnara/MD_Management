@@ -1093,8 +1093,9 @@ final class LibraryModel: ObservableObject {
         guard let store else { return }
         await save()
         do {
-            let path = try await store.createNote(named: "새 노트", in: selectedFolder,
-                                                  text: "# 새 노트\n\n")
+            // 파일 이름이 되는 말도 기기 언어를 따른다 (219 · ADR-0009) — 한 번 만들면 파일이 원본이고 다시 바꾸지 않는다.
+            let name = String(localized: "새 노트")
+            let path = try await store.createNote(named: name, in: selectedFolder, text: "# \(name)\n\n")
             await reloadNotes()
             modeAlreadyChosen = true      // 쓰려고 만든 노트다 (124)
             selectedNoteID = path
@@ -1457,7 +1458,7 @@ final class LibraryModel: ObservableObject {
             }
             // 그 밖의 파일은 **메모리에 올리지 않고 복사한다** (181) — 수 GB 영상도 넣을 수 있게.
             let ext = Paths.fileExtension(name).lowercased()
-            let stem = Paths.safeFileName(Paths.baseName(name), fallback: "문서")
+            let stem = Paths.safeFileName(Paths.baseName(name), fallback: String(localized: "문서"))
             do {
                 let relative = try await store.copyAsset(from: url, stem: stem, ext: ext.isEmpty ? "bin" : ext,
                                                          besideNoteIn: folder)
@@ -2297,6 +2298,12 @@ final class LibraryModel: ObservableObject {
         guard !entries.isEmpty else { return }
         var made = 0
         var failed = 0
+        // **받은 글 폴더는 이미 있는 이름을 쓴다** (219 · ADR-0009) — 한국어 아이폰과 영어 아이패드가 한 iCloud 를 쓸 때
+        // `받은 글` 과 `Inbox` 로 갈리지 않게. 셈은 폴더 화면의 숫자(`noteCount(of:)`)를 그대로 쓴다 — 따로 세지 않는다.
+        let existing = Dictionary(uniqueKeysWithValues: folders
+            .filter { FolderTree.depth(of: $0.relativePath) == 1 }
+            .map { ($0.relativePath, noteCount(of: $0.relativePath)) })
+        let folder = IncomingShare.inboxFolder(existing: existing, preferred: String(localized: "받은 글"))
         for entry in entries {
             do {
                 var images: [String] = []
@@ -2311,12 +2318,12 @@ final class LibraryModel: ObservableObject {
                     }
                     guard let data else { continue }
                     images.append(try await store.writeAsset(data, stem: ImageImport.stem(), ext: ext,
-                                                             besideNoteIn: IncomingShare.folder))
+                                                             besideNoteIn: folder))
                 }
                 let note = IncomingShare.note(text: entry.item.text, url: entry.item.url,
                                               pageTitle: entry.item.pageTitle, images: images,
-                                              fallback: "받은 글 " + Self.shareClock.string(from: entry.item.created))
-                let path = try await store.createNote(named: note.title, in: IncomingShare.folder, text: note.markdown)
+                                              fallback: String(localized: "받은 글 \(Self.shareClock.string(from: entry.item.created))"))
+                let path = try await store.createNote(named: note.title, in: folder, text: note.markdown)
                 await inbox.remove(entry)
                 log("공유로 받은 글을 노트로: \(path) · 사진 \(images.count)장")
                 made += 1
@@ -2330,13 +2337,13 @@ final class LibraryModel: ObservableObject {
         if failed > 0 {
             report(String(localized: "공유로 받은 글 \(failed)개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다."))
         } else if made > 0 {
-            report(String(localized: "공유로 받은 글 \(made)개를 받은 글 폴더에 새 노트로 넣었습니다."))
+            report(String(localized: "공유로 받은 글 \(made)개를 \(folder) 폴더에 새 노트로 넣었습니다."))
         }
     }
 
     private var importingShared = false
 
-    /// 받은 글의 이름이 될 때 — 제목이 하나도 없을 때만 쓴다 (`받은 글 2026-10-04 07-30`).
+    /// 받은 글의 이름이 될 때 — 제목이 하나도 없을 때만 쓴다 (`받은 글 2026-10-04 07-30` · 영어 `Shared 2026-10-04 07-30`).
     private static let shareClock: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")

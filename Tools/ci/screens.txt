@@ -23,3 +23,9 @@
 dark/02-note.png       0,0.15,1,0.75
 ipad/01-split.png      0.56,0.06,1,0.90
 ipad/02-reading.png    0.56,0.06,1,0.90
+en/01-list.png         0,0.12,1,0.75
+en/02-note.png         0,0.15,1,0.75
+en/05-reading.png      0,0.15,1,0.75
+en/09-settings.png     0,0.15,1,0.80
+en/13-search.png       0,0.18,1,0.60
+en/ipad/01-split.png   0.56,0.06,1,0.90
