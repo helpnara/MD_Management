@@ -2135,6 +2135,16 @@
         }
       }
     },
+    "이 노트를 가리키는 노트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes Linking Here"
+          }
+        }
+      }
+    },
     "이 노트에는 이미 깨진 글자가 있습니다. 파일이 그렇게 저장돼 있어 앱이 되살릴 수 없습니다." : {
       "localizations" : {
         "en" : {
