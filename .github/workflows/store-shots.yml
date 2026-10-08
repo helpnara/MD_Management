@@ -5,8 +5,8 @@ name: 영어 스토어 스크린샷
 #
 # - 견본은 `docs/samples/en/` 다섯 노트와 사진 — 앱 안 폴더(Documents)에 넣고 `-storeFolder` 로 연다
 #   (iCloud 폴더인 척 — 배너 없이, 제목 `Slow Margin`). 이 앱만 English (`-AppleLanguages (en)`).
-# - **칸 크기는 지난번 실측대로** (`docs/11-store-screenshots.md` — 2026-09-24 사용자): 아이폰 칸은 **6.5인치 1242 × 2688**,
-#   아이패드 칸은 **13인치 2064 × 2752** (세로). 마지막 단계가 크기를 하나하나 재고, 다르면 실패한다.
+# - **칸 크기는 영어 칸의 실측대로** (2026-10-08 사용자 화면): 아이폰 칸은 **6.1인치 1206 × 2622** (한국어 칸은 6.5인치였다 — 언어마다 다르다),
+#   아이패드 칸은 **13인치 2064 × 2752** (세로). 둘 다 시뮬레이터가 **그 크기로 바로** 찍는다. 마지막 단계가 크기를 하나하나 재고, 다르면 실패한다.
 # - 결과: `docs/store/en-screenshots/` 에 커밋 + 아티팩트.
 #
 # 돌리는 법: `Tools/store/shots-request.txt` 에 한 줄을 더해 푸시한다 (새 흐름은 기본 브랜치에 없어 손으로 못 돌린다).
@@ -85,10 +85,10 @@ jobs:
                       continue
                   name = d["name"]
                   if name.startswith("iPhone") and "SE" not in name and "mini" not in name:
-                      # 1242 × 2688 에 모양이 가까운 차례 (Air 0.33% · Pro Max 0.39% · 기본 · Pro 0.45%)
-                      order = ["iPhone Air", "Pro Max", "Plus", "Pro", ""]
-                      rank = next((i for i, key in enumerate(order) if key and key in name), len(order))
-                      phones.append(((version, -rank), d["udid"], name))
+                      # **칸과 같은 크기(1206 × 2622)로 찍히는 기기만** — 늘리지도 줄이지도 않는다 (2026-10-08 영어 칸 실측).
+                      order = ["iPhone 17 Pro", "iPhone 17", "iPhone 16 Pro"]
+                      if name in order:
+                          phones.append(((version, -order.index(name)), d["udid"], name))
                   if name.startswith("iPad") and "13-inch" in name:
                       pads.append(((version, "Pro" in name, name), d["udid"], name))
           phone = max(phones) if phones else None
@@ -207,7 +207,7 @@ jobs:
           OUT=docs/store/en-screenshots
           rm -rf "$OUT"; mkdir -p "$OUT"
           for f in raw-shots/iphone-*.png; do
-            .ci-venv/bin/python Tools/store/fit.py "$f" iphone-6.5-portrait "$OUT/$(basename "$f")"
+            .ci-venv/bin/python Tools/store/fit.py "$f" iphone-6.1-portrait "$OUT/$(basename "$f")"
           done
           for f in raw-shots/ipad-*.png; do
             .ci-venv/bin/python Tools/store/fit.py "$f" ipad-13-portrait "$OUT/$(basename "$f")"
@@ -215,7 +215,12 @@ jobs:
           .ci-venv/bin/python - <<'PY'
           import glob, sys
           from PIL import Image
-          want = {"iphone": (1242, 2688), "ipad": (2064, 2752)}
+          want = {"iphone": (1206, 2622), "ipad": (2064, 2752)}
+          # 찍힌 그대로가 칸 크기여야 한다 — 늘린 그림이 아니게 (원본도 잰다)
+          for raw in sorted(glob.glob("raw-shots/*.png")):
+              size = Image.open(raw).size
+              kind = "iphone" if "/iphone-" in raw else "ipad"
+              print(("같음" if size == want[kind] else "다름") + f" 원본 {raw} {size}")
           bad = 0
           files = sorted(glob.glob("docs/store/en-screenshots/*.png"))
           for path in files:
