@@ -562,7 +562,7 @@ struct MarkdownEditor: UIViewRepresentable {
             refreshFocus(view)
         }
 
-        /// **스토어 스크린샷만 쓴다** (219 · `store-shots.yml`). `-caretAt 글` 이 있으면 처음 연 노트에서 그 글 끝에 커서를 두고
+        /// **스토어 스크린샷만 쓴다** (219 · `store-shots.yml`). `-caretAt 글` 이 있으면 처음 연 노트에서 그 글 **끝**에 커서를 두고
         /// 키보드를 올린다 — 커서 줄만 마크다운 원문으로 보이는 모습을 찍으려고. 사람 손에서는 이 인자가 없어 아무 일도 안 한다.
         private var launchCaretPlaced = false
         private func placeLaunchCaret(_ view: UITextView) {
@@ -575,7 +575,7 @@ struct MarkdownEditor: UIViewRepresentable {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak view] in
                 guard let view else { return }
                 view.becomeFirstResponder()
-                view.selectedRange = NSRange(location: found.location + found.length / 2, length: 0)
+                view.selectedRange = NSRange(location: found.location + found.length, length: 0)
             }
         }
 

@@ -180,7 +180,7 @@ jobs:
           # ── 아이폰 ──
           prepare "$PHONE"
           newest "$PHONE" "Weekly Plan.md"
-          shoot "$PHONE" iphone-1-edit.png 12 -openFirstNote -caretAt "clearing what"
+          shoot "$PHONE" iphone-1-edit.png 12 -openFirstNote -caretAt "clearing "
           shoot "$PHONE" iphone-2-list.png 8
           newest "$PHONE" "Lisbon Trip.md"
           shoot "$PHONE" iphone-3-reading.png 12 -readingMode
@@ -193,6 +193,8 @@ jobs:
           shoot "$PAD" ipad-1-edit.png 14
           newest "$PAD" "Lisbon Trip.md"
           shoot "$PAD" ipad-2-reading.png 16 -readingMode
+          # 검색 화면 오른쪽 칸에는 편집 모드가 보기 좋은 노트를 둔다 (표 · 사진 원문이 드러나지 않게)
+          newest "$PAD" "Weekly Plan.md"
           shoot "$PAD" ipad-3-search.png 12 -search plan
 
           ls -la "$RAW"

@@ -150,9 +150,10 @@ public enum MarkdownHTML {
     /// 줄마다 노트 이름(노트 목록의 제목과 같은 `Paths.baseName`)과, 맨 위 폴더가 아니면 흐린 폴더 경로. 누르면 `yb://note/…` —
     /// 본문의 노트 링크와 같은 길로 그 노트가 열린다 (`NoteLinkAction.note`). 파일에는 아무것도 안 쓴다.
     /// 목록은 `AttachmentLedger.backlinks` 가 정한다 — 여기서는 그리기만.
-    public static func backlinksHTML(_ paths: [String]) -> String {
+    /// `title` 은 App 이 번역해 넘긴다 — Core 에는 번역 목록이 없다 (219 · 영어 스토어 스크린샷에서 한국어로 남은 것이 잡혔다).
+    public static func backlinksHTML(_ paths: [String], title: String = "이 노트를 가리키는 노트") -> String {
         guard !paths.isEmpty else { return "" }
-        var html = "<section class=\"yb-backlinks\">\n<p class=\"yb-backlinks-title\">이 노트를 가리키는 노트 · \(paths.count)</p>\n<ul>\n"
+        var html = "<section class=\"yb-backlinks\">\n<p class=\"yb-backlinks-title\">\(escape(title)) · \(paths.count)</p>\n<ul>\n"
         for path in paths {
             let normalized = Paths.normalized(path)
             // 이름은 노트 목록과 같은 셈 (`Paths.baseName` — 목록의 제목이 이것이다).

@@ -2504,7 +2504,7 @@ final class LibraryModel: ObservableObject {
         let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing)
 
         let pointing = backlinksOwner == path ? backlinks : []
-        pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML + MarkdownHTML.backlinksHTML(pointing),
+        pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML + MarkdownHTML.backlinksHTML(pointing, title: String(localized: "이 노트를 가리키는 노트")),
                                      css: Palette.cssTokens())
         attachmentCount = existing.count
         missingAttachments = rendered.missingAttachments
