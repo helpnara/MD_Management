@@ -2,6 +2,8 @@
 
 First week of October, three days. **Staying near the river.**
 
+![](assets/river.jpg)
+
 ## Day by day
 
 | Day | Where | Note |
