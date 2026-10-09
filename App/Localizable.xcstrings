@@ -573,6 +573,28 @@
         }
       }
     },
+    "iCloud 폴더로 옮겨 탔습니다. 그 전에 이 기기 안에 만든 노트 %lld개는 그대로 있습니다 — 파일 앱의 나의 iPhone 에서 찾을 수 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Switched to the iCloud folder. %lld note made on this device before that is still there — find it in the Files app under On My iPhone."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Switched to the iCloud folder. %lld notes made on this device before that are still there — find them in the Files app under On My iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "iCloud 폴더를 쓰지 못하고 있습니다" : {
       "localizations" : {
         "en" : {
@@ -779,6 +801,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pinned Notes"
+          }
+        }
+      }
+    },
+    "고정됨" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned"
           }
         }
       }
@@ -1135,6 +1167,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap to switch between numbered and bulleted. Touch and hold to choose a style."
+          }
+        }
+      }
+    },
+    "누르면 이 알림을 닫습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismisses this notice"
           }
         }
       }
@@ -1661,6 +1703,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "사진을 저장하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 사진은 %@ 옆 assets 폴더에 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You moved to another note while the photos were being saved, so they were not added to the text. The photos are in the assets folder next to %@."
           }
         }
       }
@@ -2493,6 +2545,16 @@
         }
       }
     },
+    "제목에서 찾음" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Found in title"
+          }
+        }
+      }
+    },
     "제목을 따라 파일 이름이 바뀝니다" : {
       "localizations" : {
         "en" : {
@@ -2783,6 +2845,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't restore the attachment: %@"
+          }
+        }
+      }
+    },
+    "첨부를 복사하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 파일은 %@ 옆 assets 폴더에 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You moved to another note while the attachments were being copied, so they were not added to the text. The files are in the assets folder next to %@."
           }
         }
       }

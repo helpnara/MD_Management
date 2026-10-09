@@ -58,6 +58,7 @@
 | iCloud 에서 받는 중입니다. 다 받은 뒤에 공유할 수 있습니다. | Downloading from iCloud. You can share it once the download finishes. |
 | iCloud 에서 아직 받지 않은 노트가 있어 셀 수 없습니다. 그 노트가 쓰는 첨부일 수 있습니다. 노트를 모두 받은 뒤 다시 열어 주세요. | Some notes haven't downloaded from iCloud yet, so attachments can't be counted — they may be used by those notes. Open this again once all notes have downloaded. |
 | iCloud 폴더 다시 찾기 | Look for iCloud Folder Again |
+| iCloud 폴더로 옮겨 탔습니다. 그 전에 이 기기 안에 만든 노트 %lld개는 그대로 있습니다 — 파일 앱의 나의 iPhone 에서 찾을 수 있습니다. | one: Switched to the iCloud folder. %lld note made on this device before that is still there — find it in the Files app under On My iPhone. / other: Switched to the iCloud folder. %lld notes made on this device before that are still there — find them in the Files app under On My iPhone. |
 | iCloud 폴더를 쓰지 못하고 있습니다 | Can't Access the iCloud Folder |
 | iCloud 폴더를 쓰지 못하고 있습니다 · 눌러서 보기 | Can't access the iCloud folder · Tap for details |
 | iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.↵↵느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.↵↵평소 쓰는 노트는 **Slow Margin 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다. | iOS **doesn't let you choose a default app for each file type.** Settings → Apps → Default Apps only covers things like browsers, mail and messaging, and apps can't set themselves as the default.↵↵Slow Margin tells iOS that it can open Markdown, so it appears in the **Share** and **Open In** lists. If the Files app offers Open In, you can choose it there too.↵↵For everyday notes, it's best to keep them **inside the Slow Margin folder**, where the app edits and saves files in place. |
@@ -79,6 +80,7 @@
 | 고정 | Pin |
 | 고정 해제 | Unpin |
 | 고정된 노트 | Pinned Notes |
+| 고정됨 | Pinned |
 | 고치고 옮기기 | Update and Move |
 | 공유 | Share |
 | 공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다. | Added shared items to the %2$@ folder as new notes (%1$lld). |
@@ -111,6 +113,7 @@
 | 노트를 열 때 읽기 모드로 | Open Notes in Reading Mode |
 | 노트를 읽어 세는 중입니다 | Counting notes… |
 | 누르면 번호와 글머리표를 바꿉니다. 길게 누르면 모양을 고릅니다 | Tap to switch between numbered and bulleted. Touch and hold to choose a style. |
+| 누르면 이 알림을 닫습니다 | Dismisses this notice |
 | 눌러서 미리 보고, 줄을 왼쪽으로 밀어 **휴지통으로** 옮깁니다. 파일 이름이 어느 노트에든 적혀 있으면 쓰는 것으로 보고 여기 넣지 않습니다. | Tap to preview. Swipe left on a row to move it **to the Trash**. Files whose names appear in any note are considered in use and aren't listed. |
 | 다른 기기에서 고친 노트입니다. 내 글은 %@ 로 나란히 저장했습니다. | This note was changed on another device. Your version was saved alongside it as %@. |
 | 다른 폴더 고르기 | Choose Another Folder |
@@ -160,6 +163,7 @@
 | 붙여넣은 서식 복사 | Copy Pasted Formatting |
 | 비우기 | Empty |
 | 사진 %lld장을 넣지 못했습니다 | one: Couldn't add %lld photo / other: Couldn't add %lld photos |
+| 사진을 저장하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 사진은 %@ 옆 assets 폴더에 있습니다. | You moved to another note while the photos were being saved, so they were not added to the text. The photos are in the assets folder next to %@. |
 | 사진첩에서 | Photo Library |
 | 살펴보기 | Review |
 | 새 노트 | New Note |
@@ -238,6 +242,7 @@
 | 접기 | Collapse |
 | 제목 · 본문 · tag: · path: | Title, text, tag:, path: |
 | 제목대로 이름을 바꾸지 못했습니다: %@ | Couldn't rename to match the title: %@ |
+| 제목에서 찾음 | Found in title |
 | 제목을 따라 파일 이름이 바뀝니다 | File Names Will Follow Titles |
 | 주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다. | Turned the URL into a link. You can undo this. |
 | 지금 목록에 없는 노트입니다 — **%@** 의 파일 | This note isn't in the current list — it's a file in **%@** |
@@ -265,6 +270,7 @@
 | 첨부가 없으면 `.md` 하나, 있으면 `.zip` 하나로 보냅니다. 이 스위치를 켜면 본문이 링크한 다른 노트도 **한 단계만** 함께 넣습니다. | Sends a single `.md` file, or a `.zip` if the note has attachments. With this on, notes linked from the text are included too — **one level deep only**. |
 | 첨부가 폴더에 없습니다: %@ | Attachment isn't in the folder: %@ |
 | 첨부를 되돌리지 못했습니다: %@ | Couldn't restore the attachment: %@ |
+| 첨부를 복사하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 파일은 %@ 옆 assets 폴더에 있습니다. | You moved to another note while the attachments were being copied, so they were not added to the text. The files are in the assets folder next to %@. |
 | 첨부하지 못했습니다: %@ | Couldn't attach: %@ |
 | 첫 줄을 파일명으로 | First Line as File Name |
 | 체크상자 | Checklist |
