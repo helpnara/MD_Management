@@ -1,6 +1,12 @@
 import Foundation
 import Core
 
+/// **쓰기 안에서 다시 불린 저장인가** (223). `write` 가 목록을 다시 읽는 동안(충돌 사본 뒤) 그 안에서 `save` 가 다시 불린다 —
+/// 그 호출만 물러나야 한다. 다른 길(노트 떠나기 · 앱이 뒤로 가기)에서 온 저장은 앞의 쓰기를 기다렸다가 남은 글을 쓴다.
+private enum SaveReentry {
+    static let fromWrite = TaskLocal<Bool>(wrappedValue: false)
+}
+
 /// 화면이 보는 상태. 파일은 `FolderStore`(actor) 가 만지고, 여기로는
 /// **`Sendable` 값만** 건너온다 (설계서 §8).
 @MainActor
@@ -2092,10 +2098,15 @@ final class LibraryModel: ObservableObject {
     func save(settlingTitle: Bool = false) async {
         autosave?.cancel()
         autosave = nil
-        // **쓰는 중에 다시 불렸다.** 충돌 사본을 만든 뒤 목록을 다시 읽는 길이 여기로
+        // **쓰기 안에서 다시 불렸다.** 충돌 사본을 만든 뒤 목록을 다시 읽는 길이 여기로
         // 돌아온다 (`reloadNotes` → `loadSelectedText` → `save`). 앞엣것을 기다리면
         // 그것이 곧 나 자신이라 영영 안 끝난다. 이미 쓰는 중이니 할 일도 없다.
-        guard !isWriting else { return }
+        //
+        // **그 길만 물러난다** (223, 2026-10-09 전수 조사). 예전에는 `isWriting` 이면 **누가 불렀든** 물러났다 —
+        // 자동 저장이 쓰는 사이에 친 글자가 있는데 노트를 떠나면, 떠나는 쪽의 `save` 가 그냥 돌아오고 `clearNote` 가
+        // 그 글자를 지웠다 (쓰는 중이던 글은 그 글자 **앞**까지였다). 이제 다른 길에서 온 저장은 앞의 쓰기를 기다렸다가
+        // 남은 글을 한 번 더 쓴다. 다시 불린 길은 쓰기가 그 호출을 감싸 표시한다 (`SaveReentry`).
+        guard !SaveReentry.fromWrite.get() else { return }
         let queued = saveChain
         let task = Task { @MainActor [weak self] in
             await queued?.value
@@ -2128,6 +2139,7 @@ final class LibraryModel: ObservableObject {
         let written = draft
         let expecting = noteText
         let original = path
+        let session = editorSession
         var conflictPath: String?
         do {
             // **덮어쓰기 전에 파일이 그대로인지 본다** (설계서 §7.2 · A15). 검사는 저장소가
@@ -2148,6 +2160,12 @@ final class LibraryModel: ObservableObject {
                 lastError = String(localized: "다른 기기에서 고친 노트입니다. 내 글은 \(shown) 로 나란히 저장했습니다.")
                 log("충돌: \(name) 이 디스크에서 바뀌어 내 글을 \(shown) 로 저장")
             }
+            // **쓰는 사이에 다른 노트로 넘어갔다면** 지금 상태(글 · 도장 · 읽기 화면)는 그 노트의 것이다 — 손대지 않는다 (223).
+            // 저장이 앞의 쓰기를 기다리게 된 뒤로는 노트를 떠나는 길이 먼저 남은 글을 쓰고 넘어가므로 드물다. 남는 길을 막아 둔다.
+            guard editorSession == session else {
+                log("저장하는 사이 노트가 바뀌어 화면 상태는 그대로 둠: \(path)")
+                return
+            }
             draftStamp = await store.stamp(of: path)
             // **내 저장도 폴더 시각을 바꾼다** (216, 2026-10-06 사용자 진단 — 최근 일에 *폴더가 바뀌어 목록을 다시 읽음* 이 3~4초마다).
             // 파일을 원자적으로 갈아 끼우면 폴더 안의 항목이 바뀌어 폴더 시각이 움직인다. 적어 두지 않으면 3초 지켜보기가 그것을
@@ -2165,7 +2183,8 @@ final class LibraryModel: ObservableObject {
             if let conflictPath {
                 // 더러움을 내린 **뒤에** 목록을 읽는다 — 안 그러면 다시 읽기가 저장을 또 부른다.
                 if selectedNoteID == original { selectedNoteID = conflictPath }
-                await reloadNotes()
+                // 이 안에서 `save` 가 다시 불린다 — 표시해 두어 그쪽이 나(쓰는 중)를 기다리지 않게 한다 (223).
+                await SaveReentry.fromWrite.withValue(true) { [self] in await self.reloadNotes() }
             }
             // 목록은 최근 수정순인데 저장한다고 다시 읽지는 않는다 — 그러면 고친 노트가
             // 위로 안 올라온다 (48). 그 한 줄만 새 시각으로 바꿔 다시 정렬한다.

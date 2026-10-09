@@ -69,7 +69,13 @@ struct RootView: View {
             guard phase != .active else { return }
             // 뒤로 갈 때는 제목도 확정한다 — 제목 줄에 커서를 둔 채 나갈 수 있다 (89).
             library.cursorOnTitleLine = false
-            Task { await library.save(settlingTitle: true) }
+            // **저장이 끝날 때까지 앱을 멈추지 말라고 시스템에 부탁한다** (223). 뒤로 간 앱은 곧 멈추고, 그 뒤 메모리가 모자라
+            // 꺼지면 쓰다 만 글이 사라진다. 저장은 앞의 쓰기를 기다렸다가 남은 글까지 쓰므로 시간이 조금 더 걸릴 수 있다.
+            let hold = BackgroundSaveHold.begin()
+            Task {
+                await library.save(settlingTitle: true)
+                hold.end()
+            }
         }
         // **시트는 하나로 모은다.** 한 뷰에 `.sheet` 를 여러 개 걸면 마지막
         // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
@@ -1663,3 +1669,23 @@ extension EnvironmentValues {
     }
 }
 
+/// **뒤로 가는 순간의 저장을 지킨다** (223). `beginBackgroundTask` 로 몇 초를 얻고, 저장이 끝나면 돌려준다.
+/// 시간이 다 되면(시스템이 거둬 가면) 그때 돌려준다 — 돌려주지 않으면 시스템이 앱을 끈다.
+@MainActor
+final class BackgroundSaveHold {
+    private var id: UIBackgroundTaskIdentifier = .invalid
+
+    static func begin() -> BackgroundSaveHold {
+        let hold = BackgroundSaveHold()
+        hold.id = UIApplication.shared.beginBackgroundTask(withName: "save") { [weak hold] in
+            MainActor.assumeIsolated { hold?.end() }
+        }
+        return hold
+    }
+
+    func end() {
+        guard id != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        id = .invalid
+    }
+}
