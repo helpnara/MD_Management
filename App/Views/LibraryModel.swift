@@ -2054,6 +2054,11 @@ final class LibraryModel: ObservableObject {
 
     // MARK: - 편집 · 자동 저장
 
+    /// **이번에 열고 나서 고쳤나** (224, 2026-10-09 전수 조사). 제목 따라 이름 바꾸기(`followTitle`)는 **고친 노트에만** 한다 —
+    /// 예전에는 보기만 해도 제어 센터 · 앱 전환(뒤로 가는 저장)에서 다른 앱이 만든 노트의 이름이 첫 줄로 바뀌었다.
+    /// 노트를 새로 열 때 내린다 (`loadSelectedText` · `clearNote`).
+    private var editedThisVisit = false
+
     /// 멈춘 뒤 얼마 만에 쓰나 (설계서 §7.3).
     private static let autosaveDelay = Duration.seconds(2)
 
@@ -2062,6 +2067,7 @@ final class LibraryModel: ObservableObject {
         guard draftPath != nil, text != draft else { return }
         draft = text
         isDirty = true
+        editedThisVisit = true
         scheduleAutosave()
     }
 
@@ -2147,7 +2153,10 @@ final class LibraryModel: ObservableObject {
             // 정말 다른 글이면 **덮어쓰지 않고** `이름 (충돌 …).md` 로 나란히 쓰고 그쪽을 연다.
             do {
                 try await store.writeText(written, to: path, expecting: expecting)
-                lastError = nil
+                // **저장 실패 알림만 거둔다** (225, 2026-10-09 전수 조사). 예전에는 성공한 저장이 **어떤 알림이든** 지웠다 —
+                // 2초 자동 저장이 *다른 기기에서 고친 노트라 나란히 저장했다* · *사진 n장을 넣지 못했다* 를 읽기도 전에 걷었다.
+                // 그 알림들은 사람이 띠를 눌러 닫거나, 사람이 다음 일을 할 때(만들기 · 옮기기 …) 걷힌다.
+                if saveFailed { lastError = nil }
             } catch WriteConflict.changedOnDisk {
                 let name = path.split(separator: "/").last.map(String.init) ?? path
                 let conflict = try await store.createNote(
@@ -2222,7 +2231,8 @@ final class LibraryModel: ObservableObject {
     /// 그 뒤로는 `제목 2` 자리를 지킨다 (`FolderStore.rename` 의 `keeping`).
     /// 편집기는 건드리지 않는다 — `editorSession` 이 그대로라 커서도 키보드도 그대로다.
     private func followTitle(of text: String, at path: String) async {
-        guard syncsFileName, let store, let heading = FrontMatterParser.firstLine(of: text) else { return }
+        // **고친 노트만** (224) — 보기만 한 노트(다른 앱이 만든 것일 수 있다)의 이름은 손대지 않는다.
+        guard syncsFileName, editedThisVisit, let store, let heading = FrontMatterParser.firstLine(of: text) else { return }
         let wanted = Paths.safeFileName(heading, fallback: "")
         let fileName = path.split(separator: "/").last.map(String.init) ?? path
         guard !wanted.isEmpty, wanted != Paths.baseName(fileName) else { return }
@@ -2478,7 +2488,10 @@ final class LibraryModel: ObservableObject {
             // 글을 **묻지 않고** 갈아 끼운다 — 한글을 조합하는 중이었다면 그 자리에서
             // 쪼개진다 (`팀 이` 와 `ㅅ` 이 따로 남았다). 같은 노트를 다시 읽는 것은
             // 편집기의 `load` 가 판정한다: 사용자가 손댔으면 그쪽이 최신이라 안 덮는다.
-            if isNewlyOpened { editorSession = UUID() }
+            if isNewlyOpened {
+                editorSession = UUID()
+                editedThisVisit = false
+            }
             // **노트를 열 때 읽기 모드로** (124). 부른 쪽이 모드를 이미 정했으면(새 노트 ·
             // `왔던 노트` · 시험 파일) 그쪽을 따른다. **편집 모드로 되돌리지는 않는다** —
             // 스위치는 켜는 쪽으로만 움직인다.
@@ -2615,6 +2628,7 @@ final class LibraryModel: ObservableObject {
         draftStamp = nil
         editorSession = UUID()
         isDirty = false
+        editedThisVisit = false
         pageHTML = ""
         attachmentCount = 0
         missingAttachments = []

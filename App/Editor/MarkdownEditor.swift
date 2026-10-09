@@ -533,6 +533,9 @@ struct MarkdownEditor: UIViewRepresentable {
                 lastCaret = nil
                 lastPath = "노트 열기"
                 view.text = text
+                // **되돌리기 기록을 비운다** (226, 2026-10-09 전수 조사). 편집기 하나를 모든 노트가 함께 쓴다 — 비우지 않으면
+                // 노트를 바꾼 뒤 되돌리기가 **앞 노트의 고침**을 지금 노트의 엉뚱한 자리에 되풀이한다.
+                view.undoManager?.removeAllActions()
                 refreshFocus(view)
                 placeLaunchCaret(view)
                 return
@@ -554,6 +557,8 @@ struct MarkdownEditor: UIViewRepresentable {
             let offset = view.contentOffset
             note("열린 노트의 글을 갈아 끼움 — \((view.text as NSString).length)자 → \((text as NSString).length)자")
             view.text = text
+            // 글을 통째로 갈아 끼웠다 — 옛 글의 자리를 가리키는 되돌리기 기록은 이제 틀린 자리다 (226).
+            view.undoManager?.removeAllActions()
             let length = (text as NSString).length
             view.selectedRange = NSRange(location: min(selection.location, length), length: 0)
             view.setContentOffset(offset, animated: false)
