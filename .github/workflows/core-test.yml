@@ -16,6 +16,8 @@ on:
       - "Tools/l10n/**"
       - "App/Localizable.xcstrings"
       - "ShareExtension/Localizable.xcstrings"
+      - "App/DesignSystem/Palette.swift"
+      - "Tools/contrast.py"
       - ".github/workflows/core-test.yml"
   pull_request:
     paths:
@@ -65,6 +67,14 @@ jobs:
         run: |
           .venv/bin/python Tools/golden/marker_focus.py || {
             echo "::error::MarkerFocus 규칙이 갈렸습니다 — Tools/golden/marker_focus.py 를 보세요."
+            exit 1
+          }
+
+      # **글자 색 대비** (232). 인용 · 태그 색이 바탕과 4.5:1 넘는가 — 색을 고친 푸시마다 센다.
+      - name: 글자 색 대비가 4.5 를 넘는가
+        run: |
+          python3 Tools/contrast.py || {
+            echo "::error::App/DesignSystem/Palette.swift 의 색이 대비 4.5 에 못 미칩니다 — python3 Tools/contrast.py 를 보세요."
             exit 1
           }
 

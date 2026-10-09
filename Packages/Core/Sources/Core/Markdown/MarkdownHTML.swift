@@ -124,18 +124,24 @@ public enum MarkdownHTML {
         for match in regex.matches(in: html, range: NSRange(location: 0, length: text.length)) {
             let open = text.substring(with: match.range(at: 1))
             let line = text.substring(with: match.range(at: 2))
-            let link = "<a class=\"yb-task\" href=\"\(scheme)://task/\(line)\">"
+            // **보이스오버에는 체크상자로 읽힌다** (232, 2026-10-09 전수 조사). 링크 안에 꺼 둔(`disabled`) 체크상자만 있으면
+            // *링크* 로 읽히고 켜졌는지는 흐리게 묻혔다. 링크에 체크상자 역할과 켜짐을 달면 안의 상자는 겉모습만 남는다
+            // (체크상자 역할의 자식은 따로 읽히지 않는다). 두 번 누르면 링크가 눌린 것과 같아 그대로 뒤집힌다.
+            func link(_ checked: Bool) -> String {
+                "<a class=\"yb-task\" role=\"checkbox\" aria-checked=\"\(checked)\" href=\"\(scheme)://task/\(line)\">"
+            }
             var replaced: String
             if match.range(at: 3).location != NSNotFound {
                 // cmark-gfm 이 그린 체크상자.
-                replaced = open + link + text.substring(with: match.range(at: 3)) + "</a>"
+                let input = text.substring(with: match.range(at: 3))
+                replaced = open + link(input.contains("checked=")) + input + "</a>"
             } else {
                 // 글자로 남은 `[ ]` — 원문 줄이 정말 체크상자 줄일 때만.
                 guard let row = Int(line), row < lines.count,
                       TaskToggle.marker(Array(lines[row].unicodeScalars)) != nil else { continue }
                 let checked = text.substring(with: match.range(at: 5)) != " "
                 let box = "<input type=\"checkbox\" disabled=\"\"" + (checked ? " checked=\"\"" : "") + " />"
-                replaced = open + link + box + "</a>"
+                replaced = open + link(checked) + box + "</a>"
                 if match.range(at: 4).location != NSNotFound {
                     replaced += " " + text.substring(with: match.range(at: 4)).trimmingCharacters(in: .whitespacesAndNewlines)
                 }
@@ -321,7 +327,7 @@ public enum MarkdownHTML {
     .yb-backlinks li { margin: 0.45em 0; }
     .yb-backlinks-folder { font-size: 0.8em; color: var(--yb-ink-faint); margin-left: 0.35em; }
     .yb-tag {
-      color: var(--yb-tag, #B88500);
+      color: var(--yb-tag, #8F6700);  /* 232 — 대비 4.5 넘게. 앱은 늘 토큰을 넘긴다 */
       font-weight: 600;
     }
     blockquote {

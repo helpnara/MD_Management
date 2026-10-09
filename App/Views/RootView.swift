@@ -302,6 +302,8 @@ struct StatusBanner: View {
                 }
             }
             .buttonStyle(.plain)
+            // 눈에는 오른쪽 `×` 가 닫기라고 말하지만 보이스오버는 글만 읽는다 (232).
+            .accessibilityHint(String(localized: "누르면 이 알림을 닫습니다"))
         } else if library.isFallenBackFromICloud, !errorsOnly {
             Button {
                 library.sheet = .diagnostics
@@ -595,6 +597,8 @@ private struct NoteList: View {
                                 if hit.byTitle {
                                     Image(systemName: "textformat")
                                         .foregroundStyle(Palette.inkFaint)
+                                        // 아이콘만으로는 보이스오버가 *textformat* 이라 읽는다 (232).
+                                        .accessibilityLabel(String(localized: "제목에서 찾음"))
                                 }
                             }
                             if !hit.line.isEmpty {
@@ -771,6 +775,7 @@ private struct NoteList: View {
                             Image(systemName: "pin.fill")
                                 .font(.scaled(.caption))
                                 .foregroundStyle(Palette.inkFaint)
+                                .accessibilityLabel(String(localized: "고정됨"))    // 232
                         }
                         if !note.isDownloaded {
                             // iCloud 에 있지만 아직 안 내려온 파일 (설계서 §7.1).
