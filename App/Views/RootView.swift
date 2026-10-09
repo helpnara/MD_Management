@@ -131,7 +131,8 @@ struct RootView: View {
     private func openSearch() {
         if horizontalSizeClass == .compact {
             library.selectedNoteID = nil
-        } else if columnVisibility == .detailOnly {
+        } else if columnVisibility != .all, columnVisibility != .doubleColumn {
+            // 노트만 크게 보던 때(`detailOnly`)와 시스템이 고르던 때(`automatic` — 세로 화면은 목록을 숨길 수 있다) 모두.
             columnVisibility = .doubleColumn
         }
         library.searchRequestedAt = Date()
