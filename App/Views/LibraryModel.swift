@@ -29,7 +29,9 @@ final class LibraryModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var noteText = ""
     /// 편집기가 들고 있는 지금 글. 아직 파일에 안 들어갔을 수 있다.
-    @Published private(set) var draft = ""
+    /// 편집기의 지금 글. **`@Published` 가 아니다** (229, 2026-10-09 전수 조사) — 이것을 보는 화면이 없는데, 글자 하나마다
+    /// 모델 전체가 바뀌었다고 알려 목록 · 폴더 · 띠까지 다시 그렸다. 긴 노트에서 치는 속도를 깎던 자리다.
+    private(set) var draft = ""
     /// 저장할 것이 남았나. **저장이 실패해도 내리지 않는다** — 다음 기회에 다시 쓴다.
     @Published private(set) var isDirty = false
     @Published private(set) var lastSaved: Date?
@@ -584,7 +586,16 @@ final class LibraryModel: ObservableObject {
     private var modeAlreadyChosen = false
 
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
-    @Published var isReading = false
+    @Published var isReading = false {
+        didSet {
+            // 쓰는 동안 미뤄 둔 읽기 페이지를 그린다 (229). 읽기로 넘기는 단추는 넘기기 **전에** 그려 두므로 여기는 그 밖의 길이다.
+            guard isReading, !oldValue, pageIsStale, let path = draftPath else { return }
+            let text = isDirty ? draft : noteText
+            Task { [weak self] in await self?.renderReading(path: path, text: text) }
+        }
+    }
+    /// 읽기 페이지가 지금 글보다 낡았나 (229) — 쓰는 동안 저장이 페이지를 다시 그리지 않고 이것만 켠다.
+    private var pageIsStale = false
     /// 이름을 바꾸는 중인 노트 · 새 이름. 화면의 알림창이 이것을 본다.
     @Published var renaming: NoteSummary?
     /// **어느 노트를 어느 폴더로 옮길까** (T1). 링크를 고칠지 물어보는 창이 이것으로 뜬다.
@@ -1677,6 +1688,8 @@ final class LibraryModel: ObservableObject {
         // 그동안 `spotRequest` 를 쥐고 있어 단추를 또 눌러도 겹치지 않는다.
         Task {
             await save()
+            // 쓰는 동안 미뤄 둔 페이지를 **넘기기 전에** 그린다 (229) — 넘긴 뒤 그리면 옛 페이지가 먼저 뜬다.
+            if pageIsStale, let path = draftPath { await renderReading(path: path, text: isDirty ? draft : noteText) }
             // 쓸 글이 없었으면 저장이 다시 그리지 않는다 — 그래도 세기는 다시 한다.
             if let path = draftPath, backlinksCounted != path { refreshBacklinks(for: path) }
             spotToRestore = restore
@@ -2098,7 +2111,8 @@ final class LibraryModel: ObservableObject {
     func noteEdited(_ text: String) {
         guard draftPath != nil, text != draft else { return }
         draft = text
-        isDirty = true
+        // 이미 더러우면 다시 넣지 않는다 — `@Published` 는 같은 값을 넣어도 화면에 알린다 (229).
+        if !isDirty { isDirty = true }
         editedThisVisit = true
         scheduleAutosave()
     }
@@ -2239,7 +2253,9 @@ final class LibraryModel: ObservableObject {
                                            size: draftStamp?.size ?? old.size, isDownloaded: old.isDownloaded)
                 notes.sort { $0.modifiedAt > $1.modifiedAt }
             }
-            await renderReading(path: path, text: written)
+            // **읽기 화면이 보일 때만 다시 그린다** (229). 쓰는 동안에는 2초 자동 저장마다 노트 전체를 HTML 로 바꾸고
+            // 있었다 — 보이지도 않는 페이지를. 이제 낡았다고 표시만 하고, 읽기로 넘어갈 때 그린다 (`finishToggle` · `isReading`).
+            if isReading { await renderReading(path: path, text: written) } else { pageIsStale = true }
             // **제목 줄에 커서가 있는 동안에는 이름을 안 바꾼다** (89).
             if settlingTitle || !cursorOnTitleLine {
                 await followTitle(of: written, at: path)
@@ -2573,6 +2589,7 @@ final class LibraryModel: ObservableObject {
     /// 것은 actor 뿐인데 렌더는 순수 함수라 기다릴 수 없다.
     private func renderReading(path: String, text: String) async {
         guard let store else { return }
+        pageIsStale = false
         let referenced = MarkdownHTML.referencedPaths(markdown: text, notePath: path)
         let existing = await store.existingPaths(among: referenced)
         let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing,
