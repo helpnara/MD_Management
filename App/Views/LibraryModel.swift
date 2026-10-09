@@ -567,6 +567,15 @@ final class LibraryModel: ObservableObject {
         formatRequest = FormatRequest(kind: kind)
     }
 
+    /// 하드웨어 키보드의 ⌘B · ⌘I · ⌘K (230). 도구 띠의 굵게 · 기울임 · 링크 단추와 **같은 함수**를 부른다 — 길을 새로 내지 않는다.
+    func shortcut(_ key: MarkdownTextView.Shortcut) {
+        switch key {
+        case .bold: format(.wrap(.bold))
+        case .italic: format(.wrap(.italic))
+        case .link: startLinkingExistingFile()
+        }
+    }
+
     /// **시험 도구를 보여 줄까** (122 · T11). **꺼짐이 기본.**
     ///
     /// 진단 화면에는 두 종류가 섞여 있었다 — 무엇이 어긋났나(쓰는 사람)와 시험 도구
@@ -1802,6 +1811,10 @@ final class LibraryModel: ObservableObject {
     }
 
     // MARK: - 검색 (ADR-0003 · 설계서 §7.5)
+
+    /// **⌘F 를 누른 때** (230). 검색 칸은 노트 목록에 붙어 있어, 목록이 화면에 없으면 바깥(`RootView`)이 목록을 꺼내고
+    /// 이것을 남긴다 — 목록이 서면 칸을 연다. 2초가 지난 부탁은 버린다 (폴더 화면에서 눌렀다가 한참 뒤 폴더를 열 때 칸이 불쑥 뜨지 않게).
+    @Published var searchRequestedAt: Date?
 
     /// 검색 칸의 글. 150ms 디바운스로 `searchResults` 가 따라온다.
     @Published var searchText = "" {

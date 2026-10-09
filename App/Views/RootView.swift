@@ -36,6 +36,17 @@ struct RootView: View {
         // 시트에만 건넸다 — 그때는 띠가 둘이 되는 것만 막으면 됐다 (빌드 24 · 13번).
         .environment(\.rootIsCompact, horizontalSizeClass == .compact)
         .tint(Palette.accent)
+        // **⌘N · ⌘F 는 어느 화면에서나** (230, 2026-10-09 전수 조사). 예전에는 노트 목록에 걸려 있어 목록이 안 보이면
+        // (아이패드에서 노트만 크게 · 아이폰에서 노트를 연 채) 아무 일도 없었다. 바깥에 걸어 두고, 찾기는 목록부터 꺼낸다.
+        .background {
+            Group {
+                Button("새 노트") { Task { await library.createNote() } }
+                    .keyboardShortcut("n", modifiers: .command)
+                Button("찾기") { openSearch() }
+                    .keyboardShortcut("f", modifiers: .command)
+            }
+            .hidden()
+        }
         .task {
             library.autoSelectsFirstNote = prefersPreselectedNote
             await library.start()
@@ -114,6 +125,16 @@ struct RootView: View {
             }
             .environment(\.rootIsCompact, horizontalSizeClass == .compact)
         }
+    }
+
+    /// ⌘F (230) — 검색 칸이 있는 노트 목록부터 꺼낸다. 아이폰 폭에서는 뒤로 가기와 같이 노트를 닫고 목록으로 간다.
+    private func openSearch() {
+        if horizontalSizeClass == .compact {
+            library.selectedNoteID = nil
+        } else if columnVisibility == .detailOnly {
+            columnVisibility = .doubleColumn
+        }
+        library.searchRequestedAt = Date()
     }
 
     /// 아이패드(regular)는 상세 칸이 비면 어색하니 첫 노트를 미리 고른다.
@@ -599,10 +620,14 @@ private struct NoteList: View {
         .searchable(text: $library.searchText, isPresented: $searchPresented,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: "제목 · 본문 · tag: · path:")
-        .background {
-            Button("찾기") { searchPresented = true }
-                .keyboardShortcut("f", modifiers: .command)
-                .hidden()
+        // ⌘F 는 바깥에 있다 (230 — `RootView.openSearch`). 목록이 서면 부탁을 받아 칸을 연다 — 막 나타나는 중이면
+        // 여는 말이 넘기는 움직임에 묻혀 잠깐 기다린다.
+        .task(id: library.searchRequestedAt) {
+            guard let at = library.searchRequestedAt, Date().timeIntervalSince(at) < 2 else { return }
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+            searchPresented = true
+            library.searchRequestedAt = nil
         }
         .toolbar {
             // **이 폴더 안에 새 폴더** (218) — 노트 목록의 폴더가 곧 고른 폴더다. 아이폰은 여기가 하위 폴더를 만드는 길.
@@ -620,7 +645,7 @@ private struct NoteList: View {
                 } label: {
                     Label("새 노트", systemImage: "square.and.pencil")
                 }
-                .keyboardShortcut("n", modifiers: .command)
+                // ⌘N 은 바깥에 있다 (230 — 목록이 안 보여도 되게).
             }
         }
         // 당겨서 새로 고침 — iCloud 로 다른 기기에서 온 변화 · 휴지통에서 되돌린 것.
@@ -1119,7 +1144,8 @@ private struct NoteDetail: View {
                     onSpot: library.reportSpot,
                     restore: library.spotToRestore,
                     onRestored: library.spotRestored,
-                    onLog: library.log)
+                    onLog: library.log,
+                    onShortcut: library.shortcut)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
                 // **`>>` · `[[` 를 치면 노트 목록이 여기 뜬다** (147).
