@@ -33,6 +33,8 @@ final class FormatGoldenTests: XCTestCase {
             let applied: String
             let activeBefore: Active
             let activeAfter: Active
+            /// 표 머리 칸의 말 (222) — 없으면 Core 의 기본값(한국어).
+            let header: String?
         }
         let formatCases: [Case]
     }
@@ -119,6 +121,9 @@ final class FormatGoldenTests: XCTestCase {
         case "quote":
             return Formatting.toggleQuote(in: item.text, start: item.start, length: item.length)
         case "table":
+            if let header = item.header {
+                return Formatting.table(in: item.text, start: item.start, header: header)
+            }
             return Formatting.table(in: item.text, start: item.start)
         default:
             XCTFail("모르는 도구 \(item.op)")

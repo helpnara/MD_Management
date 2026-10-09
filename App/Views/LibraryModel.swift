@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 import Core
 
 /// **쓰기 안에서 다시 불린 저장인가** (223). `write` 가 목록을 다시 읽는 동안(충돌 사본 뒤) 그 안에서 `save` 가 다시 불린다 —
@@ -2527,17 +2528,27 @@ final class LibraryModel: ObservableObject {
 
     /// 읽기 모드에 넘길 HTML 을 다시 만든다.
     ///
+    /// **이 글의 언어** (222) — 읽기 화면 `<html lang>` 에 넣는다. 보이스오버가 이것으로 목소리를 고른다.
+    /// 앞부분(2천 자)만 본다 — 언어를 가리기에 충분하고 긴 노트에서 느려지지 않는다. 모르면 앱의 언어.
+    static func language(of text: String) -> String {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(String(text.prefix(2000)))
+        if let found = recognizer.dominantLanguage, found != .undetermined { return found.rawValue }
+        return AppLanguage.isEnglish ? "en" : "ko"
+    }
+
     /// 두 단계다 (`MarkdownHTML.referencedPaths` 주석 참고): 파일이 있는지 아는
     /// 것은 actor 뿐인데 렌더는 순수 함수라 기다릴 수 없다.
     private func renderReading(path: String, text: String) async {
         guard let store else { return }
         let referenced = MarkdownHTML.referencedPaths(markdown: text, notePath: path)
         let existing = await store.existingPaths(among: referenced)
-        let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing)
+        let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing,
+                                           tooDeepNotice: String(localized: "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다."))
 
         let pointing = backlinksOwner == path ? backlinks : []
         pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML + MarkdownHTML.backlinksHTML(pointing, title: String(localized: "이 노트를 가리키는 노트")),
-                                     css: Palette.cssTokens())
+                                     css: Palette.cssTokens(), lang: Self.language(of: text))
         attachmentCount = existing.count
         missingAttachments = rendered.missingAttachments
         if backlinksCounted != path { refreshBacklinks(for: path) }

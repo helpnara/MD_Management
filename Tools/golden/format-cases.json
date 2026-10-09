@@ -217,6 +217,14 @@
       "text": "```swift\nlet a = 1\nlet b = 2\n```",
       "start": 9,
       "length": 19
+    },
+    {
+      "name": "표 — 영어 앱은 머리 칸이 Header (222)",
+      "op": "table",
+      "text": "Intro",
+      "start": 2,
+      "length": 0,
+      "header": "Header"
     }
   ]
 }

@@ -66,10 +66,12 @@ public enum MarkdownHTML {
     ///   - markdown: 파일 전체 (머리말 포함)
     ///   - notePath: 폴더 기준 상대경로 — 상대 링크를 푸는 기준이다
     ///   - existing: 폴더 안에 실제로 있는 상대경로들 (`referencedPaths` → `FolderStore`)
+    /// `tooDeepNotice` — 겹침이 너무 깊을 때 위에 다는 한 줄. App 이 앱 언어로 넘긴다 (222 — Core 에는 번역 목록이 없다).
     public static func render(
         markdown: String,
         notePath: String,
-        existing: Set<String>
+        existing: Set<String>,
+        tooDeepNotice: String = "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다."
     ) -> RenderedNote {
         let body = FrontMatterParser.parse(markdown).body
 
@@ -77,7 +79,7 @@ public enum MarkdownHTML {
         // 글은 그대로 보여 준다(이스케이프해서). 첨부는 안 그리므로 없는 첨부도 없다.
         guard !Nesting.isTooDeep(body) else {
             return RenderedNote(
-                bodyHTML: "<p><em>겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다.</em></p>\n<pre>\(escape(body))</pre>\n",
+                bodyHTML: "<p><em>\(escape(tooDeepNotice))</em></p>\n<pre>\(escape(body))</pre>\n",
                 missingAttachments: []
             )
         }
@@ -168,10 +170,12 @@ public enum MarkdownHTML {
 
     /// 완전한 HTML 문서. 색 토큰(`--yb-*`)은 App 이 만들어 넘긴다 — 앱과 웹뷰의
     /// 다크 모드가 같이 가야 하기 때문이다 (설계서 §8).
-    public static func page(bodyHTML: String, css: String) -> String {
+    /// `lang` — 이 글의 언어 (222). 보이스오버가 이것으로 읽을 목소리를 고르고, 줄바꿈 · 글꼴도 따른다.
+    /// 예전에는 늘 `ko` 여서 영어 노트를 한국어 목소리로 읽었다. App 이 글을 보고 정해 넘긴다.
+    public static func page(bodyHTML: String, css: String, lang: String = "ko") -> String {
         """
         <!doctype html>
-        <html lang="ko">
+        <html lang="\(escape(lang))">
         <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">

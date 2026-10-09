@@ -732,8 +732,10 @@ struct MarkdownEditor: UIViewRepresentable {
                                                     length: selection.length), in: view)
             case .table:
                 let selection = view.selectedRange
+                // 머리 칸의 말은 앱 언어로 (222) — 파일에 들어가는 글이다. 한국어는 `제목`, 영어는 `Header`.
                 return apply(Formatting.table(in: view.textStorage.string,
-                                              start: selection.location), in: view)
+                                              start: selection.location,
+                                              header: String(localized: "table.header", defaultValue: "제목")), in: view)
             case .link(let title, let path, let noteFolder):
                 return applyLink(title: title, path: path, noteFolder: noteFolder)
             case .list(let marker):

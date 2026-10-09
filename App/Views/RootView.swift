@@ -1022,7 +1022,8 @@ private struct NoteDetail: View {
             Button("그래도 보내기") { library.shareAnyway(prompt.package) }
             Button("취소", role: .cancel) { library.cancelShare(prompt.package) }
         } message: { prompt in
-            Text("\(prompt.package.missing.count)개를 찾을 수 없어 빼고 보냅니다.\n\n"
+            // 앞 문장만 번역하고 파일 이름 목록은 그대로 붙인다 — `+` 로 이으면 통째로 번역을 비껴간다 (222).
+            Text(String(localized: "\(prompt.package.missing.count)개를 찾을 수 없어 빼고 보냅니다.") + "\n\n"
                  + prompt.package.missing.prefix(5).joined(separator: "\n"))
         }
         .alert("찾을 수 없습니다", isPresented: Binding(

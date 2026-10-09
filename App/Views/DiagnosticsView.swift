@@ -159,8 +159,8 @@ struct DiagnosticsView: View {
                 if let paste = library.lastPaste {
                     Section {
                         LabeledContent("결과", value: paste.outcome)
-                        LabeledContent("서식 글 길이", value: "\(paste.html?.count ?? 0)자")
-                        LabeledContent("갈래", value: "\(paste.types.count)개")
+                        LabeledContent("서식 글 길이", value: String(localized: "\(paste.html?.count ?? 0)자"))
+                        LabeledContent("갈래", value: String(localized: "\(paste.types.count)개"))
                         Button {
                             UIPasteboard.general.string = paste.report
                             pasteCopied = true

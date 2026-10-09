@@ -283,6 +283,10 @@ actor FolderStore {
         return stamp
     }
 
+    /// **이름이 비었을 때 쓰는 파일 이름** (222 · ADR-0009) — 앱 언어로. 한국어 `제목 없음` · 영어 `Untitled`.
+    /// Core 의 기본값은 한국어라 앱이 늘 이것을 넘긴다 (`createNote` · `rename` · 겹침 피하기).
+    static var untitled: String { String(localized: "fallback.untitled", defaultValue: "제목 없음") }
+
     /// 충돌 사본의 이름. 파일 이름이라 `:` 를 못 쓴다 — `이름 (충돌 2026-09-14 14.02)` · 영어 `이름 (Conflict 2026-09-14 14.02)`.
     /// 기기 언어를 따른다 (219 · ADR-0009) — 이 이름을 알아보는 코드는 없다. 사람이 읽고 합치는 이름이다.
     static func conflictName(for fileName: String, at date: Date = Date()) -> String {
@@ -551,7 +555,7 @@ actor FolderStore {
     func createNote(named name: String, in folder: String, text: String) throws -> String {
         openScopeIfNeeded()
         try createFolder(folder)
-        let safe = Paths.safeFileName(name)
+        let safe = Paths.safeFileName(name, fallback: Self.untitled)
         let path = uniqueRelativePath(name: Paths.isNoteFile(safe) ? safe : safe + ".md", in: folder)
         try writeText(text, to: path)
         return path
@@ -563,7 +567,7 @@ actor FolderStore {
         openScopeIfNeeded()
         let folder = Paths.directory(of: relativePath)
         let current = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
-        let safe = Paths.safeFileName(newName)
+        let safe = Paths.safeFileName(newName, fallback: Self.untitled)
         // **점이 든 이름을 확장자로 오해하지 않는다.** `2026.09.13 회의` 를 그대로 두면
         // `.md` 가 안 붙어 목록에서 사라진다 — 노트 확장자가 아니면 `.md` 를 붙인다.
         let wanted = Paths.isNoteFile(safe) ? safe : safe + ".md"
@@ -1055,7 +1059,7 @@ actor FolderStore {
     /// 안 보였다** (빌드 18 · 10번). 노트 확장자는 노트를 만드는 쪽(`createNote` · `rename`)이
     /// 책임진다. 여기는 이름 그대로 번호만 붙인다 — 그래야 `사진.jpg` 도 `사진 2.jpg` 가 된다.
     private func uniqueRelativePath(name: String, in folder: String, keeping own: String? = nil) -> String {
-        let safe = Paths.safeFileName(name)
+        let safe = Paths.safeFileName(name, fallback: Self.untitled)
         // 번호는 마지막 점 앞에 — 단, 노트 확장자나 짧은 확장자일 때만. `14.02)` 는 확장자가 아니다.
         let ext = Paths.fileExtension(safe)
         let splits = !ext.isEmpty && ext.count <= 5 && ext.allSatisfy { $0.isLetter || $0.isNumber }

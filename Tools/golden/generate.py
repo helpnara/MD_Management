@@ -3380,13 +3380,15 @@ def toggle_quote(text: str, start: int, length: int) -> dict:
             "selectionStart": begin, "selectionLength": u16len(joined)}
 
 
-def make_table(text: str, start: int, rows: int = 3, columns: int = 3) -> dict:
+def make_table(text: str, start: int, rows: int = 3, columns: int = 3, header: str = "제목") -> dict:
+    """`header` — 머리 칸의 말. 앱이 앱 언어로 넘긴다 (222 — 영어에서 `제목 1` 이 파일에 들어갔다)."""
     units = to_units(text)
     begin, finish = line_range(units, start, 0)
     current = from_units(units[begin:finish])
     empty_line = not current.strip()
 
-    header = "| " + " | ".join(f"제목 {n}" for n in range(1, columns + 1)) + " |"
+    word = header
+    header = "| " + " | ".join(f"{word} {n}" for n in range(1, columns + 1)) + " |"
     rule = "| " + " | ".join(["---"] * columns) + " |"
     body = ["|" + "  |" * columns] * max(1, rows - 1)
     table = "\n".join([header, rule] + body)
@@ -3397,7 +3399,7 @@ def make_table(text: str, start: int, rows: int = 3, columns: int = 3) -> dict:
     piece = before + table + after
     lead = u16len(before + "| ")
     return {"start": insert_at, "length": 0, "text": piece,
-            "selectionStart": insert_at + lead, "selectionLength": u16len("제목 1")}
+            "selectionStart": insert_at + lead, "selectionLength": u16len(f"{word} 1")}
 
 
 def apply_edit(text: str, edit: dict) -> str:
@@ -3440,13 +3442,14 @@ def build_format_cases() -> list[dict]:
         elif op == "quote":
             edit = toggle_quote(text, start, length)
         elif op == "table":
-            edit = make_table(text, start)
+            edit = make_table(text, start, header=case.get("header", "제목"))
         else:
             raise SystemExit(f"::error::모르는 도구 {op!r}")
         applied = apply_edit(text, edit)
         check_with_markdown(op, applied, edit)
         out.append({"name": case["name"], "op": op, "text": text,
                     "start": start, "length": length, "edit": edit, "applied": applied,
+                    **({"header": case["header"]} if "header" in case else {}),
                     # **누르기 전과 누른 뒤에 무엇이 걸려 있나** (128). 눌린 모습과 실제
                     # 동작이 갈리지 않는지를 이 두 값이 지킨다.
                     "activeBefore": active_at(text, start, length),
