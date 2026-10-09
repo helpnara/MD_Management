@@ -697,8 +697,9 @@ actor FolderStore {
     }
 
     /// 휴지통 안 경로의 **원래 자리**. `.trash/여행/A.md` → `여행/A.md`.
+    /// 셈은 Core 의 하나(`AttachmentLedger.originalPath`)를 부른다 — 같은 것을 재는 곳이 둘이면 갈린다 (233 · CLAUDE.md §1).
     static func originalPath(ofTrashed relativePath: String) -> String {
-        relativePath.hasPrefix(".trash/") ? String(relativePath.dropFirst(".trash/".count)) : relativePath
+        AttachmentLedger.originalPath(of: relativePath)
     }
 
     /// 휴지통에서 **원래 폴더로** 되돌린다. 폴더가 없어졌으면 다시 만든다.

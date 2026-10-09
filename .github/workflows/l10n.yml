@@ -114,6 +114,7 @@ jobs:
 
       # 아티팩트를 커밋보다 앞에 (CLAUDE.md §5) — 커밋이 실패해도 결과물은 받는다.
       - name: 결과 보관
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: l10n-export

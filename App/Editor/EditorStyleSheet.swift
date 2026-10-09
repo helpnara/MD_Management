@@ -63,11 +63,7 @@ struct EditorStyleSheet {
         markerInk = .tertiaryLabel
         quoteInk = Palette.quoteUIColor      // 191 — 뷰어와 같은 색 하나
         linkInk = .tintColor
-        tagInk = UIColor { traits in
-            traits.userInterfaceStyle == .dark
-                ? UIColor(red: 1.00, green: 0.84, blue: 0.35, alpha: 1)     // 어두운 바탕 — 밝은 노랑
-                : UIColor(red: 0.72, green: 0.52, blue: 0.00, alpha: 1)     // 밝은 바탕 — 짙은 겨자
-        }
+        tagInk = Palette.tagUIColor          // 233 — 뷰어와 같은 색 하나 (예전에는 같은 값을 여기 또 적었다)
         codeBackground = .secondarySystemBackground
         codeBoxFill = UIColor { traits in
             traits.userInterfaceStyle == .dark
