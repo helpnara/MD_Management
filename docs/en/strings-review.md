@@ -29,6 +29,8 @@
 | %lld | %lld |
 | %lld개 | %lld |
 | %lld개 · %@ | %lld · %@ |
+| %lld개를 찾을 수 없어 빼고 보냅니다. | one: %lld attachment couldn’t be found and will be left out. / other: %lld attachments couldn’t be found and will be left out. |
+| %lld자 | one: %lld character / other: %lld characters |
 | %lld째 줄 | Line %lld |
 | (빈 파일) | (Empty File) |
 | **%@** 을 옮깁니다. 지금 있는 폴더는 고를 수 없습니다. | Moving **%@**. The folder it's in now can't be chosen. |
@@ -48,6 +50,7 @@
 | `큰 노트 시험.md` 를 300줄 · 20KB 안팎으로 만들고 **편집기로 엽니다.** 커서를 위아래로 훑어 지연이나 튐이 없으면 통과입니다. 만든 파일은 언제든 지우셔도 됩니다. | Creates `큰 노트 시험.md` with about 300 lines (20 KB) and **opens it in the editor.** Move the cursor up and down — if nothing lags or jumps, it passes. You can delete the file any time. |
 | `파일` 앱에서 `.md` 파일을 **길게 누릅니다**. | In the Files app, **touch and hold** a `.md` file. |
 | `파일` 앱에서 열기 | Open in the Files App |
+| fallback.untitled | Untitled |
 | iCloud 가 다른 기기의 글을 따로 두었습니다. %lld개를 (충돌 …) 사본으로 꺼냈습니다. | one: iCloud kept a separate version from another device. It was saved as %lld (conflict …) copy. / other: iCloud kept separate versions from other devices. They were saved as %lld (conflict …) copies. |
 | iCloud 를 잡았나 | iCloud Available |
 | iCloud 에서 받는 중이라 아직 저장하지 않았습니다. 잠시 뒤 다시 저장합니다. | This note is still downloading from iCloud, so it hasn't been saved yet. It will be saved shortly. |
@@ -58,6 +61,7 @@
 | iCloud 폴더를 쓰지 못하고 있습니다 | Can't Access the iCloud Folder |
 | iCloud 폴더를 쓰지 못하고 있습니다 · 눌러서 보기 | Can't access the iCloud folder · Tap for details |
 | iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.↵↵느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.↵↵평소 쓰는 노트는 **Slow Margin 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다. | iOS **doesn't let you choose a default app for each file type.** Settings → Apps → Default Apps only covers things like browsers, mail and messaging, and apps can't set themselves as the default.↵↵Slow Margin tells iOS that it can open Markdown, so it appears in the **Share** and **Open In** lists. If the Files app offers Open In, you can choose it there too.↵↵For everyday notes, it's best to keep them **inside the Slow Margin folder**, where the app edits and saves files in place. |
+| table.header | Header |
 | 가져오기 | Import |
 | 가져오면 **복사본**이 내 폴더에 생깁니다. 원본은 그대로 둡니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | Importing adds a **copy** to your folder and leaves the original as is. If the name is taken, a number is added. |
 | 가져오지 못했습니다: %@ | Couldn't import: %@ |
@@ -66,6 +70,7 @@
 | 검색 색인 | Search Index |
 | 결과 | Result |
 | 겹친 번호를 지웠습니다 | Removed duplicate numbering |
+| 겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다. | This note is nested too deeply to format, so it’s shown as plain text. |
 | 경로 | Path |
 | 고른 폴더 | Chosen folder |
 | 고른 폴더가 휴지통에 가거나 사라져 기본 iCloud 폴더로 돌아왔습니다. 설정 → 폴더에서 다시 고를 수 있습니다. | The chosen folder was moved to the Trash or disappeared, so the app went back to the default iCloud folder. You can choose again in Settings → Folder. |
@@ -104,7 +109,6 @@
 | 노트를 고르세요 | Select a Note |
 | 노트를 만들지 못했습니다: %@ | Couldn't create the note: %@ |
 | 노트를 열 때 읽기 모드로 | Open Notes in Reading Mode |
-| 노트를 열기만 해도 파일이 바뀝니다 | Opening a Note Can Change Its File |
 | 노트를 읽어 세는 중입니다 | Counting notes… |
 | 누르면 번호와 글머리표를 바꿉니다. 길게 누르면 모양을 고릅니다 | Tap to switch between numbered and bulleted. Touch and hold to choose a style. |
 | 눌러서 미리 보고, 줄을 왼쪽으로 밀어 **휴지통으로** 옮깁니다. 파일 이름이 어느 노트에든 적혀 있으면 쓰는 것으로 보고 여기 넣지 않습니다. | Tap to preview. Swipe left on a row to move it **to the Trash**. Files whose names appear in any note are considered in use and aren't listed. |
@@ -212,7 +216,6 @@
 | 이 노트에는 폴더 안을 가리키는 링크가 %lld개 있습니다. 옮기면 자리가 달라지므로 링크도 새 자리에 맞춰 고쳐야 사진과 첨부가 보입니다. **그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다. | one: This note has %lld link to files in its folder. Moving the note changes where it lives, so the link needs updating for photos and attachments to keep showing. Choose **Just Move** to leave the text exactly as it is. / other: This note has %lld links to files in its folder. Moving the note changes where it lives, so the links need updating for photos and attachments to keep showing. Choose **Just Move** to leave the text exactly as it is. |
 | 이 노트의 링크가 모두 제 파일을 가리킵니다. | Every link in this note points to a file that exists. |
 | 이 링크가 가리키는 파일이 폴더에 없습니다.↵%@↵↵링크의 경로는 노트가 있는 폴더 기준입니다. | The file this link points to isn't in the folder.↵%@↵↵Link paths are relative to the note's folder. |
-| 이 설정을 켜면 노트를 열 때 첫 줄과 파일명을 맞춥니다. 고치지 않아도 파일이 달라질 수 있습니다.↵↵다른 앱과 같이 쓰는 폴더라면 켜지 마세요. | With this on, opening a note makes its first line and file name match. Files may change even if you don't edit them.↵↵Don't turn this on for folders shared with other apps. |
 | 이 파일은 **Slow Margin 폴더 밖**에 있습니다. | This file is **outside the Slow Margin folder**. |
 | 이 파일의 글자 인코딩을 알아보지 못했습니다. UTF-8 로 저장한 뒤 다시 열어 주세요. | Couldn't detect this file's text encoding. Save it as UTF-8 and open it again. |
 | 이 폴더 안에 새 폴더 | New Folder in This Folder |
@@ -235,6 +238,7 @@
 | 접기 | Collapse |
 | 제목 · 본문 · tag: · path: | Title, text, tag:, path: |
 | 제목대로 이름을 바꾸지 못했습니다: %@ | Couldn't rename to match the title: %@ |
+| 제목을 따라 파일 이름이 바뀝니다 | File Names Will Follow Titles |
 | 주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다. | Turned the URL into a link. You can undo this. |
 | 지금 목록에 없는 노트입니다 — **%@** 의 파일 | This note isn't in the current list — it's a file in **%@** |
 | 지금 쓰는 곳은 **이 기기 안**입니다. `파일` 앱의 iCloud Drive 에는 폴더가 생기지 않고, 다른 기기와도 안 맞춰집니다. | Your notes are stored **on this device**. No folder appears in iCloud Drive in the Files app, and nothing syncs with your other devices. |
@@ -271,8 +275,9 @@
 | 취소선 | Strikethrough |
 | 카메라로 찍기 | Take Photo |
 | 켜기 | Turn On |
-| 켜면 노트를 **열기만 해도** 파일이 바뀔 수 있습니다. 첫 줄 `# 제목` 이 파일명과 다르면 파일명으로 맞추고, 제목이 없으면 넣고, 다른 제목이면 `##` 로 한 단계 내립니다. 앱 안에서 제목을 고치면 파일명이 따라갑니다.↵↵**다른 앱과 같이 쓰는 폴더라면 끄세요.** | When this is on, **just opening** a note may change its file: if the first line `# Title` doesn't match the file name, it's changed to match; if there's no title, one is added; if there's a different title, it's moved down a level to `##`. Editing the title in the app renames the file to match.↵↵**Turn this off for folders shared with other apps.** |
 | 켜면 노트를 고를 때마다 읽기 모드로 시작합니다. 위 도구 줄에서 언제든 편집으로 넘어갈 수 있고, 새 노트를 만들 때는 그대로 편집 모드입니다. | When this is on, notes open in reading mode. You can switch to editing from the toolbar at any time. New notes always open in editing mode. |
+| 켜면 앱에서 고친 노트의 **첫 줄 `# 제목`** 을 파일 이름이 따라갑니다. 제목 줄을 벗어날 때 한 번 바뀝니다. 열어 보기만 한 노트의 이름은 바꾸지 않습니다.↵↵**다른 앱에서 이 노트를 링크해 두었다면** 이름이 바뀔 때 그 링크가 끊길 수 있습니다. | When on, a note you edit in the app is renamed to match its **first line `# Title`**. The name changes once, when you leave the title line. Notes you only open and read keep their names.↵↵**If other apps link to this note,** those links may break when the name changes. |
+| 켜면 앱에서 고친 노트의 이름이 첫 줄 제목을 따라 바뀝니다. 다른 앱에서 이 노트를 가리키는 링크가 있으면 끊길 수 있습니다. | Notes you edit in the app will be renamed to match their first-line title. Links to them from other apps may break. |
 | 코드 | Code |
 | 큰 노트 만들기 (300줄) | Create Large Note (300 Lines) |
 | 큰 노트 시험 | Large Note Test |
