@@ -18,4 +18,4 @@ This week is about **clearing what’s piled up**. Nothing new gets started.
 
 > It’s fine not to finish everything. Just writing it down makes the head lighter.
 
-More details are in [Lisbon Trip](Lisbon%20Trip.md).
+Monday’s decisions are in [Meeting Notes](Meeting%20Notes.md).

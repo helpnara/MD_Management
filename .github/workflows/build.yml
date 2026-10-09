@@ -11,6 +11,12 @@ on:
       - "screenshots/**"
       - "docs/**"
       - "**.md"
+      # 앱에 들어가지 않는 도구 · 요청 파일 (233) — 번역 열쇠 뽑기 · 스토어 스크린샷 요청만 올려도 35분이 돌았다.
+      # 정답표가 바뀌면 `Packages/**` 의 expected.json 이 함께 바뀌므로 여기서 빼도 빌드는 돈다.
+      - "Tools/l10n/**"
+      - "Tools/store/**"
+      - "Tools/site/**"
+      - "Tools/golden/**"
   workflow_dispatch:
 
 concurrency:
@@ -582,7 +588,9 @@ jobs:
             echo "밀렸습니다. 원격을 당겨 리베이스하고 다시 시도합니다 ($attempt/3)"
             git fetch origin ${{ github.ref_name }}
             # 스크린샷은 러너가 새로 찍은 것이 항상 옳다. 충돌하면 우리 것을 쓴다.
-            git rebase -X ours origin/${{ github.ref_name }} || {
+            # **리베이스에서 `theirs` 가 내 커밋(러너가 찍은 것)이다** (233) — `ours` 는 원격 쪽이라, 예전에는
+            # 충돌 때 옛 스크린샷이 남았다. 위 주석의 뜻(러너가 새로 찍은 것이 옳다)대로 `theirs`.
+            git rebase -X theirs origin/${{ github.ref_name }} || {
               git rebase --abort || true
               sleep $((attempt * 5))
               continue

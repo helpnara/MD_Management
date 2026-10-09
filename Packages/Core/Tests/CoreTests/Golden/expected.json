@@ -4323,6 +4323,36 @@
       "op": "code",
       "start": 9,
       "text": "```swift\nlet a = 1\nlet b = 2\n```"
+    },
+    {
+      "activeAfter": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "activeBefore": {
+        "bold": false,
+        "code": false,
+        "italic": false,
+        "quote": false,
+        "strikethrough": false
+      },
+      "applied": "Intro\n\n| Header 1 | Header 2 | Header 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n",
+      "edit": {
+        "length": 0,
+        "selectionLength": 8,
+        "selectionStart": 9,
+        "start": 5,
+        "text": "\n\n| Header 1 | Header 2 | Header 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n"
+      },
+      "header": "Header",
+      "length": 0,
+      "name": "표 — 영어 앱은 머리 칸이 Header (222)",
+      "op": "table",
+      "start": 2,
+      "text": "Intro"
     }
   ],
   "hangingCases": [

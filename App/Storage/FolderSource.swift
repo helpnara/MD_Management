@@ -150,6 +150,15 @@ enum FolderSource {
 
     // MARK: - 그 밖의 폴더
 
+    /// 폴더 안 노트 수 (227) — iCloud 로 옮겨 탈 때 기기 안 폴더에 남은 것을 알리려고만 센다. 휴지통 · 숨은 폴더는 뺀다.
+    static func noteCount(in root: URL) -> Int {
+        guard let walker = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil,
+                                                          options: [.skipsHiddenFiles]) else { return 0 }
+        var count = 0
+        for case let url as URL in walker where Paths.isNoteFile(url.lastPathComponent) { count += 1 }
+        return count
+    }
+
     /// 기기 안 폴더. `Files` 앱의 **이 iPhone 안에** 보인다 (`UIFileSharingEnabled`).
     static func localDocuments() -> URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -226,6 +235,9 @@ enum FolderSource {
             // 그냥 지나가므로(일반 폴더) 화면만 다르고 동작은 같다.
             let kind: FolderKind = launch.pretendChosenFolder ? .userChosen : .sample
             return FolderChoice(url: url, kind: kind, iCloudAvailable: false, attempts: 0)
+        }
+        if launch.storeFolder {
+            return FolderChoice(url: localDocuments(), kind: .iCloudContainer, iCloudAvailable: true, attempts: 0)
         }
         var staleBookmark = false
         switch bookmarkedFolder(defaults: defaults) {
@@ -307,12 +319,16 @@ struct LaunchOptions: Sendable {
     var pretendChosenFolder = false
     /// 검색 칸에 이 말을 넣고 시작한다 — CI 가 검색 결과를 찍으려고 쓴다 (`-search 회의`).
     var searchTerm: String?
+    /// **스토어 스크린샷** (219 · `store-shots.yml`). 기기 안 폴더(`Documents` — CI 가 견본 노트를 넣어 둔다)를
+    /// **iCloud 폴더인 척** 연다 — 둘러보기 배너 없이, 제목은 실제 사용자가 보는 `Slow Margin` 으로. 시뮬레이터는 iCloud 에 로그인돼 있지 않다.
+    var storeFolder = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
             useSampleFolder: arguments.contains("-sampleFolder"),
             localFolderOnly: arguments.contains("-localFolderOnly"),
-            skipOnboarding: arguments.contains("-skipOnboarding") || arguments.contains("-sampleFolder"),
+            skipOnboarding: arguments.contains("-skipOnboarding") || arguments.contains("-sampleFolder")
+                || arguments.contains("-storeFolder"),
             openFirstNote: arguments.contains("-openFirstNote") || arguments.contains("-readingMode"),
             readingMode: arguments.contains("-readingMode"),
             showDiagnostics: arguments.contains("-diagnostics"),
@@ -323,7 +339,8 @@ struct LaunchOptions: Sendable {
             pretendChosenFolder: arguments.contains("-chosenFolder"),
             searchTerm: arguments.firstIndex(of: "-search").flatMap { index in
                 index + 1 < arguments.count ? arguments[index + 1] : nil
-            }
+            },
+            storeFolder: arguments.contains("-storeFolder")
         )
     }
 }

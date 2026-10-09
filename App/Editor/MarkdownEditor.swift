@@ -187,16 +187,32 @@ final class MarkdownTextView: UITextView {
         return nil
     }
 
+    /// 하드웨어 키보드의 서식 단축키 (230) — 도구 띠의 단추와 **같은 길**로 간다 (`LibraryModel.shortcut`).
+    enum Shortcut { case bold, italic, link }
+    var onShortcut: (@MainActor (Shortcut) -> Void)?
+
     override var keyCommands: [UIKeyCommand]? {
         let deeper = UIKeyCommand(input: "\t", modifierFlags: [], action: #selector(indentPressed))
         let shallower = UIKeyCommand(input: "\t", modifierFlags: .shift, action: #selector(outdentPressed))
-        deeper.wantsPriorityOverSystemBehavior = true
-        shallower.wantsPriorityOverSystemBehavior = true
-        return [deeper, shallower]
+        // **⌘B · ⌘I · ⌘K** (230, 2026-10-09 전수 조사). 아이패드에서 ⌘ 를 누르고 있으면 뜨는 목록에 이름이 선다.
+        // `UITextView` 는 글자 속성을 고치는 편집기가 아니라(`allowsEditingTextAttributes` 꺼짐) ⌘B 를 제가 쓰지 않는다 —
+        // 그래도 먼저 받는다고 적어 둔다. 원문에 `**` 를 넣는 것은 띠의 굵게와 같다.
+        let bold = UIKeyCommand(title: String(localized: "굵게"), action: #selector(boldPressed),
+                                input: "b", modifierFlags: .command)
+        let italic = UIKeyCommand(title: String(localized: "기울임"), action: #selector(italicPressed),
+                                  input: "i", modifierFlags: .command)
+        let link = UIKeyCommand(title: String(localized: "링크"), action: #selector(linkPressed),
+                                input: "k", modifierFlags: .command)
+        let all = [deeper, shallower, bold, italic, link]
+        for command in all { command.wantsPriorityOverSystemBehavior = true }
+        return all
     }
 
     @objc private func indentPressed() { onTab?(true) }
     @objc private func outdentPressed() { onTab?(false) }
+    @objc private func boldPressed() { onShortcut?(.bold) }
+    @objc private func italicPressed() { onShortcut?(.italic) }
+    @objc private func linkPressed() { onShortcut?(.link) }
 }
 
 /// 라이브 편집기 (ADR-0005 L1).
@@ -246,6 +262,8 @@ struct MarkdownEditor: UIViewRepresentable {
     var onRestored: @MainActor () -> Void = {}
     /// 최근 일에 한 줄 남긴다 (216 — 화면이 저절로 크게 움직이면 그 직전에 무엇이 돌았는지).
     var onLog: @MainActor (String) -> Void = { _ in }
+    /// ⌘B · ⌘I · ⌘K (230).
+    var onShortcut: @MainActor (MarkdownTextView.Shortcut) -> Void = { _ in }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
@@ -309,6 +327,7 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.onLinkQuery = onLinkQueryChanged
         coordinator.onPasteLinks = onPasteLinks
         (view as? MarkdownTextView)?.notePath = notePath
+        (view as? MarkdownTextView)?.onShortcut = onShortcut
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }
@@ -533,7 +552,11 @@ struct MarkdownEditor: UIViewRepresentable {
                 lastCaret = nil
                 lastPath = "노트 열기"
                 view.text = text
+                // **되돌리기 기록을 비운다** (226, 2026-10-09 전수 조사). 편집기 하나를 모든 노트가 함께 쓴다 — 비우지 않으면
+                // 노트를 바꾼 뒤 되돌리기가 **앞 노트의 고침**을 지금 노트의 엉뚱한 자리에 되풀이한다.
+                view.undoManager?.removeAllActions()
                 refreshFocus(view)
+                placeLaunchCaret(view)
                 return
             }
             // 편집기와 파일이 이미 같다 (방금 저장했다).
@@ -553,12 +576,31 @@ struct MarkdownEditor: UIViewRepresentable {
             let offset = view.contentOffset
             note("열린 노트의 글을 갈아 끼움 — \((view.text as NSString).length)자 → \((text as NSString).length)자")
             view.text = text
+            // 글을 통째로 갈아 끼웠다 — 옛 글의 자리를 가리키는 되돌리기 기록은 이제 틀린 자리다 (226).
+            view.undoManager?.removeAllActions()
             let length = (text as NSString).length
             view.selectedRange = NSRange(location: min(selection.location, length), length: 0)
             view.setContentOffset(offset, animated: false)
             // **갈아 끼운 뒤에 한 번 맞춘다** (162). 글을 통째로 넣으면 저장소 대리자가
             // 첫 문단을 드러낸 채 칠하는데, 초점이 없으면 그 뒤에 아무도 정리를 안 부른다.
             refreshFocus(view)
+        }
+
+        /// **스토어 스크린샷만 쓴다** (219 · `store-shots.yml`). `-caretAt 글` 이 있으면 처음 연 노트에서 그 글 **끝**에 커서를 두고
+        /// 키보드를 올린다 — 커서 줄만 마크다운 원문으로 보이는 모습을 찍으려고. 사람 손에서는 이 인자가 없어 아무 일도 안 한다.
+        private var launchCaretPlaced = false
+        private func placeLaunchCaret(_ view: UITextView) {
+            let arguments = ProcessInfo.processInfo.arguments
+            guard !launchCaretPlaced, let index = arguments.firstIndex(of: "-caretAt"),
+                  index + 1 < arguments.count else { return }
+            let found = (view.text as NSString).range(of: arguments[index + 1])
+            guard found.location != NSNotFound else { return }
+            launchCaretPlaced = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak view] in
+                guard let view else { return }
+                view.becomeFirstResponder()
+                view.selectedRange = NSRange(location: found.location + found.length, length: 0)
+            }
         }
 
         // MARK: 보던 자리 (176)
@@ -709,8 +751,10 @@ struct MarkdownEditor: UIViewRepresentable {
                                                     length: selection.length), in: view)
             case .table:
                 let selection = view.selectedRange
+                // 머리 칸의 말은 앱 언어로 (222) — 파일에 들어가는 글이다. 한국어는 `제목`, 영어는 `Header`.
                 return apply(Formatting.table(in: view.textStorage.string,
-                                              start: selection.location), in: view)
+                                              start: selection.location,
+                                              header: String(localized: "table.header", defaultValue: "제목")), in: view)
             case .link(let title, let path, let noteFolder):
                 return applyLink(title: title, path: path, noteFolder: noteFolder)
             case .list(let marker):

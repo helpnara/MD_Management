@@ -1,5 +1,12 @@
 import Foundation
+import NaturalLanguage
 import Core
+
+/// **쓰기 안에서 다시 불린 저장인가** (223). `write` 가 목록을 다시 읽는 동안(충돌 사본 뒤) 그 안에서 `save` 가 다시 불린다 —
+/// 그 호출만 물러나야 한다. 다른 길(노트 떠나기 · 앱이 뒤로 가기)에서 온 저장은 앞의 쓰기를 기다렸다가 남은 글을 쓴다.
+private enum SaveReentry {
+    static let fromWrite = TaskLocal<Bool>(wrappedValue: false)
+}
 
 /// 화면이 보는 상태. 파일은 `FolderStore`(actor) 가 만지고, 여기로는
 /// **`Sendable` 값만** 건너온다 (설계서 §8).
@@ -22,7 +29,9 @@ final class LibraryModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var noteText = ""
     /// 편집기가 들고 있는 지금 글. 아직 파일에 안 들어갔을 수 있다.
-    @Published private(set) var draft = ""
+    /// 편집기의 지금 글. **`@Published` 가 아니다** (229, 2026-10-09 전수 조사) — 이것을 보는 화면이 없는데, 글자 하나마다
+    /// 모델 전체가 바뀌었다고 알려 목록 · 폴더 · 띠까지 다시 그렸다. 긴 노트에서 치는 속도를 깎던 자리다.
+    private(set) var draft = ""
     /// 저장할 것이 남았나. **저장이 실패해도 내리지 않는다** — 다음 기회에 다시 쓴다.
     @Published private(set) var isDirty = false
     @Published private(set) var lastSaved: Date?
@@ -558,6 +567,15 @@ final class LibraryModel: ObservableObject {
         formatRequest = FormatRequest(kind: kind)
     }
 
+    /// 하드웨어 키보드의 ⌘B · ⌘I · ⌘K (230). 도구 띠의 굵게 · 기울임 · 링크 단추와 **같은 함수**를 부른다 — 길을 새로 내지 않는다.
+    func shortcut(_ key: MarkdownTextView.Shortcut) {
+        switch key {
+        case .bold: format(.wrap(.bold))
+        case .italic: format(.wrap(.italic))
+        case .link: startLinkingExistingFile()
+        }
+    }
+
     /// **시험 도구를 보여 줄까** (122 · T11). **꺼짐이 기본.**
     ///
     /// 진단 화면에는 두 종류가 섞여 있었다 — 무엇이 어긋났나(쓰는 사람)와 시험 도구
@@ -577,7 +595,16 @@ final class LibraryModel: ObservableObject {
     private var modeAlreadyChosen = false
 
     /// 위 토글. **쓰기가 기본**이다 (설계서 §14-6).
-    @Published var isReading = false
+    @Published var isReading = false {
+        didSet {
+            // 쓰는 동안 미뤄 둔 읽기 페이지를 그린다 (229). 읽기로 넘기는 단추는 넘기기 **전에** 그려 두므로 여기는 그 밖의 길이다.
+            guard isReading, !oldValue, pageIsStale, let path = draftPath else { return }
+            let text = isDirty ? draft : noteText
+            Task { [weak self] in await self?.renderReading(path: path, text: text) }
+        }
+    }
+    /// 읽기 페이지가 지금 글보다 낡았나 (229) — 쓰는 동안 저장이 페이지를 다시 그리지 않고 이것만 켠다.
+    private var pageIsStale = false
     /// 이름을 바꾸는 중인 노트 · 새 이름. 화면의 알림창이 이것을 본다.
     @Published var renaming: NoteSummary?
     /// **어느 노트를 어느 폴더로 옮길까** (T1). 링크를 고칠지 물어보는 창이 이것으로 뜬다.
@@ -787,8 +814,19 @@ final class LibraryModel: ObservableObject {
     func retryICloud() async {
         guard isFallenBackFromICloud else { return }
         guard let cloud = await FolderSource.iCloudDocuments(attempts: 2) else { return }
+        // **옮겨 타기 전에 쓴다** (227, 2026-10-09 전수 조사). 예전에는 쓰지 않고 바로 저장소를 바꿔, 쓰던 글이
+        // 새 저장소(iCloud)의 같은 자리에 써졌다 — 엉뚱한 파일이나 충돌 사본이 생길 수 있었다.
+        await save()
+        let local = FolderSource.localDocuments()
+        let left = await Task.detached { FolderSource.noteCount(in: local) }.value
         await use(FolderChoice(url: cloud, kind: .iCloudContainer,
                                iCloudAvailable: true, attempts: 2))
+        // **기기 안에 남은 노트를 알린다** (227). 옮겨 탄 뒤에는 그 폴더가 앱에 안 보인다 — 노트가 사라진 줄 안다.
+        // 옮기지는 않는다 (사용자 파일을 앱이 마음대로 옮기지 않는다). 어디서 찾는지만 알린다.
+        if left > 0 {
+            log("iCloud 로 옮겨 탐 — 기기 안 폴더에 노트 \(left)개가 남음")
+            report(String(localized: "iCloud 폴더로 옮겨 탔습니다. 그 전에 이 기기 안에 만든 노트 \(left)개는 그대로 있습니다 — 파일 앱의 나의 iPhone 에서 찾을 수 있습니다."))
+        }
     }
 
     private func use(_ choice: FolderChoice) async {
@@ -1043,10 +1081,10 @@ final class LibraryModel: ObservableObject {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
-        let path = url.standardizedFileURL.path
-        let root = store.root.standardizedFileURL.path
-
-        if let relative = Paths.relative(of: path, under: root) {
+        // **내 폴더 안인지는 저장소의 셈 하나로** (228, 2026-10-09 전수 조사). 예전에는 여기서 따로 경로를 견주었는데
+        // 심볼릭 링크를 풀지 않아(`/private/var` · `/var`) 내 폴더의 파일을 밖의 것으로 보고 `이름 2.md` 사본을 만들 수 있었다.
+        // 같은 것을 재는 곳이 둘이면 갈린다 (CLAUDE.md §1) — `FolderStore.relativePath(of:)` 를 부른다.
+        if let relative = await store.relativePath(of: url) {
             guard !Paths.isHidden(relative) else { return }
             await save()
             selectedFolder = Paths.directory(of: relative)
@@ -1402,6 +1440,15 @@ final class LibraryModel: ObservableObject {
                 failed += 1
             }
         }
+        // **그 사이 다른 노트로 넘어갔으면 넣지 않는다** (228, 2026-10-09 전수 조사). 사진을 줄이는 동안(여러 장이면 몇 초)
+        // 노트를 바꾸면, 링크가 **지금 열린 노트**에 들어갔다 — 그것도 앞 노트 폴더 기준이라 깨진 링크로.
+        guard draftPath == note.relativePath else {
+            if !lines.isEmpty {
+                log("사진을 넣는 사이 노트가 바뀌어 본문에 넣지 않음: \(note.relativePath) · \(lines.count)장")
+                report(String(localized: "사진을 저장하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 사진은 \(note.title) 옆 assets 폴더에 있습니다."))
+            }
+            return
+        }
         if !lines.isEmpty {
             insertion = Insertion(text: lines.joined(separator: "\n"))
             refreshVaultPaths()   // 방금 넣은 사진 줄을 곧바로 다른 폴더에 붙여도 고쳐지게 (177)
@@ -1466,6 +1513,15 @@ final class LibraryModel: ObservableObject {
             } catch {
                 failed.append(name)
             }
+        }
+        // 그 사이 다른 노트로 넘어갔으면 넣지 않는다 (228 — 사진과 같다).
+        guard draftPath == note.relativePath else {
+            if !lines.isEmpty {
+                log("첨부하는 사이 노트가 바뀌어 본문에 넣지 않음: \(note.relativePath) · \(lines.count)개")
+                report(String(localized: "첨부를 복사하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 파일은 \(note.title) 옆 assets 폴더에 있습니다."))
+                await reloadNotes()
+            }
+            return
         }
         if !lines.isEmpty {
             insertion = Insertion(text: lines.joined(separator: "\n"))
@@ -1641,6 +1697,8 @@ final class LibraryModel: ObservableObject {
         // 그동안 `spotRequest` 를 쥐고 있어 단추를 또 눌러도 겹치지 않는다.
         Task {
             await save()
+            // 쓰는 동안 미뤄 둔 페이지를 **넘기기 전에** 그린다 (229) — 넘긴 뒤 그리면 옛 페이지가 먼저 뜬다.
+            if pageIsStale, let path = draftPath { await renderReading(path: path, text: isDirty ? draft : noteText) }
             // 쓸 글이 없었으면 저장이 다시 그리지 않는다 — 그래도 세기는 다시 한다.
             if let path = draftPath, backlinksCounted != path { refreshBacklinks(for: path) }
             spotToRestore = restore
@@ -1753,6 +1811,10 @@ final class LibraryModel: ObservableObject {
     }
 
     // MARK: - 검색 (ADR-0003 · 설계서 §7.5)
+
+    /// **⌘F 를 누른 때** (230). 검색 칸은 노트 목록에 붙어 있어, 목록이 화면에 없으면 바깥(`RootView`)이 목록을 꺼내고
+    /// 이것을 남긴다 — 목록이 서면 칸을 연다. 2초가 지난 부탁은 버린다 (폴더 화면에서 눌렀다가 한참 뒤 폴더를 열 때 칸이 불쑥 뜨지 않게).
+    @Published var searchRequestedAt: Date?
 
     /// 검색 칸의 글. 150ms 디바운스로 `searchResults` 가 따라온다.
     @Published var searchText = "" {
@@ -2015,7 +2077,9 @@ final class LibraryModel: ObservableObject {
             // 다른 기기에서 고정한 것도 여기서 따라온다 (T10).
             await reloadPins()
             await reloadFolders()
-            if !isDirty {
+            // **쓰는 중에는 하지 않는다** (228, 2026-10-09 전수 조사) — 폴더 시각 쪽(216)은 이미 막았는데 여기가 빠져 있었다.
+            // 제목을 따라 이름을 바꾸는(`followTitle`) 틈에 목록을 읽으면 옛 이름이 목록에 없어 열린 노트가 닫혔다.
+            if !isDirty, !isWriting {
                 let fresh = await store.notes(in: selectedFolder)
                 if Self.fingerprint(fresh) != Self.fingerprint(notes) {
                     log("목록이 달라져 다시 읽음: \(selectedFolder.isEmpty ? "최상위" : selectedFolder)")
@@ -2048,6 +2112,11 @@ final class LibraryModel: ObservableObject {
 
     // MARK: - 편집 · 자동 저장
 
+    /// **이번에 열고 나서 고쳤나** (224, 2026-10-09 전수 조사). 제목 따라 이름 바꾸기(`followTitle`)는 **고친 노트에만** 한다 —
+    /// 예전에는 보기만 해도 제어 센터 · 앱 전환(뒤로 가는 저장)에서 다른 앱이 만든 노트의 이름이 첫 줄로 바뀌었다.
+    /// 노트를 새로 열 때 내린다 (`loadSelectedText` · `clearNote`).
+    private var editedThisVisit = false
+
     /// 멈춘 뒤 얼마 만에 쓰나 (설계서 §7.3).
     private static let autosaveDelay = Duration.seconds(2)
 
@@ -2055,7 +2124,9 @@ final class LibraryModel: ObservableObject {
     func noteEdited(_ text: String) {
         guard draftPath != nil, text != draft else { return }
         draft = text
-        isDirty = true
+        // 이미 더러우면 다시 넣지 않는다 — `@Published` 는 같은 값을 넣어도 화면에 알린다 (229).
+        if !isDirty { isDirty = true }
+        editedThisVisit = true
         scheduleAutosave()
     }
 
@@ -2092,10 +2163,15 @@ final class LibraryModel: ObservableObject {
     func save(settlingTitle: Bool = false) async {
         autosave?.cancel()
         autosave = nil
-        // **쓰는 중에 다시 불렸다.** 충돌 사본을 만든 뒤 목록을 다시 읽는 길이 여기로
+        // **쓰기 안에서 다시 불렸다.** 충돌 사본을 만든 뒤 목록을 다시 읽는 길이 여기로
         // 돌아온다 (`reloadNotes` → `loadSelectedText` → `save`). 앞엣것을 기다리면
         // 그것이 곧 나 자신이라 영영 안 끝난다. 이미 쓰는 중이니 할 일도 없다.
-        guard !isWriting else { return }
+        //
+        // **그 길만 물러난다** (223, 2026-10-09 전수 조사). 예전에는 `isWriting` 이면 **누가 불렀든** 물러났다 —
+        // 자동 저장이 쓰는 사이에 친 글자가 있는데 노트를 떠나면, 떠나는 쪽의 `save` 가 그냥 돌아오고 `clearNote` 가
+        // 그 글자를 지웠다 (쓰는 중이던 글은 그 글자 **앞**까지였다). 이제 다른 길에서 온 저장은 앞의 쓰기를 기다렸다가
+        // 남은 글을 한 번 더 쓴다. 다시 불린 길은 쓰기가 그 호출을 감싸 표시한다 (`SaveReentry`).
+        guard !SaveReentry.fromWrite.get() else { return }
         let queued = saveChain
         let task = Task { @MainActor [weak self] in
             await queued?.value
@@ -2128,6 +2204,7 @@ final class LibraryModel: ObservableObject {
         let written = draft
         let expecting = noteText
         let original = path
+        let session = editorSession
         var conflictPath: String?
         do {
             // **덮어쓰기 전에 파일이 그대로인지 본다** (설계서 §7.2 · A15). 검사는 저장소가
@@ -2135,7 +2212,10 @@ final class LibraryModel: ObservableObject {
             // 정말 다른 글이면 **덮어쓰지 않고** `이름 (충돌 …).md` 로 나란히 쓰고 그쪽을 연다.
             do {
                 try await store.writeText(written, to: path, expecting: expecting)
-                lastError = nil
+                // **저장 실패 알림만 거둔다** (225, 2026-10-09 전수 조사). 예전에는 성공한 저장이 **어떤 알림이든** 지웠다 —
+                // 2초 자동 저장이 *다른 기기에서 고친 노트라 나란히 저장했다* · *사진 n장을 넣지 못했다* 를 읽기도 전에 걷었다.
+                // 그 알림들은 사람이 띠를 눌러 닫거나, 사람이 다음 일을 할 때(만들기 · 옮기기 …) 걷힌다.
+                if saveFailed { lastError = nil }
             } catch WriteConflict.changedOnDisk {
                 let name = path.split(separator: "/").last.map(String.init) ?? path
                 let conflict = try await store.createNote(
@@ -2147,6 +2227,12 @@ final class LibraryModel: ObservableObject {
                 let shown = conflict.split(separator: "/").last.map(String.init) ?? conflict
                 lastError = String(localized: "다른 기기에서 고친 노트입니다. 내 글은 \(shown) 로 나란히 저장했습니다.")
                 log("충돌: \(name) 이 디스크에서 바뀌어 내 글을 \(shown) 로 저장")
+            }
+            // **쓰는 사이에 다른 노트로 넘어갔다면** 지금 상태(글 · 도장 · 읽기 화면)는 그 노트의 것이다 — 손대지 않는다 (223).
+            // 저장이 앞의 쓰기를 기다리게 된 뒤로는 노트를 떠나는 길이 먼저 남은 글을 쓰고 넘어가므로 드물다. 남는 길을 막아 둔다.
+            guard editorSession == session else {
+                log("저장하는 사이 노트가 바뀌어 화면 상태는 그대로 둠: \(path)")
+                return
             }
             draftStamp = await store.stamp(of: path)
             // **내 저장도 폴더 시각을 바꾼다** (216, 2026-10-06 사용자 진단 — 최근 일에 *폴더가 바뀌어 목록을 다시 읽음* 이 3~4초마다).
@@ -2165,7 +2251,8 @@ final class LibraryModel: ObservableObject {
             if let conflictPath {
                 // 더러움을 내린 **뒤에** 목록을 읽는다 — 안 그러면 다시 읽기가 저장을 또 부른다.
                 if selectedNoteID == original { selectedNoteID = conflictPath }
-                await reloadNotes()
+                // 이 안에서 `save` 가 다시 불린다 — 표시해 두어 그쪽이 나(쓰는 중)를 기다리지 않게 한다 (223).
+                await SaveReentry.fromWrite.withValue(true) { [self] in await self.reloadNotes() }
             }
             // 목록은 최근 수정순인데 저장한다고 다시 읽지는 않는다 — 그러면 고친 노트가
             // 위로 안 올라온다 (48). 그 한 줄만 새 시각으로 바꿔 다시 정렬한다.
@@ -2179,7 +2266,9 @@ final class LibraryModel: ObservableObject {
                                            size: draftStamp?.size ?? old.size, isDownloaded: old.isDownloaded)
                 notes.sort { $0.modifiedAt > $1.modifiedAt }
             }
-            await renderReading(path: path, text: written)
+            // **읽기 화면이 보일 때만 다시 그린다** (229). 쓰는 동안에는 2초 자동 저장마다 노트 전체를 HTML 로 바꾸고
+            // 있었다 — 보이지도 않는 페이지를. 이제 낡았다고 표시만 하고, 읽기로 넘어갈 때 그린다 (`finishToggle` · `isReading`).
+            if isReading { await renderReading(path: path, text: written) } else { pageIsStale = true }
             // **제목 줄에 커서가 있는 동안에는 이름을 안 바꾼다** (89).
             if settlingTitle || !cursorOnTitleLine {
                 await followTitle(of: written, at: path)
@@ -2203,7 +2292,8 @@ final class LibraryModel: ObservableObject {
     /// 그 뒤로는 `제목 2` 자리를 지킨다 (`FolderStore.rename` 의 `keeping`).
     /// 편집기는 건드리지 않는다 — `editorSession` 이 그대로라 커서도 키보드도 그대로다.
     private func followTitle(of text: String, at path: String) async {
-        guard syncsFileName, let store, let heading = FrontMatterParser.firstLine(of: text) else { return }
+        // **고친 노트만** (224) — 보기만 한 노트(다른 앱이 만든 것일 수 있다)의 이름은 손대지 않는다.
+        guard syncsFileName, editedThisVisit, let store, let heading = FrontMatterParser.firstLine(of: text) else { return }
         let wanted = Paths.safeFileName(heading, fallback: "")
         let fileName = path.split(separator: "/").last.map(String.init) ?? path
         guard !wanted.isEmpty, wanted != Paths.baseName(fileName) else { return }
@@ -2372,7 +2462,8 @@ final class LibraryModel: ObservableObject {
         scheduleIndexRefresh()
         refreshVaultPaths()   // 노트가 생기고 · 이름이 바뀌고 · 옮겨졌을 수 있다 (177)
         // 링크를 따라온 노트는 목록에 없는 것이 맞다 — 지우지 않는다 (T7).
-        if let current = selectedNoteID, current != linkedNote?.relativePath,
+        // **쓰는 중에는 고른 노트를 내리지 않는다** (228) — 이름을 바꾸는 중이면 옛 이름이 잠깐 목록에 없다. 쓰기가 끝나면 쓰기가 새 이름으로 고른다.
+        if let current = selectedNoteID, current != linkedNote?.relativePath, !isWriting,
            !loaded.contains(where: { $0.id == current }) {
             selectedNoteID = nil
         }
@@ -2459,7 +2550,10 @@ final class LibraryModel: ObservableObject {
             // 글을 **묻지 않고** 갈아 끼운다 — 한글을 조합하는 중이었다면 그 자리에서
             // 쪼개진다 (`팀 이` 와 `ㅅ` 이 따로 남았다). 같은 노트를 다시 읽는 것은
             // 편집기의 `load` 가 판정한다: 사용자가 손댔으면 그쪽이 최신이라 안 덮는다.
-            if isNewlyOpened { editorSession = UUID() }
+            if isNewlyOpened {
+                editorSession = UUID()
+                editedThisVisit = false
+            }
             // **노트를 열 때 읽기 모드로** (124). 부른 쪽이 모드를 이미 정했으면(새 노트 ·
             // `왔던 노트` · 시험 파일) 그쪽을 따른다. **편집 모드로 되돌리지는 않는다** —
             // 스위치는 켜는 쪽으로만 움직인다.
@@ -2495,17 +2589,28 @@ final class LibraryModel: ObservableObject {
 
     /// 읽기 모드에 넘길 HTML 을 다시 만든다.
     ///
+    /// **이 글의 언어** (222) — 읽기 화면 `<html lang>` 에 넣는다. 보이스오버가 이것으로 목소리를 고른다.
+    /// 앞부분(2천 자)만 본다 — 언어를 가리기에 충분하고 긴 노트에서 느려지지 않는다. 모르면 앱의 언어.
+    static func language(of text: String) -> String {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(String(text.prefix(2000)))
+        if let found = recognizer.dominantLanguage, found != .undetermined { return found.rawValue }
+        return AppLanguage.isEnglish ? "en" : "ko"
+    }
+
     /// 두 단계다 (`MarkdownHTML.referencedPaths` 주석 참고): 파일이 있는지 아는
     /// 것은 actor 뿐인데 렌더는 순수 함수라 기다릴 수 없다.
     private func renderReading(path: String, text: String) async {
         guard let store else { return }
+        pageIsStale = false
         let referenced = MarkdownHTML.referencedPaths(markdown: text, notePath: path)
         let existing = await store.existingPaths(among: referenced)
-        let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing)
+        let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing,
+                                           tooDeepNotice: String(localized: "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다."))
 
         let pointing = backlinksOwner == path ? backlinks : []
-        pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML + MarkdownHTML.backlinksHTML(pointing),
-                                     css: Palette.cssTokens())
+        pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML + MarkdownHTML.backlinksHTML(pointing, title: String(localized: "이 노트를 가리키는 노트")),
+                                     css: Palette.cssTokens(), lang: Self.language(of: text))
         attachmentCount = existing.count
         missingAttachments = rendered.missingAttachments
         if backlinksCounted != path { refreshBacklinks(for: path) }
@@ -2596,6 +2701,7 @@ final class LibraryModel: ObservableObject {
         draftStamp = nil
         editorSession = UUID()
         isDirty = false
+        editedThisVisit = false
         pageHTML = ""
         attachmentCount = 0
         missingAttachments = []

@@ -1,6 +1,6 @@
 ---
 title: 심사 제출 절차서
-updated: 2026-09-27
+updated: 2026-10-09
 ---
 
 # 심사 제출 절차서
@@ -12,20 +12,16 @@ updated: 2026-09-27
 
 ---
 
-## 0. 지금 상태 (2026-10-07 — **1.1 (빌드 92) 심사 준비** · 1.0.7 승인 · 1.0.8(빌드 86)은 내지 않고 1.1 에 합침)
+## 0. 지금 상태 (2026-10-09 — **1.1 (빌드 92) 승인 · 배포** · 한국어 + 영어(Slow Margin) · `main` = 1.1 · 1.0.8(빌드 86)은 내지 않고 1.1 에 합침)
 
 | | |
 |---|---|
-| 앱 기록 | ✅ 이미 있다 — TestFlight 를 52번 올렸다 |
 | 번들 ID | `com.helpnara.markdown` |
-| 올라간 최신 빌드 | **56** (버전 `1.0`) — 162~169 (2026-09-26) |
-| S8 | ✅ **다 찼다** (2026-09-26) — ① 0건 · ② 2 / 2 · ③ ✅ |
-| 심사 | **2026-09-26 제출** → 09-27 **2.1 정보 요청** → 답장 · 녹화 → ✅ **2026-09-28 승인** (§5) |
-| 스크린샷 | ✅ **일곱 장 준비됨** (2026-09-24) |
-| 처리방침 페이지 | ✅ 열리는 것 확인 (2026-09-24 · A16) |
-
-**빌드 번호는 CI 실행 번호와 같다** (`testflight.yml` 이 `github.run_number` 를 넣는다).
-그래서 **TestFlight 56 = 빌드 56** 이다. 심사에 낼 것은 **56** 이다 — 골라 둔 빌드를 **다시 고른다.**
+| 출시된 판 | **1.1** (빌드 92 · 2026-10-09 배포) — 한국어 · 영어 |
+| 빌드 번호 | **CI 실행 번호와 같다** (`testflight.yml` 이 `github.run_number` 를 넣는다) — 심사에 낼 빌드를 확인 목록 0번의 판으로 고른다 |
+| 처리방침 · 지원 | 한국어 `/privacy/` · 영어 `/en/privacy/` (열리는 것 확인 — 2026-09-24 · 2026-10-07) |
+| 스크린샷 | 한국어 — 아이폰 6.5" 석 장 · 아이패드 13" 가로 넉 장 (2026-09-24). 영어 — 아이폰 **6.1"** 넉 장 · 아이패드 13" 세로 석 장 (2026-10-08, `docs/11-store-screenshots.md`) |
+| 첫 심사 | 2026-09-26 제출 → 2.1 정보 요청 → 답장 · 녹화 → 2026-09-28 승인 (§5) |
 
 ---
 
@@ -166,9 +162,21 @@ https://helpnara.github.io/MD_Management/privacy/
 3. 오른쪽 위 언어 메뉴 → **English (U.S.)** 더하기 → 아래 *Name* ~ *What’s New* 를 칸마다 붙인다
    - **앱 정보** 쪽(이름 · 부제 · 개인정보 처리방침 URL)과 **버전** 쪽(프로모션 · 설명 · 키워드 · 지원 URL · 새로운 기능 · 스크린샷)이 다른 화면이다 — 둘 다 English 로 바꿔 채운다
    - 개인정보 처리방침 URL · 지원 URL 은 영어 쪽 주소 (아래)
+   - **언어 더하기 자세히** (2026-10-08 사용자 질문). 언어 메뉴는 왼쪽 목록이 아니라 **화면 오른쪽 위**, 페이지 제목 줄 끝의 `한국어 ▾` 다.
+     ① 왼쪽 **앱 정보** → 오른쪽 위 `한국어 ▾` → 목록에서 **English (U.S.)** → 빈 영어 칸이 열린다: 이름 · 부제 · 개인정보 처리방침 URL → **저장**.
+     ② 왼쪽 **iOS 앱 1.1** → 오른쪽 위 언어 메뉴를 **English (U.S.)** 로 바꾼다 (①에서 더했으므로 목록에 있다) → 스크린샷 · 프로모션 · 설명 · 키워드 · 지원 URL · 새로운 기능 → **저장**.
+     기본 언어(한국어)는 바꾸지 않는다 — 한국어 칸은 그대로다. 메뉴로 언어를 오가며 칸이 빠졌는지 본다. **칸 이름 · 자리는 콘솔이 바뀌면 조금 다를 수 있다** (여기서 콘솔을 못 본다).
 4. **영어 스크린샷.** 영어 칸에 안 올리면 **한국어 스크린샷이 그대로 보인다.** 영어 견본 노트 `docs/samples/en/` 으로 한국어 때와 같은 차례로 찍는다
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
+
+### 1.1.1 제출 순서 (2026-10-09 사용자 — *묶음 2까지 묶어서 한번에 출시*)
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.1` — 한국어 · 영어 칸과 스크린샷은 1.1 에서 따라온다
+2. 한국어 칸: *이 버전의 새로운 기능* 에 §6 아래 울타리를 붙인다 · **빌드** 칸에서 **94** 를 고른다
+   (아이패드 키보드 확인(빌드 94 · 11~13)에서 걸려 빌드 95 를 만들면 그것을 고른다)
+3. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New in This Version* 에 아래 영어 울타리를 붙인다 → **저장**. 다른 영어 칸은 그대로
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
 
 ### Name
 
@@ -260,14 +268,18 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다.
+> **1.1.1** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1 의 글은 `docs/store/1.1-새로운-기능.txt`.
 
 ```
-• Slow Margin now speaks English. To use it in English, open Settings, find Slow Margin, and set its Language to English.
-• With a folder selected, New Folder now creates the new folder inside it (up to two levels).
-• Touch and hold a button in the formatting toolbar to see its name.
-• In the Files app, the iCloud Drive folder is now named Slow Margin. It’s the same folder, and your notes stay right where they are.
-• A new app icon.
+• Saving is sturdier: text typed while a save is in progress is now saved too when you leave the note.
+• Notes you only open and read are no longer renamed. The first-line file name setting now applies only to notes you edit in the app.
+• Undo after switching notes no longer brings back changes from the previous note.
+• Typing in long notes feels lighter.
+• If you switch notes while photos or attachments are being added, they are no longer put into the other note — you’ll see where the files were saved.
+• On iPad with a keyboard: ⌘B for bold, ⌘I for italic, ⌘K for a link. ⌘N and ⌘F now work even when the note list is hidden.
+• Formatting toolbar buttons dim while pressed and are easier to tap. On iPad, they highlight under the pointer.
+• #tags are darker in light mode for easier reading, and VoiceOver now reads checkboxes in reading view as checkboxes.
+• Korean text that still appeared in English mode (table headers, the heading at the bottom of reading view, and more) is now in English.
 ```
 
 ---
@@ -385,6 +397,7 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-10-09 | **1.1.1 (빌드 94) 준비** — 전수 조사 묶음 1 (빌드 93 · 0~10 확인) + 묶음 2 (빌드 94 · 1~9 확인, 아이패드 키보드 11~13 은 사용자가 보는 중). 새로운 기능 글 `docs/store/1.1.1-새로운-기능.txt` (한국어 · 영어). `main` 병합 |
 | 2026-10-07 | ✅ **1.0.7 (빌드 84) 승인** (사용자 — *1.0.7은 심사가 완료되었어*). 216 · 217 · 스토어 설명 보강(새 기능 셋). `main` 병합 (차이 없음 확인) |
 | 2026-10-04 | ✅ **1.0.6 (빌드 81) 승인 · 배포** (사용자 — *1.0.6 배포되었어*). 출시된 판 = 1.0.6. 다음 판에서 스토어 설명에 새 기능 셋을 더한다 (위 §설명) |
 | 2026-10-03 | ✅ **1.0.6 (빌드 81) 제출** (사용자 — *1.0.6 제출 완료*). 1.0.5 는 따로 내지 않고 합쳤다 (210~215 + 200 · 201 · 206~209). `main` 병합 (차이 없음 확인). **스토어 설명 보강(공유 메뉴 · 읽기 화면 체크상자 · 이 노트를 가리키는 노트)은 다음 판에** (사용자 — *누락된 추가 기능 설명은 다음 버전할때 포함시키자*) |
@@ -466,15 +479,19 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1** (2026-10-07 — 219 영문판 · 218 폴더 안에 폴더 · 220 도구 띠 이름). 1.0.7 의 글은 `docs/store/1.0.7-새로운-기능.txt`.
+> **1.1.1** (2026-10-09 — 전수 조사 묶음 1 · 2: 223 저장 · 224 이름 · 226 되돌리기 · 229 속도 · 228 사진 · 230 키보드 · 231 띠 단추 · 232 대비 · 보이스오버 · 222 영어). 1.1 의 글은 `docs/store/1.1-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
-> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6). 1.1 에 더 실리면 여기에 더한다.
+> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6). 225(알림 띠) · 227(iCloud 늦게 잡은 날)은 드물어 적지 않았다.
 
 ```
-• 영어를 지원합니다. 설정 앱에서 느린 여백을 찾아 언어를 English 로 바꾸면 이 앱만 영어로 쓸 수 있습니다.
-• 폴더를 고른 채 새 폴더를 만들면 그 폴더 안에 만들어집니다 (두 단계까지).
-• 아래 도구 띠의 단추를 길게 누르면 단추 이름이 뜹니다.
-• 파일 앱의 iCloud Drive 에 보이는 폴더 이름이 Slow Margin 으로 바뀝니다. 같은 폴더이고 노트는 그대로입니다.
-• 앱 아이콘이 새로 바뀌었습니다.
+• 저장을 더 단단하게 했습니다. 저장하는 사이에 친 글자도 노트를 떠날 때 빠짐없이 저장합니다.
+• 열어 보기만 한 노트의 파일 이름은 바꾸지 않습니다. 첫 줄을 파일 이름으로 쓰는 설정은 앱에서 고친 노트에만 걸립니다.
+• 다른 노트로 넘어간 뒤 실행 취소를 눌러도 앞 노트에서 고친 것이 끼어들지 않습니다.
+• 긴 노트에서 글자를 칠 때 더 가볍게 따라옵니다.
+• 사진이나 첨부를 넣는 사이 다른 노트로 넘어가면, 그 노트에 넣지 않고 사진이 있는 곳을 알려 줍니다.
+• 아이패드 키보드에서 ⌘B 굵게 · ⌘I 기울임 · ⌘K 링크를 쓸 수 있습니다. ⌘N · ⌘F 는 노트 목록이 안 보여도 됩니다.
+• 도구 띠 단추가 누르는 동안 흐려지고, 손가락으로 누르기 쉬워졌습니다. 아이패드에서는 포인터를 올리면 단추가 드러납니다.
+• 밝은 화면의 #태그 색을 더 짙게 해 읽기 쉽게 했습니다. 보이스오버가 읽기 화면의 체크상자를 체크상자로 읽습니다.
+• 영어로 쓸 때 남아 있던 한국어(표 머리 칸, 읽기 화면 맨 아래 제목 등)를 영어로 바꿨습니다.
 ```
 

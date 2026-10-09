@@ -66,10 +66,12 @@ public enum MarkdownHTML {
     ///   - markdown: 파일 전체 (머리말 포함)
     ///   - notePath: 폴더 기준 상대경로 — 상대 링크를 푸는 기준이다
     ///   - existing: 폴더 안에 실제로 있는 상대경로들 (`referencedPaths` → `FolderStore`)
+    /// `tooDeepNotice` — 겹침이 너무 깊을 때 위에 다는 한 줄. App 이 앱 언어로 넘긴다 (222 — Core 에는 번역 목록이 없다).
     public static func render(
         markdown: String,
         notePath: String,
-        existing: Set<String>
+        existing: Set<String>,
+        tooDeepNotice: String = "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다."
     ) -> RenderedNote {
         let body = FrontMatterParser.parse(markdown).body
 
@@ -77,7 +79,7 @@ public enum MarkdownHTML {
         // 글은 그대로 보여 준다(이스케이프해서). 첨부는 안 그리므로 없는 첨부도 없다.
         guard !Nesting.isTooDeep(body) else {
             return RenderedNote(
-                bodyHTML: "<p><em>겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다.</em></p>\n<pre>\(escape(body))</pre>\n",
+                bodyHTML: "<p><em>\(escape(tooDeepNotice))</em></p>\n<pre>\(escape(body))</pre>\n",
                 missingAttachments: []
             )
         }
@@ -122,18 +124,24 @@ public enum MarkdownHTML {
         for match in regex.matches(in: html, range: NSRange(location: 0, length: text.length)) {
             let open = text.substring(with: match.range(at: 1))
             let line = text.substring(with: match.range(at: 2))
-            let link = "<a class=\"yb-task\" href=\"\(scheme)://task/\(line)\">"
+            // **보이스오버에는 체크상자로 읽힌다** (232, 2026-10-09 전수 조사). 링크 안에 꺼 둔(`disabled`) 체크상자만 있으면
+            // *링크* 로 읽히고 켜졌는지는 흐리게 묻혔다. 링크에 체크상자 역할과 켜짐을 달면 안의 상자는 겉모습만 남는다
+            // (체크상자 역할의 자식은 따로 읽히지 않는다). 두 번 누르면 링크가 눌린 것과 같아 그대로 뒤집힌다.
+            func link(_ checked: Bool) -> String {
+                "<a class=\"yb-task\" role=\"checkbox\" aria-checked=\"\(checked)\" href=\"\(scheme)://task/\(line)\">"
+            }
             var replaced: String
             if match.range(at: 3).location != NSNotFound {
                 // cmark-gfm 이 그린 체크상자.
-                replaced = open + link + text.substring(with: match.range(at: 3)) + "</a>"
+                let input = text.substring(with: match.range(at: 3))
+                replaced = open + link(input.contains("checked=")) + input + "</a>"
             } else {
                 // 글자로 남은 `[ ]` — 원문 줄이 정말 체크상자 줄일 때만.
                 guard let row = Int(line), row < lines.count,
                       TaskToggle.marker(Array(lines[row].unicodeScalars)) != nil else { continue }
                 let checked = text.substring(with: match.range(at: 5)) != " "
                 let box = "<input type=\"checkbox\" disabled=\"\"" + (checked ? " checked=\"\"" : "") + " />"
-                replaced = open + link + box + "</a>"
+                replaced = open + link(checked) + box + "</a>"
                 if match.range(at: 4).location != NSNotFound {
                     replaced += " " + text.substring(with: match.range(at: 4)).trimmingCharacters(in: .whitespacesAndNewlines)
                 }
@@ -150,9 +158,10 @@ public enum MarkdownHTML {
     /// 줄마다 노트 이름(노트 목록의 제목과 같은 `Paths.baseName`)과, 맨 위 폴더가 아니면 흐린 폴더 경로. 누르면 `yb://note/…` —
     /// 본문의 노트 링크와 같은 길로 그 노트가 열린다 (`NoteLinkAction.note`). 파일에는 아무것도 안 쓴다.
     /// 목록은 `AttachmentLedger.backlinks` 가 정한다 — 여기서는 그리기만.
-    public static func backlinksHTML(_ paths: [String]) -> String {
+    /// `title` 은 App 이 번역해 넘긴다 — Core 에는 번역 목록이 없다 (219 · 영어 스토어 스크린샷에서 한국어로 남은 것이 잡혔다).
+    public static func backlinksHTML(_ paths: [String], title: String = "이 노트를 가리키는 노트") -> String {
         guard !paths.isEmpty else { return "" }
-        var html = "<section class=\"yb-backlinks\">\n<p class=\"yb-backlinks-title\">이 노트를 가리키는 노트 · \(paths.count)</p>\n<ul>\n"
+        var html = "<section class=\"yb-backlinks\">\n<p class=\"yb-backlinks-title\">\(escape(title)) · \(paths.count)</p>\n<ul>\n"
         for path in paths {
             let normalized = Paths.normalized(path)
             // 이름은 노트 목록과 같은 셈 (`Paths.baseName` — 목록의 제목이 이것이다).
@@ -167,10 +176,12 @@ public enum MarkdownHTML {
 
     /// 완전한 HTML 문서. 색 토큰(`--yb-*`)은 App 이 만들어 넘긴다 — 앱과 웹뷰의
     /// 다크 모드가 같이 가야 하기 때문이다 (설계서 §8).
-    public static func page(bodyHTML: String, css: String) -> String {
+    /// `lang` — 이 글의 언어 (222). 보이스오버가 이것으로 읽을 목소리를 고르고, 줄바꿈 · 글꼴도 따른다.
+    /// 예전에는 늘 `ko` 여서 영어 노트를 한국어 목소리로 읽었다. App 이 글을 보고 정해 넘긴다.
+    public static func page(bodyHTML: String, css: String, lang: String = "ko") -> String {
         """
         <!doctype html>
-        <html lang="ko">
+        <html lang="\(escape(lang))">
         <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -316,7 +327,7 @@ public enum MarkdownHTML {
     .yb-backlinks li { margin: 0.45em 0; }
     .yb-backlinks-folder { font-size: 0.8em; color: var(--yb-ink-faint); margin-left: 0.35em; }
     .yb-tag {
-      color: var(--yb-tag, #B88500);
+      color: var(--yb-tag, #8F6700);  /* 232 — 대비 4.5 넘게. 앱은 늘 토큰을 넘긴다 */
       font-weight: 600;
     }
     blockquote {

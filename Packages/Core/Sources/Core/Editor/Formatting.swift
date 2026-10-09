@@ -250,7 +250,8 @@ public enum Formatting {
     /// 커서가 선 줄이 비어 있으면 그 자리에, 아니면 **그 줄 다음에** 넣는다. 표는 앞뒤로
     /// 빈 줄이 있어야 표로 읽히므로(GFM) 필요한 만큼 빈 줄을 함께 넣는다.
     /// 넣고 나서 **첫 칸의 글자를 골라 둔다** — 바로 쳐서 덮어쓸 수 있다.
-    public static func table(in text: String, start: Int, rows: Int = 3, columns: Int = 3) -> Edit {
+    /// `header` 는 머리 칸의 말 — App 이 앱 언어로 넘긴다 (222 — Core 에는 번역 목록이 없다. 영어에서 `제목 1` 이 **파일에** 들어갔다).
+    public static func table(in text: String, start: Int, rows: Int = 3, columns: Int = 3, header: String = "제목") -> Edit {
         let units = Array(text.utf16)
         let columns = max(1, columns)
         let bodyRows = max(1, rows - 1)
@@ -258,7 +259,8 @@ public enum Formatting {
         let current = string(units, line.start, line.end)
         let isEmptyLine = current.trimmingCharacters(in: .whitespaces).isEmpty
 
-        let header = "| " + (1...columns).map { "제목 \($0)" }.joined(separator: " | ") + " |"
+        let headerWord = header
+        let header = "| " + (1...columns).map { "\(headerWord) \($0)" }.joined(separator: " | ") + " |"
         let rule = "| " + Array(repeating: "---", count: columns).joined(separator: " | ") + " |"
         let body = Array(repeating: "|" + String(repeating: "  |", count: columns), count: bodyRows)
         let table = ([header, rule] + body).joined(separator: "\n")
@@ -272,7 +274,7 @@ public enum Formatting {
 
         // 첫 칸의 `제목 1` 을 골라 둔다.
         let lead = ((before + "| ") as NSString).length
-        let first = ("제목 1" as NSString).length
+        let first = ("\(headerWord) 1" as NSString).length
         return Edit(start: insertAt, length: 0, text: piece,
                     selectionStart: insertAt + lead, selectionLength: first)
     }

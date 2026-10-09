@@ -46,7 +46,7 @@
 | 한국어 | 영어 |
 |---|---|
 | `주간 계획` | `Weekly Plan` — 편집 모드 사진 (커서를 **`clearing what’s piled up`** 줄에) |
-| `제주 여행` | `Lisbon Trip` — 읽기 모드 사진 (사진은 앱으로 넣는다 — `…` → **Photo Library**) |
+| `제주 여행` | `Lisbon Trip` — 읽기 모드 사진. 사진(`assets/river.jpg` — 새 아이콘 그림의 창밖 풍경)과 링크가 **이미 들어 있다** |
 | `회의록` | `Meeting Notes` |
 | `독서 기록` | `Reading Log` |
 | `장보기` | `Groceries` |
@@ -54,4 +54,7 @@
 **찍기 전에** 아이폰 설정 → 느린 여백 → **언어 → English** (이 앱만). 그 상태로 위 *넣는 법* 1~5 를 그대로 한다 — 버튼 이름만 영어다
 (*Choose Another Folder* · *Pin* · *Photo Library*). `[[` 사진은 `Weekly Plan` 에서 `[[Read` 처럼.
 다 찍은 뒤 언어를 한국어로 되돌린다.
+
+**영어 스토어 스크린샷은 CI 가 찍는다** (2026-10-08 사용자 — *스크린샷을 찍어서 줘 … 이미지 사이즈 실수하지 않도록*). `store-shots.yml` 이 이 다섯 노트와 사진을
+시뮬레이터 앱 폴더에 넣고 영어로 띄워 찍은 뒤 `Tools/store/fit.py` 로 칸 크기에 맞춰 `docs/store/en-screenshots/` 에 커밋한다 (요청: `Tools/store/shots-request.txt` 에 한 줄).
 

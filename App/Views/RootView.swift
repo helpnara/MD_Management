@@ -36,6 +36,17 @@ struct RootView: View {
         // 시트에만 건넸다 — 그때는 띠가 둘이 되는 것만 막으면 됐다 (빌드 24 · 13번).
         .environment(\.rootIsCompact, horizontalSizeClass == .compact)
         .tint(Palette.accent)
+        // **⌘N · ⌘F 는 어느 화면에서나** (230, 2026-10-09 전수 조사). 예전에는 노트 목록에 걸려 있어 목록이 안 보이면
+        // (아이패드에서 노트만 크게 · 아이폰에서 노트를 연 채) 아무 일도 없었다. 바깥에 걸어 두고, 찾기는 목록부터 꺼낸다.
+        .background {
+            Group {
+                Button("새 노트") { Task { await library.createNote() } }
+                    .keyboardShortcut("n", modifiers: .command)
+                Button("찾기") { openSearch() }
+                    .keyboardShortcut("f", modifiers: .command)
+            }
+            .hidden()
+        }
         .task {
             library.autoSelectsFirstNote = prefersPreselectedNote
             await library.start()
@@ -69,7 +80,13 @@ struct RootView: View {
             guard phase != .active else { return }
             // 뒤로 갈 때는 제목도 확정한다 — 제목 줄에 커서를 둔 채 나갈 수 있다 (89).
             library.cursorOnTitleLine = false
-            Task { await library.save(settlingTitle: true) }
+            // **저장이 끝날 때까지 앱을 멈추지 말라고 시스템에 부탁한다** (223). 뒤로 간 앱은 곧 멈추고, 그 뒤 메모리가 모자라
+            // 꺼지면 쓰다 만 글이 사라진다. 저장은 앞의 쓰기를 기다렸다가 남은 글까지 쓰므로 시간이 조금 더 걸릴 수 있다.
+            let hold = BackgroundSaveHold.begin()
+            Task {
+                await library.save(settlingTitle: true)
+                hold.end()
+            }
         }
         // **시트는 하나로 모은다.** 한 뷰에 `.sheet` 를 여러 개 걸면 마지막
         // 것만 뜬다 — 진단을 눌렀는데 설정이 뜨는 식으로 조용히 어긋난다.
@@ -108,6 +125,17 @@ struct RootView: View {
             }
             .environment(\.rootIsCompact, horizontalSizeClass == .compact)
         }
+    }
+
+    /// ⌘F (230) — 검색 칸이 있는 노트 목록부터 꺼낸다. 아이폰 폭에서는 뒤로 가기와 같이 노트를 닫고 목록으로 간다.
+    private func openSearch() {
+        if horizontalSizeClass == .compact {
+            library.selectedNoteID = nil
+        } else if columnVisibility != .all, columnVisibility != .doubleColumn {
+            // 노트만 크게 보던 때(`detailOnly`)와 시스템이 고르던 때(`automatic` — 세로 화면은 목록을 숨길 수 있다) 모두.
+            columnVisibility = .doubleColumn
+        }
+        library.searchRequestedAt = Date()
     }
 
     /// 아이패드(regular)는 상세 칸이 비면 어색하니 첫 노트를 미리 고른다.
@@ -275,6 +303,8 @@ struct StatusBanner: View {
                 }
             }
             .buttonStyle(.plain)
+            // 눈에는 오른쪽 `×` 가 닫기라고 말하지만 보이스오버는 글만 읽는다 (232).
+            .accessibilityHint(String(localized: "누르면 이 알림을 닫습니다"))
         } else if library.isFallenBackFromICloud, !errorsOnly {
             Button {
                 library.sheet = .diagnostics
@@ -568,6 +598,8 @@ private struct NoteList: View {
                                 if hit.byTitle {
                                     Image(systemName: "textformat")
                                         .foregroundStyle(Palette.inkFaint)
+                                        // 아이콘만으로는 보이스오버가 *textformat* 이라 읽는다 (232).
+                                        .accessibilityLabel(String(localized: "제목에서 찾음"))
                                 }
                             }
                             if !hit.line.isEmpty {
@@ -593,10 +625,14 @@ private struct NoteList: View {
         .searchable(text: $library.searchText, isPresented: $searchPresented,
                     placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: "제목 · 본문 · tag: · path:")
-        .background {
-            Button("찾기") { searchPresented = true }
-                .keyboardShortcut("f", modifiers: .command)
-                .hidden()
+        // ⌘F 는 바깥에 있다 (230 — `RootView.openSearch`). 목록이 서면 부탁을 받아 칸을 연다 — 막 나타나는 중이면
+        // 여는 말이 넘기는 움직임에 묻혀 잠깐 기다린다.
+        .task(id: library.searchRequestedAt) {
+            guard let at = library.searchRequestedAt, Date().timeIntervalSince(at) < 2 else { return }
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else { return }
+            searchPresented = true
+            library.searchRequestedAt = nil
         }
         .toolbar {
             // **이 폴더 안에 새 폴더** (218) — 노트 목록의 폴더가 곧 고른 폴더다. 아이폰은 여기가 하위 폴더를 만드는 길.
@@ -614,7 +650,7 @@ private struct NoteList: View {
                 } label: {
                     Label("새 노트", systemImage: "square.and.pencil")
                 }
-                .keyboardShortcut("n", modifiers: .command)
+                // ⌘N 은 바깥에 있다 (230 — 목록이 안 보여도 되게).
             }
         }
         // 당겨서 새로 고침 — iCloud 로 다른 기기에서 온 변화 · 휴지통에서 되돌린 것.
@@ -740,6 +776,7 @@ private struct NoteList: View {
                             Image(systemName: "pin.fill")
                                 .font(.scaled(.caption))
                                 .foregroundStyle(Palette.inkFaint)
+                                .accessibilityLabel(String(localized: "고정됨"))    // 232
                         }
                         if !note.isDownloaded {
                             // iCloud 에 있지만 아직 안 내려온 파일 (설계서 §7.1).
@@ -1016,7 +1053,8 @@ private struct NoteDetail: View {
             Button("그래도 보내기") { library.shareAnyway(prompt.package) }
             Button("취소", role: .cancel) { library.cancelShare(prompt.package) }
         } message: { prompt in
-            Text("\(prompt.package.missing.count)개를 찾을 수 없어 빼고 보냅니다.\n\n"
+            // 앞 문장만 번역하고 파일 이름 목록은 그대로 붙인다 — `+` 로 이으면 통째로 번역을 비껴간다 (222).
+            Text(String(localized: "\(prompt.package.missing.count)개를 찾을 수 없어 빼고 보냅니다.") + "\n\n"
                  + prompt.package.missing.prefix(5).joined(separator: "\n"))
         }
         .alert("찾을 수 없습니다", isPresented: Binding(
@@ -1112,7 +1150,8 @@ private struct NoteDetail: View {
                     onSpot: library.reportSpot,
                     restore: library.spotToRestore,
                     onRestored: library.spotRestored,
-                    onLog: library.log)
+                    onLog: library.log,
+                    onShortcut: library.shortcut)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
                 // **`>>` · `[[` 를 치면 노트 목록이 여기 뜬다** (147).
@@ -1314,6 +1353,48 @@ private struct NoteDetail: View {
 
 }
 
+/// **도구 띠 단추의 모양** (231). 누르는 동안 흐려지고, 0.4초를 넘게 누르고 있으면 `onHeld` 를 부른다 (220 이름 띄우기).
+private struct BarButtonStyle: ButtonStyle {
+    let clock: PressClock
+    let onHeld: @MainActor () -> Void
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.45 : 1)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                clock.pressChanged(pressed, onHeld: onHeld)
+            }
+    }
+}
+
+/// **얼마나 오래 눌렀나** (231). 화면을 다시 그릴 일이 아니라 `@Published` 를 쓰지 않는 그냥 상자다.
+/// 누르기 시작하면 0.4초를 센다. 다 세면 *길게 누름* 으로 적고 이름을 띄운다. 뗄 때 단추의 동작이 이것을 한 번 읽고 지운다.
+/// 누르다 단추 밖으로 빠져 동작이 안 와도, 다음 누르기가 시작할 때 지우므로 그 다음 짧은 누르기를 먹지 않는다.
+@MainActor
+private final class PressClock {
+    private var heldTask: Task<Void, Never>?
+    private var held = false
+
+    func pressChanged(_ pressed: Bool, onHeld: @escaping @MainActor () -> Void) {
+        heldTask?.cancel()
+        heldTask = nil
+        guard pressed else { return }
+        held = false
+        heldTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard let self, !Task.isCancelled else { return }
+            self.held = true
+            onHeld()
+        }
+    }
+
+    /// 방금 뗀 누르기가 길었나. 읽으면 지운다.
+    func consumeHeld() -> Bool {
+        defer { held = false }
+        return held
+    }
+}
+
 /// **편집 도구 띠** (127 · T13 1차, 2026-09-18 사용자 — 워드의 도구 띠처럼).
 ///
 /// **여기 있는 것은 마크다운 표준 안쪽뿐이다** — 굵게 · 기울임 · 취소선 · 인용 · 표 ·
@@ -1487,10 +1568,13 @@ private struct FormatBar: View {
     /// 길게 눌러 띄운 단추 이름 (220). 몇 초 뒤 저절로 걷힌다.
     @State private var shownName: String?
     @State private var hideNameTask: Task<Void, Never>?
+    /// 지금 누르는 단추를 얼마나 오래 눌렀나 (231). 띠에 단추가 여럿이어도 손가락은 한 번에 하나다.
+    @State private var press = PressClock()
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Metrics.rowSpacing) {
+            // 단추가 제 둘레에 누를 자리를 넉넉히 가지므로(231 · `face`) 사이는 좁힌다 — 띠 길이는 예전과 같다.
+            HStack(spacing: Metrics.scaledLength(2)) {
                 button(String(localized: "굵게"), "bold", .wrap(.bold), on: library.activeFormats.bold)
                 button(String(localized: "기울임"), "italic", .wrap(.italic), on: library.activeFormats.italic)
                 button(String(localized: "취소선"), "strikethrough", .wrap(.strikethrough),
@@ -1513,7 +1597,6 @@ private struct FormatBar: View {
                 button(String(localized: "들여쓰기"), "increase.indent", .shift(deeper: true))
             }
             .padding(.horizontal, Metrics.gutter)
-            .padding(.vertical, Metrics.rowSpacing)
         }
         // **세로로는 딱 한 줄만 차지한다.** 가로 스크롤은 세로로도 남는 공간을 다 먹으려
         // 해서, 그냥 두면 띠 높이가 제멋대로 잡히고 **아래가 잘린다** (시뮬레이터
@@ -1557,6 +1640,7 @@ private struct FormatBar: View {
         Rectangle()
             .fill(Palette.rule)
             .frame(width: 0.5, height: Metrics.scaledLength(20))
+            .padding(.horizontal, Metrics.scaledLength(4))
     }
 
     /// 글자는 안 보이고 **아이콘만** 선다 — 띠가 한 줄을 넘지 않게. 이름은 보이스오버가 읽고,
@@ -1574,21 +1658,28 @@ private struct FormatBar: View {
     /// **모양은 한 자리에만 적는다.** 링크 단추를 더하면서 크기 · 색을 옆에 또 적었다가
     /// 곧 갈릴 뻔했다 (`CLAUDE.md` §1 — 같은 것을 재는 곳이 둘이면 갈린다).
     ///
-    /// **`Button` 이 아니라 두 손짓이다** (220). `Button` 은 오래 누르다 떼어도 동작을 하므로 *이름만 보기* 가 안 된다.
-    /// 짧게 누르기와 길게 누르기를 함께 걸면 길게 누르기가 이긴 때 짧게 누르기는 오지 않는다. 손짓은 편집기의
-    /// 입력 초점을 빼앗지 않는다 — `Button(.plain)` 때와 같다. 보이스오버에는 단추로 읽히고 두 번 누르면 동작한다.
+    /// **다시 `Button` 이다** (231, 2026-10-09 전수 조사). 220 에서 두 손짓(누르기 · 길게 누르기)으로 바꿨더니 누르는 동안
+    /// 흐려지는 모습과 아이패드 포인터가 단추에 붙는 효과가 함께 사라졌다 — `Button` 만 주는 것들이다.
+    /// 이름만 보기는 단추의 모양(`BarButtonStyle`)이 **누른 시간을 재서** 맞춘다: 0.4초를 넘기면 이름을 띄우고,
+    /// 뗄 때 오는 동작은 건너뛴다 (`PressClock`). 손짓을 따로 걸지 않으니 띠를 미는 것과 다투지 않는다.
     private func button(_ name: String, _ symbol: String, on isOn: Bool = false,
                         action: @escaping () -> Void) -> some View {
-        face(name, symbol, on: isOn)
-            .onTapGesture(perform: action)
-            .onLongPressGesture(minimumDuration: 0.4) { showName(name) }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(isOn ? String(localized: "\(name) 켜짐") : name)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityAction(.default, action)
+        Button {
+            // 길게 눌러 이름을 본 것이면 서식을 걸지 않는다 (220).
+            if press.consumeHeld() { return }
+            action()
+        } label: {
+            face(name, symbol, on: isOn)
+        }
+        .buttonStyle(BarButtonStyle(clock: press) { showName(name) })
+        .hoverEffect(.highlight)
+        .accessibilityLabel(isOn ? String(localized: "\(name) 켜짐") : name)
     }
 
     /// 단추의 얼굴 — 일반 단추와 목록 단추(193)가 같이 쓴다.
+    ///
+    /// **보이는 칸은 34, 누르는 칸은 44** (231 — 손가락 권장 크기). 보이는 칸까지 키우면 눌린 모습의 파란 칸이
+    /// 띠를 꽉 채워 무거워 보인다. 바깥 칸이 띠 높이가 되므로 띠의 위아래 여백은 뺐다 — 띠 높이는 예전과 거의 같다.
     private func face(_ name: String, _ symbol: String, on isOn: Bool) -> some View {
         Label(name, systemImage: symbol)
             .labelStyle(.iconOnly)
@@ -1600,6 +1691,8 @@ private struct FormatBar: View {
                 RoundedRectangle(cornerRadius: Metrics.scaledLength(7))
                     .fill(isOn ? Palette.accent : .clear)
             }
+            .frame(minWidth: Metrics.scaledLength(44),
+                   minHeight: Metrics.scaledLength(44))
             .contentShape(Rectangle())
     }
 
@@ -1619,6 +1712,7 @@ private struct FormatBar: View {
         }
         .menuStyle(.button)
         .buttonStyle(.plain)
+        .hoverEffect(.highlight)
         .accessibilityLabel("목록 모양")
         .accessibilityHint("누르면 번호와 글머리표를 바꿉니다. 길게 누르면 모양을 고릅니다")
     }
@@ -1663,3 +1757,23 @@ extension EnvironmentValues {
     }
 }
 
+/// **뒤로 가는 순간의 저장을 지킨다** (223). `beginBackgroundTask` 로 몇 초를 얻고, 저장이 끝나면 돌려준다.
+/// 시간이 다 되면(시스템이 거둬 가면) 그때 돌려준다 — 돌려주지 않으면 시스템이 앱을 끈다.
+@MainActor
+final class BackgroundSaveHold {
+    private var id: UIBackgroundTaskIdentifier = .invalid
+
+    static func begin() -> BackgroundSaveHold {
+        let hold = BackgroundSaveHold()
+        hold.id = UIApplication.shared.beginBackgroundTask(withName: "save") { [weak hold] in
+            MainActor.assumeIsolated { hold?.end() }
+        }
+        return hold
+    }
+
+    func end() {
+        guard id != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        id = .invalid
+    }
+}

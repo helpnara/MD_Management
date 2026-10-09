@@ -247,6 +247,50 @@
         }
       }
     },
+    "%lld개를 찾을 수 없어 빼고 보냅니다." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld attachment couldn’t be found and will be left out."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld attachments couldn’t be found and will be left out."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld자" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld character"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld characters"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld째 줄" : {
       "localizations" : {
         "en" : {
@@ -437,6 +481,16 @@
         }
       }
     },
+    "fallback.untitled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Untitled"
+          }
+        }
+      }
+    },
     "iCloud 가 다른 기기의 글을 따로 두었습니다. %lld개를 (충돌 …) 사본으로 꺼냈습니다." : {
       "localizations" : {
         "en" : {
@@ -519,6 +573,28 @@
         }
       }
     },
+    "iCloud 폴더로 옮겨 탔습니다. 그 전에 이 기기 안에 만든 노트 %lld개는 그대로 있습니다 — 파일 앱의 나의 iPhone 에서 찾을 수 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Switched to the iCloud folder. %lld note made on this device before that is still there — find it in the Files app under On My iPhone."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Switched to the iCloud folder. %lld notes made on this device before that are still there — find them in the Files app under On My iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "iCloud 폴더를 쓰지 못하고 있습니다" : {
       "localizations" : {
         "en" : {
@@ -545,6 +621,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "iOS **doesn't let you choose a default app for each file type.** Settings → Apps → Default Apps only covers things like browsers, mail and messaging, and apps can't set themselves as the default.\n\nSlow Margin tells iOS that it can open Markdown, so it appears in the **Share** and **Open In** lists. If the Files app offers Open In, you can choose it there too.\n\nFor everyday notes, it's best to keep them **inside the Slow Margin folder**, where the app edits and saves files in place."
+          }
+        }
+      }
+    },
+    "table.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Header"
           }
         }
       }
@@ -629,6 +715,16 @@
         }
       }
     },
+    "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This note is nested too deeply to format, so it’s shown as plain text."
+          }
+        }
+      }
+    },
     "경로" : {
       "localizations" : {
         "en" : {
@@ -705,6 +801,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pinned Notes"
+          }
+        }
+      }
+    },
+    "고정됨" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned"
           }
         }
       }
@@ -1045,16 +1151,6 @@
         }
       }
     },
-    "노트를 열기만 해도 파일이 바뀝니다" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Opening a Note Can Change Its File"
-          }
-        }
-      }
-    },
     "노트를 읽어 세는 중입니다" : {
       "localizations" : {
         "en" : {
@@ -1071,6 +1167,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap to switch between numbered and bulleted. Touch and hold to choose a style."
+          }
+        }
+      }
+    },
+    "누르면 이 알림을 닫습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismisses this notice"
           }
         }
       }
@@ -1597,6 +1703,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "사진을 저장하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 사진은 %@ 옆 assets 폴더에 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You moved to another note while the photos were being saved, so they were not added to the text. The photos are in the assets folder next to %@."
           }
         }
       }
@@ -2135,6 +2251,16 @@
         }
       }
     },
+    "이 노트를 가리키는 노트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes Linking Here"
+          }
+        }
+      }
+    },
     "이 노트에는 이미 깨진 글자가 있습니다. 파일이 그렇게 저장돼 있어 앱이 되살릴 수 없습니다." : {
       "localizations" : {
         "en" : {
@@ -2183,16 +2309,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The file this link points to isn't in the folder.\n%@\n\nLink paths are relative to the note's folder."
-          }
-        }
-      }
-    },
-    "이 설정을 켜면 노트를 열 때 첫 줄과 파일명을 맞춥니다. 고치지 않아도 파일이 달라질 수 있습니다.\n\n다른 앱과 같이 쓰는 폴더라면 켜지 마세요." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "With this on, opening a note makes its first line and file name match. Files may change even if you don't edit them.\n\nDon't turn this on for folders shared with other apps."
           }
         }
       }
@@ -2425,6 +2541,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't rename to match the title: %@"
+          }
+        }
+      }
+    },
+    "제목에서 찾음" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Found in title"
+          }
+        }
+      }
+    },
+    "제목을 따라 파일 이름이 바뀝니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File Names Will Follow Titles"
           }
         }
       }
@@ -2713,6 +2849,16 @@
         }
       }
     },
+    "첨부를 복사하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 파일은 %@ 옆 assets 폴더에 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You moved to another note while the attachments were being copied, so they were not added to the text. The files are in the assets folder next to %@."
+          }
+        }
+      }
+    },
     "첨부하지 못했습니다: %@" : {
       "localizations" : {
         "en" : {
@@ -2813,22 +2959,32 @@
         }
       }
     },
-    "켜면 노트를 **열기만 해도** 파일이 바뀔 수 있습니다. 첫 줄 `# 제목` 이 파일명과 다르면 파일명으로 맞추고, 제목이 없으면 넣고, 다른 제목이면 `##` 로 한 단계 내립니다. 앱 안에서 제목을 고치면 파일명이 따라갑니다.\n\n**다른 앱과 같이 쓰는 폴더라면 끄세요.**" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When this is on, **just opening** a note may change its file: if the first line `# Title` doesn't match the file name, it's changed to match; if there's no title, one is added; if there's a different title, it's moved down a level to `##`. Editing the title in the app renames the file to match.\n\n**Turn this off for folders shared with other apps.**"
-          }
-        }
-      }
-    },
     "켜면 노트를 고를 때마다 읽기 모드로 시작합니다. 위 도구 줄에서 언제든 편집으로 넘어갈 수 있고, 새 노트를 만들 때는 그대로 편집 모드입니다." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "When this is on, notes open in reading mode. You can switch to editing from the toolbar at any time. New notes always open in editing mode."
+          }
+        }
+      }
+    },
+    "켜면 앱에서 고친 노트의 **첫 줄 `# 제목`** 을 파일 이름이 따라갑니다. 제목 줄을 벗어날 때 한 번 바뀝니다. 열어 보기만 한 노트의 이름은 바꾸지 않습니다.\n\n**다른 앱에서 이 노트를 링크해 두었다면** 이름이 바뀔 때 그 링크가 끊길 수 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When on, a note you edit in the app is renamed to match its **first line `# Title`**. The name changes once, when you leave the title line. Notes you only open and read keep their names.\n\n**If other apps link to this note,** those links may break when the name changes."
+          }
+        }
+      }
+    },
+    "켜면 앱에서 고친 노트의 이름이 첫 줄 제목을 따라 바뀝니다. 다른 앱에서 이 노트를 가리키는 링크가 있으면 끊길 수 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes you edit in the app will be renamed to match their first-line title. Links to them from other apps may break."
           }
         }
       }

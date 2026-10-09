@@ -1,0 +1,260 @@
+name: 영어 스토어 스크린샷
+
+# 219 · 1.1 — App Store Connect 영어 칸에 올릴 스크린샷을 시뮬레이터로 찍는다 (2026-10-08 사용자 —
+# *스크린샷을 찍어서 줘. 영문버전이어야 하고, 과거처럼 이미지 사이즈 실수하지 않도록*).
+#
+# - 견본은 `docs/samples/en/` 다섯 노트와 사진 — 앱 안 폴더(Documents)에 넣고 `-storeFolder` 로 연다
+#   (iCloud 폴더인 척 — 배너 없이, 제목 `Slow Margin`). 이 앱만 English (`-AppleLanguages (en)`).
+# - **칸 크기는 영어 칸의 실측대로** (2026-10-08 사용자 화면): 아이폰 칸은 **6.1인치 1206 × 2622** (한국어 칸은 6.5인치였다 — 언어마다 다르다),
+#   아이패드 칸은 **13인치 2064 × 2752** (세로). 둘 다 시뮬레이터가 **그 크기로 바로** 찍는다. 마지막 단계가 크기를 하나하나 재고, 다르면 실패한다.
+# - 결과: `docs/store/en-screenshots/` 에 커밋 + 아티팩트.
+#
+# 돌리는 법: `Tools/store/shots-request.txt` 에 한 줄을 더해 푸시한다 (새 흐름은 기본 브랜치에 없어 손으로 못 돌린다).
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - "Tools/store/shots-request.txt"
+      - ".github/workflows/store-shots.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: store-shots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shots:
+    name: 영어 스토어 스크린샷
+    runs-on: macos-26
+    permissions:
+      contents: write
+    env:
+      BUNDLE_ID: com.helpnara.markdown
+      SCHEME: Notebook
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Xcode 26 이상 선택
+        run: |
+          set -uo pipefail
+          xcver() {
+            [ -f "$1/Contents/version.plist" ] || return 1
+            /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$1/Contents/version.plist" 2>/dev/null
+          }
+          CUR_APP=$(xcode-select -p 2>/dev/null || true); CUR_APP=${CUR_APP%/Contents/Developer}
+          CUR_V=$(xcver "$CUR_APP" || true)
+          echo "현재 선택: ${CUR_APP:-(없음)} ${CUR_V:-(?)}"
+          NEED=1
+          case "${CUR_V%%.*}" in ''|*[!0-9]*) ;; *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;; esac
+          if [ "$NEED" -eq 1 ]; then
+            BEST=""; BEST_K=0
+            for app in /Applications/Xcode*.app; do
+              v=$(xcver "$app" || true); [ -n "$v" ] || continue
+              k=$(echo "$v" | awk -F. '{printf "%d", ($1*10000)+($2*100)+$3}')
+              if [ "$k" -gt "$BEST_K" ]; then BEST_K=$k; BEST="$app"; fi
+            done
+            [ -n "$BEST" ] && sudo xcode-select -s "$BEST/Contents/Developer"
+          fi
+          xcodebuild -version
+
+      - name: XcodeGen 설치
+        run: brew install xcodegen
+
+      - name: Xcode 프로젝트 생성
+        run: xcodegen generate
+
+      # **칸과 같은 크기로 찍히는 기기를 고른다.** 영어 아이폰 칸은 6.1인치 1206 × 2622 (2026-10-08 사용자 화면) — iPhone 17 Pro 가
+      # 그 크기로 바로 찍는다(늘리지 않는다). 아이패드는 13인치가 칸과 **같은 크기**다.
+      - name: 시뮬레이터 고르기
+        id: sim
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, re, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))["devices"]
+          phones, pads = [], []
+          for runtime, devices in data.items():
+              m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              if not m:
+                  continue
+              version = (int(m.group(1)), int(m.group(2)))
+              for d in devices:
+                  if not d.get("isAvailable"):
+                      continue
+                  name = d["name"]
+                  if name.startswith("iPhone") and "SE" not in name and "mini" not in name:
+                      # **칸과 같은 크기(1206 × 2622)로 찍히는 기기만** — 늘리지도 줄이지도 않는다 (2026-10-08 영어 칸 실측).
+                      order = ["iPhone 17 Pro", "iPhone 17", "iPhone 16 Pro"]
+                      if name in order:
+                          phones.append(((version, -order.index(name)), d["udid"], name))
+                  if name.startswith("iPad") and "13-inch" in name:
+                      pads.append(((version, "Pro" in name, name), d["udid"], name))
+          phone = max(phones) if phones else None
+          pad = max(pads) if pads else None
+          print(f"phone={phone[1] if phone else ''}")
+          print(f"phone_name={phone[2] if phone else ''}")
+          print(f"pad={pad[1] if pad else ''}")
+          print(f"pad_name={pad[2] if pad else ''}")
+          PY
+          cat "$GITHUB_OUTPUT"
+
+      - name: 빌드
+        run: |
+          set -o pipefail
+          if ! xcodebuild -project Notebook.xcodeproj -scheme "$SCHEME" -configuration Debug \
+            -destination "id=${{ steps.sim.outputs.phone }}" -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build 2>&1 | tee /tmp/build.log; then
+            grep -E "error:|error " /tmp/build.log | head -40 || true
+            exit 1
+          fi
+
+      - name: 화소 도구 준비 (pillow)
+        run: |
+          python3 -m venv .ci-venv
+          .ci-venv/bin/pip install --quiet --disable-pip-version-check pillow
+
+      - name: 찍기
+        run: |
+          set -uo pipefail
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
+          EN=(-AppleLanguages "(en)" -AppleLocale en_US -storeFolder)
+          RAW=raw-shots; mkdir -p "$RAW"
+          # 키보드를 화면에 띄운다 (맥 키보드에 붙어 있으면 화면 키보드가 안 뜬다).
+          defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false || true
+
+          prepare() {   # $1 = 기기
+            local udid="$1"
+            xcrun simctl boot "$udid" || true
+            xcrun simctl bootstatus "$udid" -b
+            xcrun simctl status_bar "$udid" override --time "9:41" --dataNetwork wifi --wifiMode active \
+              --wifiBars 3 --batteryState charged --batteryLevel 100
+            xcrun simctl install "$udid" "$APP"
+            # 한 번 띄워 앱 폴더를 만든다
+            xcrun simctl launch "$udid" "$BUNDLE_ID" "${EN[@]}" >/dev/null 2>&1 || true
+            sleep 6
+            xcrun simctl terminate "$udid" "$BUNDLE_ID" >/dev/null 2>&1 || true
+            DOCS="$(xcrun simctl get_app_container "$udid" "$BUNDLE_ID" data)/Documents"
+            rm -rf "$DOCS"; mkdir -p "$DOCS/.여백"
+            cp -R docs/samples/en/. "$DOCS/"
+            # 고정 — Weekly Plan 하나 (목록에 고정 구역이 선다)
+            printf '["Weekly Plan.md"]' > "$DOCS/.여백/고정.json"
+            # 목록 차례 — 오래된 것부터 시각을 준다
+            touch -t 202610010900 "$DOCS/Groceries.md"
+            touch -t 202610020900 "$DOCS/Reading Log.md"
+            touch -t 202610050900 "$DOCS/Meeting Notes.md"
+            touch -t 202610060900 "$DOCS/Lisbon Trip.md"
+            touch -t 202610070900 "$DOCS/Weekly Plan.md"
+            ls -la "$DOCS"
+          }
+
+          newest() {    # $1 = 기기, $2 = 맨 위로 올릴 노트 (첫 노트로 열린다)
+            local docs="$(xcrun simctl get_app_container "$1" "$BUNDLE_ID" data)/Documents"
+            touch -t 202610080900 "$docs/$2"
+          }
+
+          shoot() {     # $1 = 기기, $2 = 파일, $3 = 기다림(초), 나머지 = 실행 인자
+            local udid="$1" file="$2" wait="$3"; shift 3
+            local attempt size
+            for attempt in 1 2 3; do
+              xcrun simctl terminate "$udid" "$BUNDLE_ID" >/dev/null 2>&1 || true
+              xcrun simctl launch "$udid" "$BUNDLE_ID" "${EN[@]}" "$@" >/dev/null 2>&1 || true
+              sleep $(( wait + (attempt - 1) * 6 ))
+              xcrun simctl io "$udid" screenshot "$RAW/$file"
+              size=$(stat -f%z "$RAW/$file")
+              # 아직 안 그려진 화면은 단색이라 작다. (사진이 든 아이패드 화면은 커서 윗문턱은 두지 않는다.)
+              if [ "$size" -ge 150000 ]; then
+                echo "찍음: $file ($size 바이트) $*"; return 0
+              fi
+              echo "  다시 ($attempt/3) — $size 바이트"
+            done
+            echo "::error::$file 을 못 찍었습니다"; echo "$file" >> /tmp/shot-failures
+          }
+
+          PHONE="${{ steps.sim.outputs.phone }}"
+          PAD="${{ steps.sim.outputs.pad }}"
+          [ -n "$PHONE" ] || { echo "::error::아이폰 시뮬레이터가 없습니다"; exit 1; }
+          [ -n "$PAD" ] || { echo "::error::13인치 아이패드 시뮬레이터가 없습니다"; exit 1; }
+
+          # ── 아이폰 ──
+          prepare "$PHONE"
+          newest "$PHONE" "Weekly Plan.md"
+          shoot "$PHONE" iphone-1-edit.png 12 -openFirstNote -caretAt "clearing "
+          shoot "$PHONE" iphone-2-list.png 8
+          newest "$PHONE" "Lisbon Trip.md"
+          shoot "$PHONE" iphone-3-reading.png 12 -readingMode
+          shoot "$PHONE" iphone-4-search.png 9 -search plan
+          xcrun simctl shutdown "$PHONE" || true
+
+          # ── 아이패드 (13인치 · 세로) ──
+          prepare "$PAD"
+          newest "$PAD" "Weekly Plan.md"
+          shoot "$PAD" ipad-1-edit.png 14
+          # **검색을 Lisbon Trip 을 열기 전에 찍는다.** 아이패드는 마지막에 연 노트를 다시 연다 — 뒤에 찍으면 오른쪽 칸에
+          # Lisbon Trip 이 편집 모드(표 · 사진 원문)로 남는다 (첫 촬영에서 잡힘).
+          shoot "$PAD" ipad-3-search.png 12 -search plan
+          newest "$PAD" "Lisbon Trip.md"
+          shoot "$PAD" ipad-2-reading.png 16 -readingMode
+
+          ls -la "$RAW"
+          if [ -s /tmp/shot-failures ]; then exit 1; fi
+
+      # **칸 크기에 맞추고, 하나하나 잰다.** 지난번에 6.9인치로 짐작해 맞췄다가 한 바퀴를 버렸다 — 칸은 6.5인치였다.
+      - name: 칸 크기에 맞추기 · 재기
+        run: |
+          set -euo pipefail
+          OUT=docs/store/en-screenshots
+          rm -rf "$OUT"; mkdir -p "$OUT"
+          for f in raw-shots/iphone-*.png; do
+            .ci-venv/bin/python Tools/store/fit.py "$f" iphone-6.1-portrait "$OUT/$(basename "$f")"
+          done
+          for f in raw-shots/ipad-*.png; do
+            .ci-venv/bin/python Tools/store/fit.py "$f" ipad-13-portrait "$OUT/$(basename "$f")"
+          done
+          .ci-venv/bin/python - <<'PY'
+          import glob, sys
+          from PIL import Image
+          want = {"iphone": (1206, 2622), "ipad": (2064, 2752)}
+          # 찍힌 그대로가 칸 크기여야 한다 — 늘린 그림이 아니게 (원본도 잰다)
+          for raw in sorted(glob.glob("raw-shots/*.png")):
+              size = Image.open(raw).size
+              kind = "iphone" if "/iphone-" in raw else "ipad"
+              print(("같음" if size == want[kind] else "다름") + f" 원본 {raw} {size}")
+          bad = 0
+          files = sorted(glob.glob("docs/store/en-screenshots/*.png"))
+          for path in files:
+              im = Image.open(path)
+              kind = "iphone" if "/iphone-" in path else "ipad"
+              ok = im.size == want[kind] and im.mode == "RGB"
+              bad += not ok
+              print(("OK  " if ok else "틀림") + f" {path} {im.size} {im.mode} (칸 {want[kind]})")
+          if len(files) != 7:
+              print(f"::error::7장이어야 하는데 {len(files)}장"); sys.exit(1)
+          if bad:
+              print("::error::칸 크기와 다른 그림이 있다"); sys.exit(1)
+          PY
+
+      - name: 결과 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: en-store-screenshots
+          path: |
+            docs/store/en-screenshots
+            raw-shots
+
+      - name: 브랜치에 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/store/en-screenshots
+          if git diff --cached --quiet; then echo "변화 없음"; exit 0; fi
+          git commit -m "chore: 영어 스토어 스크린샷 (store-shots.yml) [skip ci]"
+          git reset -q --hard HEAD; git clean -qfd
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then exit 0; fi
+            git fetch origin ${{ github.ref_name }}
+            git rebase origin/${{ github.ref_name }} || { git rebase --abort || true; sleep $((attempt * 5)); continue; }
+          done
+          exit 1

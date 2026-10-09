@@ -119,6 +119,10 @@ final class HTMLMarkdownGoldenTests: XCTestCase {
                 rest = rest[range.upperBound...]
             }
             XCTAssertEqual(found, item.lines, "[\(item.name)] \(html)")
+            // 232 — 누를 수 있는 체크상자마다 보이스오버가 체크상자로 읽는다. 켜짐은 상자의 `checked` 와 같다.
+            XCTAssertEqual(html.components(separatedBy: "role=\"checkbox\"").count - 1, found.count, "[\(item.name)] \(html)")
+            XCTAssertEqual(html.components(separatedBy: "aria-checked=\"true\"").count - 1,
+                           html.components(separatedBy: "checked=\"\"").count - 1, "[\(item.name)] \(html)")
             // 누른 줄을 뒤집으면 실제로 체크상자가 바뀐다 — 링크의 줄 번호와 뒤집기의 줄 번호가 같은 셈이다.
             for line in found {
                 XCTAssertNotNil(TaskToggle.toggled(item.markdown, line: line), "[\(item.name)] \(line)번 줄")

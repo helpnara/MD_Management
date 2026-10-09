@@ -36,10 +36,11 @@ enum Palette {
             : UIColor(red: 0.184, green: 0.373, blue: 0.620, alpha: 1)    // 밝은 바탕 — #2F5F9E
     }
 
+    /// `#태그` 색. 대비는 `Tools/contrast.py` 가 센다 — 밝은 바탕은 예전 `#B88500` 이 3.3:1 이라 4.5 에 못 미쳐 짙게 했다 (232).
     static let tagUIColor = UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 1.00, green: 0.84, blue: 0.35, alpha: 1)
-            : UIColor(red: 0.72, green: 0.52, blue: 0.00, alpha: 1)
+            ? UIColor(red: 1.00, green: 0.84, blue: 0.35, alpha: 1)       // 어두운 바탕 — #FFD659
+            : UIColor(red: 0.56, green: 0.405, blue: 0.00, alpha: 1)      // 밝은 바탕 — #8F6700
     }
 
     // MARK: - 뷰어 CSS 로 넘기는 같은 토큰
