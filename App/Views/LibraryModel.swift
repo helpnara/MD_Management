@@ -794,8 +794,19 @@ final class LibraryModel: ObservableObject {
     func retryICloud() async {
         guard isFallenBackFromICloud else { return }
         guard let cloud = await FolderSource.iCloudDocuments(attempts: 2) else { return }
+        // **옮겨 타기 전에 쓴다** (227, 2026-10-09 전수 조사). 예전에는 쓰지 않고 바로 저장소를 바꿔, 쓰던 글이
+        // 새 저장소(iCloud)의 같은 자리에 써졌다 — 엉뚱한 파일이나 충돌 사본이 생길 수 있었다.
+        await save()
+        let local = FolderSource.localDocuments()
+        let left = await Task.detached { FolderSource.noteCount(in: local) }.value
         await use(FolderChoice(url: cloud, kind: .iCloudContainer,
                                iCloudAvailable: true, attempts: 2))
+        // **기기 안에 남은 노트를 알린다** (227). 옮겨 탄 뒤에는 그 폴더가 앱에 안 보인다 — 노트가 사라진 줄 안다.
+        // 옮기지는 않는다 (사용자 파일을 앱이 마음대로 옮기지 않는다). 어디서 찾는지만 알린다.
+        if left > 0 {
+            log("iCloud 로 옮겨 탐 — 기기 안 폴더에 노트 \(left)개가 남음")
+            report(String(localized: "iCloud 폴더로 옮겨 탔습니다. 그 전에 이 기기 안에 만든 노트 \(left)개는 그대로 있습니다 — 파일 앱의 나의 iPhone 에서 찾을 수 있습니다."))
+        }
     }
 
     private func use(_ choice: FolderChoice) async {
@@ -1050,10 +1061,10 @@ final class LibraryModel: ObservableObject {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
-        let path = url.standardizedFileURL.path
-        let root = store.root.standardizedFileURL.path
-
-        if let relative = Paths.relative(of: path, under: root) {
+        // **내 폴더 안인지는 저장소의 셈 하나로** (228, 2026-10-09 전수 조사). 예전에는 여기서 따로 경로를 견주었는데
+        // 심볼릭 링크를 풀지 않아(`/private/var` · `/var`) 내 폴더의 파일을 밖의 것으로 보고 `이름 2.md` 사본을 만들 수 있었다.
+        // 같은 것을 재는 곳이 둘이면 갈린다 (CLAUDE.md §1) — `FolderStore.relativePath(of:)` 를 부른다.
+        if let relative = await store.relativePath(of: url) {
             guard !Paths.isHidden(relative) else { return }
             await save()
             selectedFolder = Paths.directory(of: relative)
@@ -1409,6 +1420,15 @@ final class LibraryModel: ObservableObject {
                 failed += 1
             }
         }
+        // **그 사이 다른 노트로 넘어갔으면 넣지 않는다** (228, 2026-10-09 전수 조사). 사진을 줄이는 동안(여러 장이면 몇 초)
+        // 노트를 바꾸면, 링크가 **지금 열린 노트**에 들어갔다 — 그것도 앞 노트 폴더 기준이라 깨진 링크로.
+        guard draftPath == note.relativePath else {
+            if !lines.isEmpty {
+                log("사진을 넣는 사이 노트가 바뀌어 본문에 넣지 않음: \(note.relativePath) · \(lines.count)장")
+                report(String(localized: "사진을 저장하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 사진은 \(note.title) 옆 assets 폴더에 있습니다."))
+            }
+            return
+        }
         if !lines.isEmpty {
             insertion = Insertion(text: lines.joined(separator: "\n"))
             refreshVaultPaths()   // 방금 넣은 사진 줄을 곧바로 다른 폴더에 붙여도 고쳐지게 (177)
@@ -1473,6 +1493,15 @@ final class LibraryModel: ObservableObject {
             } catch {
                 failed.append(name)
             }
+        }
+        // 그 사이 다른 노트로 넘어갔으면 넣지 않는다 (228 — 사진과 같다).
+        guard draftPath == note.relativePath else {
+            if !lines.isEmpty {
+                log("첨부하는 사이 노트가 바뀌어 본문에 넣지 않음: \(note.relativePath) · \(lines.count)개")
+                report(String(localized: "첨부를 복사하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 파일은 \(note.title) 옆 assets 폴더에 있습니다."))
+                await reloadNotes()
+            }
+            return
         }
         if !lines.isEmpty {
             insertion = Insertion(text: lines.joined(separator: "\n"))
@@ -2022,7 +2051,9 @@ final class LibraryModel: ObservableObject {
             // 다른 기기에서 고정한 것도 여기서 따라온다 (T10).
             await reloadPins()
             await reloadFolders()
-            if !isDirty {
+            // **쓰는 중에는 하지 않는다** (228, 2026-10-09 전수 조사) — 폴더 시각 쪽(216)은 이미 막았는데 여기가 빠져 있었다.
+            // 제목을 따라 이름을 바꾸는(`followTitle`) 틈에 목록을 읽으면 옛 이름이 목록에 없어 열린 노트가 닫혔다.
+            if !isDirty, !isWriting {
                 let fresh = await store.notes(in: selectedFolder)
                 if Self.fingerprint(fresh) != Self.fingerprint(notes) {
                     log("목록이 달라져 다시 읽음: \(selectedFolder.isEmpty ? "최상위" : selectedFolder)")
@@ -2402,7 +2433,8 @@ final class LibraryModel: ObservableObject {
         scheduleIndexRefresh()
         refreshVaultPaths()   // 노트가 생기고 · 이름이 바뀌고 · 옮겨졌을 수 있다 (177)
         // 링크를 따라온 노트는 목록에 없는 것이 맞다 — 지우지 않는다 (T7).
-        if let current = selectedNoteID, current != linkedNote?.relativePath,
+        // **쓰는 중에는 고른 노트를 내리지 않는다** (228) — 이름을 바꾸는 중이면 옛 이름이 잠깐 목록에 없다. 쓰기가 끝나면 쓰기가 새 이름으로 고른다.
+        if let current = selectedNoteID, current != linkedNote?.relativePath, !isWriting,
            !loaded.contains(where: { $0.id == current }) {
             selectedNoteID = nil
         }

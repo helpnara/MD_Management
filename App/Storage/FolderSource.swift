@@ -150,6 +150,15 @@ enum FolderSource {
 
     // MARK: - 그 밖의 폴더
 
+    /// 폴더 안 노트 수 (227) — iCloud 로 옮겨 탈 때 기기 안 폴더에 남은 것을 알리려고만 센다. 휴지통 · 숨은 폴더는 뺀다.
+    static func noteCount(in root: URL) -> Int {
+        guard let walker = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil,
+                                                          options: [.skipsHiddenFiles]) else { return 0 }
+        var count = 0
+        for case let url as URL in walker where Paths.isNoteFile(url.lastPathComponent) { count += 1 }
+        return count
+    }
+
     /// 기기 안 폴더. `Files` 앱의 **이 iPhone 안에** 보인다 (`UIFileSharingEnabled`).
     static func localDocuments() -> URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
