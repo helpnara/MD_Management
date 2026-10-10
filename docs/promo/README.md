@@ -3,6 +3,8 @@
 > 2026-10-10 사용자 — *이 앱을 블로그나 기타 소셜 네트워크 서비스에 홍보하기 위한 기능 중심의 소개로 구성한 모션그래픽을 만들어줘.*
 
 - `slow-margin-promo.mp4` — **세로 1080 × 1920 · 30fps · 49초 · 소리 없음** (릴스 · 쇼츠 · 블로그 본문)
+- `slow-margin-promo-en.mp4` — 같은 장면의 **영어판** (`promo-en.html` · 영어 자판 · 받은 글 폴더는 `Inbox` · 알림은 앱의 실제 영어 문구)
+- 쇼츠 제목 · 설명 — `youtube-shorts.md` (한국어) · `youtube-shorts-en.md` (영어)
 - `promo.html` — 장면 원본. `render(t)` 가 t초의 화면을 그린다 (CSS 애니메이션을 쓰지 않아 프레임마다 똑같이 찍힌다)
 - `render.js` — 프레임을 찍어 ffmpeg 로 묶는다
 
@@ -31,6 +33,7 @@ Google Fonts 에서 받아 `fonts/` 에 두고 `fonts.css` 를 `fonts/local.css`
 ```
 PROMO_DIR=$(pwd)/docs/promo FFMPEG=<ffmpeg 경로> NODE_PATH=$(npm root -g) node docs/promo/render.js video out.mp4 30
 PROMO_DIR=$(pwd)/docs/promo NODE_PATH=$(npm root -g) node docs/promo/render.js stills 2.5,11,18   # 정지 화면
+PROMO_PAGE=promo-en.html …                                                                       # 영어판
 ```
 
 `icon.png` 는 `App/Assets.xcassets/AppIcon.appiconset/icon-1024.png` 를 복사해 둔다.
