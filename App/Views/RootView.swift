@@ -1520,15 +1520,31 @@ private struct CodeViewer: View {
     /// 위 복사 단추가 잠깐 *복사했습니다* 로 바뀐다 — 시트가 아래 알림 띠를 가린다.
     @State private var copied = false
 
+    /// 상자 글의 줄들. 탭은 빈칸 넷으로 — 한 줄 글자에서 탭 폭이 들쭉날쭉하지 않게 (원문 · 복사는 그대로다).
+    private var lines: [String] {
+        block.text.replacingOccurrences(of: "\t", with: "    ")
+            .split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView([.horizontal, .vertical]) {
-                Text(block.text.isEmpty ? " " : block.text)
-                    .font(.scaledMono(.callout))
-                    .foregroundStyle(Palette.ink)
-                    .textSelection(.enabled)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .padding(Metrics.gutter)
+                // **한 줄씩 그리고 줄마다 한 줄로 못 박는다** (237 둘째, 빌드 96 사용자 — *가로 스크롤이 필요한데 자동 줄바꿈되어서
+                // 세로 스크롤만*). 글 전체를 `Text` 하나에 담고 `fixedSize` 를 걸었더니 기기에서는 화면 폭에 맞춰 접혔다.
+                // `lineLimit(1)` 인 줄은 접힐 수 없고, `fixedSize` 로 제 길이를 다 가지므로 긴 줄만큼 옆으로 밀린다.
+                // 글 고르기는 한 줄 안에서만 된다 — 통째로는 위 **복사** 단추가 맡는다.
+                // `LazyVStack` 은 보이는 줄만 재서 밀 수 있는 폭이 스크롤마다 달라진다 — 모든 줄을 잰다.
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                        Text(line.isEmpty ? " " : line)
+                            .lineLimit(1)
+                            .fixedSize(horizontal: true, vertical: false)
+                    }
+                }
+                .font(.scaledMono(.callout))
+                .foregroundStyle(Palette.ink)
+                .textSelection(.enabled)
+                .padding(Metrics.gutter)
             }
             .background(Palette.paper)
             .navigationTitle(block.language.isEmpty ? String(localized: "코드") : block.language)
