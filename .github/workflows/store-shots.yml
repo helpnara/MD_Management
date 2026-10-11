@@ -255,7 +255,8 @@ jobs:
             prepare "$PAD"
             newest "$PAD" "$PLAN"
             shoot "$PAD" ipad-1-edit.png 14
-            MIN_BYTES=100000; shoot "$PAD" ipad-5-search.png 12 -search "$TERM"; MIN_BYTES=150000
+            # 아이패드 검색 장은 하한을 낮추지 않는다 — 낮췄더니 덜 그려진 빈 화면(검색 칸 비고 *노트를 고르세요*)이 지나갔다 (세 번째 촬영)
+            shoot "$PAD" ipad-5-search.png 14 -search "$TERM"
             shoot_files "$PAD" ipad-2-files.png
             newest "$PAD" "$WATCH"
             shoot "$PAD" ipad-3-links.png 16 -readingMode
