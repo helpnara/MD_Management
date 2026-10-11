@@ -10,6 +10,8 @@ struct RootView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
     @State private var columnVisibility = NavigationSplitViewVisibility.all
+    /// 236 — 키보드가 내려간 뒤 아래 띠 높이를 잠깐 1포인트 바꿔 위 화면이 크기를 다시 재게 한다.
+    @State private var bannerNudge: CGFloat = 0
 
     var body: some View {
         // **안내 띠는 제 칸에 둔다** (133 손질). 예전에는 `safeAreaInset` 으로 얹었는데,
@@ -19,6 +21,18 @@ struct RootView: View {
         VStack(spacing: 0) {
             splitView
             StatusBanner()
+                .padding(.bottom, bannerNudge)
+        }
+        // **키보드가 내려간 뒤 화면을 한 번 다시 재게 한다** (236, 2026-10-11 사용자 화면). 띠가 떠 있는 채 쓰기에서
+        // 목록으로 돌아오면 목록이 **키보드가 떠 있던 때의 높이**에서 잘렸다 — 띠가 없으면 안 잘렸고(사용자 확인), 띠를 닫으면
+        // 다시 제대로 나왔다. 닫을 때 일어나는 일(아래 칸의 높이가 바뀐다)을 1포인트만 짧게 흉내 낸다. 넘기는 움직임이 끝난 뒤에.
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(450))
+                bannerNudge = 1
+                try? await Task.sleep(for: .milliseconds(60))
+                bannerNudge = 0
+            }
         }
     }
 
@@ -304,6 +318,33 @@ struct StatusBanner: View {
             }
             .buttonStyle(.plain)
             // 눈에는 오른쪽 `×` 가 닫기라고 말하지만 보이스오버는 글만 읽는다 (232).
+            .accessibilityHint(String(localized: "누르면 이 알림을 닫습니다"))
+        } else if let notice = library.notice, !errorsOnly {
+            // **알려 줄 뿐인 것** (236) — 오류가 아니라 옅은 파랑 · `i` 아이콘. 몇 초 뒤 저절로 걷히고(`notify`),
+            // 눌러서 먼저 닫을 수 있다. 오류가 떠 있으면 오류가 먼저다 (위 가지).
+            Button {
+                library.clearNotice()
+            } label: {
+                HStack(spacing: Metrics.rowSpacing) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundStyle(Palette.accent)
+                    Text(notice)
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                    Image(systemName: "xmark")
+                        .foregroundStyle(Palette.inkFaint)
+                }
+                .font(.scaled(.footnote, weight: .semibold))
+                .foregroundStyle(Palette.ink)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, Metrics.gutter)
+                .padding(.vertical, Metrics.rowSpacing)
+                .background(Palette.accent.opacity(0.10))
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Palette.rule).frame(height: 0.5)
+                }
+            }
+            .buttonStyle(.plain)
             .accessibilityHint(String(localized: "누르면 이 알림을 닫습니다"))
         } else if library.isFallenBackFromICloud, !errorsOnly {
             Button {

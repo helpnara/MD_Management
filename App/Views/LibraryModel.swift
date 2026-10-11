@@ -60,6 +60,10 @@ final class LibraryModel: ObservableObject {
     /// 공유 전에도 알린다 (설계서 §7.6-4).
     @Published private(set) var missingAttachments: [String] = []
     @Published private(set) var lastError: String?
+    /// **알려 줄 뿐인 것** (236, 2026-10-11 사용자 화면). 붙여넣기를 바꿨다 · 공유로 받은 글을 넣었다 — 오류가 아니다.
+    /// 예전에는 오류와 같은 붉은 띠(`lastError`)로 떠서 누를 때까지 남았고, 노트를 떠난 뒤에도 *되돌리기로 무를 수 있습니다* 가
+    /// 남았다 (다른 노트를 열면 되돌리기 기록은 비워진다 — 226). 이제 옅은 띠로 몇 초 뒤 저절로 걷히고, 노트에 묶인 것은 노트를 떠나면 걷힌다.
+    @Published private(set) var notice: String?
 
     /// 최상위는 빈 문자열.
     @Published var selectedFolder = ""
@@ -364,7 +368,7 @@ final class LibraryModel: ObservableObject {
             || (pasted.url != nil && pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty),
            let link = Pasting.webLink(url: address, name: pasted.urlName,
                                       selection: pasted.selection) {
-            report(String(localized: "주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다."))
+            notify(String(localized: "주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다."), aboutNote: true)
             return link
         }
         // 2. 서식 있는 글 — 글 전체를 마크다운으로
@@ -374,7 +378,7 @@ final class LibraryModel: ObservableObject {
                 if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) { text = fixed.text }
                 recordPaste(pasted, outcome: "서식을 마크다운으로 바꿈")
                 guard text != pasted.plain else { return nil }
-                report(String(localized: "서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다."))
+                notify(String(localized: "서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다."), aboutNote: true)
                 return text
             }
             // 바꾼 글에 평문의 글자가 다 없다 — 바꾸지 않는다. 글을 잃느니 서식을 잃는다.
@@ -387,7 +391,7 @@ final class LibraryModel: ObservableObject {
             let markdown = HTMLMarkdown.promoteEmptyHeaders(given)
             recordPaste(pasted, outcome: "보낸 앱의 마크다운을 씀")
             guard markdown != pasted.plain else { return nil }
-            report(String(localized: "서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다."))
+            notify(String(localized: "서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다."), aboutNote: true)
             return markdown
         }
         if pasted.html != nil || pasted.markdown != nil {
@@ -411,7 +415,7 @@ final class LibraryModel: ObservableObject {
             notes.append(String(localized: "링크 \(repair.fixed)개를 이 노트에서 열리도록 고쳤습니다"))
         }
         guard !notes.isEmpty, text != pasted.plain else { return nil }
-        report(notes.joined(separator: ". ") + String(localized: ". 되돌리기로 무를 수 있습니다."))
+        notify(notes.joined(separator: ". ") + String(localized: ". 되돌리기로 무를 수 있습니다."), aboutNote: true)
         return text
     }
 
@@ -1453,7 +1457,8 @@ final class LibraryModel: ObservableObject {
             insertion = Insertion(text: lines.joined(separator: "\n"))
             refreshVaultPaths()   // 방금 넣은 사진 줄을 곧바로 다른 폴더에 붙여도 고쳐지게 (177)
         }
-        lastError = failed == 0 ? nil : String(localized: "사진 \(failed)장을 넣지 못했습니다")
+        // **실패했을 때만 띄운다** (235). 예전에는 다 성공하면 `nil` 을 넣어 그 전에 떠 있던 남의 알림(저장 실패 · 충돌 사본)까지 지웠다.
+        if failed > 0 { report(String(localized: "사진 \(failed)장을 넣지 못했습니다")) }
     }
 
     /// 문서 첨부 — 사진과 같은 길로 (78). 고른 파일을 `assets/` 에 **복사**하고 커서 자리에
@@ -1528,7 +1533,8 @@ final class LibraryModel: ObservableObject {
             await reloadNotes()   // 밖에서 들여온 노트가 목록에 서야 한다 (111)
             log("문서 첨부 \(lines.count)개: \(note.relativePath)")
         }
-        lastError = failed.isEmpty ? nil : String(localized: "첨부하지 못했습니다: \(failed.joined(separator: ", "))")
+        // 사진과 같다 (235) — 다 성공했다고 남의 알림을 지우지 않는다.
+        if !failed.isEmpty { report(String(localized: "첨부하지 못했습니다: \(failed.joined(separator: ", "))")) }
     }
 
     // MARK: - 공유 (설계서 §7.6)
@@ -2330,6 +2336,36 @@ final class LibraryModel: ObservableObject {
     /// **진짜 실패도 노트만 열면 사라진다.**
     private var errorIsAboutNote = false
 
+    /// **알려 줄 뿐인 것을 띄운다** (236). `aboutNote` 면 지금 노트에 묶인 말이라 노트를 떠나면 걷는다
+    /// (*되돌리기로 무를 수 있습니다* 는 그 노트 안에서만 맞다). 몇 초 뒤에는 어느 쪽이든 저절로 걷힌다.
+    func notify(_ message: String, aboutNote: Bool = false) {
+        notice = message
+        noticeIsAboutNote = aboutNote
+        log("알림: \(message)")
+        noticeTask?.cancel()
+        noticeTask = Task { [weak self] in
+            try? await Task.sleep(for: Self.noticeDuration)
+            guard !Task.isCancelled, let self, self.notice == message else { return }
+            self.notice = nil
+        }
+    }
+
+    func clearNotice() {
+        noticeTask?.cancel()
+        notice = nil
+        noticeIsAboutNote = false
+    }
+
+    /// 노트에 묶인 알림만 걷는다 — 노트를 떠날 때 · 다른 노트를 열 때.
+    private func clearNoteNotice() {
+        if noticeIsAboutNote { clearNotice() }
+    }
+
+    private var noticeTask: Task<Void, Never>?
+    private var noticeIsAboutNote = false
+    /// 읽기에 넉넉하고 오래 남지 않게 — 한 줄 반짜리 글을 두 번 읽을 시간.
+    static let noticeDuration: Duration = .seconds(5)
+
     /// 화면이 오류를 올리는 문. `lastError` 의 setter 는 모델 안에만 있다.
     func report(_ message: String) {
         lastError = message
@@ -2427,7 +2463,7 @@ final class LibraryModel: ObservableObject {
         if failed > 0 {
             report(String(localized: "공유로 받은 글 \(failed)개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다."))
         } else if made > 0 {
-            report(String(localized: "공유로 받은 글 \(made)개를 \(folder) 폴더에 새 노트로 넣었습니다."))
+            notify(String(localized: "공유로 받은 글 \(made)개를 \(folder) 폴더에 새 노트로 넣었습니다."))
         }
     }
 
@@ -2553,6 +2589,7 @@ final class LibraryModel: ObservableObject {
             if isNewlyOpened {
                 editorSession = UUID()
                 editedThisVisit = false
+                clearNoteNotice()   // 앞 노트의 *되돌리기로 무를 수 있습니다* 는 여기서 맞지 않다 (236)
             }
             // **노트를 열 때 읽기 모드로** (124). 부른 쪽이 모드를 이미 정했으면(새 노트 ·
             // `왔던 노트` · 시험 파일) 그쪽을 따른다. **편집 모드로 되돌리지는 않는다** —
@@ -2693,6 +2730,7 @@ final class LibraryModel: ObservableObject {
     }
 
     private func clearNote() {
+        clearNoteNotice()   // 236
         noteIsDownloading = false
         cursorImage = nil
         noteText = ""
