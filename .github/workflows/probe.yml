@@ -1,0 +1,37 @@
+name: 주소 제목 살펴보기
+
+# 240 — 공유 창의 제목 가져오기가 유튜브에서 채널 이름을 주는 까닭을 맥 러너에서 본다 (원격 세션은 유튜브에 못 닿는다).
+# `Tools/probe/urls.txt` 를 고쳐 올리면 돈다. 앱에는 들어가지 않는다.
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - "Tools/probe/**"
+      - ".github/workflows/probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: 애플 링크 미리보기
+        run: swift Tools/probe/title.swift $(cat Tools/probe/urls.txt) || true
+      - name: 쪽이 주는 제목 (사용자 행위자별)
+        run: |
+          for u in $(cat Tools/probe/urls.txt); do
+            for ua in "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)" "facebookexternalhit/1.1 Facebot Twitterbot/1.0"; do
+              echo "== $u · $ua"
+              curl -sSL -m 20 -A "$ua" -H "Accept-Language: ko-KR,ko;q=0.9" "$u" -o page.html -w "%{http_code} %{url_effective}\n" || true
+              grep -o '<title>[^<]*</title>' page.html | head -1 || true
+              grep -oE '<meta [^>]*(og:title|og:site_name|name="title"|twitter:title)[^>]*>' page.html | head -5 || true
+            done
+          done
+      - name: oEmbed
+        run: |
+          curl -sS -m 20 "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DcQlzN7JeDxU"; echo
