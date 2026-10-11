@@ -4,6 +4,7 @@
 
 - `slow-margin-promo.mp4` — **세로 1080 × 1920 · 30fps · 49초 · 소리 없음** (릴스 · 쇼츠 · 블로그 본문)
 - `slow-margin-promo-en.mp4` — 같은 장면의 **영어판** (`promo-en.html` · 영어 자판 · 받은 글 폴더는 `Inbox` · 알림은 앱의 실제 영어 문구)
+- **출시 주 홍보 묶음** — `launch-kit.md` (애플 추천 신청 · 인앱 이벤트 · 캠페인 링크 · 블로그 · 커뮤니티 · 해외 글 초안, 2026-10-11)
 - 쇼츠 제목 · 설명 — `youtube-shorts.md` (한국어) · `youtube-shorts-en.md` (영어)
 - `promo.html` — 장면 원본. `render(t)` 가 t초의 화면을 그린다 (CSS 애니메이션을 쓰지 않아 프레임마다 똑같이 찍힌다)
 - `render.js` — 프레임을 찍어 ffmpeg 로 묶는다

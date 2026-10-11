@@ -1,0 +1,198 @@
+---
+title: 출시 주 홍보 묶음 — 추천 신청 · 인앱 이벤트 · 캠페인 링크 · 글 초안
+updated: 2026-10-11
+---
+
+# 출시 주 홍보 묶음 (브레인스토밍 4 · 5)
+
+> 2026-10-11 사용자 — *무료 앱 중에서 상위에 랭크하기 위해서 … 내가 무엇을 더 준비하면 좋을까* → 준비물 표 4 · 5 →
+> *4·5 홍보 준비* (스크린샷을 찍는 동안). 무료 차트는 **며칠 사이의 다운로드 속도**로 움직인다 — 흩어 올리지 말고 **한 주에 몰아서** 낸다.
+>
+> **판 번호를 글에 박지 않는다** — 링크 모으기 · 코드 상자는 1.1.3 에 들어갔고, 1.1.4 는 평가 부탁 · 스토어 손질이다. *최근 업데이트* 로 쓴다.
+>
+> **지킬 것.** 다른 앱 이름을 쓰지 않는다 (CLAUDE §6 — 블로그 · 커뮤니티 글도 사용자가 읽는 글이다). **하는 일만** 적는다.
+> 이 저장소는 공개다 — 실제 메일 · 개인 정보를 여기 적지 않는다. 글자 수는 셌다 (`python3` · 칸 한도 옆 괄호).
+
+## 0. 한 주의 차례
+
+| 언제 | 할 일 | 어디 |
+|---|---|---|
+| 출시 **3주 전** (가능하면 6주) | 애플 추천 신청 (§2) | App Store Connect → 추천(Featuring) → 신청 |
+| 2주 전 | 인앱 이벤트 만들기 · 심사 (§3) — 이벤트는 따로 심사받는다 | App Store Connect → 인앱 이벤트 |
+| 1주 전 | 캠페인 링크 만들기 (§1) · 글 초안 다듬기 (§4~§6) | 이 문서 |
+| **출시 날 (D)** | 판 출시 · 프로모션 텍스트 갈기 · 블로그 글 (§4) | 네이버 블로그 |
+| D+1 | 국내 커뮤니티 두 곳 (§5) | 메이커 모임 · 개발자 소식 |
+| D+2 | 스레드 · 맥 · 아이폰 사용자 게시판 (§5) | |
+| D+3~4 | 해외 — Product Hunt 하루 · Reddit · Show HN (§6) | 영어판 |
+| D+7 | **결과 적기** — App Store Connect *앱 분석* 의 출처별 다운로드 (§1 의 `ct`) · 순위 · 평점 수 | 이 문서 맨 아래 |
+
+## 1. 캠페인 링크 — 어느 글에서 왔는지 재기
+
+앱 안에서 아무것도 모으지 않아도, **스토어 링크에 꼬리표**를 붙이면 App Store Connect *앱 분석* 이 출처별 노출 · 다운로드를 보여 준다.
+
+```
+https://apps.apple.com/app/id6811515067?pt=<공급자 번호>&ct=<꼬리표>&mt=8
+```
+
+- `<공급자 번호>` — App Store Connect → **앱 분석** → 위의 **캠페인 링크 만들기**(또는 *Campaign Generator*)에서 얻는다. 여기 적지 않는다 (사용자가 채운다).
+- `<꼬리표>` — 글마다 하나. 영문 · 숫자 · `-` 만:
+
+| 꼬리표 | 글 |
+|---|---|
+| `blog-links` | 네이버 블로그 — 링크 모으기 (§4) |
+| `blog-intro` | 앱 소개 글 (`docs/blog/앱-소개.md`) |
+| `shorts-ko` · `shorts-en` | 유튜브 쇼츠 설명 (`docs/promo/youtube-shorts*.md`) |
+| `disquiet` · `geeknews` · `threads` · `forum-ko` | 국내 (§5) |
+| `ph` · `reddit` · `hn` | 해외 (§6) |
+
+## 2. 애플 추천 신청 (Featuring Nomination)
+
+App Store Connect 의 **추천 신청**은 편집팀에 *이런 앱 · 이런 업데이트가 나온다* 고 알리는 칸이다. 뽑힐지는 애플이 정한다 — 내는 데 돈은 안 든다.
+**칸 이름 · 한도는 콘솔에 보이는 것이 최종이다** (여기서는 열어 볼 수 없다). 영어로 낸다 — 편집팀이 여러 나라다.
+
+| 칸 | 값 |
+|---|---|
+| 신청 이름 (우리끼리 보는 이름) | `Slow Margin — collect links in one note` |
+| 종류 | **App Enhancements** (업데이트) |
+| 출시 예정일 | 1.1.4 출시 예정일 (최소 3주 뒤로) |
+| 나라 | 대한민국 · 미국 (+ 전 세계) |
+| 관련 인앱 이벤트 | §3 의 이벤트 (만들었으면) |
+
+**설명 (영어 · 그대로 붙인다)**
+
+```
+Slow Margin is a Markdown notes app for iPhone and iPad, made by a solo developer in Korea around one promise: your writing stays as plain files. There is no app database and no account. Every note is a .md file in your own iCloud folder, visible in the Files app, readable in any editor, and still there if you delete the app.
+
+Recent updates add a quiet way to collect: share a video or a web page from any app, pick a pinned note, and its title and link are added as a new line at the end of that note. When an app shares only a bare link, Slow Margin reads the page title once so the note stays readable. Code blocks in Read mode now have Copy and Expand buttons with optional line wrapping, and notices are calmer.
+
+The app is fully localized in Korean and English, follows Dynamic Type, and collects no data.
+```
+
+**한국어 뜻 (확인용 — 내지 않는다).** 느린 여백은 *글은 파일로 남는다* 는 약속 하나로 한국의 1인 개발자가 만든 아이폰 · 아이패드 마크다운 노트 앱입니다.
+앱 데이터베이스도 계정도 없습니다 — 모든 노트는 사용자 iCloud 폴더의 `.md` 파일이고, 파일 앱에서 보이며 어떤 편집기로도 열리고, 앱을 지워도 남습니다.
+최근 업데이트로 *모으는 길* 이 생겼습니다 — 어떤 앱에서든 동영상이나 웹 쪽을 공유하고 고정한 노트를 고르면 그 노트 끝에 제목과 링크가 한 줄씩 쌓입니다.
+주소만 보내는 앱이면 쪽 제목을 한 번 읽어 와 노트가 읽기 좋게 남습니다. 읽기 화면의 코드 상자에 복사 · 크게 보기(줄바꿈 선택) 단추가 생겼고 안내가 차분해졌습니다.
+한국어 · 영어로 모두 쓸 수 있고, 글자 크기 설정을 따르며, 데이터를 모으지 않습니다.
+
+## 3. 인앱 이벤트 — 검색 결과 · 투데이 탭의 카드
+
+**이벤트는 앱 안에서 실제로 할 수 있는 일**이어야 한다. *고정한 노트에 링크 모으기* 는 지금 앱에서 된다 (1.1.3). 기간은 최대 31일.
+
+| 칸 (한도) | 한국어 | 영어 |
+|---|---|---|
+| 배지 | **대규모 업데이트** (Major Update) — 또는 *특별 이벤트* | Major Update |
+| 이벤트 이름 (30) | 보던 링크를 한 노트에 모으기 (16) | Collect Links in One Note (25) |
+| 짧은 설명 (50) | 공유 한 번이면 고정한 노트 끝에 제목과 링크가 쌓입니다 (31) | Share once. The title and link land in your note. (49) |
+| 긴 설명 (120) | 동영상이나 웹 쪽을 보다가 공유 → 느린 여백 → 고정한 노트를 고르면, 그 노트 맨 끝에 제목과 링크가 한 줄씩 쌓입니다. 같은 주제는 한 노트에. (83) | Share a video or page to Slow Margin and pick a pinned note. Its title and link are added as a new line at the end. (115) |
+| 목적 | 기존 사용자에게 알리기 · 새 사용자 끌기 | |
+| 바로 가기 | 없음 (앱이 열린다) | |
+
+**그림 두 장이 더 필요하다** — 카드 **1920 × 1080** (가로) · 상세 **1080 × 1920** (세로), 글자 없이 앱 화면이 보이는 것. 스크린샷 3번(링크 모음)을
+`Tools/store/frame.py` 와 같은 길로 다시 짜면 된다 — **스크린샷이 확정된 뒤에** 만든다 (남은 일).
+
+## 4. 블로그 글 — 출시 날 (네이버 · 1 · 2 · 3편과 같은 꼴: 본문에 기호 없음 · ▌ 줄만 소제목 · [사진 n] 자리)
+
+```
+보던 링크를 한 노트에 모으는 법 — 느린 여백
+
+볼 만한 영상이나 글을 발견하면 어떻게 하시나요. 저는 늘 "나중에 봐야지" 하고 어딘가에 링크를 던져 두었다가, 정작 다시 찾을 때는 어디에 두었는지 몰라 헤맸습니다. 그래서 느린 여백에 모으는 길을 하나 만들었습니다.
+
+▌ 공유 한 번이면 끝
+
+[사진 1 — 공유 창의 넣을 곳]
+동영상이나 웹 쪽을 보다가 공유를 누르고 느린 여백을 고릅니다. 공유 창 아래 "넣을 곳"에서 고정해 둔 노트를 고르고 보내면 끝입니다. 앱을 열면 그 노트 맨 끝에 제목과 링크가 한 줄로 붙어 있습니다.
+
+[사진 2 — 링크가 쌓인 노트]
+같은 주제는 한 노트에 계속 쌓입니다. 마지막에 고른 노트를 기억해 두니, 두 번째부터는 공유 → 보내기 두 번이면 됩니다. 공유 창 글 칸에 "2부부터" 같은 메모를 쓰면 그 줄 끝에 같이 붙습니다.
+
+▌ 주소만 보내는 앱이어도 제목이 들어갑니다
+
+어떤 앱은 공유할 때 주소만 보냅니다. 그러면 노트에 알 수 없는 주소만 남지요. 느린 여백은 그럴 때 그 쪽의 제목을 한 번 읽어 와 링크 이름으로 씁니다. 제목 말고는 아무것도 주고받지 않습니다.
+
+▌ 그래도 파일입니다
+
+[사진 3 — 파일 앱의 같은 폴더]
+이렇게 모인 노트도 결국 내 iCloud 폴더의 .md 파일 하나입니다. 파일 앱에서 그대로 보이고, 다른 편집기로 열어도 같은 줄들이 보입니다. 앱을 지워도 남습니다. 느린 여백이 처음부터 지키려던 한 가지입니다.
+
+▌ 최근 업데이트에 함께 들어간 것
+
+읽기 화면의 코드 상자에 복사 · 크게 보기 단추가 생겼고, 크게 보기에서 줄바꿈을 켜고 끌 수 있습니다. 가로줄과 표 테두리가 너무 짙던 것을 옅게 고쳤고, 붙여 넣은 글을 바꿨다는 안내는 오류처럼 붉게 뜨지 않고 잠깐 떴다 사라집니다.
+
+느린 여백은 무료이고, 계정도 광고도 없습니다. 써 보시고 좋았다면 앱 스토어에 평가 한 줄 남겨 주시면 큰 힘이 됩니다.
+
+앱 스토어: (캠페인 링크 — blog-links)
+```
+
+## 5. 국내 — 메이커 모임 · 개발자 소식 · 스레드 · 사용자 게시판
+
+**올리기 전에 그 게시판의 자기 홍보 규칙을 먼저 본다** — 허용 게시판 · 말머리 · 횟수. 같은 글을 여러 곳에 그대로 붙이지 않는다 (아래 셋은 서로 다르게 썼다).
+
+**메이커 모임 (만든 이야기 중심)**
+
+```
+혼자 만든 아이폰 마크다운 노트 앱, 느린 여백을 업데이트했습니다.
+
+처음 정한 원칙은 하나였습니다 — 글은 파일로 남는다. 앱 데이터베이스가 없고, 모든 노트가 내 iCloud 폴더의 .md 파일입니다. 최근 판에서 "모으는 길"을 더했습니다. 어떤 앱에서든 공유 → 고정한 노트를 고르면 그 노트 끝에 제목과 링크가 한 줄씩 쌓입니다.
+
+만들면서 배운 것 하나: 공유로 넘어오는 것이 앱마다 다릅니다. 주소를 "주소"로 주는 앱이 있고 "글"로 주는 앱이 있어서, 글 칸에 주소 하나만 온 경우를 따로 가려야 했습니다. 이런 판단은 파이썬으로 같은 셈을 한 번 더 짜서 정답표를 만들고, 앱의 테스트가 그 표를 따르게 했습니다.
+
+무료 · 계정 없음 · 데이터 수집 없음입니다. 피드백 주시면 다음 판에 반영하겠습니다.
+(캠페인 링크 — disquiet)
+```
+
+**개발자 소식 (Show 글 · 기술 중심)**
+
+```
+Show: 느린 여백 — 노트가 그냥 iCloud 의 .md 파일인 iOS 마크다운 앱
+
+- 앱 DB 없음. 파일이 원본이고, 검색 색인(SQLite FTS5)은 언제 지워도 되는 캐시입니다.
+- 편집기의 문자열은 언제나 마크다운 원문 하나 — 보이는 모양은 글꼴 · 색 · 기호 숨김 같은 속성으로만 냅니다. 저장은 원문 그대로.
+- 리눅스 원격 세션에서 개발하고 macOS 자동 빌드 검사 · TestFlight 로 확인합니다. 순수 로직은 파이썬으로 같은 셈을 짜 만든 정답표로 시험합니다.
+- 최근 업데이트: 공유로 받은 링크를 고정한 노트 끝에 한 줄씩 덧붙이기.
+(캠페인 링크 — geeknews)
+```
+
+**스레드 (세 번에 나눠)**
+
+```
+1) 볼 영상 · 읽을 글 링크, 어디에 모아 두세요? 저는 이제 노트 한 장에 모읍니다. 공유 → 느린 여백 → 고정한 노트. 끝.
+2) 모인 노트는 그냥 내 iCloud 의 .md 파일이에요. 파일 앱에서도 보이고, 앱을 지워도 남습니다.
+3) 혼자 만든 무료 앱이고 계정도 광고도 없습니다. (캠페인 링크 — threads)
+```
+
+**아이폰 · 맥 사용자 게시판 (사용기 꼴)** — 블로그 글(§4)을 줄여 사진 두 장(공유 창 · 링크가 쌓인 노트)과 함께. 꼬리표 `forum-ko`.
+
+## 6. 해외 — 영어판
+
+**Product Hunt**
+
+| 칸 (한도) | 값 |
+|---|---|
+| Name | Slow Margin |
+| Tagline (60) | Markdown notes that stay as files in your iCloud (48) |
+| Description (260) | Slow Margin is an iPhone and iPad Markdown notes app with no database: every note is a plain .md file in your own iCloud folder. Write with live formatting, read cleanly, link notes, and collect links from the share menu into a pinned note. (240) |
+| 첫 댓글 | 아래 Reddit 글을 줄여서 — 왜 만들었나 · 무엇을 안 하나(계정 · 광고 · 수집 없음) |
+
+**Reddit (아이폰 앱 게시판 — 자기 홍보 규칙 · 말머리 확인)** — 꼬리표 `reddit`
+
+```
+I made a Markdown notes app where every note is just a file in your iCloud
+
+Hi! I'm a solo developer from Korea. Slow Margin is a free iPhone/iPad notes app built around one rule: your writing stays as plain .md files in your own iCloud folder. No database, no account, no ads, no data collection. Delete the app and your notes are still there in the Files app.
+
+What it does:
+- Live Markdown editing: only the line with the cursor shows the symbols
+- A clean Read mode with tables, images, and code blocks (copy / expand)
+- Link notes with [[ and see which notes link back
+- New: share a video or web page, pick a pinned note, and the title + link are added as a new line at the end
+
+Feedback very welcome, especially on what feels missing.
+```
+
+**Show HN** — 제목 (80): `Show HN: Slow Margin – iOS Markdown notes that are just files in iCloud` (71) · 본문은 개발자 소식 글(§5)을 영어로 — 파일이 원본 · 색인은 캐시 · 원문 하나 · 정답표.
+
+## 7. 결과 (출시 뒤 적는다)
+
+| 날 | 꼬리표 | 노출 · 다운로드 (앱 분석) | 메모 |
+|---|---|---|---|
+| | | | |
