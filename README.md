@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| 상태 | 앱 스토어 출시 — 1.1.1 (2026-10-09 · 한국어 *느린 여백* · 영어 *Slow Margin*) · 1.1.3 심사 중 (2026-10-11). 지금 어디까지는 [docs/roadmap.md](docs/roadmap.md) 첫 줄 |
+| 상태 | 앱 스토어 출시 — 1.1.3 (2026-10-11 · 한국어 *느린 여백* · 영어 *Slow Margin*). 지금 어디까지는 [docs/roadmap.md](docs/roadmap.md) 첫 줄 |
 | 대상 | iPhone · iPad 유니버설 앱 (iOS 17+) |
 | 개발 | Claude Code 원격(리눅스) + GitHub Actions macOS 러너 + TestFlight |
 
