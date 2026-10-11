@@ -170,6 +170,13 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.2 제출 순서 (2026-10-11 사용자 — *빌드하고 심사 제출하자*)
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.2` — 한국어 · 영어 칸과 스크린샷은 1.1.1 에서 따라온다
+2. 한국어 칸: *이 버전의 새로운 기능* 에 §6 아래 울타리를 붙인다 · **빌드** 칸에서 **95** 를 고른다
+3. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New in This Version* 에 아래 영어 울타리를 붙인다 → **저장**
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+
 ### 1.1.1 제출 순서 (2026-10-09 사용자 — *묶음 2까지 묶어서 한번에 출시*)
 
 1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.1` — 한국어 · 영어 칸과 스크린샷은 1.1 에서 따라온다
@@ -268,18 +275,12 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.1** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1 의 글은 `docs/store/1.1-새로운-기능.txt`.
+> **1.1.2** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.1 의 글은 `docs/store/1.1.1-새로운-기능.txt`.
 
 ```
-• Saving is sturdier: text typed while a save is in progress is now saved too when you leave the note.
-• Notes you only open and read are no longer renamed. The first-line file name setting now applies only to notes you edit in the app.
-• Undo after switching notes no longer brings back changes from the previous note.
-• Typing in long notes feels lighter.
-• If you switch notes while photos or attachments are being added, they are no longer put into the other note — you’ll see where the files were saved.
-• On iPad with a keyboard: ⌘B for bold, ⌘I for italic, ⌘K for a link. ⌘N and ⌘F now work even when the note list is hidden.
-• Formatting toolbar buttons dim while pressed and are easier to tap. On iPad, they highlight under the pointer.
-• #tags are darker in light mode for easier reading, and VoiceOver now reads checkboxes in reading view as checkboxes.
-• Korean text that still appeared in English mode (table headers, the heading at the bottom of reading view, and more) is now in English.
+• The notice that pasted text was converted no longer looks like a red error. It appears briefly in a light banner, fades on its own, and clears when you leave the note.
+• Fixed the note list being cut off halfway when you went back to it with a notice showing.
+• Adding photos or attachments no longer clears other notices that were already showing.
 ```
 
 ---
@@ -397,6 +398,7 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-10-11 | **1.1.2 (빌드 95) 준비** — 235 · 236 알림 띠 (빌드 95 · 0~6 확인). 새로운 기능 글 `docs/store/1.1.2-새로운-기능.txt`. `main` 병합 |
 | 2026-10-09 | ✅ **1.1.1 (빌드 94) 승인 · 배포** (사용자 — *심사 완료. 배포 완료.*). 출시된 판 = 1.1.1 |
 | 2026-10-09 | ✅ **1.1.1 (빌드 94) 제출** (사용자 — *1.1.1 심사 제출 완료*). 자동 출시 · 단계적 출시 끔 |
 | 2026-10-09 | **1.1.1 (빌드 94) 준비** — 전수 조사 묶음 1 (빌드 93 · 0~10 확인) + 묶음 2 (빌드 94 · 1~9 · 11~13 확인). 새로운 기능 글 `docs/store/1.1.1-새로운-기능.txt` (한국어 · 영어). `main` 병합 |
@@ -481,19 +483,13 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.1** (2026-10-09 — 전수 조사 묶음 1 · 2: 223 저장 · 224 이름 · 226 되돌리기 · 229 속도 · 228 사진 · 230 키보드 · 231 띠 단추 · 232 대비 · 보이스오버 · 222 영어). 1.1 의 글은 `docs/store/1.1-새로운-기능.txt`.
+> **1.1.2** (2026-10-11 — 235 · 236 알림 띠). 1.1.1 의 글은 `docs/store/1.1.1-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
-> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6). 225(알림 띠) · 227(iCloud 늦게 잡은 날)은 드물어 적지 않았다.
+> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 저장을 더 단단하게 했습니다. 저장하는 사이에 친 글자도 노트를 떠날 때 빠짐없이 저장합니다.
-• 열어 보기만 한 노트의 파일 이름은 바꾸지 않습니다. 첫 줄을 파일 이름으로 쓰는 설정은 앱에서 고친 노트에만 걸립니다.
-• 다른 노트로 넘어간 뒤 실행 취소를 눌러도 앞 노트에서 고친 것이 끼어들지 않습니다.
-• 긴 노트에서 글자를 칠 때 더 가볍게 따라옵니다.
-• 사진이나 첨부를 넣는 사이 다른 노트로 넘어가면, 그 노트에 넣지 않고 사진이 있는 곳을 알려 줍니다.
-• 아이패드 키보드에서 ⌘B 굵게 · ⌘I 기울임 · ⌘K 링크를 쓸 수 있습니다. ⌘N · ⌘F 는 노트 목록이 안 보여도 됩니다.
-• 도구 띠 단추가 누르는 동안 흐려지고, 손가락으로 누르기 쉬워졌습니다. 아이패드에서는 포인터를 올리면 단추가 드러납니다.
-• 밝은 화면의 #태그 색을 더 짙게 해 읽기 쉽게 했습니다. 보이스오버가 읽기 화면의 체크상자를 체크상자로 읽습니다.
-• 영어로 쓸 때 남아 있던 한국어(표 머리 칸, 읽기 화면 맨 아래 제목 등)를 영어로 바꿨습니다.
+• 붙여 넣은 글의 서식을 바꿨다는 안내가 오류처럼 붉게 뜨지 않습니다. 옅은 띠로 잠깐 뜨고 저절로 사라지며, 노트를 떠나면 바로 걷힙니다.
+• 안내가 떠 있는 채 목록으로 돌아오면 노트 목록이 중간에서 잘려 보이던 문제를 고쳤습니다.
+• 사진이나 첨부를 넣어도 그 전에 떠 있던 다른 안내가 지워지지 않습니다.
 ```
 

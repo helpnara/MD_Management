@@ -1,0 +1,8 @@
+• 붙여 넣은 글의 서식을 바꿨다는 안내가 오류처럼 붉게 뜨지 않습니다. 옅은 띠로 잠깐 뜨고 저절로 사라지며, 노트를 떠나면 바로 걷힙니다.
+• 안내가 떠 있는 채 목록으로 돌아오면 노트 목록이 중간에서 잘려 보이던 문제를 고쳤습니다.
+• 사진이나 첨부를 넣어도 그 전에 떠 있던 다른 안내가 지워지지 않습니다.
+
+— English —
+• The notice that pasted text was converted no longer looks like a red error. It appears briefly in a light banner, fades on its own, and clears when you leave the note.
+• Fixed the note list being cut off halfway when you went back to it with a notice showing.
+• Adding photos or attachments no longer clears other notices that were already showing.
