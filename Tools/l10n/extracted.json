@@ -619,6 +619,10 @@
     "note": null,
     "source": "번호"
    },
+   "복사": {
+    "note": null,
+    "source": "복사"
+   },
    "복사했습니다": {
     "note": null,
     "source": "복사했습니다"
@@ -1130,6 +1134,14 @@
    "코드": {
     "note": null,
     "source": "코드"
+   },
+   "코드를 복사했습니다.": {
+    "note": null,
+    "source": "코드를 복사했습니다."
+   },
+   "크게 보기": {
+    "note": null,
+    "source": "크게 보기"
    },
    "큰 노트 만들기 (300줄)": {
     "note": null,
