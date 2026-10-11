@@ -173,8 +173,8 @@ https://helpnara.github.io/MD_Management/privacy/
 ### 1.1.2 제출 순서 (2026-10-11 사용자 — *빌드하고 심사 제출하자*)
 
 1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.2` — 한국어 · 영어 칸과 스크린샷은 1.1.1 에서 따라온다
-2. 한국어 칸: *이 버전의 새로운 기능* 에 §6 아래 울타리를 **새 글로 바꿔** 붙인다 · **빌드** 칸에서 95 를 빼고 **98** 을 고른다
-   (2026-10-11 사용자 — 빌드 95 로 낸 심사를 거두고 코드 상자 기능까지 넣어 다시 낸다. 빌드 96 · 97 은 판이 `1.1.3` 이라 1.1.2 에 붙일 수 없다 — 98 은 다시 `1.1.2`)
+2. 한국어 칸: *이 버전의 새로운 기능* 에 §6 아래 울타리를 **새 글로 바꿔** 붙인다 · **빌드** 칸에서 95 를 빼고 **99** 를 고른다
+   (2026-10-11 사용자 — 빌드 95 로 낸 심사를 거두고 코드 상자 기능까지 넣어 다시 낸다. 빌드 96 · 97 은 판이 `1.1.3` 이라 1.1.2 에 붙일 수 없다 — 98 · 99 는 다시 `1.1.2`. 99 = 98 + 240 공유 제목)
 3. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New in This Version* 에 아래 영어 울타리를 **새 글로 바꿔** 붙인다 → **저장**
 4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
 
@@ -281,6 +281,7 @@ https://helpnara.github.io/MD_Management/en/privacy/
 ```
 • Code blocks in Read mode now have Copy and Expand buttons in the top-right corner. Copy takes just the code inside the block.
 • Expand shows the code with its original lines, scrolling sideways, or turn on line wrapping to fit it to the screen.
+• When you share from an app that sends only a link, such as a video app, the page title now becomes the note’s title and link text.
 • The notice that pasted text was converted no longer looks like a red error. It appears briefly in a light banner, fades on its own, and clears when you leave the note.
 • Fixed the note list being cut off halfway when you went back to it with a notice showing.
 • Adding photos or attachments no longer clears other notices that were already showing.
@@ -401,7 +402,7 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
-| 2026-10-11 | **1.1.2 심사 거둠 → 빌드 98 로 다시 낸다** (사용자 — *기존에 심사 제출한 것은 취소했으니 다시 1.1.2에 빌드 번호만 바꿔서 제출*). 237 코드 상자 복사 · 크게 보기 · 239 줄바꿈을 더했다 |
+| 2026-10-11 | **1.1.2 심사 거둠 → 빌드 99 로 다시 낸다** (사용자 — *기존에 심사 제출한 것은 취소했으니 다시 1.1.2에 빌드 번호만 바꿔서 제출*). 237 코드 상자 복사 · 크게 보기 · 239 줄바꿈 · 240 공유로 받은 주소의 제목을 더했다 · **처리방침 한 줄** (제목을 가져오려고 그 주소에 한 번 접속) |
 | 2026-10-11 | ✅ **1.1.2 (빌드 95) 제출** (사용자 — *심사 제출했어*). 자동 출시 · 단계적 출시 끔 |
 | 2026-10-11 | **1.1.2 (빌드 95) 준비** — 235 · 236 알림 띠 (빌드 95 · 0~6 확인). 새로운 기능 글 `docs/store/1.1.2-새로운-기능.txt`. `main` 병합 |
 | 2026-10-09 | ✅ **1.1.1 (빌드 94) 승인 · 배포** (사용자 — *심사 완료. 배포 완료.*). 출시된 판 = 1.1.1 |
@@ -488,13 +489,14 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.2** (2026-10-11 — 235 · 236 알림 띠 · 237 코드 상자 복사 · 크게 보기 · 239 줄바꿈). 처음 낸 1.1.2(빌드 95)는 사용자가 심사를 거두고 빌드 98 로 다시 낸다. 1.1.1 의 글은 `docs/store/1.1.1-새로운-기능.txt`.
+> **1.1.2** (2026-10-11 — 235 · 236 알림 띠 · 237 코드 상자 복사 · 크게 보기 · 239 줄바꿈 · 240 공유 제목). 처음 낸 1.1.2(빌드 95)는 사용자가 심사를 거두고 빌드 99 로 다시 낸다. 1.1.1 의 글은 `docs/store/1.1.1-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
 • 읽기 화면의 코드 상자 오른쪽 위에 복사 · 크게 보기 단추가 생겼습니다. 복사는 상자 안의 글만 담습니다.
 • 크게 보기에서는 코드를 원래 줄 모양 그대로 옆으로 밀어 볼 수 있고, 줄바꿈을 켜면 화면 폭에 맞춰 읽을 수 있습니다.
+• 동영상 앱처럼 주소만 보내는 앱에서 공유해도 그 쪽의 제목이 노트 제목과 링크 이름으로 들어갑니다.
 • 붙여 넣은 글의 서식을 바꿨다는 안내가 오류처럼 붉게 뜨지 않습니다. 옅은 띠로 잠깐 뜨고 저절로 사라지며, 노트를 떠나면 바로 걷힙니다.
 • 안내가 떠 있는 채 목록으로 돌아오면 노트 목록이 중간에서 잘려 보이던 문제를 고쳤습니다.
 • 사진이나 첨부를 넣어도 그 전에 떠 있던 다른 안내가 지워지지 않습니다.

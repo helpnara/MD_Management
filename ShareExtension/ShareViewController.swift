@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
+import LinkPresentation
 
 /// **다른 앱의 공유 메뉴 → 느린 여백** (213).
 ///
@@ -52,6 +53,12 @@ final class ShareModel: ObservableObject {
 
     var onFinish: @MainActor (Bool) -> Void = { _ in }
     private var imageProviders: [NSItemProvider] = []
+    /// **주소만 온 공유의 제목 가져오기** (240). 보내기가 이것을 기다린다 — 길어도 `titleTimeout` 까지.
+    private var titleTask: Task<Void, Never>?
+    /// 가져오는 동안 붙들어 둔다 — 놓으면 가져오기가 멈출 수 있다.
+    private var metadataProvider: LPMetadataProvider?
+    /// 오래 기다리게 하지 않는다 — 못 가져오면 예전처럼 주소만 넣는다.
+    static let titleTimeout: TimeInterval = 5
 
     var isEmpty: Bool {
         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && url == nil && imageCount == 0
@@ -77,12 +84,41 @@ final class ShareModel: ObservableObject {
         }
         imageCount = imageProviders.count
         isLoading = false
+        fetchTitleIfMissing()
+    }
+
+    /// **주소만 왔으면 그 쪽의 제목을 가져온다** (240, 2026-10-11 사용자 — *유튜브에서 공유하면 받은 글에 링크만 들어온다*).
+    /// 사파리는 주소와 함께 제목을 주지만(`attributedContentText`) 유튜브 같은 앱은 주소만 준다. 애플의 링크 미리보기
+    /// (`LinkPresentation` — 메시지 앱이 쓰는 것)로 그 주소에 **한 번** 접속해 제목만 읽는다. 다른 것은 보내지 않는다 (처리방침).
+    /// 못 가져오면 예전 그대로 — 제목 칸은 사이트 이름, 본문은 주소 링크.
+    private func fetchTitleIfMissing() {
+        guard pageTitle == nil, let address = url, let target = URL(string: address),
+              let scheme = target.scheme?.lowercased(), scheme == "https" || scheme == "http" else { return }
+        titleTask = Task { [weak self] in
+            guard let self else { return }
+            let provider = LPMetadataProvider()
+            provider.timeout = Self.titleTimeout
+            self.metadataProvider = provider
+            let title: String? = await withCheckedContinuation { continuation in
+                provider.startFetchingMetadata(for: target) { @Sendable metadata, _ in
+                    continuation.resume(returning: metadata?.title)
+                }
+            }
+            self.metadataProvider = nil
+            let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+            // 제목이 주소 그대로면 쓸모가 없다.
+            if self.pageTitle == nil, let trimmed, !trimmed.isEmpty, trimmed != address {
+                self.pageTitle = trimmed
+            }
+        }
     }
 
     func send() async {
         guard !isSending else { return }
         isSending = true
         failure = nil
+        // 제목을 가져오는 중이면 기다린다 (240) — 길어도 `titleTimeout`. 보낸 뒤에 온 제목은 노트에 못 들어간다.
+        await titleTask?.value
         let inbox = ShareInbox()
         var opened: URL?
         do {

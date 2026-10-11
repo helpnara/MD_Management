@@ -1,6 +1,6 @@
 ---
 title: Privacy Policy
-updated: 2026-10-07
+updated: 2026-10-11
 ---
 
 # Privacy Policy
@@ -22,6 +22,8 @@ Slow Margin **does not collect any personal information.**
 - Deleting the app also deletes its search index. **Your files stay where they are.**
 - When you send something to Slow Margin from another app’s share menu, it waits on your device until
   you open the app, then becomes a note in your folder.
+- If you share **only a web address** (for example, from a video app), the app **visits that address once to read the page title.**
+  Nothing else is received or sent, and nothing reaches the developer.
 
 ## Permissions
 
