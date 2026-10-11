@@ -70,6 +70,66 @@ public enum IncomingShare {
         return Note(title: title, markdown: (["# " + title] + parts).joined(separator: "\n\n") + "\n")
     }
 
+    // MARK: - 이미 있는 노트에 덧붙이기 (241)
+
+    /// **노트 끝에 덧붙일 한 항목** (241, 2026-10-11 사용자 — *같은 주제의 내용은 하나의 노트에 계속 제목과 링크만 누적*).
+    ///
+    /// - 주소가 있으면 `- [주소의 제목](주소)` — 새 노트(`note`)와 같은 `markdownLink`. 제목이 없으면 주소가 이름이다.
+    /// - 받은 글은 **한 줄로** 뒤에 붙인다 (` — 글`). 줄바꿈은 빈칸으로 — 목록 한 줄이 한 공유다.
+    ///   받은 글에 주소가 이미 들어 있으면 링크를 또 붙이지 않는다 (`note` 와 같은 규칙).
+    /// - 사진은 항목 아래에 두 칸 들여 `![](…)` — 그 항목에 딸린다. 글 · 주소가 없으면 첫 사진이 항목이다.
+    /// - 아무것도 없으면 nil.
+    ///
+    /// 파이썬 쌍둥이: `share_entry` (`shareEntryCases`).
+    public static func entry(text: String, url: String?, pageTitle: String?, images: [String]) -> String? {
+        let memo = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: "\n").map { trimmed($0) }.filter { !$0.isEmpty }.joined(separator: " ")
+        let address = url.map { oneLine($0) }.flatMap { $0.isEmpty ? nil : $0 }
+        let label = pageTitle.map { oneLine($0) }.flatMap { $0.isEmpty ? nil : $0 }
+        var head = memo
+        if let address, !memo.contains(address) {
+            let link = NoteLinking.markdownLink(label: label ?? address, path: address)
+            head = memo.isEmpty ? link : link + " — " + memo
+        }
+        var pictures = images.map { "!" + NoteLinking.markdownLink(label: "", path: $0) }
+        if head.isEmpty {
+            guard !pictures.isEmpty else { return nil }
+            head = pictures.removeFirst()
+        }
+        return (["- " + head] + pictures.map { "  " + $0 }).joined(separator: "\n")
+    }
+
+    /// **노트 글 끝에 항목을 붙인 글.** 끝의 빈 줄은 걷고, 마지막 줄이 목록 항목(`- ` · `* ` · `+ `)이거나 두 칸 넘게
+    /// 들여 쓴 줄(앞 항목에 딸린 줄)이면 **한 줄바꿈**으로 이어 같은 목록이 되게, 아니면 빈 줄 하나를 두고 새 목록을 연다.
+    /// 앞의 글은 한 글자도 바꾸지 않는다 (마지막 줄 끝의 빈칸까지). 끝은 줄바꿈 하나.
+    /// 파이썬 쌍둥이: `share_append` (`shareAppendCases`).
+    public static func appending(_ entry: String, to text: String) -> String {
+        // 줄은 글자 단위로 직접 나눈다 — `\r\n` 은 스위프트에서 한 글자라 `components` 가 플랫폼마다 다르게 나눌 수 있다.
+        var lines: [String] = []
+        var current = String.UnicodeScalarView()
+        for scalar in text.unicodeScalars {
+            if scalar == "\n" {
+                lines.append(String(current))
+                current = String.UnicodeScalarView()
+            } else {
+                current.append(scalar)
+            }
+        }
+        lines.append(String(current))
+        while let last = lines.last, last.unicodeScalars.allSatisfy({ $0 == " " || $0 == "\t" || $0 == "\r" }) {
+            lines.removeLast()
+        }
+        guard let last = lines.last else { return entry + "\n" }
+        var scalars = Array(last.unicodeScalars)
+        if scalars.last == "\r" { scalars.removeLast() }
+        let marks: Set<Unicode.Scalar> = ["-", "*", "+"]
+        let listItem = scalars.count >= 2 && marks.contains(scalars[0]) && scalars[1] == " "
+        let indented = scalars.count >= 3 && scalars[0] == " " && scalars[1] == " "
+            && scalars.contains(where: { $0 != " " && $0 != "\t" })
+        let separator = listItem || indented ? "\n" : "\n\n"
+        return lines.joined(separator: "\n") + separator + entry + "\n"
+    }
+
     /// 주소의 사이트 이름 (`https://www.example.org/a` → `example.org`). 소문자로 — 파이썬 `urlsplit` 과 같게.
     static func siteName(_ address: String) -> String? {
         guard var host = URLComponents(string: address)?.host?.lowercased(), !host.isEmpty else { return nil }

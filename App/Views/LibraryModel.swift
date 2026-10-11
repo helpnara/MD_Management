@@ -82,7 +82,10 @@ final class LibraryModel: ObservableObject {
 
     /// **고정된 노트** (T10). 목록 맨 위에 따로 선다. 폴더 안 숨김 파일에 적어 두므로
     /// iCloud 로 따라가고 본문은 한 글자도 안 건드린다.
-    @Published private(set) var pinned: [String] = []
+    @Published private(set) var pinned: [String] = [] {
+        // 공유 창의 *넣을 곳* 목록도 함께 (241).
+        didSet { publishShareTargets() }
+    }
 
     /// 고정된 것 · 아닌 것으로 가른 목록. 화면은 이 둘만 그린다.
     var pinnedNotes: [NoteSummary] {
@@ -2441,6 +2444,8 @@ final class LibraryModel: ObservableObject {
         guard !entries.isEmpty else { return }
         var made = 0
         var failed = 0
+        var appended: [String] = []
+        var lost = 0
         // **받은 글 폴더는 이미 있는 이름을 쓴다** (219 · ADR-0009) — 한국어 아이폰과 영어 아이패드가 한 iCloud 를 쓸 때
         // `받은 글` 과 `Inbox` 로 갈리지 않게. 셈은 폴더 화면의 숫자(`noteCount(of:)`)를 그대로 쓴다 — 따로 세지 않는다.
         let existing = Dictionary(uniqueKeysWithValues: folders
@@ -2449,20 +2454,18 @@ final class LibraryModel: ObservableObject {
         let folder = IncomingShare.inboxFolder(existing: existing, preferred: String(localized: "받은 글"))
         for entry in entries {
             do {
-                var images: [String] = []
-                for name in entry.item.images {
-                    guard let raw = await inbox.imageData(name, in: entry),
-                          let ext = ImageImport.pastedExtension(of: raw) else { continue }
-                    let data: Data?
-                    if ext == "jpg" {
-                        data = await Task.detached(priority: .userInitiated) { ImageImport.jpeg(from: raw) }.value
-                    } else {
-                        data = raw
+                // **고른 노트에 덧붙인다** (241). 그 노트가 없으면(지웠거나 옮겼다) 아래로 내려가 새 노트로 넣는다 — 버리지 않는다.
+                if let target = entry.item.target {
+                    if try await appendShared(entry, to: target, inbox: inbox) {
+                        await inbox.remove(entry)
+                        log("공유로 받은 것을 노트 끝에 덧붙임: \(target)")
+                        appended.append(target)
+                        continue
                     }
-                    guard let data else { continue }
-                    images.append(try await store.writeAsset(data, stem: ImageImport.stem(), ext: ext,
-                                                             besideNoteIn: folder))
+                    log("덧붙일 노트가 없어 새 노트로: \(target)")
+                    lost += 1
                 }
+                let images = try await importSharedImages(entry, besideNoteIn: folder, inbox: inbox)
                 let note = IncomingShare.note(text: entry.item.text, url: entry.item.url,
                                               pageTitle: entry.item.pageTitle, images: images,
                                               fallback: String(localized: "받은 글 \(Self.shareClock.string(from: entry.item.created))"))
@@ -2479,9 +2482,75 @@ final class LibraryModel: ObservableObject {
         await reloadNotes()
         if failed > 0 {
             report(String(localized: "공유로 받은 글 \(failed)개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다."))
+        } else if lost > 0 {
+            report(String(localized: "덧붙일 노트를 찾지 못해 공유로 받은 글 \(lost)개를 \(folder) 폴더에 새 노트로 넣었습니다."))
+        } else if !appended.isEmpty, made == 0 {
+            let names = Set(appended)
+            if names.count == 1, let only = names.first {
+                notify(String(localized: "공유로 받은 것 \(appended.count)개를 \(Paths.baseName(only)) 노트 끝에 덧붙였습니다."))
+            } else {
+                notify(String(localized: "공유로 받은 것 \(appended.count)개를 고른 노트 끝에 덧붙였습니다."))
+            }
+        } else if !appended.isEmpty {
+            notify(String(localized: "공유로 받은 것 \(made)개는 새 노트로, \(appended.count)개는 고른 노트 끝에 넣었습니다."))
         } else if made > 0 {
             notify(String(localized: "공유로 받은 글 \(made)개를 \(folder) 폴더에 새 노트로 넣었습니다."))
         }
+    }
+
+    /// 받은 칸의 사진을 사진 넣기와 같은 길(`ImageImport` 로 다시 읽고 줄여)로 `folder` 의 노트 옆 `assets/` 에 쓴다.
+    /// 노트 기준 경로를 받은 순서로 준다.
+    private func importSharedImages(_ entry: ShareInbox.Entry, besideNoteIn folder: String,
+                                    inbox: ShareInbox) async throws -> [String] {
+        guard let store else { return [] }
+        var images: [String] = []
+        for name in entry.item.images {
+            guard let raw = await inbox.imageData(name, in: entry),
+                  let ext = ImageImport.pastedExtension(of: raw) else { continue }
+            let data: Data?
+            if ext == "jpg" {
+                data = await Task.detached(priority: .userInitiated) { ImageImport.jpeg(from: raw) }.value
+            } else {
+                data = raw
+            }
+            guard let data else { continue }
+            images.append(try await store.writeAsset(data, stem: ImageImport.stem(), ext: ext, besideNoteIn: folder))
+        }
+        return images
+    }
+
+    /// **받은 것을 이미 있는 노트 끝에 한 줄로** (241, 2026-10-11 사용자 — *같은 주제의 내용은 하나의 노트에 계속 제목과 링크만 누적*).
+    /// 줄 모양 · 잇는 규칙은 Core (`IncomingShare.entry` · `appending` — 정답표). 그 노트가 없으면 false — 부른 쪽이 새 노트로 넣는다.
+    ///
+    /// **열린 노트면** 먼저 쓰던 글을 저장하고, **파일에서 다시 읽어** 덧붙인 뒤 편집기를 그 글로 다시 연다 (`editorSession`).
+    /// 편집기의 글과 파일이 갈리면 다음 자동 저장이 덧붙인 줄을 지운다 — 그래서 편집기 밖에서 고친 글은 언제나 다시 연다.
+    /// 쓰기는 읽은 글을 `expecting` 으로 건다 — 그 사이 다른 기기가 고쳤으면 덮지 않고 실패한다 (상자에 남아 다음에 다시).
+    /// 덧붙이는 사이 사용자가 쳤으면 편집기를 다시 열지 않는다 — 다음 저장이 파일이 바뀐 것을 보고 충돌 사본을 만든다 (유실 없음).
+    private func appendShared(_ entry: ShareInbox.Entry, to target: String, inbox: ShareInbox) async throws -> Bool {
+        guard let store, Paths.isNoteFile(target), await store.stamp(of: target) != nil else { return false }
+        if target == draftPath { await save() }
+        let before = try await store.readText(at: target)
+        let images = try await importSharedImages(entry, besideNoteIn: Paths.directory(of: target), inbox: inbox)
+        guard let line = IncomingShare.entry(text: entry.item.text, url: entry.item.url,
+                                             pageTitle: entry.item.pageTitle, images: images) else { return true }
+        let after = IncomingShare.appending(line, to: before)
+        try await store.writeText(after, to: target, expecting: before)
+        if target == draftPath, !isDirty, !isWriting {
+            noteText = after
+            draft = after
+            draftStamp = await store.stamp(of: target)
+            editorSession = UUID()
+            await renderReading(path: target, text: after)
+        }
+        return true
+    }
+
+    /// 241 — **공유 창이 고를 수 있게 고정한 노트를 적어 둔다** (앱 그룹 · 경로와 이름뿐). 고정이 바뀔 때마다.
+    /// 둘러보기 자료(가짜 폴더)의 것은 적지 않는다 — 그 노트에 덧붙일 수 없다.
+    private func publishShareTargets() {
+        let targets = isSample ? [] : pinned.filter { Paths.isNoteFile($0) }
+            .map { ShareInbox.Target(path: $0, name: Paths.baseName($0)) }
+        Task { await ShareInbox().writeTargets(targets) }
     }
 
     private var importingShared = false

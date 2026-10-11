@@ -55,6 +55,11 @@ final class ShareModel: ObservableObject {
     @Published var isLoading = true
     @Published var isSending = false
     @Published var failure: String?
+    /// **넣을 곳** (241) — 앱이 적어 둔 고정한 노트들. nil 이면 받은 글 폴더에 새 노트.
+    @Published var targets: [ShareInbox.Target] = []
+    @Published var target: String?
+    /// 마지막에 고른 곳 — 같은 주제를 이어 모을 때 다시 고르지 않게. 확장 자기 설정에만 둔다.
+    static let targetKey = "share.target"
 
     var onFinish: @MainActor (Bool) -> Void = { _ in }
     private var imageProviders: [NSItemProvider] = []
@@ -92,6 +97,10 @@ final class ShareModel: ObservableObject {
         text = separated.text
         url = separated.url
         imageCount = imageProviders.count
+        targets = await ShareInbox().targets()
+        // 마지막에 고른 노트가 아직 고정돼 있으면 그대로 고른다.
+        let remembered = UserDefaults.standard.string(forKey: Self.targetKey)
+        target = targets.contains { $0.path == remembered } ? remembered : nil
         isLoading = false
         fetchTitleIfMissing()
     }
@@ -163,7 +172,8 @@ final class ShareModel: ObservableObject {
                 names.append(try await inbox.writeImage(image.data, ext: image.ext, index: index + 1, in: folder))
             }
             try await inbox.finish(ShareInbox.Item(text: text, url: url, pageTitle: pageTitle,
-                                                   images: names, created: Date()), in: folder)
+                                                   images: names, created: Date(), target: target), in: folder)
+            UserDefaults.standard.set(target, forKey: Self.targetKey)
             onFinish(true)
         } catch {
             if let opened { await inbox.discard(opened) }
@@ -261,10 +271,27 @@ struct ShareView: View {
                             Label("사진 \(model.imageCount)장", systemImage: "photo.on.rectangle")
                         }
                     }
+                    if !model.targets.isEmpty {
+                        Section {
+                            Picker("넣을 곳", selection: $model.target) {
+                                Text("새 노트").tag(String?.none)
+                                ForEach(model.targets) { item in
+                                    Text(item.name).tag(String?.some(item.path))
+                                }
+                            }
+                        }
+                    }
                     Section {
-                        Text("앱을 열면 받은 글 폴더에 새 노트로 들어갑니다.")
+                        Text(model.target == nil
+                             ? String(localized: "앱을 열면 받은 글 폴더에 새 노트로 들어갑니다.")
+                             : String(localized: "앱을 열면 고른 노트의 맨 끝에 한 줄로 덧붙입니다."))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                        if model.targets.isEmpty {
+                            Text("노트를 고정해 두면 여기서 그 노트에 덧붙일 수 있습니다.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
                         if let failure = model.failure {
                             Text(failure)
                                 .font(.footnote)
