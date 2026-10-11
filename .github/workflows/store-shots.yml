@@ -289,7 +289,8 @@ jobs:
             esac
           }
           for lang in ko en; do
-            phone_slot=iphone-6.5; [ "$lang" = en ] && phone_slot=iphone-6.1
+            # 한국어 아이폰 칸도 6.1" 로 바뀌었다 (2026-10-11 사용자 화면 — *1179 × 2556 · 1206 × 2622*). 예전 한국어 칸은 6.5" 였다.
+            phone_slot=iphone-6.1
             for f in raw-shots/$lang/*.png; do
               name=$(basename "$f"); n=$(echo "$name" | sed -E 's/^[a-z]+-([0-9]).*/\1/')
               slot=ipad-13; case "$name" in iphone-*) slot=$phone_slot ;; esac
@@ -299,7 +300,7 @@ jobs:
           .ci-venv/bin/python - <<'PY'
           import glob, sys
           from PIL import Image
-          want = {("ko", "iphone"): (1242, 2688), ("en", "iphone"): (1206, 2622),
+          want = {("ko", "iphone"): (1206, 2622), ("en", "iphone"): (1206, 2622),
                   ("ko", "ipad"): (2064, 2752), ("en", "ipad"): (2064, 2752)}
           bad = 0
           for lang in ("ko", "en"):
