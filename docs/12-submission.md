@@ -42,7 +42,7 @@ updated: 2026-10-11
 ### 부제
 
 ```
-글이 파일로 남는 마크다운 기록
+글이 파일로 남는 마크다운 노트 · 메모
 ```
 
 ### 프로모션 텍스트
@@ -56,7 +56,7 @@ updated: 2026-10-11
 ### 키워드
 
 ```
-마크다운,markdown,md,노트,메모,기록,일기,글쓰기,아이클라우드,icloud,파일,에디터,텍스트,체크리스트,태그
+markdown,md,메모장,기록,일기,글쓰기,아이클라우드,icloud,에디터,텍스트,체크리스트,할일,태그,링크,스크랩,모음,위키,백링크,문서,다이어리,저널,정리,오프라인
 ```
 
 ### 설명
@@ -214,7 +214,7 @@ Your writing lives as Markdown files in your own iCloud folder, not inside the a
 쉼표 뒤에 빈칸을 넣지 않는다 — 빈칸도 글자로 센다. 이름에 든 말(slow · margin)은 넣지 않는다 — 이름은 이미 검색된다.
 
 ```
-markdown,md,notes,journal,diary,writing,editor,plaintext,icloud,files,checklist,tags,outline
+md,journal,diary,writing,editor,plaintext,icloud,checklist,tags,memo,links,wiki,offline,backlinks
 ```
 
 ### Description
