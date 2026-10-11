@@ -164,6 +164,8 @@ targets:
     sources:
       - ShareExtension
       - Shared
+      # 240 — 확장은 Core 를 잇지 않는다. 글로 온 주소를 가르는 셈 **한 파일만** 함께 빌드한다 (셈하는 곳은 하나 · 리눅스 정답표).
+      - path: Packages/Core/Sources/Core/Share/SharedAddress.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.helpnara.markdown.share

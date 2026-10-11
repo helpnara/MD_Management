@@ -82,6 +82,10 @@ final class ShareModel: ObservableObject {
                 }
             }
         }
+        // 유튜브 같은 앱은 주소를 글로 준다 — 글이 주소 하나뿐이면 주소로 옮겨 사파리와 같은 길을 탄다 (240 · 빌드 99 사용자 화면).
+        let separated = SharedAddress.separate(text: text, url: url)
+        text = separated.text
+        url = separated.url
         imageCount = imageProviders.count
         isLoading = false
         fetchTitleIfMissing()

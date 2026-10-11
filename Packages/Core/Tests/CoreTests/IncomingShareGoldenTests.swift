@@ -22,8 +22,16 @@ final class IncomingShareGoldenTests: XCTestCase {
             let preferred: String
             let result: String
         }
+        struct Address: Decodable {
+            let name: String
+            let text: String
+            let url: String?
+            let resultText: String
+            let resultURL: String?
+        }
         let shareCases: [Case]
         let inboxCases: [Inbox]
+        let sharedAddressCases: [Address]
     }
 
     func testMatchesGolden() throws {
@@ -50,6 +58,19 @@ final class IncomingShareGoldenTests: XCTestCase {
         for item in cases {
             XCTAssertEqual(IncomingShare.inboxFolder(existing: item.existing, preferred: item.preferred),
                            item.result, "[\(item.name)]")
+        }
+    }
+
+    /// 240 — **글로 온 주소를 주소로.** 공유 확장이 같은 파일(`SharedAddress.swift`)을 빌드해 부른다.
+    func testSharedAddressMatchesGolden() throws {
+        let here = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let url = here.appendingPathComponent("Golden/expected.json")
+        let cases = try JSONDecoder().decode(Golden.self, from: try Data(contentsOf: url)).sharedAddressCases
+        XCTAssertFalse(cases.isEmpty, "정답표가 비었다")
+        for item in cases {
+            let got = SharedAddress.separate(text: item.text, url: item.url)
+            XCTAssertEqual(got.text, item.resultText, "글 — [\(item.name)]")
+            XCTAssertEqual(got.url, item.resultURL, "주소 — [\(item.name)]")
         }
     }
 }
