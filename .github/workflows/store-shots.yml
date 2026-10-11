@@ -1,4 +1,4 @@
-name: 영어 스토어 스크린샷
+name: 스토어 스크린샷 (한국어 · 영어 · 글귀)
 
 # 219 · 1.1 — App Store Connect 영어 칸에 올릴 스크린샷을 시뮬레이터로 찍는다 (2026-10-08 사용자 —
 # *스크린샷을 찍어서 줘. 영문버전이어야 하고, 과거처럼 이미지 사이즈 실수하지 않도록*).
@@ -7,7 +7,11 @@ name: 영어 스토어 스크린샷
 #   (iCloud 폴더인 척 — 배너 없이, 제목 `Slow Margin`). 이 앱만 English (`-AppleLanguages (en)`).
 # - **칸 크기는 영어 칸의 실측대로** (2026-10-08 사용자 화면): 아이폰 칸은 **6.1인치 1206 × 2622** (한국어 칸은 6.5인치였다 — 언어마다 다르다),
 #   아이패드 칸은 **13인치 2064 × 2752** (세로). 둘 다 시뮬레이터가 **그 크기로 바로** 찍는다. 마지막 단계가 크기를 하나하나 재고, 다르면 실패한다.
-# - 결과: `docs/store/en-screenshots/` 에 커밋 + 아티팩트.
+# - 결과: `docs/store/screenshots/{ko,en}/` 에 커밋 + 아티팩트 (1.1.4 부터 — 예전 `docs/store/en-screenshots/` 는 1.1 때 것).
+#
+# **1.1.4 (2026-10-11 사용자 — 스토어 손질 3번, `docs/44-store-refresh.md`)** — 한국어 · 영어 **둘 다** 찍고, 화면 위에 **글귀 한 줄**을 얹는다
+# (`Tools/store/frame.py`). 차례: 1 쓰기 · 2 파일 앱의 같은 폴더 · 3 링크 모음(241) · 4 읽기 · 5 검색. 언어마다 시뮬레이터 전체 언어를 바꿔
+# 다시 켠다 — 파일 앱도 그 언어로 보이게. 결과: `docs/store/screenshots/{ko,en}/`.
 #
 # 돌리는 법: `Tools/store/shots-request.txt` 에 한 줄을 더해 푸시한다 (새 흐름은 기본 브랜치에 없어 손으로 못 돌린다).
 
@@ -25,7 +29,7 @@ concurrency:
 
 jobs:
   shots:
-    name: 영어 스토어 스크린샷
+    name: 스토어 스크린샷
     runs-on: macos-26
     permissions:
       contents: write
@@ -119,57 +123,113 @@ jobs:
         run: |
           set -uo pipefail
           APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
-          EN=(-AppleLanguages "(en)" -AppleLocale en_US -storeFolder)
-          RAW=raw-shots; mkdir -p "$RAW"
+          RAW=raw-shots; mkdir -p "$RAW/ko" "$RAW/en"
           # 키보드를 화면에 띄운다 (맥 키보드에 붙어 있으면 화면 키보드가 안 뜬다).
           defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false || true
 
-          prepare() {   # $1 = 기기
+          # 언어마다 정하는 것 — 견본 · 고정 · 목록 차례 · 커서 자리 · 찾을 말.
+          setup_lang() {
+            LANG_CODE="$1"
+            if [ "$LANG_CODE" = ko ]; then
+              ARGS=(-AppleLanguages "(ko)" -AppleLocale ko_KR -storeFolder)
+              LOCALE=ko_KR
+              PLAN="주간 계획.md"; WATCH="볼 영상 모음.md"; TRIP="제주 여행.md"
+              ORDER=("장보기.md" "독서 기록.md" "회의록.md" "$TRIP" "$WATCH" "$PLAN")
+              # 찾을 말은 `회의` — 두 글자 · 노트 둘이 걸린다. `정리` 는 링크 모음의 원문(주소)이 결과 줄에 떴다 (첫 촬영).
+              CARET="쌓아 둔 것을 "; TERM="회의"
+            else
+              ARGS=(-AppleLanguages "(en)" -AppleLocale en_US -storeFolder)
+              LOCALE=en_US
+              PLAN="Weekly Plan.md"; WATCH="Watch Later.md"; TRIP="Lisbon Trip.md"
+              ORDER=("Groceries.md" "Reading Log.md" "Meeting Notes.md" "$TRIP" "$WATCH" "$PLAN")
+              CARET="clearing "; TERM="plan"
+            fi
+          }
+
+          # 시뮬레이터 전체를 그 언어로 — 파일 앱까지 같은 언어로 보이게. 바꾼 뒤 다시 켠다.
+          boot_lang() {   # $1 = 기기
             local udid="$1"
+            xcrun simctl shutdown "$udid" >/dev/null 2>&1 || true
+            xcrun simctl boot "$udid" || true
+            xcrun simctl bootstatus "$udid" -b
+            xcrun simctl spawn "$udid" defaults write -g AppleLanguages -array "$LANG_CODE"
+            xcrun simctl spawn "$udid" defaults write -g AppleLocale "$LOCALE"
+            xcrun simctl shutdown "$udid" || true
             xcrun simctl boot "$udid" || true
             xcrun simctl bootstatus "$udid" -b
             xcrun simctl status_bar "$udid" override --time "9:41" --dataNetwork wifi --wifiMode active \
               --wifiBars 3 --batteryState charged --batteryLevel 100
+          }
+
+          prepare() {   # $1 = 기기
+            local udid="$1"
+            boot_lang "$udid"
+            xcrun simctl uninstall "$udid" "$BUNDLE_ID" >/dev/null 2>&1 || true
             xcrun simctl install "$udid" "$APP"
             # 한 번 띄워 앱 폴더를 만든다
-            xcrun simctl launch "$udid" "$BUNDLE_ID" "${EN[@]}" >/dev/null 2>&1 || true
+            xcrun simctl launch "$udid" "$BUNDLE_ID" "${ARGS[@]}" >/dev/null 2>&1 || true
             sleep 6
             xcrun simctl terminate "$udid" "$BUNDLE_ID" >/dev/null 2>&1 || true
             DOCS="$(xcrun simctl get_app_container "$udid" "$BUNDLE_ID" data)/Documents"
             rm -rf "$DOCS"; mkdir -p "$DOCS/.여백"
-            cp -R docs/samples/en/. "$DOCS/"
-            # 고정 — Weekly Plan 하나 (목록에 고정 구역이 선다)
-            printf '["Weekly Plan.md"]' > "$DOCS/.여백/고정.json"
+            if [ "$LANG_CODE" = ko ]; then
+              # 견본 폴더의 노트만 — README 와 영어 폴더는 넣지 않는다
+              find docs/samples -maxdepth 1 -name '*.md' ! -name 'README.md' -exec cp {} "$DOCS/" \;
+              cp -R docs/samples/assets "$DOCS/"
+            else
+              cp -R docs/samples/en/. "$DOCS/"
+            fi
+            # 고정 — 계획 노트와 링크 모음 (고정한 노트가 공유 창의 넣을 곳이다 · 241)
+            printf '["%s","%s"]' "$PLAN" "$WATCH" > "$DOCS/.여백/고정.json"
             # 목록 차례 — 오래된 것부터 시각을 준다
-            touch -t 202610010900 "$DOCS/Groceries.md"
-            touch -t 202610020900 "$DOCS/Reading Log.md"
-            touch -t 202610050900 "$DOCS/Meeting Notes.md"
-            touch -t 202610060900 "$DOCS/Lisbon Trip.md"
-            touch -t 202610070900 "$DOCS/Weekly Plan.md"
+            local stamp=202610010900 name
+            for name in "${ORDER[@]}"; do
+              touch -t "$stamp" "$DOCS/$name"; stamp=$((stamp + 10000))
+            done
             ls -la "$DOCS"
           }
 
+          # **올릴 때마다 한 시간씩 늦게** (1.1.4 첫 촬영에서 잡힘) — 같은 시각을 주면 동점이라 앱이 엉뚱한 노트를 첫 노트로 열었다.
+          NEWEST_STAMP=202610090800
           newest() {    # $1 = 기기, $2 = 맨 위로 올릴 노트 (첫 노트로 열린다)
             local docs="$(xcrun simctl get_app_container "$1" "$BUNDLE_ID" data)/Documents"
-            touch -t 202610080900 "$docs/$2"
+            NEWEST_STAMP=$((NEWEST_STAMP + 100))
+            touch -t "$NEWEST_STAMP" "$docs/$2"
+          }
+
+          # 아직 안 그려진 화면은 단색이라 작다. **검색 장은 결과가 두어 줄이라 원래 작다** — 한국어 `회의` 가 146KB 로 걸렸다 (두 번째 촬영).
+          MIN_BYTES=150000
+          check() {     # $1 = 파일
+            local size; size=$(stat -f%z "$1"); [ "$size" -ge "$MIN_BYTES" ]
           }
 
           shoot() {     # $1 = 기기, $2 = 파일, $3 = 기다림(초), 나머지 = 실행 인자
-            local udid="$1" file="$2" wait="$3"; shift 3
-            local attempt size
+            local udid="$1" file="$RAW/$LANG_CODE/$2" wait="$3"; shift 3
+            local attempt
             for attempt in 1 2 3; do
               xcrun simctl terminate "$udid" "$BUNDLE_ID" >/dev/null 2>&1 || true
-              xcrun simctl launch "$udid" "$BUNDLE_ID" "${EN[@]}" "$@" >/dev/null 2>&1 || true
+              xcrun simctl launch "$udid" "$BUNDLE_ID" "${ARGS[@]}" "$@" >/dev/null 2>&1 || true
               sleep $(( wait + (attempt - 1) * 6 ))
-              xcrun simctl io "$udid" screenshot "$RAW/$file"
-              size=$(stat -f%z "$RAW/$file")
-              # 아직 안 그려진 화면은 단색이라 작다. (사진이 든 아이패드 화면은 커서 윗문턱은 두지 않는다.)
-              if [ "$size" -ge 150000 ]; then
-                echo "찍음: $file ($size 바이트) $*"; return 0
-              fi
-              echo "  다시 ($attempt/3) — $size 바이트"
+              xcrun simctl io "$udid" screenshot "$file"
+              if check "$file"; then echo "찍음: $file $*"; return 0; fi
+              echo "  다시 ($attempt/3)"
             done
             echo "::error::$file 을 못 찍었습니다"; echo "$file" >> /tmp/shot-failures
+          }
+
+          # **파일 앱의 같은 폴더** — 파일 앱을 우리 앱 폴더에서 바로 연다. 못 찍으면 그 장만 빼고 알린다 (실패로 멈추지 않는다).
+          shoot_files() {   # $1 = 기기, $2 = 파일
+            local udid="$1" file="$RAW/$LANG_CODE/$2" attempt
+            local docs="$(xcrun simctl get_app_container "$udid" "$BUNDLE_ID" data)/Documents"
+            xcrun simctl terminate "$udid" "$BUNDLE_ID" >/dev/null 2>&1 || true
+            for attempt in 1 2; do
+              xcrun simctl openurl "$udid" "shareddocuments://$docs" || true
+              sleep $(( 10 + attempt * 4 ))
+              xcrun simctl io "$udid" screenshot "$file"
+              if check "$file"; then echo "찍음 (파일 앱): $file"; break; fi
+            done
+            xcrun simctl terminate "$udid" com.apple.DocumentsApp >/dev/null 2>&1 || true
+            check "$file" || { echo "::warning::파일 앱을 못 찍었습니다 — $file 을 뺀다"; rm -f "$file"; }
           }
 
           PHONE="${{ steps.sim.outputs.phone }}"
@@ -177,60 +237,84 @@ jobs:
           [ -n "$PHONE" ] || { echo "::error::아이폰 시뮬레이터가 없습니다"; exit 1; }
           [ -n "$PAD" ] || { echo "::error::13인치 아이패드 시뮬레이터가 없습니다"; exit 1; }
 
-          # ── 아이폰 ──
-          prepare "$PHONE"
-          newest "$PHONE" "Weekly Plan.md"
-          shoot "$PHONE" iphone-1-edit.png 12 -openFirstNote -caretAt "clearing "
-          shoot "$PHONE" iphone-2-list.png 8
-          newest "$PHONE" "Lisbon Trip.md"
-          shoot "$PHONE" iphone-3-reading.png 12 -readingMode
-          shoot "$PHONE" iphone-4-search.png 9 -search plan
-          xcrun simctl shutdown "$PHONE" || true
+          for lang in ko en; do
+            setup_lang "$lang"
+            # ── 아이폰 ──
+            prepare "$PHONE"
+            newest "$PHONE" "$PLAN"
+            shoot "$PHONE" iphone-1-edit.png 12 -openFirstNote -caretAt "$CARET"
+            shoot_files "$PHONE" iphone-2-files.png
+            newest "$PHONE" "$WATCH"
+            shoot "$PHONE" iphone-3-links.png 12 -readingMode
+            newest "$PHONE" "$TRIP"
+            shoot "$PHONE" iphone-4-reading.png 12 -readingMode
+            MIN_BYTES=100000; shoot "$PHONE" iphone-5-search.png 9 -search "$TERM"; MIN_BYTES=150000
+            xcrun simctl shutdown "$PHONE" || true
 
-          # ── 아이패드 (13인치 · 세로) ──
-          prepare "$PAD"
-          newest "$PAD" "Weekly Plan.md"
-          shoot "$PAD" ipad-1-edit.png 14
-          # **검색을 Lisbon Trip 을 열기 전에 찍는다.** 아이패드는 마지막에 연 노트를 다시 연다 — 뒤에 찍으면 오른쪽 칸에
-          # Lisbon Trip 이 편집 모드(표 · 사진 원문)로 남는다 (첫 촬영에서 잡힘).
-          shoot "$PAD" ipad-3-search.png 12 -search plan
-          newest "$PAD" "Lisbon Trip.md"
-          shoot "$PAD" ipad-2-reading.png 16 -readingMode
+            # ── 아이패드 (13인치 · 세로) ── 아이패드는 마지막에 연 노트를 다시 연다 — 검색을 다른 노트를 열기 전에 찍는다.
+            prepare "$PAD"
+            newest "$PAD" "$PLAN"
+            shoot "$PAD" ipad-1-edit.png 14
+            # 아이패드 검색 장은 하한을 낮추지 않는다 — 낮췄더니 덜 그려진 빈 화면(검색 칸 비고 *노트를 고르세요*)이 지나갔다 (세 번째 촬영)
+            shoot "$PAD" ipad-5-search.png 14 -search "$TERM"
+            shoot_files "$PAD" ipad-2-files.png
+            newest "$PAD" "$WATCH"
+            shoot "$PAD" ipad-3-links.png 16 -readingMode
+            newest "$PAD" "$TRIP"
+            shoot "$PAD" ipad-4-reading.png 16 -readingMode
+            xcrun simctl shutdown "$PAD" || true
+          done
 
-          ls -la "$RAW"
+          ls -la "$RAW"/*
           if [ -s /tmp/shot-failures ]; then exit 1; fi
 
-      # **칸 크기에 맞추고, 하나하나 잰다.** 지난번에 6.9인치로 짐작해 맞췄다가 한 바퀴를 버렸다 — 칸은 6.5인치였다.
-      - name: 칸 크기에 맞추기 · 재기
+      # **글귀를 얹고 칸 크기로 — 하나하나 잰다.** 한국어 아이폰 칸은 6.5", 영어 아이폰 칸은 6.1" 였다 (언어마다 다르다 · 2026-09-24 · 10-08 실측).
+      - name: 글귀 얹기 · 재기
         run: |
           set -euo pipefail
-          OUT=docs/store/en-screenshots
-          rm -rf "$OUT"; mkdir -p "$OUT"
-          for f in raw-shots/iphone-*.png; do
-            .ci-venv/bin/python Tools/store/fit.py "$f" iphone-6.1-portrait "$OUT/$(basename "$f")"
-          done
-          for f in raw-shots/ipad-*.png; do
-            .ci-venv/bin/python Tools/store/fit.py "$f" ipad-13-portrait "$OUT/$(basename "$f")"
+          OUT=docs/store/screenshots
+          rm -rf "$OUT"; mkdir -p "$OUT/ko" "$OUT/en"
+          caption() {   # $1 = 언어, $2 = 차례
+            case "$1-$2" in
+              ko-1) echo "그냥 쓰면 마크다운" ;;
+              ko-2) echo "글은 내 파일로 남습니다" ;;
+              ko-3) echo "보던 링크를 한 노트에" ;;
+              ko-4) echo "읽을 때는 깔끔하게" ;;
+              ko-5) echo "두 글자부터 찾기" ;;
+              en-1) echo "Just write. It’s Markdown." ;;
+              en-2) echo "Your notes stay as files" ;;
+              en-3) echo "Collect links in one note" ;;
+              en-4) echo "A clean reading view" ;;
+              en-5) echo "Find anything fast" ;;
+            esac
+          }
+          for lang in ko en; do
+            phone_slot=iphone-6.5; [ "$lang" = en ] && phone_slot=iphone-6.1
+            for f in raw-shots/$lang/*.png; do
+              name=$(basename "$f"); n=$(echo "$name" | sed -E 's/^[a-z]+-([0-9]).*/\1/')
+              slot=ipad-13; case "$name" in iphone-*) slot=$phone_slot ;; esac
+              .ci-venv/bin/python Tools/store/frame.py "$f" "$slot" "$(caption "$lang" "$n")" "$OUT/$lang/$name"
+            done
           done
           .ci-venv/bin/python - <<'PY'
           import glob, sys
           from PIL import Image
-          want = {"iphone": (1206, 2622), "ipad": (2064, 2752)}
-          # 찍힌 그대로가 칸 크기여야 한다 — 늘린 그림이 아니게 (원본도 잰다)
-          for raw in sorted(glob.glob("raw-shots/*.png")):
-              size = Image.open(raw).size
-              kind = "iphone" if "/iphone-" in raw else "ipad"
-              print(("같음" if size == want[kind] else "다름") + f" 원본 {raw} {size}")
+          want = {("ko", "iphone"): (1242, 2688), ("en", "iphone"): (1206, 2622),
+                  ("ko", "ipad"): (2064, 2752), ("en", "ipad"): (2064, 2752)}
           bad = 0
-          files = sorted(glob.glob("docs/store/en-screenshots/*.png"))
-          for path in files:
-              im = Image.open(path)
-              kind = "iphone" if "/iphone-" in path else "ipad"
-              ok = im.size == want[kind] and im.mode == "RGB"
-              bad += not ok
-              print(("OK  " if ok else "틀림") + f" {path} {im.size} {im.mode} (칸 {want[kind]})")
-          if len(files) != 7:
-              print(f"::error::7장이어야 하는데 {len(files)}장"); sys.exit(1)
+          for lang in ("ko", "en"):
+              files = sorted(glob.glob(f"docs/store/screenshots/{lang}/*.png"))
+              for path in files:
+                  im = Image.open(path)
+                  kind = "iphone" if "/iphone-" in path else "ipad"
+                  ok = im.size == want[(lang, kind)] and im.mode == "RGB"
+                  bad += not ok
+                  print(("OK  " if ok else "틀림") + f" {path} {im.size} {im.mode} (칸 {want[(lang, kind)]})")
+              # 파일 앱 두 장은 못 찍으면 빠진다 — 그 밖은 다 있어야 한다
+              if len(files) < 8:
+                  print(f"::error::{lang} 이 {len(files)}장뿐"); sys.exit(1)
+              if len(files) < 10:
+                  print(f"::warning::{lang} 은 {len(files)}장 — 파일 앱을 못 찍은 것")
           if bad:
               print("::error::칸 크기와 다른 그림이 있다"); sys.exit(1)
           PY
@@ -239,18 +323,18 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: en-store-screenshots
+          name: store-screenshots
           path: |
-            docs/store/en-screenshots
+            docs/store/screenshots
             raw-shots
 
       - name: 브랜치에 커밋
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/store/en-screenshots
+          git add docs/store/screenshots
           if git diff --cached --quiet; then echo "변화 없음"; exit 0; fi
-          git commit -m "chore: 영어 스토어 스크린샷 (store-shots.yml) [skip ci]"
+          git commit -m "chore: 스토어 스크린샷 · 한국어 · 영어 · 글귀 (store-shots.yml) [skip ci]"
           git reset -q --hard HEAD; git clean -qfd
           for attempt in 1 2 3; do
             if git push origin HEAD:${{ github.ref_name }}; then exit 0; fi

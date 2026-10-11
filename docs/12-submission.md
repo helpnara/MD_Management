@@ -1,6 +1,6 @@
 ---
 title: 심사 제출 절차서
-updated: 2026-10-09
+updated: 2026-10-11
 ---
 
 # 심사 제출 절차서
@@ -12,12 +12,12 @@ updated: 2026-10-09
 
 ---
 
-## 0. 지금 상태 (2026-10-09 — **1.1 (빌드 92) 승인 · 배포** · 한국어 + 영어(Slow Margin) · `main` = 1.1 · 1.0.8(빌드 86)은 내지 않고 1.1 에 합침)
+## 0. 지금 상태 (2026-10-11 — **1.1.3 (빌드 101) 승인 · 배포** · 한국어 + 영어(Slow Margin) · `main` = 1.1.3 · 1.1.2 는 심사를 거두어 출시되지 않음 · 다음은 1.1.4)
 
 | | |
 |---|---|
 | 번들 ID | `com.helpnara.markdown` |
-| 출시된 판 | **1.1** (빌드 92 · 2026-10-09 배포) — 한국어 · 영어 |
+| 출시된 판 | **1.1.3** (빌드 101 · 2026-10-11 배포) — 한국어 · 영어. 그 앞 1.1.1 (빌드 94) |
 | 빌드 번호 | **CI 실행 번호와 같다** (`testflight.yml` 이 `github.run_number` 를 넣는다) — 심사에 낼 빌드를 확인 목록 0번의 판으로 고른다 |
 | 처리방침 · 지원 | 한국어 `/privacy/` · 영어 `/en/privacy/` (열리는 것 확인 — 2026-09-24 · 2026-10-07) |
 | 스크린샷 | 한국어 — 아이폰 6.5" 석 장 · 아이패드 13" 가로 넉 장 (2026-09-24). 영어 — 아이폰 **6.1"** 넉 장 · 아이패드 13" 세로 석 장 (2026-10-08, `docs/11-store-screenshots.md`) |
@@ -41,7 +41,7 @@ updated: 2026-10-09
 ### 부제
 
 ```
-글이 파일로 남는 마크다운 기록
+글이 파일로 남는 마크다운 노트 · 메모
 ```
 
 ### 프로모션 텍스트
@@ -55,7 +55,7 @@ updated: 2026-10-09
 ### 키워드
 
 ```
-마크다운,markdown,md,노트,메모,기록,일기,글쓰기,아이클라우드,icloud,파일,에디터,텍스트,체크리스트,태그
+markdown,md,메모장,기록,일기,글쓰기,아이클라우드,icloud,에디터,텍스트,체크리스트,할일,태그,링크,스크랩,모음,위키,백링크,문서,다이어리,저널,정리,오프라인
 ```
 
 ### 설명
@@ -170,6 +170,16 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.4 제출 순서 (2026-10-11 사용자 — *착수 하자*)
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.4`
+2. **빌드** 칸에서 **102** 를 고른다 (`1.1.4 (102)`)
+3. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 울타리 (`docs/store/1.1.4-새로운-기능.txt`)
+4. 한국어 **부제** · **키워드** — §1 의 새 값 (안 A · 부제 22/30 · 키워드 95/100)
+5. **스크린샷 갈기** — 아이폰 6.5" 칸 · 아이패드 13" 칸의 것을 **모두 지우고** `docs/store/screenshots/ko/` 의 다섯 장을 1 → 5 차례로 (아이패드는 이번에 **세로**)
+6. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New* (§1-영어) · **Keywords** (97/100) · 스크린샷(아이폰 6.1" · 아이패드 13" 칸에 `docs/store/screenshots/en/` 다섯 장씩) → **저장**
+7. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+
 ### 1.1.3 제출 순서 (2026-10-11 사용자 — *기존 버전을 1.1.3으로 업하자* · *1.1.3을 심사에 낼 수 있게 준비하자*)
 
 판을 **1.1.3** 으로 올렸다 — 테스트플라이트에서 빌드 96 · 97(`1.1.3`)을 쓰던 기기는 판이 낮은 98 · 99(`1.1.2`)를 **저절로 받지 않는다**.
@@ -213,7 +223,7 @@ Your writing lives as Markdown files in your own iCloud folder, not inside the a
 쉼표 뒤에 빈칸을 넣지 않는다 — 빈칸도 글자로 센다. 이름에 든 말(slow · margin)은 넣지 않는다 — 이름은 이미 검색된다.
 
 ```
-markdown,md,notes,journal,diary,writing,editor,plaintext,icloud,files,checklist,tags,outline
+md,journal,diary,writing,editor,plaintext,icloud,checklist,tags,memo,links,wiki,offline,backlinks
 ```
 
 ### Description
@@ -280,17 +290,10 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.3** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.1 의 글은 `docs/store/1.1.1-새로운-기능.txt`.
+> **1.1.4** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.3 의 글은 `docs/store/1.1.3-새로운-기능.txt`.
 
 ```
-• When you share, you can pick a pinned note. The title and link are added as a new line at the end of that note instead of a new note, so links on one topic stay together.
-• Code blocks in Read mode now have Copy and Expand buttons in the top-right corner. Copy takes just the code inside the block.
-• Expand shows the code with its original lines, scrolling sideways, or turn on line wrapping to fit it to the screen.
-• When you share from an app that sends only a link, such as a video app, the page title now becomes the note’s title and link text.
-• Horizontal rules and table borders in Read mode are now lighter, matching the other lines in the app.
-• The notice that pasted text was converted no longer looks like a red error. It appears briefly in a light banner, fades on its own, and clears when you leave the note.
-• Fixed the note list being cut off halfway when you went back to it with a notice showing.
-• Adding photos or attachments no longer clears other notices that were already showing.
+• After you’ve used the app for a few days, it may occasionally ask for a rating as you leave a note you edited. It never asks while you write, and asks at most once per version. Your rating means a lot to a one-person app.
 ```
 
 ---
@@ -408,6 +411,8 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-10-11 | **1.1.4 (빌드 102) 준비** (사용자 — *0-2번 확인 완료*). 평가 부탁 · 새로운 기능 한 줄 · 부제 · 키워드 안 A · 스크린샷 스무 장 (글귀 · 한국어 아이패드 세로로). `main` 병합 |
+| 2026-10-11 | ✅ **1.1.3 (빌드 101) 승인 · 배포** (사용자 — *심사 완료됐고 배포도 완료했어*). 출시된 판 = 1.1.3 |
 | 2026-10-11 | ✅ **1.1.3 (빌드 101) 제출** (사용자 — *제출 완료했어*). 거둔 1.1.2 를 1.1.3 으로 고쳐 냈다. 자동 출시 · 단계적 출시 끔 |
 | 2026-10-11 | **1.1.3 (빌드 101) 심사 준비** (사용자 — *0-11번 모두 확인 완료* · *심사 준비하자*). 240 유튜브 제목(공식 제목 창구) · 241 고정한 노트에 덧붙이기 · 238 가름선을 더했다 · 새로운 기능 두 줄 · 처리방침 한 줄. `main` 병합 |
 | 2026-10-11 | **판을 1.1.3 으로 올림** (사용자 — *테스트플라이트에서 판이 낮아 자동 업데이트가 안 된다 · 1.1.3으로 업하자*). 스토어의 거둔 1.1.2 를 1.1.3 으로 고쳐 빌드 101 로 낸다 (100 은 유튜브 제목 자리에 채널 이름 — 공식 제목 창구로 고침 · 처리방침 한 줄) |
@@ -442,8 +447,8 @@ python3 Tools/store/count.py
 
 - ☑ 심사 결과를 기다린다 — **승인 2026-09-28.** 반려되면 **사유를 그대로 여기 적는다** — 다음에 같은 자리에
   안 걸리게
-- ☐ 통과하면 `docs/roadmap.md` 의 *지금 어디까지* 를 갱신하고, 안정화 표에 날짜를 채운다
-- ☐ **TestFlight 는 그대로 둔다** — 다음 판을 만들 때 다시 쓴다
+- ☑ 통과하면 `docs/roadmap.md` 의 *지금 어디까지* 를 갱신하고, 안정화 표에 날짜를 채운다 — S1~S12 모두 날짜가 있다 (2026-10-11 다시 봄)
+- ☑ **TestFlight 는 그대로 둔다** — 다음 판을 만들 때 다시 쓴다 (1.0.1 부터 판마다 그대로 쓰고 있다)
 
 ---
 
@@ -498,18 +503,11 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.3** (2026-10-11 — 235 · 236 알림 띠 · 237 코드 상자 복사 · 크게 보기 · 239 줄바꿈 · 240 공유 제목). 처음 낸 1.1.2(빌드 95)는 사용자가 심사를 거두었고, 판을 1.1.3 으로 올려 빌드 101 로 낸다 (1.1.2 는 출시되지 않음). 글은 `docs/store/1.1.3-새로운-기능.txt`. 1.1.1 의 글은 `docs/store/1.1.1-새로운-기능.txt`.
+> **1.1.4** (2026-10-11 — 평가 부탁 · 스토어 손질(스크린샷 · 부제 · 키워드)). 글은 `docs/store/1.1.4-새로운-기능.txt`. 1.1.3 의 글은 `docs/store/1.1.3-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 공유 메뉴로 보낼 때 고정한 노트를 고르면, 새 노트 대신 그 노트 맨 끝에 제목과 링크가 한 줄씩 쌓입니다. 같은 주제의 링크를 한 노트에 모아 둘 수 있습니다.
-• 읽기 화면의 코드 상자 오른쪽 위에 복사 · 크게 보기 단추가 생겼습니다. 복사는 상자 안의 글만 담습니다.
-• 크게 보기에서는 코드를 원래 줄 모양 그대로 옆으로 밀어 볼 수 있고, 줄바꿈을 켜면 화면 폭에 맞춰 읽을 수 있습니다.
-• 동영상 앱처럼 주소만 보내는 앱에서 공유해도 그 쪽의 제목이 노트 제목과 링크 이름으로 들어갑니다.
-• 읽기 화면의 가로줄과 표 테두리가 너무 짙던 것을 앱의 다른 선처럼 옅게 고쳤습니다.
-• 붙여 넣은 글의 서식을 바꿨다는 안내가 오류처럼 붉게 뜨지 않습니다. 옅은 띠로 잠깐 뜨고 저절로 사라지며, 노트를 떠나면 바로 걷힙니다.
-• 안내가 떠 있는 채 목록으로 돌아오면 노트 목록이 중간에서 잘려 보이던 문제를 고쳤습니다.
-• 사진이나 첨부를 넣어도 그 전에 떠 있던 다른 안내가 지워지지 않습니다.
+• 앱을 며칠 써 보신 분께, 고친 노트를 닫고 나올 때 가끔 별점을 부탁드립니다. 쓰는 도중에는 묻지 않고, 같은 판에서는 한 번만 묻습니다. 남겨 주시는 평가가 혼자 만드는 앱에 큰 힘이 됩니다.
 ```
 

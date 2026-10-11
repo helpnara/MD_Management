@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import Combine
 import PhotosUI
+import StoreKit
 import Core
 
 /// 아이패드는 3단, 아이폰은 같은 뷰가 스택으로 접힌다 (ADR-0006).
@@ -12,6 +13,8 @@ struct RootView: View {
     @State private var columnVisibility = NavigationSplitViewVisibility.all
     /// 236 — 키보드가 내려간 뒤 아래 띠 높이를 잠깐 1포인트 바꿔 위 화면이 크기를 다시 재게 한다.
     @State private var bannerNudge: CGFloat = 0
+    /// 애플의 평가 창 (`LibraryModel.reviewRequest`).
+    @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         // **안내 띠는 제 칸에 둔다** (133 손질). 예전에는 `safeAreaInset` 으로 얹었는데,
@@ -32,6 +35,15 @@ struct RootView: View {
                 bannerNudge = 1
                 try? await Task.sleep(for: .milliseconds(60))
                 bannerNudge = 0
+            }
+        }
+        // **평가 부탁** — 노트를 고치고 떠난 순간 모델이 정한다. 목록이 자리를 잡은 뒤에, 시트가 떠 있지 않을 때만.
+        .onChange(of: library.reviewRequest) { _, request in
+            guard request != nil else { return }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(1))
+                guard library.sheet == nil else { return }
+                requestReview()
             }
         }
     }

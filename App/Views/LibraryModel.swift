@@ -2231,6 +2231,7 @@ final class LibraryModel: ObservableObject {
                 // 2초 자동 저장이 *다른 기기에서 고친 노트라 나란히 저장했다* · *사진 n장을 넣지 못했다* 를 읽기도 전에 걷었다.
                 // 그 알림들은 사람이 띠를 눌러 닫거나, 사람이 다음 일을 할 때(만들기 · 옮기기 …) 걷힌다.
                 if saveFailed { lastError = nil }
+                reviewLedger.noteSaved()   // 평가 부탁 — 저장한 날 수 (`ReviewPrompt`)
             } catch WriteConflict.changedOnDisk {
                 let name = path.split(separator: "/").last.map(String.init) ?? path
                 let conflict = try await store.createNote(
@@ -2555,6 +2556,23 @@ final class LibraryModel: ObservableObject {
 
     private var importingShared = false
 
+    // MARK: - 평가 부탁 (2026-10-11 사용자 — 무료 앱 상위 · 브레인스토밍 1번)
+
+    /// 바뀌면 화면이 애플의 평가 창을 부른다 (`RootView`). 띄울지는 애플이 정한다 — 1년에 세 번까지.
+    @Published private(set) var reviewRequest: UUID?
+    private let reviewLedger = ReviewLedger()
+
+    /// **노트를 고치고 떠나는 순간에만** — 쓰는 도중 · 처음 며칠 · 같은 판에서 두 번은 묻지 않는다 (Core `ReviewPrompt`).
+    /// 둘러보기 자료에서는 묻지 않는다.
+    private func askForReviewIfDue() {
+        guard editedThisVisit, !isSample else { return }
+        let version = Bundle.appVersion
+        guard reviewLedger.isDue(version: version) else { return }
+        reviewLedger.markAsked(version: version)
+        log("평가 부탁 창을 부름 (\(version))")
+        reviewRequest = UUID()
+    }
+
     /// 받은 글의 이름이 될 때 — 제목이 하나도 없을 때만 쓴다 (`받은 글 2026-10-04 07-30` · 영어 `Shared 2026-10-04 07-30`).
     private static let shareClock: DateFormatter = {
         let formatter = DateFormatter()
@@ -2607,6 +2625,7 @@ final class LibraryModel: ObservableObject {
         await save()
 
         guard let store, let note = selectedNote else {
+            askForReviewIfDue()   // 고친 노트를 떠나 목록으로 — 평가를 부탁해도 되는 순간
             clearNote()
             return
         }
@@ -2673,6 +2692,7 @@ final class LibraryModel: ObservableObject {
             // 쪼개진다 (`팀 이` 와 `ㅅ` 이 따로 남았다). 같은 노트를 다시 읽는 것은
             // 편집기의 `load` 가 판정한다: 사용자가 손댔으면 그쪽이 최신이라 안 덮는다.
             if isNewlyOpened {
+                askForReviewIfDue()   // 고친 노트를 떠나 다른 노트로 (아이패드)
                 editorSession = UUID()
                 editedThisVisit = false
                 clearNoteNotice()   // 앞 노트의 *되돌리기로 무를 수 있습니다* 는 여기서 맞지 않다 (236)
