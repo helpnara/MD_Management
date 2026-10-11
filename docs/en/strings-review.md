@@ -83,6 +83,9 @@
 | 고정됨 | Pinned |
 | 고치고 옮기기 | Update and Move |
 | 공유 | Share |
+| 공유로 받은 것 %lld개는 새 노트로, %lld개는 고른 노트 끝에 넣었습니다. | Added shared items: %lld as new notes, %lld to the end of the chosen note. |
+| 공유로 받은 것 %lld개를 %@ 노트 끝에 덧붙였습니다. | Added shared items to the end of %2$@ (%1$lld). |
+| 공유로 받은 것 %lld개를 고른 노트 끝에 덧붙였습니다. | Added shared items to the end of the chosen notes (%lld). |
 | 공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다. | Added shared items to the %2$@ folder as new notes (%1$lld). |
 | 공유로 받은 글 %lld개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다. | one: Couldn't add %lld shared item. The app will try again next time it opens. / other: Couldn't add %lld shared items. The app will try again next time it opens. |
 | 공유할 때 링크된 노트도 넣기 | Include Linked Notes When Sharing |
@@ -121,6 +124,7 @@
 | 닫기 | Close |
 | 더 보기 | More |
 | 더 보기 (%lld줄) | Show More (%lld Lines) |
+| 덧붙일 노트를 찾지 못해 공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다. | Couldn’t find the note to add to, so shared items went into the %2$@ folder as new notes (%1$lld). |
 | 도움 | Help |
 | 되돌리기 | Restore |
 | 되돌리지 못했습니다: %@ | Couldn't restore: %@ |
@@ -329,10 +333,14 @@
 | 한국어 | English |
 |---|---|
 | 글 | Text |
+| 넣을 곳 | Save to |
+| 노트를 고정해 두면 여기서 그 노트에 덧붙일 수 있습니다. | Pin a note to add to it from here. |
 | 느린 여백에 보내기 | Send to Slow Margin |
 | 보내기 | Send |
 | 보내지 못했습니다. 잠시 뒤 다시 해 주세요. | Couldn't send. Please try again in a moment. |
 | 사진 %lld장 | one: %lld photo / other: %lld photos |
+| 새 노트 | New Note |
+| 앱을 열면 고른 노트의 맨 끝에 한 줄로 덧붙입니다. | When you open the app, it’s added as a new line at the end of the chosen note. |
 | 앱을 열면 받은 글 폴더에 새 노트로 들어갑니다. | When you open the app, it's added as a new note in the Inbox folder. |
 | 주소 | Link |
 | 취소 | Cancel |
