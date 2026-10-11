@@ -398,5 +398,59 @@
    "name": "꺾쇠로 막은 것 · 혼자인 것은 아니다",
    "markdown": "> - \\[ ] 막음\n> - [ ]\n- \\[x] 밖에서 막음"
   }
+ ],
+ "codeBlocks": [
+  {
+   "name": "울타리 · 언어",
+   "markdown": "# 메모\n\n```swift\nlet a = 1\nprint(a)\n```\n\n끝"
+  },
+  {
+   "name": "울타리 · 언어 없음",
+   "markdown": "```\n그냥 글\n```"
+  },
+  {
+   "name": "물결 울타리 · 언어 뒤 낱말",
+   "markdown": "~~~js 예제 코드\nconsole.log(\"hi\")\n~~~"
+  },
+  {
+   "name": "빈칸 넷 들여쓴 코드",
+   "markdown": "글\n\n    가 = 1\n    나 = 2\n\n끝"
+  },
+  {
+   "name": "상자 둘 — 차례대로",
+   "markdown": "```py\nx = 1\n```\n\n사이 글\n\n```sh\necho 둘\n```"
+  },
+  {
+   "name": "목록 안",
+   "markdown": "- 항목\n\n  ```\n  안쪽 코드\n  ```\n- 다음"
+  },
+  {
+   "name": "인용 안",
+   "markdown": "> 인용\n>\n> ```\n> 인용 속 코드\n> ```"
+  },
+  {
+   "name": "꺾쇠 · 앰퍼샌드 · 따옴표",
+   "markdown": "```html\n<b>굵게</b> & \"따옴\" 'ㅎ' &amp;\n```"
+  },
+  {
+   "name": "빈 상자",
+   "markdown": "```\n```"
+  },
+  {
+   "name": "안의 빈 줄 · 탭",
+   "markdown": "```\n첫 줄\n\n\t탭 줄\n```"
+  },
+  {
+   "name": "머리말 뒤",
+   "markdown": "---\ntitle: 가\n---\n```txt\n머리말 다음\n```"
+  },
+  {
+   "name": "언어에 따옴표",
+   "markdown": "```a\"b\n코드\n```"
+  },
+  {
+   "name": "코드 없음",
+   "markdown": "# 제목\n\n`인라인 코드`만 있다"
+  }
  ]
 }

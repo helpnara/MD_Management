@@ -8,10 +8,38 @@ public struct RenderedNote: Equatable, Sendable {
     /// 참조했는데 폴더 안에 없는 것. **원문에 적힌 링크 그대로** — 사용자에게
     /// "어느 링크가 없는지" 를 보여 줘야 한다 (안정화 기준 S5).
     public let missingAttachments: [String]
+    /// 읽기 화면의 코드 상자들 — **화면에 그린 차례대로** (237). `yb://copy/<번호>` · `yb://code/<번호>` 의 번호가 이 배열의 자리다.
+    public let codeBlocks: [CodeBlockText]
 
-    public init(bodyHTML: String, missingAttachments: [String]) {
+    public init(bodyHTML: String, missingAttachments: [String], codeBlocks: [CodeBlockText] = []) {
         self.bodyHTML = bodyHTML
         self.missingAttachments = missingAttachments
+        self.codeBlocks = codeBlocks
+    }
+}
+
+/// 코드 상자 하나 (237). `language` 는 울타리 뒤에 적은 첫 낱말 (` ```swift ` → `swift`), 없으면 빈 문자열.
+/// `text` 는 상자 안의 글 그대로 — 복사하기가 클립보드에 넣는 것이다.
+public struct CodeBlockText: Equatable, Sendable {
+    public let language: String
+    public let text: String
+
+    public init(language: String, text: String) {
+        self.language = language
+        self.text = text
+    }
+}
+
+/// 코드 상자 머리의 글자 (237). Core 에는 번역 목록이 없어 App 이 번역해 넘긴다 — 기본값은 한국어.
+public struct CodeBoxLabels: Sendable {
+    public let code: String
+    public let copy: String
+    public let expand: String
+
+    public init(code: String = "코드", copy: String = "복사", expand: String = "크게 보기") {
+        self.code = code
+        self.copy = copy
+        self.expand = expand
     }
 }
 
@@ -71,7 +99,8 @@ public enum MarkdownHTML {
         markdown: String,
         notePath: String,
         existing: Set<String>,
-        tooDeepNotice: String = "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다."
+        tooDeepNotice: String = "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다.",
+        codeLabels: CodeBoxLabels = CodeBoxLabels()
     ) -> RenderedNote {
         let body = FrontMatterParser.parse(markdown).body
 
@@ -96,12 +125,74 @@ public enum MarkdownHTML {
 
         // 블록마다 원문 줄 범위를 붙인다 — 읽기 ↔ 쓰기를 오가도 보던 자리를 잇는다 (176).
         // 짝이 안 맞으면 `LineMap` 이 손대지 않고 돌려준다.
+        let tasked = linkTasks(LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown),
+                               markdown: markdown)
+        // 코드 상자에 머리(언어 · 복사 · 크게 보기)를 단다 (237) — 단추의 번호와 복사할 글을 **같은 한 번의 훑기**에서 얻는다.
+        let boxed = decorateCodeBlocks(tasked, labels: codeLabels)
         return RenderedNote(
-            bodyHTML: linkTasks(LineMap.annotate(HTMLFormatter.format(rewritten), markdown: markdown),
-                                markdown: markdown),
-            missingAttachments: rewriter.missing
+            bodyHTML: boxed.html,
+            missingAttachments: rewriter.missing,
+            codeBlocks: boxed.blocks
         )
     }
+
+    /// **코드 상자마다 머리를 단다** (237, 2026-10-11 사용자 — 상자 오른쪽 위에 *복사* · *크게 보기*).
+    ///
+    /// 읽기 화면은 자바스크립트를 끈 웹뷰라 화면 안에서 클립보드에 넣을 수 없다 — 체크상자(211)와 같은 길로 간다:
+    /// 단추는 `yb://copy/<번호>` · `yb://code/<번호>` 링크이고, 누르면 앱이 받아 `codeBlocks[번호]` 를 쓴다.
+    ///
+    /// **번호와 글을 한 번에 얻는다** (CLAUDE.md §1 — 같은 것을 재는 곳이 둘이면 갈린다). 글은 **화면에 그린 HTML 에서**
+    /// 되돌려 얻는다 — 원시 HTML 은 위에서 전부 이스케이프되므로 진짜 `<pre>` 는 코드 블록에서만 나온다.
+    /// 짝이 안 맞는 꼴(정규식이 못 잡는 `<pre>`)은 손대지 않는다 — 단추가 없을 뿐 글은 그대로 보인다.
+    static func decorateCodeBlocks(_ html: String, labels: CodeBoxLabels) -> (html: String, blocks: [CodeBlockText]) {
+        guard html.contains("<pre"),
+              let regex = try? NSRegularExpression(
+                pattern: #"<pre(\b[^>]*)><code(?: class="language-([^"]*)")?>([\s\S]*?)</code></pre>"#)
+        else { return (html, []) }
+        let text = html as NSString
+        var out = ""
+        var blocks: [CodeBlockText] = []
+        var cursor = 0
+        for match in regex.matches(in: html, range: NSRange(location: 0, length: text.length)) {
+            let attributes = text.substring(with: match.range(at: 1))
+            let languageClass = match.range(at: 2).location == NSNotFound ? "" : text.substring(with: match.range(at: 2))
+            let inner = text.substring(with: match.range(at: 3))
+            // 언어는 울타리 뒤 첫 낱말 — ` ```js 제목 ` 이면 `js`.
+            let language = unescape(languageClass).split(whereSeparator: { $0 == " " || $0 == "\t" }).first.map(String.init) ?? ""
+            var code = unescape(inner)
+            if code.hasSuffix("\n") { code.removeLast() }   // 파서가 상자 끝에 붙이는 줄바꿈 하나
+            let index = blocks.count
+            blocks.append(CodeBlockText(language: language, text: code))
+
+            let classAttribute = languageClass.isEmpty ? "" : " class=\"language-\(languageClass)\""
+            let head = "<div class=\"yb-code\"><div class=\"yb-code-bar\">"
+                + "<span class=\"yb-code-lang\">\(escape(language.isEmpty ? labels.code : language))</span>"
+                + "<a class=\"yb-code-btn\" href=\"\(scheme)://copy/\(index)\" aria-label=\"\(escape(labels.copy))\">\(copyIcon)</a>"
+                + "<a class=\"yb-code-btn\" href=\"\(scheme)://code/\(index)\" aria-label=\"\(escape(labels.expand))\">\(expandIcon)</a>"
+                + "</div>"
+            out += text.substring(with: NSRange(location: cursor, length: match.range.location - cursor))
+            out += head + "<pre\(attributes)><code\(classAttribute)>\(inner)</code></pre></div>"
+            cursor = match.range.location + match.range.length
+        }
+        out += text.substring(from: cursor)
+        return (out, blocks)
+    }
+
+    /// `escape` 를 거꾸로 — 같은 다섯 글자만. `&amp;` 는 맨 나중에 (먼저 풀면 `&amp;lt;` 가 `<` 가 된다).
+    static func unescape(_ text: String) -> String {
+        guard text.contains("&") else { return text }
+        return text
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'")
+            .replacingOccurrences(of: "&amp;", with: "&")
+    }
+
+    /// 겹친 네모 둘 — 복사 (237). 선만 그리고 색은 글자색을 따른다.
+    private static let copyIcon = #"<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></svg>"#
+    /// 바깥으로 벌어지는 두 화살 — 크게 보기 (237).
+    private static let expandIcon = #"<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg>"#
 
     /// **체크상자를 누를 수 있게** (211) — 목록 항목의 줄 번호(`data-line`, `LineMap` 이 붙였다)로 `yb://task/<줄>` 링크를 씌운다.
     /// 체크상자 자체는 그대로 두고(`disabled`), 링크가 누름을 받는다 — CSS 가 체크상자의 누름을 링크로 흘린다.
@@ -355,6 +446,17 @@ public enum MarkdownHTML {
     }
     /* 글자 인용만 파랑 (196) — 코드 덩이는 본문색 그대로. */
     pre code { background: none; color: inherit; padding: 0; font-size: 0.85em; white-space: inherit; }
+    /* 237 — 코드 상자의 머리: 왼쪽 언어(없으면 코드) · 오른쪽 복사 · 크게 보기. 상자와 한 덩어리로 보이게 같은 바탕에 가는 선으로 가른다. */
+    .yb-code { margin: 1em 0; border-radius: 0.5em; background: var(--yb-paper-raised); overflow: hidden; }
+    .yb-code pre { margin: 0; border-radius: 0; }
+    .yb-code-bar { display: flex; align-items: center; gap: 0.2em; padding: 0.15em 0.35em 0.15em 0.8em;
+      border-bottom: 1px solid var(--yb-rule); font-size: 0.8em; color: var(--yb-ink-faint); }
+    .yb-code-lang { flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .yb-code-btn { display: flex; align-items: center; justify-content: center; width: 2.6em; height: 2.4em;
+      color: var(--yb-ink-faint); -webkit-tap-highlight-color: transparent; }
+    .yb-code-btn:active { color: var(--yb-ink); }
+    .yb-code-btn svg { width: 1.35em; height: 1.35em; fill: none; stroke: currentColor; stroke-width: 1.8;
+      stroke-linecap: round; stroke-linejoin: round; }
     hr { border: none; border-top: 1px solid var(--yb-rule); margin: 2em 0; }
     img { max-width: 100%; height: auto; border-radius: 0.4em; display: block; margin: 1em auto; }
     table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1em 0; }
@@ -433,6 +535,8 @@ private struct NoteRewriter: MarkupRewriter {
     mutating func visitCodeBlock(_ codeBlock: CodeBlock) -> Markup? {
         var copy = codeBlock
         copy.code = MarkdownHTML.escape(codeBlock.code)
+        // 울타리 뒤 글(언어)도 HTML 속성(`class="language-…"`)에 그대로 들어간다 — 따옴표가 있으면 속성을 깨고 나왔다 (237 에서 찾음).
+        copy.language = codeBlock.language.map { MarkdownHTML.escape($0) }
         return copy
     }
 

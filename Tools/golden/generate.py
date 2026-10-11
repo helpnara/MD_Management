@@ -2546,8 +2546,23 @@ def build_html_markdown_cases() -> dict:
             raise SystemExit(f"::error::[{case['name']}] 체크상자 줄 {lines} · 심판의 체크상자 {boxes(case['markdown'])[0]}")
         task_lines.append({**case, "lines": lines})
 
+    # 237 — 읽기 화면 코드 상자의 *복사* 가 넣을 글. **심판은 markdown-it 의 토큰이다** — 앱은 화면에 그린 HTML 에서
+    # 되돌려 얻는다(`MarkdownHTML.decorateCodeBlocks`). 길이 다른 둘이 같은 글을 내면 복사가 맞다. 언어는 울타리 뒤 첫 낱말.
+    code_md = MarkdownIt("commonmark")
+    code_blocks = []
+    for case in spec["codeBlocks"]:
+        body = re.sub(r"^---\n.*?\n---\n", "", case["markdown"], flags=re.S)
+        blocks = []
+        for token in code_md.parse(body):
+            if token.type not in ("fence", "code_block"):
+                continue
+            text = token.content[:-1] if token.content.endswith("\n") else token.content
+            info = token.info.strip() if token.type == "fence" else ""
+            blocks.append({"language": info.split()[0] if info else "", "text": text})
+        code_blocks.append({**case, "blocks": blocks})
+
     return {"convert": converted, "fill": fills, "keeps": keeps, "promote": promotes,
-            "tasks": tasks, "taskLines": task_lines}
+            "tasks": tasks, "taskLines": task_lines, "codeBlocks": code_blocks}
 
 
 def build_broken_cases() -> list[dict]:

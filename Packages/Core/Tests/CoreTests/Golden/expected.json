@@ -4430,6 +4430,137 @@
     }
   ],
   "htmlMarkdownCases": {
+    "codeBlocks": [
+      {
+        "blocks": [
+          {
+            "language": "swift",
+            "text": "let a = 1\nprint(a)"
+          }
+        ],
+        "markdown": "# 메모\n\n```swift\nlet a = 1\nprint(a)\n```\n\n끝",
+        "name": "울타리 · 언어"
+      },
+      {
+        "blocks": [
+          {
+            "language": "",
+            "text": "그냥 글"
+          }
+        ],
+        "markdown": "```\n그냥 글\n```",
+        "name": "울타리 · 언어 없음"
+      },
+      {
+        "blocks": [
+          {
+            "language": "js",
+            "text": "console.log(\"hi\")"
+          }
+        ],
+        "markdown": "~~~js 예제 코드\nconsole.log(\"hi\")\n~~~",
+        "name": "물결 울타리 · 언어 뒤 낱말"
+      },
+      {
+        "blocks": [
+          {
+            "language": "",
+            "text": "가 = 1\n나 = 2"
+          }
+        ],
+        "markdown": "글\n\n    가 = 1\n    나 = 2\n\n끝",
+        "name": "빈칸 넷 들여쓴 코드"
+      },
+      {
+        "blocks": [
+          {
+            "language": "py",
+            "text": "x = 1"
+          },
+          {
+            "language": "sh",
+            "text": "echo 둘"
+          }
+        ],
+        "markdown": "```py\nx = 1\n```\n\n사이 글\n\n```sh\necho 둘\n```",
+        "name": "상자 둘 — 차례대로"
+      },
+      {
+        "blocks": [
+          {
+            "language": "",
+            "text": "안쪽 코드"
+          }
+        ],
+        "markdown": "- 항목\n\n  ```\n  안쪽 코드\n  ```\n- 다음",
+        "name": "목록 안"
+      },
+      {
+        "blocks": [
+          {
+            "language": "",
+            "text": "인용 속 코드"
+          }
+        ],
+        "markdown": "> 인용\n>\n> ```\n> 인용 속 코드\n> ```",
+        "name": "인용 안"
+      },
+      {
+        "blocks": [
+          {
+            "language": "html",
+            "text": "<b>굵게</b> & \"따옴\" 'ㅎ' &amp;"
+          }
+        ],
+        "markdown": "```html\n<b>굵게</b> & \"따옴\" 'ㅎ' &amp;\n```",
+        "name": "꺾쇠 · 앰퍼샌드 · 따옴표"
+      },
+      {
+        "blocks": [
+          {
+            "language": "",
+            "text": ""
+          }
+        ],
+        "markdown": "```\n```",
+        "name": "빈 상자"
+      },
+      {
+        "blocks": [
+          {
+            "language": "",
+            "text": "첫 줄\n\n\t탭 줄"
+          }
+        ],
+        "markdown": "```\n첫 줄\n\n\t탭 줄\n```",
+        "name": "안의 빈 줄 · 탭"
+      },
+      {
+        "blocks": [
+          {
+            "language": "txt",
+            "text": "머리말 다음"
+          }
+        ],
+        "markdown": "---\ntitle: 가\n---\n```txt\n머리말 다음\n```",
+        "name": "머리말 뒤"
+      },
+      {
+        "blocks": [
+          {
+            "language": "a\"b",
+            "text": "코드"
+          }
+        ],
+        "markdown": "```a\"b\n코드\n```",
+        "name": "언어에 따옴표"
+      },
+      {
+        "blocks": [],
+        "markdown": "# 제목\n\n`인라인 코드`만 있다",
+        "name": "코드 없음"
+      }
+    ],
     "convert": [
       {
         "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 3.0px 0.0px; font: 26.0px '.AppleSystemUIFont'}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 16.0px '.AppleSystemUIFont'; min-height: 21.0px}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 16.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 4.0px 0.0px; font: 21.0px '.AppleSystemUIFont'}\np.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 16.0px '.Apple SD Gothic NeoI'}\np.p6 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'}\np.p7 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.0px '.AppleSystemUIFont'; color: #00c8b3}\nli.li3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 16.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: 'UICTFontTextStyleBody'; font-weight: bold; font-style: normal; font-size: 26.00px}\nspan.s2 {font-family: 'UICTFontTextStyleBody'; font-weight: normal; font-style: normal; font-size: 16.00px}\nspan.s3 {font-family: 'UICTFontTextStyleBody'; font-weight: bold; font-style: normal; font-size: 21.00px}\nspan.s4 {font-family: 'UICTFontTextStyleBody'; font-weight: normal; font-style: normal; font-size: 16.00px; color: #00c8b3; background-color: rgba(0, 200, 179, 0.15)}\nspan.s5 {font-family: 'UICTFontTextStyleEmphasizedBody'; font-weight: bold; font-style: normal; font-size: 16.00px; color: #00c8b3; background-color: rgba(0, 200, 179, 0.15)}\nspan.s6 {font-family: 'UICTFontTextStyleEmphasizedBody'; font-weight: bold; font-style: normal; font-size: 16.00px}\nspan.s7 {font-family: '.AppleSDGothicNeoI-Regular'; font-weight: normal; font-style: normal; font-size: 16.00px}\nspan.s8 {font-family: 'UICTFontTextStyleBody'; font-weight: normal; font-style: normal; font-size: 17.00px}\nspan.s12 {font-family: 'UICTFontTextStyleBody'; font-weight: normal; font-style: normal; font-size: 12.35px}\ntable.t1 {border-collapse: collapse}\ntd.td1 {border-style: solid; border-width: 1.0px 1.0px 1.0px 1.0px; border-color: #aaaaaa #aaaaaa #aaaaaa #aaaaaa; padding: 1.0px 5.0px 1.0px 5.0px}\nol.ol1 {list-style-type: decimal}\nul.ul1 {list-style-type: '—  '}\nul.ul2 {list-style-type: disc}\n</style>\n</head>\n<body>\n<p class=\"p1\"><span class=\"s1\">⭐️한 해 정리</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p3\"><span class=\"s2\">⭐️보고 기록</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p4\"><span class=\"s3\">기대하는 것</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<ol class=\"ol1\">\n<li class=\"li3\"><span class=\"s4\"><mark style=\"background-color: rgba(0, 0, 0, 0.0)\">기준을 세우고 해마다 </span><span class=\"s5\">약 12건</span><span class=\"s4\">을 살핀다</span></mark></li>\n<li class=\"li3\"><span class=\"s6\">(올해 기준) 모두 40건</span><span class=\"s2\"> 을 돕는다</span></li>\n<ul class=\"ul1\">\n<li class=\"li3\"><span class=\"s2\">빼면 모두 9건</span></li>\n</ul>\n<li class=\"li3\"><span class=\"s2\">셋째 항목</span></li>\n</ol>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p4\"><span class=\"s3\">늘어난 것(50 -&gt; 80%)</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<ol class=\"ol1\">\n<li class=\"li3\"><span class=\"s2\">일 수 : 처음 7건</span></li>\n</ol>\n<table cellspacing=\"0\" cellpadding=\"0\" class=\"t1\">\n<tbody>\n<tr>\n<td valign=\"top\" class=\"td1\">\n<p class=\"p5\"><span class=\"s7\">나눔</span></p>\n</td>\n<td valign=\"top\" class=\"td1\">\n<p class=\"p6\"><span class=\"s8\">1</span><span class=\"s7\">해</span></p>\n</td>\n<td valign=\"top\" class=\"td1\">\n<p class=\"p6\"><span class=\"s8\">2</span><span class=\"s7\">해</span></p>\n</td>\n</tr>\n<tr>\n<td valign=\"top\" class=\"td1\">\n<p class=\"p5\"><span class=\"s7\">맡김</span></p>\n</td>\n<td valign=\"top\" class=\"td1\">\n<p class=\"p6\"><span class=\"s8\">5</span></p>\n</td>\n<td valign=\"top\" class=\"td1\">\n<p class=\"p6\"><span class=\"s8\">-</span></p>\n</td>\n</tr>\n</tbody>\n</table>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<ol class=\"ol1\">\n<li class=\"li3\"><span class=\"s2\">배운 사람 : 처음 20명</span></li>\n</ol>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p3\"><span class=\"s2\">*** 살피는 기준 : 또렷함</span></p>\n<p class=\"p3\"><span class=\"s6\">[하나] 보는 일 — 벌써 40% (2018-2019)</span></p>\n<p class=\"p3\"><span class=\"s2\">지금 “틀림 약 40% 줄임”은 있다</span></p>\n<ul class=\"ul2\">\n<li class=\"li3\"><span class=\"s4\"><mark style=\"background-color: rgba(0, 0, 0, 0.0)\">“일 30건 살핌(올해 기준)”<br>\n-&gt; “모임 19회”</span></mark></li>\n</ul>\n<p class=\"p3\"><span class=\"s6\">하나 조심.</span><span class=\"s2\"> 적은 </span><span class=\"s12\">[ N ]</span><span class=\"s2\"> 자리</span></p>\n</body>\n</html>\n",

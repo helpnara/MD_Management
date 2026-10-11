@@ -48,6 +48,15 @@ final class HTMLMarkdownGoldenTests: XCTestCase {
             let markdown: String
             let lines: [Int]
         }
+        struct CodeBlock: Decodable {
+            let language: String
+            let text: String
+        }
+        struct CodeBlocks: Decodable {
+            let name: String
+            let markdown: String
+            let blocks: [CodeBlock]
+        }
         struct Cases: Decodable {
             let convert: [Convert]
             let fill: [Fill]
@@ -55,6 +64,7 @@ final class HTMLMarkdownGoldenTests: XCTestCase {
             let promote: [Promote]
             let tasks: [TaskCase]
             let taskLines: [TaskLines]
+            let codeBlocks: [CodeBlocks]
         }
         let htmlMarkdownCases: Cases
     }
@@ -127,6 +137,25 @@ final class HTMLMarkdownGoldenTests: XCTestCase {
             for line in found {
                 XCTAssertNotNil(TaskToggle.toggled(item.markdown, line: line), "[\(item.name)] \(line)번 줄")
             }
+        }
+    }
+
+    /// 237 — 읽기 화면 코드 상자의 *복사* 가 넣을 글. 정답은 markdown-it 의 토큰(파이썬)이 계산했다.
+    /// 상자마다 복사 · 크게 보기 단추가 **그 차례의 번호로** 하나씩 선다 — 단추 번호와 글의 자리가 같은 셈이다.
+    func testCodeBlocksMatchGolden() throws {
+        let cases = try Self.goldenCases().codeBlocks
+        XCTAssertFalse(cases.isEmpty, "정답표가 비었다")
+        for item in cases {
+            let rendered = MarkdownHTML.render(markdown: item.markdown, notePath: "노트.md", existing: [])
+            XCTAssertEqual(rendered.codeBlocks.map(\.language), item.blocks.map(\.language), "[\(item.name)] 언어")
+            XCTAssertEqual(rendered.codeBlocks.map(\.text), item.blocks.map(\.text), "[\(item.name)] 글")
+            for index in item.blocks.indices {
+                XCTAssertTrue(rendered.bodyHTML.contains("yb://copy/\(index)\""), "[\(item.name)] 복사 단추 \(index)")
+                XCTAssertTrue(rendered.bodyHTML.contains("yb://code/\(index)\""), "[\(item.name)] 크게 보기 단추 \(index)")
+            }
+            XCTAssertFalse(rendered.bodyHTML.contains("yb://copy/\(item.blocks.count)\""), "[\(item.name)] 단추가 상자보다 많다")
+            // 울타리 뒤 글의 따옴표가 속성을 깨고 나오지 않는다.
+            XCTAssertFalse(rendered.bodyHTML.contains("language-a\"b"), "[\(item.name)] \(rendered.bodyHTML)")
         }
     }
 }
