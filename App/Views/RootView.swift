@@ -135,6 +135,8 @@ struct RootView: View {
                 LinkFilePicker().environmentObject(library)
             case .brokenLinks:
                 BrokenLinkList().environmentObject(library)
+            case .code(_, let block):
+                CodeViewer(block: block)
             }
             }
             .environment(\.rootIsCompact, horizontalSizeClass == .compact)
@@ -1246,6 +1248,14 @@ private struct NoteDetail: View {
             Task { await library.previewAttachment(path) }
         case .task(let line):
             Task { await library.toggleTask(line: line) }
+        case .copyCode(let index):
+            // **상자 안 글만 평문으로** (237). 클립보드는 화면 쪽 일이라 여기서 — 모델은 UIKit 을 모른다.
+            if let text = library.codeText(at: index) {
+                UIPasteboard.general.string = text
+                library.notify(String(localized: "코드를 복사했습니다."), aboutNote: true)
+            }
+        case .showCode(let index):
+            library.showCode(at: index)
         case .missing(let path):
             // 빈 경로만 띄우면 오류처럼 보인다 — 무엇이 없는지 말한다 (빌드 20 · 10번).
             alert = String(localized: "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다.")
@@ -1502,6 +1512,49 @@ private struct LinkPickerBar: View {
 ///
 /// 타이핑으로 부르는 `>>` · `[[` 와 **속이 같다** (147) — 넣는 부분은 `NoteLinking.link`
 /// 하나뿐이고 입구만 둘이다.
+/// **코드 상자 크게 보기** (237, 2026-10-11 사용자 — 상자 오른쪽 위의 두 단추). 읽기 화면은 긴 줄을 화면 폭에서 접는다(170) —
+/// 여기서는 **줄을 접지 않고** 가로 · 세로로 밀어 원래 모양 그대로 본다. 글을 골라 일부만 복사할 수도 있다.
+private struct CodeViewer: View {
+    let block: CodeBlockText
+    @Environment(\.dismiss) private var dismiss
+    /// 위 복사 단추가 잠깐 *복사했습니다* 로 바뀐다 — 시트가 아래 알림 띠를 가린다.
+    @State private var copied = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView([.horizontal, .vertical]) {
+                Text(block.text.isEmpty ? " " : block.text)
+                    .font(.scaledMono(.callout))
+                    .foregroundStyle(Palette.ink)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(Metrics.gutter)
+            }
+            .background(Palette.paper)
+            .navigationTitle(block.language.isEmpty ? String(localized: "코드") : block.language)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { dismiss() }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        UIPasteboard.general.string = block.text
+                        copied = true
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(1.5))
+                            copied = false
+                        }
+                    } label: {
+                        Label(copied ? String(localized: "복사했습니다") : String(localized: "복사"),
+                              systemImage: copied ? "checkmark" : "doc.on.doc")
+                    }
+                }
+            }
+        }
+    }
+}
+
 private struct LinkFilePicker: View {
     @EnvironmentObject private var library: LibraryModel
     @State private var filter = ""

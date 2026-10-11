@@ -60,6 +60,9 @@ final class LibraryModel: ObservableObject {
     /// 공유 전에도 알린다 (설계서 §7.6-4).
     @Published private(set) var missingAttachments: [String] = []
     @Published private(set) var lastError: String?
+    /// 읽기 화면에 그린 코드 상자들 (237). **화면을 그린 바로 그 렌더에서** 받는다 — 단추의 번호와 이 배열의 자리가 같다.
+    /// 화면이 지켜볼 값이 아니라 `@Published` 가 아니다.
+    private(set) var codeBlocks: [CodeBlockText] = []
     /// **알려 줄 뿐인 것** (236, 2026-10-11 사용자 화면). 붙여넣기를 바꿨다 · 공유로 받은 글을 넣었다 — 오류가 아니다.
     /// 예전에는 오류와 같은 붉은 띠(`lastError`)로 떠서 누를 때까지 남았고, 노트를 떠난 뒤에도 *되돌리기로 무를 수 있습니다* 가
     /// 남았다 (다른 노트를 열면 되돌리기 기록은 비워진다 — 226). 이제 옅은 띠로 몇 초 뒤 저절로 걷히고, 노트에 묶인 것은 노트를 떠나면 걷힌다.
@@ -681,6 +684,8 @@ final class LibraryModel: ObservableObject {
         case linkFile
         /// **안 열리는 링크 보기** (146). 찾아 주기만 한다 — 고치지 않는다.
         case brokenLinks
+        /// **코드 상자 크게 보기** (237). 줄을 접지 않고 가로 · 세로로 민다.
+        case code(index: Int, block: CodeBlockText)
 
         var id: String {
             switch self {
@@ -691,6 +696,7 @@ final class LibraryModel: ObservableObject {
             case .share(let url): return "share-\(url.path)"
             case .linkFile: return "linkFile"
             case .brokenLinks: return "brokenLinks"
+            case .code(let index, _): return "code-\(index)"
             }
         }
     }
@@ -2336,6 +2342,17 @@ final class LibraryModel: ObservableObject {
     /// **진짜 실패도 노트만 열면 사라진다.**
     private var errorIsAboutNote = false
 
+    /// 읽기 화면의 코드 상자 글 (237). 번호가 지금 화면에 없으면 `nil` — 그새 화면이 다시 그려졌을 수 있다.
+    func codeText(at index: Int) -> String? {
+        codeBlocks.indices.contains(index) ? codeBlocks[index].text : nil
+    }
+
+    /// 코드 상자를 크게 본다 (237).
+    func showCode(at index: Int) {
+        guard codeBlocks.indices.contains(index) else { return }
+        sheet = .code(index: index, block: codeBlocks[index])
+    }
+
     /// **알려 줄 뿐인 것을 띄운다** (236). `aboutNote` 면 지금 노트에 묶인 말이라 노트를 떠나면 걷는다
     /// (*되돌리기로 무를 수 있습니다* 는 그 노트 안에서만 맞다). 몇 초 뒤에는 어느 쪽이든 저절로 걷힌다.
     func notify(_ message: String, aboutNote: Bool = false) {
@@ -2643,7 +2660,11 @@ final class LibraryModel: ObservableObject {
         let referenced = MarkdownHTML.referencedPaths(markdown: text, notePath: path)
         let existing = await store.existingPaths(among: referenced)
         let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing,
-                                           tooDeepNotice: String(localized: "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다."))
+                                           tooDeepNotice: String(localized: "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다."),
+                                           codeLabels: CodeBoxLabels(code: String(localized: "코드"),
+                                                                     copy: String(localized: "복사"),
+                                                                     expand: String(localized: "크게 보기")))
+        codeBlocks = rendered.codeBlocks
 
         let pointing = backlinksOwner == path ? backlinks : []
         pageHTML = MarkdownHTML.page(bodyHTML: rendered.bodyHTML + MarkdownHTML.backlinksHTML(pointing, title: String(localized: "이 노트를 가리키는 노트")),
@@ -2731,6 +2752,7 @@ final class LibraryModel: ObservableObject {
 
     private func clearNote() {
         clearNoteNotice()   // 236
+        codeBlocks = []     // 237
         noteIsDownloading = false
         cursorImage = nil
         noteText = ""

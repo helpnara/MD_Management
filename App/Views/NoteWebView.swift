@@ -231,6 +231,10 @@ enum NoteLinkAction {
     case missing(String)
     /// 체크상자 — 그 줄의 `[ ]` · `[x]` 를 뒤집는다 (211). 줄 번호는 `LineMap` 과 같다.
     case task(Int)
+    /// 코드 상자의 **복사** (237) — 번호는 `RenderedNote.codeBlocks` 의 자리다.
+    case copyCode(Int)
+    /// 코드 상자의 **크게 보기** (237).
+    case showCode(Int)
 
     init(url: URL) {
         guard url.scheme == MarkdownHTML.scheme else {
@@ -245,6 +249,13 @@ enum NoteLinkAction {
             // `MarkdownHTML.linkTasks` 가 만든 `yb://task/<줄>`.
             if let line = Int(path) {
                 self = .task(line)
+            } else {
+                self = .missing(path)
+            }
+        case "copy", "code":
+            // `MarkdownHTML.decorateCodeBlocks` 가 만든 `yb://copy/<번호>` · `yb://code/<번호>` (237).
+            if let index = Int(path) {
+                self = url.host == "copy" ? .copyCode(index) : .showCode(index)
             } else {
                 self = .missing(path)
             }
