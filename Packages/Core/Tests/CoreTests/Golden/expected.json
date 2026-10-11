@@ -8805,6 +8805,98 @@
       "viewport": 0
     }
   ],
+  "shareAppendCases": [
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "빈 노트",
+      "result": "- [글](https://a.org)\n",
+      "text": ""
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "제목만 있는 노트 — 빈 줄을 두고 새 목록",
+      "result": "# 유튜브 모음\n\n- [글](https://a.org)\n",
+      "text": "# 유튜브 모음\n"
+    },
+    {
+      "entry": "- [둘](https://b.org)",
+      "name": "목록 끝에 — 같은 목록으로",
+      "result": "# 모음\n\n- [하나](https://a.org)\n- [둘](https://b.org)\n",
+      "text": "# 모음\n\n- [하나](https://a.org)\n"
+    },
+    {
+      "entry": "- [둘](https://b.org)",
+      "name": "끝의 빈 줄 · 빈칸 줄은 걷는다",
+      "result": "# 모음\n\n- [하나](https://a.org)\n- [둘](https://b.org)\n",
+      "text": "# 모음\n\n- [하나](https://a.org)\n\n  \n\n"
+    },
+    {
+      "entry": "- [둘](https://b.org)",
+      "name": "끝에 줄바꿈이 없어도",
+      "result": "# 모음\n\n- [하나](https://a.org)\n- [둘](https://b.org)\n",
+      "text": "# 모음\n\n- [하나](https://a.org)"
+    },
+    {
+      "entry": "- [둘](https://b.org)",
+      "name": "앞 항목에 사진이 딸려 있어도 같은 목록",
+      "result": "- [하나](https://a.org)\n  ![](assets/x.jpg)\n- [둘](https://b.org)\n",
+      "text": "- [하나](https://a.org)\n  ![](assets/x.jpg)\n"
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "문단 끝 — 빈 줄을 두고",
+      "result": "# 모음\n\n볼 영상들을 모은다.\n\n- [글](https://a.org)\n",
+      "text": "# 모음\n\n볼 영상들을 모은다."
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "별표 목록 뒤 — 이어 붙인다 (다른 표시라 새 목록이 된다)",
+      "result": "* 하나\n- [글](https://a.org)\n",
+      "text": "* 하나\n"
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "체크상자 목록 뒤",
+      "result": "- [ ] 할 일\n- [글](https://a.org)\n",
+      "text": "- [ ] 할 일\n"
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "코드 상자로 끝나는 노트",
+      "result": "```\ncode\n```\n\n- [글](https://a.org)\n",
+      "text": "```\ncode\n```\n"
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "표로 끝나는 노트",
+      "result": "| a | b |\n|---|---|\n| 1 | 2 |\n\n- [글](https://a.org)\n",
+      "text": "| a | b |\n|---|---|\n| 1 | 2 |\n"
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "머리말만 있는 노트",
+      "result": "---\ntags: [영상]\n---\n\n- [글](https://a.org)\n",
+      "text": "---\ntags: [영상]\n---\n"
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "윈도 줄바꿈 노트",
+      "result": "# 모음\r\n\r\n- 하나\r\n- [글](https://a.org)\n",
+      "text": "# 모음\r\n\r\n- 하나\r\n"
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "마지막 줄 끝 빈칸은 그대로",
+      "result": "끝 줄  \n\n- [글](https://a.org)\n",
+      "text": "끝 줄  "
+    },
+    {
+      "entry": "- [글](https://a.org)",
+      "name": "인용으로 끝나는 노트",
+      "result": "> 인용\n\n- [글](https://a.org)\n",
+      "text": "> 인용\n"
+    }
+  ],
   "shareCases": [
     {
       "fallback": "받은 글 2026-10-04 07-30",
@@ -8940,6 +9032,93 @@
       "text": "",
       "title": "example.org",
       "url": "https://www.example.org/x"
+    }
+  ],
+  "shareEntryCases": [
+    {
+      "images": [],
+      "name": "주소와 제목 (유튜브 · 사파리)",
+      "pageTitle": "AI 시대는 전력이 필요합니다. 새로운 시대 새로운 기업은? (박두환)",
+      "result": "- [AI 시대는 전력이 필요합니다. 새로운 시대 새로운 기업은? (박두환)](https://youtube.com/watch?v=cQlzN7JeDxU&si=aV7LOdfQ5-wnpAFI)",
+      "text": "",
+      "url": "https://youtube.com/watch?v=cQlzN7JeDxU&si=aV7LOdfQ5-wnpAFI"
+    },
+    {
+      "images": [],
+      "name": "제목이 없으면 주소가 이름",
+      "pageTitle": null,
+      "result": "- [https://example.org/a](https://example.org/a)",
+      "text": "",
+      "url": "https://example.org/a"
+    },
+    {
+      "images": [],
+      "name": "주소 + 메모 — 한 줄로 뒤에",
+      "pageTitle": "좋은 글",
+      "result": "- [좋은 글](https://example.org/a) — 다시 볼 것 2부부터",
+      "text": "다시 볼 것\n\n  2부부터 ",
+      "url": "https://example.org/a"
+    },
+    {
+      "images": [],
+      "name": "제목의 대괄호는 피한다",
+      "pageTitle": "[공지] 새 판",
+      "result": "- [\\[공지\\] 새 판](https://example.org/a)",
+      "text": "",
+      "url": "https://example.org/a"
+    },
+    {
+      "images": [],
+      "name": "빈칸이 든 주소",
+      "pageTitle": "글",
+      "result": "- [글](<https://example.org/a b>)",
+      "text": "",
+      "url": "https://example.org/a b"
+    },
+    {
+      "images": [],
+      "name": "글 안에 주소가 이미 있으면 링크를 또 붙이지 않는다",
+      "pageTitle": "글",
+      "result": "- 이것 봐 https://example.org/a",
+      "text": "이것 봐 https://example.org/a",
+      "url": "https://example.org/a"
+    },
+    {
+      "images": [],
+      "name": "글만",
+      "pageTitle": null,
+      "result": "- 생각난 것 하나 더",
+      "text": "생각난 것\n하나 더",
+      "url": null
+    },
+    {
+      "images": [
+        "assets/2026-10-11-1.jpg",
+        "assets/2026-10-11-2.jpg"
+      ],
+      "name": "사진만",
+      "pageTitle": null,
+      "result": "- ![](assets/2026-10-11-1.jpg)\n  ![](assets/2026-10-11-2.jpg)",
+      "text": "",
+      "url": null
+    },
+    {
+      "images": [
+        "assets/x.jpg"
+      ],
+      "name": "주소 + 사진 — 사진은 항목 아래",
+      "pageTitle": "글",
+      "result": "- [글](https://example.org/a)\n  ![](assets/x.jpg)",
+      "text": "",
+      "url": "https://example.org/a"
+    },
+    {
+      "images": [],
+      "name": "아무것도 없음",
+      "pageTitle": null,
+      "result": null,
+      "text": "  \n ",
+      "url": null
     }
   ],
   "sharedAddressCases": [
@@ -9964,6 +10143,83 @@
         }
       ],
       "text": "#회의. 끝"
+    }
+  ],
+  "titleServiceCases": [
+    {
+      "address": "https://youtube.com/watch?v=cQlzN7JeDxU&si=aV7LOdfQ5-wnpAFI",
+      "name": "유튜브 공유 주소 (빌드 100 사용자 — 채널 이름이 들어왔다)",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fyoutube.com%2Fwatch%3Fv%3DcQlzN7JeDxU%26si%3DaV7LOdfQ5-wnpAFI"
+    },
+    {
+      "address": "https://www.youtube.com/watch?v=abc",
+      "name": "www",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "https://m.youtube.com/watch?v=abc",
+      "name": "모바일 쪽",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fm.youtube.com%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "https://youtu.be/abc?si=x",
+      "name": "짧은 주소",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fyoutu.be%2Fabc%3Fsi%3Dx"
+    },
+    {
+      "address": "https://youtube.com/shorts/abc?si=q",
+      "name": "짧은 동영상",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fyoutube.com%2Fshorts%2Fabc%3Fsi%3Dq"
+    },
+    {
+      "address": "https://music.youtube.com/watch?v=abc",
+      "name": "음악",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fmusic.youtube.com%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "HTTPS://WWW.YouTube.com:443/watch?v=abc",
+      "name": "사이트 이름이 대문자 · 포트",
+      "result": "https://www.youtube.com/oembed?format=json&url=HTTPS%3A%2F%2FWWW.YouTube.com%3A443%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "http://youtube.com/watch?v=abc",
+      "name": "http",
+      "result": "https://www.youtube.com/oembed?format=json&url=http%3A%2F%2Fyoutube.com%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "https://youtube.com/results?search_query=여백",
+      "name": "한글이 든 주소도 되살아난다",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fyoutube.com%2Fresults%3Fsearch_query%3D%EC%97%AC%EB%B0%B1"
+    },
+    {
+      "address": "https://example.org/watch?v=abc",
+      "name": "다른 사이트 — 링크 미리보기로",
+      "result": null
+    },
+    {
+      "address": "https://notyoutube.com/watch?v=abc",
+      "name": "이름만 비슷한 사이트",
+      "result": null
+    },
+    {
+      "address": "https://youtube.com.example.org/watch",
+      "name": "유튜브를 앞에 붙인 다른 사이트",
+      "result": null
+    },
+    {
+      "address": "https://youtube.com@example.org/watch",
+      "name": "사용자 정보로 속인 주소",
+      "result": null
+    },
+    {
+      "address": "https://example.org/youtube.com",
+      "name": "경로에만 유튜브",
+      "result": null
+    },
+    {
+      "address": "youtube.com/watch?v=abc",
+      "name": "스킴이 없다",
+      "result": null
     }
   ],
   "wrapCases": [

@@ -2743,6 +2743,9 @@ def build() -> dict:
         "restyleCases": build_restyle_cases(),
         "shareCases": build_share_cases(),
         "sharedAddressCases": build_shared_address_cases(),
+        "titleServiceCases": build_title_service_cases(),
+        "shareEntryCases": build_share_entry_cases(),
+        "shareAppendCases": build_share_append_cases(),
     }
 
 
@@ -2820,6 +2823,47 @@ def shared_address(text: str, url):
     return text, url
 
 
+YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be"}
+
+
+def _ascii_lower(text: str) -> str:
+    return "".join(chr(ord(c) + 32) if "A" <= c <= "Z" else c for c in text)
+
+
+def shared_host(address: str):
+    """`http(s)://` 뒤의 사이트 이름 — 영어 소문자, 포트를 뗀다. `@` 가 끼면 None (Swift `SharedAddress.host`)."""
+    for scheme in ("https://", "http://"):
+        if len(address) <= len(scheme) or _ascii_lower(address[:len(scheme)]) != scheme:
+            continue
+        authority = re.match(r"[^/?#]*", address[len(scheme):]).group(0)
+        if "@" in authority:
+            return None
+        name = _ascii_lower(authority.split(":", 1)[0])
+        return name or None
+    return None
+
+
+def title_service(address: str):
+    """240 — 제목을 알려 주는 공식 창구(유튜브 oEmbed). 없으면 None (Swift `SharedAddress.titleService`)."""
+    host = shared_host(address)
+    if host not in YOUTUBE_HOSTS:
+        return None
+    return "https://www.youtube.com/oembed?format=json&url=" + urllib.parse.quote(address, safe="")
+
+
+def build_title_service_cases() -> list[dict]:
+    spec = json.loads(SHARE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["titleService"]:
+        got = title_service(case["address"])
+        if "expect" in case and got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 제목 창구: 뜻 {case['expect']!r} · 셈 {got!r}")
+        if got is not None and urllib.parse.parse_qs(urllib.parse.urlsplit(got).query)["url"] != [case["address"]]:
+            raise SystemExit(f"::error::[{case['name']}] 창구 주소에서 원래 주소가 되살아나지 않는다: {got!r}")
+        out.append({"name": case["name"], "address": case["address"], "result": got})
+    return out
+
+
 def build_shared_address_cases() -> list[dict]:
     """정답을 셈하고, 옮긴 결과를 노트로 짜 본다 — **주소를 옮겼으면 제목 · 파일 이름이 주소가 아니어야 한다** (빌드 99 의 `https---…`)."""
     spec = json.loads(SHARE_CASES.read_text(encoding="utf-8"))
@@ -2835,6 +2879,85 @@ def build_shared_address_cases() -> list[dict]:
                 raise SystemExit(f"::error::[{case['name']}] 옮겼는데 제목이 주소다: {note['title']!r}")
         out.append({"name": case["name"], "text": case["text"], "url": case.get("url"),
                     "resultText": text, "resultURL": url})
+    return out
+
+
+# 241 — 이미 있는 노트에 덧붙이기 (Swift `IncomingShare.entry` · `appending`).
+def share_entry(text: str, url, page_title, images: list):
+    """노트 끝에 덧붙일 한 항목. 받은 글은 한 줄로, 주소는 `[제목](주소)`, 사진은 두 칸 들여 아래에. 없으면 None."""
+    lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    memo = " ".join(t for t in (_share_trim(l) for l in lines) if t)
+    address = _share_one_line(url) if url is not None else None
+    address = address or None
+    label = _share_one_line(page_title) if page_title is not None else None
+    label = label or None
+    head = memo
+    if address and address not in memo:
+        link = markdown_link(label or address, address)
+        head = link if not memo else link + " — " + memo
+    pictures = ["!" + markdown_link("", path) for path in images]
+    if not head:
+        if not pictures:
+            return None
+        head = pictures.pop(0)
+    return "\n".join(["- " + head] + ["  " + pic for pic in pictures])
+
+
+def share_append(entry: str, text: str) -> str:
+    """노트 글 끝에 항목을 붙인 글. 끝의 빈 줄은 걷고, 마지막 줄이 목록 항목이거나 두 칸 넘게 들여 쓴 줄이면 한 줄바꿈, 아니면 빈 줄 하나."""
+    lines = text.split("\n")
+    while lines and all(c in " \t\r" for c in lines[-1]):
+        lines.pop()
+    if not lines:
+        return entry + "\n"
+    last = lines[-1][:-1] if lines[-1].endswith("\r") else lines[-1]
+    list_item = len(last) >= 2 and last[0] in "-*+" and last[1] == " "
+    indented = len(last) >= 3 and last.startswith("  ") and any(c not in " \t" for c in last)
+    return "\n".join(lines) + ("\n" if list_item or indented else "\n\n") + entry + "\n"
+
+
+def build_share_entry_cases() -> list[dict]:
+    """정답을 셈하고 그려 본다 — 항목은 목록 한 줄(`<li>` 하나), 주소는 링크 하나, 사진은 그림."""
+    spec = json.loads(SHARE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["entry"]:
+        got = share_entry(case.get("text", ""), case.get("url"), case.get("pageTitle"), case.get("images", []))
+        if "expect" in case and got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 덧붙일 항목: 뜻 {case['expect']!r} · 셈 {got!r}")
+        if got is not None:
+            html = cmark_html(got)
+            if html.count("<li>") != 1:
+                raise SystemExit(f"::error::[{case['name']}] 항목이 목록 한 줄이 아니다:\n{html}")
+            url = case.get("url")
+            if url and url.strip() and url.strip() not in case.get("text", "") and html.count("<a href=") != 1:
+                raise SystemExit(f"::error::[{case['name']}] 주소가 링크 하나로 안 나왔다:\n{html}")
+            if html.count("<img ") != len(case.get("images", [])):
+                raise SystemExit(f"::error::[{case['name']}] 사진 수가 다르다:\n{html}")
+        out.append({"name": case["name"], "text": case.get("text", ""), "url": case.get("url"),
+                    "pageTitle": case.get("pageTitle"), "images": case.get("images", []), "result": got})
+    return out
+
+
+def build_share_append_cases() -> list[dict]:
+    """정답을 셈하고 그려 본다 — 앞의 글은 그대로 앞에 남고, 목록 항목이 **하나 늘고**, 새 항목은 마지막 목록의 마지막 줄이다.
+    마지막 줄이 목록이면 **같은 목록**으로 이어져야 한다 (`<ul>` 수가 그대로)."""
+    spec = json.loads(SHARE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["append"]:
+        got = share_append(case["entry"], case["text"])
+        if "expect" in case and got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 덧붙인 글: 뜻 {case['expect']!r} · 셈 {got!r}")
+        kept = case["text"].rstrip(" \t\r\n")
+        if not got.startswith(kept):
+            raise SystemExit(f"::error::[{case['name']}] 앞의 글이 바뀌었다:\n{got!r}")
+        before, after = cmark_html(case["text"]), cmark_html(got)
+        if after.count("<li>") != before.count("<li>") + 1:
+            raise SystemExit(f"::error::[{case['name']}] 목록 항목이 하나 늘지 않았다:\n{after}")
+        if not after.rstrip().endswith("</li>\n</ul>") and not after.rstrip().endswith("</li></ul>"):
+            raise SystemExit(f"::error::[{case['name']}] 새 항목이 글 끝의 목록이 아니다:\n{after}")
+        if case.get("sameList") and after.count("<ul>") != before.count("<ul>"):
+            raise SystemExit(f"::error::[{case['name']}] 앞 목록과 이어지지 않았다:\n{after}")
+        out.append({"name": case["name"], "text": case["text"], "entry": case["entry"], "result": got})
     return out
 
 
@@ -3763,7 +3886,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
-        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
     # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.

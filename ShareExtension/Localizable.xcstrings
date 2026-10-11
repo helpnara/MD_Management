@@ -11,6 +11,26 @@
         }
       }
     },
+    "넣을 곳" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to"
+          }
+        }
+      }
+    },
+    "노트를 고정해 두면 여기서 그 노트에 덧붙일 수 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pin a note to add to it from here."
+          }
+        }
+      }
+    },
     "느린 여백에 보내기" : {
       "localizations" : {
         "en" : {
@@ -59,6 +79,26 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "새 노트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Note"
+          }
+        }
+      }
+    },
+    "앱을 열면 고른 노트의 맨 끝에 한 줄로 덧붙입니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When you open the app, it’s added as a new line at the end of the chosen note."
           }
         }
       }

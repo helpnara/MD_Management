@@ -22,6 +22,15 @@ actor ShareInbox {
         /// 같은 칸 안의 사진 파일 이름 — 받은 순서.
         var images: [String]
         var created: Date
+        /// **덧붙일 노트** (241) — 금고 기준 경로. 없으면 새 노트. 예전 칸(이 열쇠가 없는 것)은 nil 로 읽힌다.
+        var target: String? = nil
+    }
+
+    /// **공유 창이 고를 수 있는 노트** (241) — 앱이 고정한 노트를 적어 둔다. 경로와 보여 줄 이름뿐 — 본문은 없다 (ADR-0001).
+    struct Target: Codable, Sendable, Hashable, Identifiable {
+        var path: String
+        var name: String
+        var id: String { path }
     }
 
     struct Entry: Sendable {
@@ -34,11 +43,32 @@ actor ShareInbox {
     }
 
     private let root: URL?
+    /// 고를 수 있는 노트 목록 (241). 받은 글 칸들(`Inbox/`) 밖에 둔다 — 앱이 칸으로 읽지 않게.
+    private let targetsFile: URL?
 
     init() {
-        root = FileManager.default
-            .containerURL(forSecurityApplicationGroupIdentifier: Self.groupID)?
-            .appendingPathComponent("Inbox", isDirectory: true)
+        let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Self.groupID)
+        root = container?.appendingPathComponent("Inbox", isDirectory: true)
+        targetsFile = container?.appendingPathComponent("ShareTargets.json")
+    }
+
+    // MARK: - 덧붙일 노트 (241)
+
+    /// 앱이 쓴다 — 고정한 노트가 바뀔 때마다. 비면 파일을 지운다.
+    func writeTargets(_ targets: [Target]) {
+        guard let targetsFile else { return }
+        guard !targets.isEmpty, let data = try? JSONEncoder().encode(targets) else {
+            try? FileManager.default.removeItem(at: targetsFile)
+            return
+        }
+        try? data.write(to: targetsFile, options: .atomic)
+    }
+
+    /// 공유 창이 읽는다.
+    func targets() -> [Target] {
+        guard let targetsFile, let data = try? Data(contentsOf: targetsFile),
+              let list = try? JSONDecoder().decode([Target].self, from: data) else { return [] }
+        return list
     }
 
     // MARK: - 확장이 쓴다

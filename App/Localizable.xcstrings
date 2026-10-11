@@ -835,6 +835,36 @@
         }
       }
     },
+    "공유로 받은 것 %lld개는 새 노트로, %lld개는 고른 노트 끝에 넣었습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added shared items: %lld as new notes, %lld to the end of the chosen note."
+          }
+        }
+      }
+    },
+    "공유로 받은 것 %lld개를 %@ 노트 끝에 덧붙였습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added shared items to the end of %2$@ (%1$lld)."
+          }
+        }
+      }
+    },
+    "공유로 받은 것 %lld개를 고른 노트 끝에 덧붙였습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Added shared items to the end of the chosen notes (%lld)."
+          }
+        }
+      }
+    },
     "공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다." : {
       "localizations" : {
         "en" : {
@@ -1247,6 +1277,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show More (%lld Lines)"
+          }
+        }
+      }
+    },
+    "덧붙일 노트를 찾지 못해 공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t find the note to add to, so shared items went into the %2$@ folder as new notes (%1$lld)."
           }
         }
       }

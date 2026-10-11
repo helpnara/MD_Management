@@ -17,6 +17,8 @@ on:
       - "Tools/store/**"
       - "Tools/site/**"
       - "Tools/golden/**"
+      - "Tools/probe/**"
+      - ".github/workflows/probe.yml"
   workflow_dispatch:
 
 concurrency:

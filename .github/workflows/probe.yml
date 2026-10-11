@@ -1,0 +1,24 @@
+name: 주소 제목 살펴보기
+
+# 240 — 공유 창의 제목 가져오기가 유튜브에서 채널 이름을 주는 까닭을 맥 러너에서 본다 (원격 세션은 유튜브에 못 닿는다).
+# `Tools/probe/urls.txt` 를 고쳐 올리면 돈다. 앱에는 들어가지 않는다.
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - "Tools/probe/**"
+      - ".github/workflows/probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: 제목 창구 (oEmbed) — 앱과 같은 셈으로 주소를 만든다
+        run: python3 Tools/probe/oembed.py Tools/probe/urls.txt
