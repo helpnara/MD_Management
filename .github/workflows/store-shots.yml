@@ -197,8 +197,10 @@ jobs:
             touch -t "$NEWEST_STAMP" "$docs/$2"
           }
 
-          check() {     # $1 = 파일 — 아직 안 그려진 화면은 단색이라 작다
-            local size; size=$(stat -f%z "$1"); [ "$size" -ge 150000 ]
+          # 아직 안 그려진 화면은 단색이라 작다. **검색 장은 결과가 두어 줄이라 원래 작다** — 한국어 `회의` 가 146KB 로 걸렸다 (두 번째 촬영).
+          MIN_BYTES=150000
+          check() {     # $1 = 파일
+            local size; size=$(stat -f%z "$1"); [ "$size" -ge "$MIN_BYTES" ]
           }
 
           shoot() {     # $1 = 기기, $2 = 파일, $3 = 기다림(초), 나머지 = 실행 인자
@@ -246,14 +248,14 @@ jobs:
             shoot "$PHONE" iphone-3-links.png 12 -readingMode
             newest "$PHONE" "$TRIP"
             shoot "$PHONE" iphone-4-reading.png 12 -readingMode
-            shoot "$PHONE" iphone-5-search.png 9 -search "$TERM"
+            MIN_BYTES=100000; shoot "$PHONE" iphone-5-search.png 9 -search "$TERM"; MIN_BYTES=150000
             xcrun simctl shutdown "$PHONE" || true
 
             # ── 아이패드 (13인치 · 세로) ── 아이패드는 마지막에 연 노트를 다시 연다 — 검색을 다른 노트를 열기 전에 찍는다.
             prepare "$PAD"
             newest "$PAD" "$PLAN"
             shoot "$PAD" ipad-1-edit.png 14
-            shoot "$PAD" ipad-5-search.png 12 -search "$TERM"
+            MIN_BYTES=100000; shoot "$PAD" ipad-5-search.png 12 -search "$TERM"; MIN_BYTES=150000
             shoot_files "$PAD" ipad-2-files.png
             newest "$PAD" "$WATCH"
             shoot "$PAD" ipad-3-links.png 16 -readingMode
