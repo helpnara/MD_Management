@@ -178,8 +178,8 @@ https://helpnara.github.io/MD_Management/privacy/
 1. App Store Connect → 앱 → 왼쪽 **iOS 앱** 의 `1.1.2` (거둔 것) → 맨 위 **버전** 칸의 `1.1.2` 를 `1.1.3` 으로 고쳐 **저장**
    (아직 출시 안 된 판은 번호를 고칠 수 있다. 칸이 잠겨 있으면 알려 준다 — 그때는 다른 길을 찾는다)
 2. **빌드** 칸에서 95 를 빼고 **101** 을 고른다 (`1.1.3 (101)` — 98 · 99 는 `1.1.2` 라 목록에 안 나온다 · 100 은 유튜브 제목 대신 채널 이름이 들어와 101 로 고침)
-3. 한국어 칸 *이 버전의 새로운 기능* — 이미 붙인 글 그대로 (`docs/store/1.1.3-새로운-기능.txt` · §6 아래 울타리와 같다)
-4. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New in This Version* 도 그대로인지 본다 → **저장**
+3. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 울타리를 **새 글로 바꿔** 붙인다 (`docs/store/1.1.3-새로운-기능.txt` 와 같다 · 241 덧붙이기 · 238 가름선 두 줄이 늘었다)
+4. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New in This Version* 도 아래 영어 울타리를 **새 글로 바꿔** 붙인다 → **저장**
 5. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
 
 ### 1.1.1 제출 순서 (2026-10-09 사용자 — *묶음 2까지 묶어서 한번에 출시*)
@@ -283,9 +283,11 @@ https://helpnara.github.io/MD_Management/en/privacy/
 > **1.1.3** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.1 의 글은 `docs/store/1.1.1-새로운-기능.txt`.
 
 ```
+• When you share, you can pick a pinned note. The title and link are added as a new line at the end of that note instead of a new note, so links on one topic stay together.
 • Code blocks in Read mode now have Copy and Expand buttons in the top-right corner. Copy takes just the code inside the block.
 • Expand shows the code with its original lines, scrolling sideways, or turn on line wrapping to fit it to the screen.
 • When you share from an app that sends only a link, such as a video app, the page title now becomes the note’s title and link text.
+• Horizontal rules and table borders in Read mode are now lighter, matching the other lines in the app.
 • The notice that pasted text was converted no longer looks like a red error. It appears briefly in a light banner, fades on its own, and clears when you leave the note.
 • Fixed the note list being cut off halfway when you went back to it with a notice showing.
 • Adding photos or attachments no longer clears other notices that were already showing.
@@ -499,9 +501,11 @@ python3 Tools/store/count.py
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
+• 공유 메뉴로 보낼 때 고정한 노트를 고르면, 새 노트 대신 그 노트 맨 끝에 제목과 링크가 한 줄씩 쌓입니다. 같은 주제의 링크를 한 노트에 모아 둘 수 있습니다.
 • 읽기 화면의 코드 상자 오른쪽 위에 복사 · 크게 보기 단추가 생겼습니다. 복사는 상자 안의 글만 담습니다.
 • 크게 보기에서는 코드를 원래 줄 모양 그대로 옆으로 밀어 볼 수 있고, 줄바꿈을 켜면 화면 폭에 맞춰 읽을 수 있습니다.
 • 동영상 앱처럼 주소만 보내는 앱에서 공유해도 그 쪽의 제목이 노트 제목과 링크 이름으로 들어갑니다.
+• 읽기 화면의 가로줄과 표 테두리가 너무 짙던 것을 앱의 다른 선처럼 옅게 고쳤습니다.
 • 붙여 넣은 글의 서식을 바꿨다는 안내가 오류처럼 붉게 뜨지 않습니다. 옅은 띠로 잠깐 뜨고 저절로 사라지며, 노트를 떠나면 바로 걷힙니다.
 • 안내가 떠 있는 채 목록으로 돌아오면 노트 목록이 중간에서 잘려 보이던 문제를 고쳤습니다.
 • 사진이나 첨부를 넣어도 그 전에 떠 있던 다른 안내가 지워지지 않습니다.
