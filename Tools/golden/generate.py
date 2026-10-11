@@ -2742,6 +2742,7 @@ def build() -> dict:
         "htmlMarkdownCases": build_html_markdown_cases(),
         "restyleCases": build_restyle_cases(),
         "shareCases": build_share_cases(),
+        "sharedAddressCases": build_shared_address_cases(),
     }
 
 
@@ -2787,6 +2788,54 @@ def incoming_share(text: str, url, page_title, images: list, fallback: str) -> d
         site = site[4:]       # `www.` 는 제목 줄에서 다시 자동 링크가 된다
     title = label or site or fallback
     return {"title": title, "markdown": "\n\n".join(["# " + title] + parts) + "\n"}
+
+
+# 240 — 글로 온 주소를 주소로 (Swift `SharedAddress`). 빈칸 목록은 못 박는다 — 플랫폼마다 *빈칸* 의 뜻이 다르다.
+SHARED_BLANKS = " \t\n\r\x0b\x0c\x85\xa0\u2028\u2029\u3000\ufeff"
+
+
+def shared_web_address(text: str):
+    """글이 앞뒤 빈칸을 빼고 `http://` · `https://` 주소 하나뿐이면 그 주소. 사이트 이름이 없으면 아니다."""
+    s = text.strip(SHARED_BLANKS)
+    if any(c in SHARED_BLANKS for c in s):
+        return None
+    for scheme in ("https://", "http://"):
+        head = "".join(chr(ord(c) + 32) if "A" <= c <= "Z" else c for c in s[:len(scheme)])
+        if len(s) <= len(scheme) or head != scheme:
+            continue
+        rest = s[len(scheme):]
+        host = re.match(r"[^/?#]*", rest).group(0)
+        return s if host else None
+    return None
+
+
+def shared_address(text: str, url):
+    lone = shared_web_address(text)
+    if lone is None:
+        return text, url
+    if url is None:
+        return "", lone
+    if url == lone:
+        return "", url
+    return text, url
+
+
+def build_shared_address_cases() -> list[dict]:
+    """정답을 셈하고, 옮긴 결과를 노트로 짜 본다 — **주소를 옮겼으면 제목 · 파일 이름이 주소가 아니어야 한다** (빌드 99 의 `https---…`)."""
+    spec = json.loads(SHARE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["address"]:
+        text, url = shared_address(case["text"], case.get("url"))
+        want = case["expect"]
+        if (text, url) != (want["text"], want["url"]):
+            raise SystemExit(f"::error::[{case['name']}] 글로 온 주소: 뜻 {want!r} · 셈 {(text, url)!r}")
+        if url is not None and url != case.get("url"):
+            note = incoming_share(text, url, None, [], "받은 글")
+            if note["title"].lower().startswith("http"):
+                raise SystemExit(f"::error::[{case['name']}] 옮겼는데 제목이 주소다: {note['title']!r}")
+        out.append({"name": case["name"], "text": case["text"], "url": case.get("url"),
+                    "resultText": text, "resultURL": url})
+    return out
 
 
 INBOX_NAMES = ["받은 글", "Inbox"]
@@ -3714,7 +3763,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
-        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
     # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.

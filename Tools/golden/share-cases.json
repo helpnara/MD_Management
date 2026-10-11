@@ -175,5 +175,154 @@
       "preferred": "Boîte",
       "expect": "받은 글"
     }
+  ],
+  "address": [
+    {
+      "name": "유튜브 — 주소 하나가 글로 온다 (빌드 99 사용자 화면)",
+      "text": "https://youtube.com/watch?v=cQlzN7JeDxU&si=aV7LOdfQ5-wnpAFI",
+      "expect": {
+        "text": "",
+        "url": "https://youtube.com/watch?v=cQlzN7JeDxU&si=aV7LOdfQ5-wnpAFI"
+      }
+    },
+    {
+      "name": "앞뒤 빈칸 · 빈 줄은 떼고 옮긴다",
+      "text": "\n  https://youtu.be/abc?si=x \n\n",
+      "expect": {
+        "text": "",
+        "url": "https://youtu.be/abc?si=x"
+      }
+    },
+    {
+      "name": "http 도 주소",
+      "text": "http://example.org",
+      "expect": {
+        "text": "",
+        "url": "http://example.org"
+      }
+    },
+    {
+      "name": "스킴이 대문자",
+      "text": "HTTPS://Example.org/A",
+      "expect": {
+        "text": "",
+        "url": "HTTPS://Example.org/A"
+      }
+    },
+    {
+      "name": "짧은 동영상 주소",
+      "text": "https://youtube.com/shorts/abc123?si=q",
+      "expect": {
+        "text": "",
+        "url": "https://youtube.com/shorts/abc123?si=q"
+      }
+    },
+    {
+      "name": "한글이 든 주소",
+      "text": "https://ko.wikipedia.org/wiki/여백",
+      "expect": {
+        "text": "",
+        "url": "https://ko.wikipedia.org/wiki/여백"
+      }
+    },
+    {
+      "name": "글과 주소가 한 줄 — 그대로 (사용자가 쓴 글이 제목)",
+      "text": "이것 봐 https://example.org/a",
+      "expect": {
+        "text": "이것 봐 https://example.org/a",
+        "url": null
+      }
+    },
+    {
+      "name": "제목 줄 + 주소 줄 — 그대로",
+      "text": "좋은 영상\nhttps://youtu.be/abc",
+      "expect": {
+        "text": "좋은 영상\nhttps://youtu.be/abc",
+        "url": null
+      }
+    },
+    {
+      "name": "주소 둘 — 그대로",
+      "text": "https://a.org\nhttps://b.org",
+      "expect": {
+        "text": "https://a.org\nhttps://b.org",
+        "url": null
+      }
+    },
+    {
+      "name": "스킴 없는 주소 — 그대로",
+      "text": "www.example.org",
+      "expect": {
+        "text": "www.example.org",
+        "url": null
+      }
+    },
+    {
+      "name": "다른 스킴 — 그대로",
+      "text": "mailto:a@example.org",
+      "expect": {
+        "text": "mailto:a@example.org",
+        "url": null
+      }
+    },
+    {
+      "name": "사이트 이름이 없다 — 그대로",
+      "text": "https:///a",
+      "expect": {
+        "text": "https:///a",
+        "url": null
+      }
+    },
+    {
+      "name": "스킴뿐 — 그대로",
+      "text": "https://",
+      "expect": {
+        "text": "https://",
+        "url": null
+      }
+    },
+    {
+      "name": "주소 가운데 넓은 빈칸 — 그대로",
+      "text": "https://a.org/b　c",
+      "expect": {
+        "text": "https://a.org/b　c",
+        "url": null
+      }
+    },
+    {
+      "name": "빈 글",
+      "text": "",
+      "expect": {
+        "text": "",
+        "url": null
+      }
+    },
+    {
+      "name": "같은 주소가 주소로도 왔다 — 글만 비운다",
+      "text": "https://example.org/a\n",
+      "url": "https://example.org/a",
+      "expect": {
+        "text": "",
+        "url": "https://example.org/a"
+      }
+    },
+    {
+      "name": "다른 주소가 주소로 왔다 — 그대로",
+      "text": "https://b.org",
+      "url": "https://a.org",
+      "expect": {
+        "text": "https://b.org",
+        "url": "https://a.org"
+      }
+    },
+    {
+      "name": "주소로 온 것 + 보통 글 — 그대로",
+      "text": "메모",
+      "url": "https://a.org",
+      "expect": {
+        "text": "메모",
+        "url": "https://a.org"
+      }
+    }
   ]
 }
