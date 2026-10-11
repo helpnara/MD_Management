@@ -2746,6 +2746,7 @@ def build() -> dict:
         "titleServiceCases": build_title_service_cases(),
         "shareEntryCases": build_share_entry_cases(),
         "shareAppendCases": build_share_append_cases(),
+        "reviewCases": build_review_cases(),
     }
 
 
@@ -2958,6 +2959,37 @@ def build_share_append_cases() -> list[dict]:
         if case.get("sameList") and after.count("<ul>") != before.count("<ul>"):
             raise SystemExit(f"::error::[{case['name']}] 앞 목록과 이어지지 않았다:\n{after}")
         out.append({"name": case["name"], "text": case["text"], "entry": case["entry"], "result": got})
+    return out
+
+
+# 앱 평가를 부탁할 때인가 (Swift `ReviewPrompt.isDue`).
+REVIEW_CASES = ROOT / "Tools" / "golden" / "review-cases.json"
+REVIEW_MIN_ACTIVE_DAYS = 5
+REVIEW_MIN_DAYS_SINCE_FIRST = 7
+REVIEW_MIN_DAYS_BETWEEN = 120
+
+
+def review_due(active_days: int, days_since_first: int, days_since_last_ask, asked_this_version: bool) -> bool:
+    if asked_this_version:
+        return False
+    if active_days < REVIEW_MIN_ACTIVE_DAYS or days_since_first < REVIEW_MIN_DAYS_SINCE_FIRST:
+        return False
+    if days_since_last_ask is not None and days_since_last_ask < REVIEW_MIN_DAYS_BETWEEN:
+        return False
+    return True
+
+
+def build_review_cases() -> list[dict]:
+    spec = json.loads(REVIEW_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        got = review_due(case["activeDays"], case["daysSinceFirstUse"], case.get("daysSinceLastAsk"),
+                         case.get("askedThisVersion", False))
+        if "expect" in case and got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 평가 부탁: 뜻 {case['expect']!r} · 셈 {got!r}")
+        out.append({"name": case["name"], "activeDays": case["activeDays"], "daysSinceFirstUse": case["daysSinceFirstUse"],
+                    "daysSinceLastAsk": case.get("daysSinceLastAsk"), "askedThisVersion": case.get("askedThisVersion", False),
+                    "result": got})
     return out
 
 
@@ -3886,7 +3918,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
-        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"), ("평가 부탁", "reviewCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
     # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.

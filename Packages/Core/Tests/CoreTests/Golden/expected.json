@@ -8692,6 +8692,80 @@
       "text": "[메모](../../메모.md) [위](../요약.md)"
     }
   ],
+  "reviewCases": [
+    {
+      "activeDays": 1,
+      "askedThisVersion": false,
+      "daysSinceFirstUse": 0,
+      "daysSinceLastAsk": null,
+      "name": "처음 깐 날 — 묻지 않는다",
+      "result": false
+    },
+    {
+      "activeDays": 5,
+      "askedThisVersion": false,
+      "daysSinceFirstUse": 6,
+      "daysSinceLastAsk": null,
+      "name": "닷새 썼지만 아직 엿새째",
+      "result": false
+    },
+    {
+      "activeDays": 4,
+      "askedThisVersion": false,
+      "daysSinceFirstUse": 30,
+      "daysSinceLastAsk": null,
+      "name": "일주일 지났지만 나흘만 썼다",
+      "result": false
+    },
+    {
+      "activeDays": 5,
+      "askedThisVersion": false,
+      "daysSinceFirstUse": 7,
+      "daysSinceLastAsk": null,
+      "name": "딱 닷새 · 딱 이레 — 묻는다",
+      "result": true
+    },
+    {
+      "activeDays": 40,
+      "askedThisVersion": false,
+      "daysSinceFirstUse": 90,
+      "daysSinceLastAsk": null,
+      "name": "오래 잘 쓰는 사람 · 처음 묻기",
+      "result": true
+    },
+    {
+      "activeDays": 40,
+      "askedThisVersion": true,
+      "daysSinceFirstUse": 90,
+      "daysSinceLastAsk": 200,
+      "name": "이 판에서 이미 물었다",
+      "result": false
+    },
+    {
+      "activeDays": 40,
+      "askedThisVersion": false,
+      "daysSinceFirstUse": 300,
+      "daysSinceLastAsk": 119,
+      "name": "새 판이지만 지난번 부탁이 119일 전",
+      "result": false
+    },
+    {
+      "activeDays": 40,
+      "askedThisVersion": false,
+      "daysSinceFirstUse": 300,
+      "daysSinceLastAsk": 120,
+      "name": "새 판 · 지난번 부탁이 딱 120일 전",
+      "result": true
+    },
+    {
+      "activeDays": 10,
+      "askedThisVersion": false,
+      "daysSinceFirstUse": -3,
+      "daysSinceLastAsk": null,
+      "name": "시계가 거꾸로 (기기 시간을 되돌림) — 묻지 않는다",
+      "result": false
+    }
+  ],
   "scrollGaugeCases": [
     {
       "content": 500,

@@ -1,0 +1,14 @@
+{
+  "_왜": "앱 평가를 부탁할 때인가 (ReviewPrompt). 값은 generate.py 가 셈한다. expect 는 사례가 지키려는 뜻이고, 셈과 다르면 멈춘다.",
+  "cases": [
+    {"name": "처음 깐 날 — 묻지 않는다", "activeDays": 1, "daysSinceFirstUse": 0, "expect": false},
+    {"name": "닷새 썼지만 아직 엿새째", "activeDays": 5, "daysSinceFirstUse": 6, "expect": false},
+    {"name": "일주일 지났지만 나흘만 썼다", "activeDays": 4, "daysSinceFirstUse": 30, "expect": false},
+    {"name": "딱 닷새 · 딱 이레 — 묻는다", "activeDays": 5, "daysSinceFirstUse": 7, "expect": true},
+    {"name": "오래 잘 쓰는 사람 · 처음 묻기", "activeDays": 40, "daysSinceFirstUse": 90, "expect": true},
+    {"name": "이 판에서 이미 물었다", "activeDays": 40, "daysSinceFirstUse": 90, "daysSinceLastAsk": 200, "askedThisVersion": true, "expect": false},
+    {"name": "새 판이지만 지난번 부탁이 119일 전", "activeDays": 40, "daysSinceFirstUse": 300, "daysSinceLastAsk": 119, "expect": false},
+    {"name": "새 판 · 지난번 부탁이 딱 120일 전", "activeDays": 40, "daysSinceFirstUse": 300, "daysSinceLastAsk": 120, "expect": true},
+    {"name": "시계가 거꾸로 (기기 시간을 되돌림) — 묻지 않는다", "activeDays": 10, "daysSinceFirstUse": -3, "expect": false}
+  ]
+}
