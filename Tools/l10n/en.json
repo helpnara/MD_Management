@@ -185,6 +185,7 @@
  "번호": "Numbered List",
  "보내기": "Send",
  "보내지 못했습니다. 잠시 뒤 다시 해 주세요.": "Couldn't send. Please try again in a moment.",
+ "복사": "Copy",
  "복사했습니다": "Copied",
  "붙여넣기가 이상하게 바뀌었을 때 이것을 복사해 보내 주세요. **붙여넣은 글이 그대로 담깁니다** — 앱을 끄면 사라집니다.": "If a paste came out wrong, copy this and send it to us. **It contains the pasted text as is** — it's cleared when you quit the app.",
  "붙여넣은 사진 %lld장을 저장하지 못했습니다.": {
@@ -343,6 +344,8 @@
  "켜면 앱에서 고친 노트의 **첫 줄 `# 제목`** 을 파일 이름이 따라갑니다. 제목 줄을 벗어날 때 한 번 바뀝니다. 열어 보기만 한 노트의 이름은 바꾸지 않습니다.\n\n**다른 앱에서 이 노트를 링크해 두었다면** 이름이 바뀔 때 그 링크가 끊길 수 있습니다.": "When on, a note you edit in the app is renamed to match its **first line `# Title`**. The name changes once, when you leave the title line. Notes you only open and read keep their names.\n\n**If other apps link to this note,** those links may break when the name changes.",
  "켜면 앱에서 고친 노트의 이름이 첫 줄 제목을 따라 바뀝니다. 다른 앱에서 이 노트를 가리키는 링크가 있으면 끊길 수 있습니다.": "Notes you edit in the app will be renamed to match their first-line title. Links to them from other apps may break.",
  "코드": "Code",
+ "코드를 복사했습니다.": "Copied the code.",
+ "크게 보기": "Expand",
  "큰 노트 만들기 (300줄)": "Create Large Note (300 Lines)",
  "큰 노트 시험": "Large Note Test",
  "큰 노트를 만들지 못했습니다: %@": "Couldn't create the large note: %@",
