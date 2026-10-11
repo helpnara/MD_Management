@@ -4789,6 +4789,14 @@
         "plain": null
       },
       {
+        "html": "<div class=\"yb-code\" style=\"margin: 1em 0px;\"><div class=\"yb-code-bar\" style=\"display: flex; font-size: 0.8em;\"><span class=\"yb-code-lang\" data-label=\"코드\" style=\"flex: 1 1 0%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;\"></span><a class=\"yb-code-btn\" href=\"yb://copy/0\" aria-label=\"복사\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"8\" y=\"8\" width=\"12\" height=\"12\" rx=\"2.5\"></rect></svg></a><a class=\"yb-code-btn\" href=\"yb://code/0\" aria-label=\"크게 보기\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M14 4h6v6\"></path></svg></a></div><pre data-line=\"2\" style=\"font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap;\"><code>너는 네이버 블로그와 구글 애드센스를 동시에 운영하며\n\n월 수 천만원 이상의 광고 수익을 만드는 투자 전문 블로그 작가다.</code></pre></div><p data-line=\"6\">다음 ETF 종목 “000”에 대해</p><p data-line=\"8\">단순 정보 요약이 아니라,</p>",
+        "images": [],
+        "keeps": null,
+        "markdown": "```\n너는 네이버 블로그와 구글 애드센스를 동시에 운영하며\n\n월 수 천만원 이상의 광고 수익을 만드는 투자 전문 블로그 작가다.\n```\n\n다음 ETF 종목 “000”에 대해\n\n단순 정보 요약이 아니라,",
+        "name": "읽기 화면에서 코드 상자와 글을 함께 골라 복사 (237 · 빌드 96 사용자) — 머리 줄(언어 · 단추)은 실리지 않는다",
+        "plain": null
+      },
+      {
         "html": "<table><tr><th>이름</th><th>값</th></tr><tr><td>가</td><td>1</td></tr></table>",
         "images": [],
         "keeps": null,

@@ -166,7 +166,10 @@ public enum MarkdownHTML {
 
             let classAttribute = languageClass.isEmpty ? "" : " class=\"language-\(languageClass)\""
             let head = "<div class=\"yb-code\"><div class=\"yb-code-bar\">"
-                + "<span class=\"yb-code-lang\">\(escape(language.isEmpty ? labels.code : language))</span>"
+                // 머리 글자는 **CSS 가 그린다** (`::before`) — 페이지의 글이 아니라서 글을 골라 복사할 때 실리지 않는다 (237 셋째,
+                // 빌드 96 사용자 — 코드와 글을 함께 골라 복사해 붙이니 `코드` 만 든 상자가 하나 더 생겼다. 고정폭 글꼴이라
+                // 붙여넣기가 코드로 읽었다). 단추는 그림뿐이라 글이 없다.
+                + "<span class=\"yb-code-lang\" data-label=\"\(escape(language.isEmpty ? labels.code : language))\"></span>"
                 + "<a class=\"yb-code-btn\" href=\"\(scheme)://copy/\(index)\" aria-label=\"\(escape(labels.copy))\">\(copyIcon)</a>"
                 + "<a class=\"yb-code-btn\" href=\"\(scheme)://code/\(index)\" aria-label=\"\(escape(labels.expand))\">\(expandIcon)</a>"
                 + "</div>"
@@ -450,8 +453,10 @@ public enum MarkdownHTML {
     .yb-code { margin: 1em 0; border-radius: 0.5em; background: var(--yb-paper-raised); overflow: hidden; }
     .yb-code pre { margin: 0; border-radius: 0; }
     .yb-code-bar { display: flex; align-items: center; gap: 0.2em; padding: 0.15em 0.35em 0.15em 0.8em;
-      border-bottom: 1px solid var(--yb-rule); font-size: 0.8em; color: var(--yb-ink-faint); }
+      border-bottom: 1px solid var(--yb-rule); font-size: 0.8em; color: var(--yb-ink-faint);
+      -webkit-user-select: none; user-select: none; }
     .yb-code-lang { flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .yb-code-lang::before { content: attr(data-label); }
     .yb-code-btn { display: flex; align-items: center; justify-content: center; width: 2.6em; height: 2.4em;
       color: var(--yb-ink-faint); -webkit-tap-highlight-color: transparent; }
     .yb-code-btn:active { color: var(--yb-ink); }
