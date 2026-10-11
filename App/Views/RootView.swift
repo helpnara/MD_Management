@@ -1519,6 +1519,10 @@ private struct CodeViewer: View {
     @Environment(\.dismiss) private var dismiss
     /// 위 복사 단추가 잠깐 *복사했습니다* 로 바뀐다 — 시트가 아래 알림 띠를 가린다.
     @State private var copied = false
+    /// **줄바꿈 켜고 끄기** (239, 2026-10-11 사용자 결정 *가*). 끄면 원래 줄 모양 그대로 옆으로 밀고(코드), 켜면 화면 폭에서 접어
+    /// 위아래로만 읽는다(프롬프트 · 긴 문장). **마지막에 고른 것을 기억한다.** 처음은 끔 — 크게 보기는 원래 줄 모양을 보는 곳이다
+    /// (읽기 화면이 늘 접으므로 — 170).
+    @AppStorage("code.wrap") private var wraps = false
 
     /// 상자 글의 줄들. 탭은 빈칸 넷으로 — 한 줄 글자에서 탭 폭이 들쭉날쭉하지 않게 (원문 · 복사는 그대로다).
     private var lines: [String] {
@@ -1528,23 +1532,8 @@ private struct CodeViewer: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView([.horizontal, .vertical]) {
-                // **한 줄씩 그리고 줄마다 한 줄로 못 박는다** (237 둘째, 빌드 96 사용자 — *가로 스크롤이 필요한데 자동 줄바꿈되어서
-                // 세로 스크롤만*). 글 전체를 `Text` 하나에 담고 `fixedSize` 를 걸었더니 기기에서는 화면 폭에 맞춰 접혔다.
-                // `lineLimit(1)` 인 줄은 접힐 수 없고, `fixedSize` 로 제 길이를 다 가지므로 긴 줄만큼 옆으로 밀린다.
-                // 글 고르기는 한 줄 안에서만 된다 — 통째로는 위 **복사** 단추가 맡는다.
-                // `LazyVStack` 은 보이는 줄만 재서 밀 수 있는 폭이 스크롤마다 달라진다 — 모든 줄을 잰다.
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                        Text(line.isEmpty ? " " : line)
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
-                    }
-                }
-                .font(.scaledMono(.callout))
-                .foregroundStyle(Palette.ink)
-                .textSelection(.enabled)
-                .padding(Metrics.gutter)
+            Group {
+                if wraps { wrapped } else { unwrapped }
             }
             .background(Palette.paper)
             .navigationTitle(block.language.isEmpty ? String(localized: "코드") : block.language)
@@ -1553,7 +1542,13 @@ private struct CodeViewer: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("닫기") { dismiss() }
                 }
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button {
+                        wraps.toggle()
+                    } label: {
+                        Label(wraps ? String(localized: "줄바꿈 끄기") : String(localized: "줄바꿈 켜기"),
+                              systemImage: wraps ? "arrow.left.and.right" : "arrow.turn.down.left")
+                    }
                     Button {
                         UIPasteboard.general.string = block.text
                         copied = true
@@ -1567,6 +1562,40 @@ private struct CodeViewer: View {
                     }
                 }
             }
+        }
+    }
+
+    /// **줄바꿈 켬** — 글 하나를 화면 폭에서 접는다. 위아래로만 밀고, 글을 여러 줄에 걸쳐 고를 수 있다.
+    private var wrapped: some View {
+        ScrollView(.vertical) {
+            Text(block.text.isEmpty ? " " : block.text)
+                .font(.scaledMono(.callout))
+                .foregroundStyle(Palette.ink)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Metrics.gutter)
+        }
+    }
+
+    /// **줄바꿈 끔** — 원래 줄 모양 그대로 옆으로 민다.
+    private var unwrapped: some View {
+        ScrollView([.horizontal, .vertical]) {
+            // **한 줄씩 그리고 줄마다 한 줄로 못 박는다** (237 둘째, 빌드 96 사용자 — *가로 스크롤이 필요한데 자동 줄바꿈되어서
+            // 세로 스크롤만*). 글 전체를 `Text` 하나에 담고 `fixedSize` 를 걸었더니 기기에서는 화면 폭에 맞춰 접혔다.
+            // `lineLimit(1)` 인 줄은 접힐 수 없고, `fixedSize` 로 제 길이를 다 가지므로 긴 줄만큼 옆으로 밀린다.
+            // 글 고르기는 한 줄 안에서만 된다 — 통째로는 위 **복사** 단추가 맡는다.
+            // `LazyVStack` 은 보이는 줄만 재서 밀 수 있는 폭이 스크롤마다 달라진다 — 모든 줄을 잰다.
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                    Text(line.isEmpty ? " " : line)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+            }
+            .font(.scaledMono(.callout))
+            .foregroundStyle(Palette.ink)
+            .textSelection(.enabled)
+            .padding(Metrics.gutter)
         }
     }
 }
