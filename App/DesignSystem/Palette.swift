@@ -74,13 +74,21 @@ enum Palette {
             let clamp = { (v: CGFloat) in Int((max(0, min(1, v)) * 255).rounded()) }
             return String(format: "#%02X%02X%02X", clamp(r), clamp(g), clamp(b))
         }
+        /// 투명도까지 넘긴다 (238). 가름선(`separator`)은 앱에서 반투명인데 `hex` 가 투명도를 버려 읽기 화면의 선이 짙었다.
+        /// 글자 색(`secondaryLabel` 도 반투명)은 그대로 `hex` — 읽기 글이 옅어지면 대비가 4.5:1 아래로 내려간다.
+        func rgba(_ color: UIColor) -> String {
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+            color.resolvedColor(with: traits).getRed(&r, green: &g, blue: &b, alpha: &a)
+            let clamp = { (v: CGFloat) in Int((max(0, min(1, v)) * 255).rounded()) }
+            return String(format: "rgba(%d, %d, %d, %.3f)", clamp(r), clamp(g), clamp(b), Double(max(0, min(1, a))))
+        }
         return """
           --yb-paper: \(hex(.systemBackground));
           --yb-paper-raised: \(hex(.secondarySystemBackground));
           --yb-ink: \(hex(.label));
           --yb-ink-faint: \(hex(.secondaryLabel));
           --yb-accent: \(hex(.tintColor));
-          --yb-rule: \(hex(.separator));
+          --yb-rule: \(rgba(.separator));
           --yb-tag: \(hex(tagUIColor));
           --yb-quote: \(hex(quoteUIColor));
         """
