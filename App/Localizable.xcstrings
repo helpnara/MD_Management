@@ -2585,6 +2585,26 @@
         }
       }
     },
+    "줄바꿈 끄기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn Off Line Wrap"
+          }
+        }
+      }
+    },
+    "줄바꿈 켜기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn On Line Wrap"
+          }
+        }
+      }
+    },
     "지금 목록에 없는 노트입니다 — **%@** 의 파일" : {
       "localizations" : {
         "en" : {
