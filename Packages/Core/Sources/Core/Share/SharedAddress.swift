@@ -45,6 +45,52 @@ public enum SharedAddress {
         return nil
     }
 
+    /// **제목을 알려 주는 공식 창구가 있는 사이트면 그 주소** (240 · 빌드 100 사용자 — *영상 제목이 아니라 채널명을 가지고 온다*).
+    /// 유튜브 쪽은 스크립트가 제목을 채우므로, 쪽을 그대로 읽는 링크 미리보기는 제목 대신 엉뚱한 값(채널 이름)을 잡았다
+    /// (맥 러너에서 확인 — 브라우저로 열면 `<title>YouTube</title>`). 유튜브가 여는 oEmbed 는 `title` 을 정확히 준다.
+    /// 없으면 nil — 다른 사이트는 링크 미리보기로.
+    public static func titleService(for address: String) -> String? {
+        guard let host = host(of: address), youTubeHosts.contains(host) else { return nil }
+        return "https://www.youtube.com/oembed?format=json&url=" + percentEncoded(address)
+    }
+
+    static let youTubeHosts: Set<String> = ["youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be"]
+
+    /// `http(s)://` 뒤의 사이트 이름 — 영어 소문자로, 포트는 뗀다. 사용자 정보(`@`)가 끼어 있으면 nil (속이는 주소).
+    static func host(of address: String) -> String? {
+        let scalars = Array(address.unicodeScalars)
+        for scheme in ["https://", "http://"] {
+            let head = Array(scheme.unicodeScalars)
+            guard scalars.count > head.count,
+                  zip(scalars, head).allSatisfy({ pair in asciiLower(pair.0) == pair.1 }) else { continue }
+            let authority = scalars[head.count...].prefix { $0 != "/" && $0 != "?" && $0 != "#" }
+            guard !authority.contains("@") else { return nil }
+            let name = authority.prefix { $0 != ":" }.map(asciiLower)
+            guard !name.isEmpty else { return nil }
+            var view = String.UnicodeScalarView()
+            view.append(contentsOf: name)
+            return String(view)
+        }
+        return nil
+    }
+
+    /// 주소를 다른 주소의 값으로 — 영어 · 숫자 · `-._~` 말고는 UTF-8 바이트마다 `%XX` (파이썬 `quote(safe="")` 와 같다).
+    static func percentEncoded(_ text: String) -> String {
+        let hex = Array("0123456789ABCDEF")
+        var out = ""
+        for byte in text.utf8 {
+            switch byte {
+            case 0x30...0x39, 0x41...0x5A, 0x61...0x7A, 0x2D, 0x2E, 0x5F, 0x7E:
+                out.append(Character(Unicode.Scalar(byte)))
+            default:
+                out.append("%")
+                out.append(hex[Int(byte >> 4)])
+                out.append(hex[Int(byte & 0x0F)])
+            }
+        }
+        return out
+    }
+
     /// 영어 대문자만 소문자로 — 다른 글자는 그대로 (파이썬과 같게).
     private static func asciiLower(_ scalar: Unicode.Scalar) -> Unicode.Scalar {
         guard scalar.value >= 0x41, scalar.value <= 0x5A, let lower = Unicode.Scalar(scalar.value + 32) else { return scalar }

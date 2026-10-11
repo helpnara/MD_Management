@@ -23,6 +23,7 @@ Slow Margin **does not collect any personal information.**
 - When you send something to Slow Margin from another app’s share menu, it waits on your device until
   you open the app, then becomes a note in your folder.
 - If you share **only a web address** (for example, from a video app), the app **visits that address once to read the page title.**
+  If the site offers an official title service (as video sites do), the app instead **sends that address once to the site’s own service** to get the title.
   Nothing else is received or sent, and nothing reaches the developer.
 
 ## Permissions

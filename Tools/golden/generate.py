@@ -2743,6 +2743,7 @@ def build() -> dict:
         "restyleCases": build_restyle_cases(),
         "shareCases": build_share_cases(),
         "sharedAddressCases": build_shared_address_cases(),
+        "titleServiceCases": build_title_service_cases(),
     }
 
 
@@ -2818,6 +2819,47 @@ def shared_address(text: str, url):
     if url == lone:
         return "", url
     return text, url
+
+
+YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be"}
+
+
+def _ascii_lower(text: str) -> str:
+    return "".join(chr(ord(c) + 32) if "A" <= c <= "Z" else c for c in text)
+
+
+def shared_host(address: str):
+    """`http(s)://` 뒤의 사이트 이름 — 영어 소문자, 포트를 뗀다. `@` 가 끼면 None (Swift `SharedAddress.host`)."""
+    for scheme in ("https://", "http://"):
+        if len(address) <= len(scheme) or _ascii_lower(address[:len(scheme)]) != scheme:
+            continue
+        authority = re.match(r"[^/?#]*", address[len(scheme):]).group(0)
+        if "@" in authority:
+            return None
+        name = _ascii_lower(authority.split(":", 1)[0])
+        return name or None
+    return None
+
+
+def title_service(address: str):
+    """240 — 제목을 알려 주는 공식 창구(유튜브 oEmbed). 없으면 None (Swift `SharedAddress.titleService`)."""
+    host = shared_host(address)
+    if host not in YOUTUBE_HOSTS:
+        return None
+    return "https://www.youtube.com/oembed?format=json&url=" + urllib.parse.quote(address, safe="")
+
+
+def build_title_service_cases() -> list[dict]:
+    spec = json.loads(SHARE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["titleService"]:
+        got = title_service(case["address"])
+        if "expect" in case and got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 제목 창구: 뜻 {case['expect']!r} · 셈 {got!r}")
+        if got is not None and urllib.parse.parse_qs(urllib.parse.urlsplit(got).query)["url"] != [case["address"]]:
+            raise SystemExit(f"::error::[{case['name']}] 창구 주소에서 원래 주소가 되살아나지 않는다: {got!r}")
+        out.append({"name": case["name"], "address": case["address"], "result": got})
+    return out
 
 
 def build_shared_address_cases() -> list[dict]:
@@ -3763,7 +3805,7 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
-        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
     # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.

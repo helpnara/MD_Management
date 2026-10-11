@@ -324,5 +324,74 @@
         "url": "https://a.org"
       }
     }
+  ],
+  "titleService": [
+    {
+      "name": "유튜브 공유 주소 (빌드 100 사용자 — 채널 이름이 들어왔다)",
+      "address": "https://youtube.com/watch?v=cQlzN7JeDxU&si=aV7LOdfQ5-wnpAFI",
+      "expect": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fyoutube.com%2Fwatch%3Fv%3DcQlzN7JeDxU%26si%3DaV7LOdfQ5-wnpAFI"
+    },
+    {
+      "name": "www",
+      "address": "https://www.youtube.com/watch?v=abc"
+    },
+    {
+      "name": "모바일 쪽",
+      "address": "https://m.youtube.com/watch?v=abc"
+    },
+    {
+      "name": "짧은 주소",
+      "address": "https://youtu.be/abc?si=x"
+    },
+    {
+      "name": "짧은 동영상",
+      "address": "https://youtube.com/shorts/abc?si=q"
+    },
+    {
+      "name": "음악",
+      "address": "https://music.youtube.com/watch?v=abc"
+    },
+    {
+      "name": "사이트 이름이 대문자 · 포트",
+      "address": "HTTPS://WWW.YouTube.com:443/watch?v=abc"
+    },
+    {
+      "name": "http",
+      "address": "http://youtube.com/watch?v=abc"
+    },
+    {
+      "name": "한글이 든 주소도 되살아난다",
+      "address": "https://youtube.com/results?search_query=여백"
+    },
+    {
+      "name": "다른 사이트 — 링크 미리보기로",
+      "address": "https://example.org/watch?v=abc",
+      "expect": null
+    },
+    {
+      "name": "이름만 비슷한 사이트",
+      "address": "https://notyoutube.com/watch?v=abc",
+      "expect": null
+    },
+    {
+      "name": "유튜브를 앞에 붙인 다른 사이트",
+      "address": "https://youtube.com.example.org/watch",
+      "expect": null
+    },
+    {
+      "name": "사용자 정보로 속인 주소",
+      "address": "https://youtube.com@example.org/watch",
+      "expect": null
+    },
+    {
+      "name": "경로에만 유튜브",
+      "address": "https://example.org/youtube.com",
+      "expect": null
+    },
+    {
+      "name": "스킴이 없다",
+      "address": "youtube.com/watch?v=abc",
+      "expect": null
+    }
   ]
 }

@@ -38,6 +38,11 @@ final class ShareViewController: UIViewController {
     }
 }
 
+/// 제목 창구(oEmbed)의 대답 — `title` 만 읽는다 (240).
+private struct TitleAnswer: Decodable, Sendable {
+    let title: String?
+}
+
 /// 받은 것 · 보내기. 모두 주 액터에서 돈다 — `NSItemProvider` 를 다른 곳으로 넘기지 않는다.
 /// 읽기 완료 처리는 **다른 큐에서** 불린다 — 클로저에 `@Sendable` 을 붙여 주 액터로 추정되지 않게 한다
 /// (Swift 6 은 주 액터로 추정된 클로저가 다른 큐에서 불리면 앱을 멈춘다). 안에서는 값만 만들어 넘긴다.
@@ -94,27 +99,51 @@ final class ShareModel: ObservableObject {
     /// **주소만 왔으면 그 쪽의 제목을 가져온다** (240, 2026-10-11 사용자 — *유튜브에서 공유하면 받은 글에 링크만 들어온다*).
     /// 사파리는 주소와 함께 제목을 주지만(`attributedContentText`) 유튜브 같은 앱은 주소만 준다. 애플의 링크 미리보기
     /// (`LinkPresentation` — 메시지 앱이 쓰는 것)로 그 주소에 **한 번** 접속해 제목만 읽는다. 다른 것은 보내지 않는다 (처리방침).
+    /// **유튜브는 그 사이트가 여는 제목 창구(oEmbed)로** — 쪽을 읽으면 채널 이름이 잡혔다 (빌드 100 사용자 · `SharedAddress.titleService`).
     /// 못 가져오면 예전 그대로 — 제목 칸은 사이트 이름, 본문은 주소 링크.
     private func fetchTitleIfMissing() {
         guard pageTitle == nil, let address = url, let target = URL(string: address),
               let scheme = target.scheme?.lowercased(), scheme == "https" || scheme == "http" else { return }
+        // 유튜브는 공식 창구(oEmbed)로만 — 쪽을 읽으면 제목 대신 채널 이름이 잡힌다 (빌드 100 사용자). 못 가져오면 제목 없이.
+        let service = SharedAddress.titleService(for: address).flatMap { URL(string: $0) }
         titleTask = Task { [weak self] in
             guard let self else { return }
-            let provider = LPMetadataProvider()
-            provider.timeout = Self.titleTimeout
-            self.metadataProvider = provider
-            let title: String? = await withCheckedContinuation { continuation in
-                provider.startFetchingMetadata(for: target) { @Sendable metadata, _ in
-                    continuation.resume(returning: metadata?.title)
-                }
+            let title: String?
+            if let service {
+                title = await Self.serviceTitle(service)
+            } else {
+                title = await self.previewTitle(target)
             }
-            self.metadataProvider = nil
             let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines)
             // 제목이 주소 그대로면 쓸모가 없다.
             if self.pageTitle == nil, let trimmed, !trimmed.isEmpty, trimmed != address {
                 self.pageTitle = trimmed
             }
         }
+    }
+
+    /// 애플 링크 미리보기 — 쪽의 제목.
+    private func previewTitle(_ target: URL) async -> String? {
+        let provider = LPMetadataProvider()
+        provider.timeout = Self.titleTimeout
+        metadataProvider = provider
+        let title: String? = await withCheckedContinuation { continuation in
+            provider.startFetchingMetadata(for: target) { @Sendable metadata, _ in
+                continuation.resume(returning: metadata?.title)
+            }
+        }
+        metadataProvider = nil
+        return title
+    }
+
+    /// 사이트가 여는 제목 창구(oEmbed) — 받은 것의 `title` 만 읽는다. 쿠키 · 캐시를 남기지 않는다.
+    private static func serviceTitle(_ service: URL) async -> String? {
+        let request = URLRequest(url: service, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: titleTimeout)
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.finishTasksAndInvalidate() }
+        guard let answer = try? await session.data(for: request),
+              (answer.1 as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return (try? JSONDecoder().decode(TitleAnswer.self, from: answer.0))?.title
     }
 
     func send() async {

@@ -31,7 +31,13 @@ final class IncomingShareGoldenTests: XCTestCase {
         }
         let shareCases: [Case]
         let inboxCases: [Inbox]
+        struct Service: Decodable {
+            let name: String
+            let address: String
+            let result: String?
+        }
         let sharedAddressCases: [Address]
+        let titleServiceCases: [Service]
     }
 
     func testMatchesGolden() throws {
@@ -71,6 +77,17 @@ final class IncomingShareGoldenTests: XCTestCase {
             let got = SharedAddress.separate(text: item.text, url: item.url)
             XCTAssertEqual(got.text, item.resultText, "글 — [\(item.name)]")
             XCTAssertEqual(got.url, item.resultURL, "주소 — [\(item.name)]")
+        }
+    }
+
+    /// 240 — **제목을 알려 주는 공식 창구.** 유튜브 주소만 oEmbed 로, 비슷한 이름 · 속인 주소는 링크 미리보기로.
+    func testTitleServiceMatchesGolden() throws {
+        let here = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let url = here.appendingPathComponent("Golden/expected.json")
+        let cases = try JSONDecoder().decode(Golden.self, from: try Data(contentsOf: url)).titleServiceCases
+        XCTAssertFalse(cases.isEmpty, "정답표가 비었다")
+        for item in cases {
+            XCTAssertEqual(SharedAddress.titleService(for: item.address), item.result, "[\(item.name)]")
         }
     }
 }

@@ -9966,6 +9966,83 @@
       "text": "#회의. 끝"
     }
   ],
+  "titleServiceCases": [
+    {
+      "address": "https://youtube.com/watch?v=cQlzN7JeDxU&si=aV7LOdfQ5-wnpAFI",
+      "name": "유튜브 공유 주소 (빌드 100 사용자 — 채널 이름이 들어왔다)",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fyoutube.com%2Fwatch%3Fv%3DcQlzN7JeDxU%26si%3DaV7LOdfQ5-wnpAFI"
+    },
+    {
+      "address": "https://www.youtube.com/watch?v=abc",
+      "name": "www",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "https://m.youtube.com/watch?v=abc",
+      "name": "모바일 쪽",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fm.youtube.com%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "https://youtu.be/abc?si=x",
+      "name": "짧은 주소",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fyoutu.be%2Fabc%3Fsi%3Dx"
+    },
+    {
+      "address": "https://youtube.com/shorts/abc?si=q",
+      "name": "짧은 동영상",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fyoutube.com%2Fshorts%2Fabc%3Fsi%3Dq"
+    },
+    {
+      "address": "https://music.youtube.com/watch?v=abc",
+      "name": "음악",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fmusic.youtube.com%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "HTTPS://WWW.YouTube.com:443/watch?v=abc",
+      "name": "사이트 이름이 대문자 · 포트",
+      "result": "https://www.youtube.com/oembed?format=json&url=HTTPS%3A%2F%2FWWW.YouTube.com%3A443%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "http://youtube.com/watch?v=abc",
+      "name": "http",
+      "result": "https://www.youtube.com/oembed?format=json&url=http%3A%2F%2Fyoutube.com%2Fwatch%3Fv%3Dabc"
+    },
+    {
+      "address": "https://youtube.com/results?search_query=여백",
+      "name": "한글이 든 주소도 되살아난다",
+      "result": "https://www.youtube.com/oembed?format=json&url=https%3A%2F%2Fyoutube.com%2Fresults%3Fsearch_query%3D%EC%97%AC%EB%B0%B1"
+    },
+    {
+      "address": "https://example.org/watch?v=abc",
+      "name": "다른 사이트 — 링크 미리보기로",
+      "result": null
+    },
+    {
+      "address": "https://notyoutube.com/watch?v=abc",
+      "name": "이름만 비슷한 사이트",
+      "result": null
+    },
+    {
+      "address": "https://youtube.com.example.org/watch",
+      "name": "유튜브를 앞에 붙인 다른 사이트",
+      "result": null
+    },
+    {
+      "address": "https://youtube.com@example.org/watch",
+      "name": "사용자 정보로 속인 주소",
+      "result": null
+    },
+    {
+      "address": "https://example.org/youtube.com",
+      "name": "경로에만 유튜브",
+      "result": null
+    },
+    {
+      "address": "youtube.com/watch?v=abc",
+      "name": "스킴이 없다",
+      "result": null
+    }
+  ],
   "wrapCases": [
     {
       "applied": "이 문서는 [체크리스트](<자료/목돈 배치.md>) 입니다",
