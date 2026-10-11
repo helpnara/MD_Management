@@ -453,7 +453,8 @@ public enum MarkdownHTML {
     .yb-code { margin: 1em 0; border-radius: 0.5em; background: var(--yb-paper-raised); overflow: hidden; }
     .yb-code pre { margin: 0; border-radius: 0; }
     .yb-code-bar { display: flex; align-items: center; gap: 0.2em; padding: 0.15em 0.35em 0.15em 0.8em;
-      border-bottom: 1px solid var(--yb-rule); font-size: 0.8em; color: var(--yb-ink-faint);
+      /* 가름선은 옅게 — `--yb-rule` 은 앱에서 반투명인데 웹으로 넘길 때 투명도가 빠져 짙은 선이 됐다 (237 검토 · 238). */
+      border-bottom: 1px solid color-mix(in srgb, var(--yb-ink-faint) 22%, transparent); font-size: 0.8em; color: var(--yb-ink-faint);
       -webkit-user-select: none; user-select: none; }
     .yb-code-lang { flex: 1; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
     .yb-code-lang::before { content: attr(data-label); }
