@@ -135,7 +135,8 @@ jobs:
               LOCALE=ko_KR
               PLAN="주간 계획.md"; WATCH="볼 영상 모음.md"; TRIP="제주 여행.md"
               ORDER=("장보기.md" "독서 기록.md" "회의록.md" "$TRIP" "$WATCH" "$PLAN")
-              CARET="쌓아 둔 것을 "; TERM="정리"
+              # 찾을 말은 `회의` — 두 글자 · 노트 둘이 걸린다. `정리` 는 링크 모음의 원문(주소)이 결과 줄에 떴다 (첫 촬영).
+              CARET="쌓아 둔 것을 "; TERM="회의"
             else
               ARGS=(-AppleLanguages "(en)" -AppleLocale en_US -storeFolder)
               LOCALE=en_US
@@ -188,9 +189,12 @@ jobs:
             ls -la "$DOCS"
           }
 
+          # **올릴 때마다 한 시간씩 늦게** (1.1.4 첫 촬영에서 잡힘) — 같은 시각을 주면 동점이라 앱이 엉뚱한 노트를 첫 노트로 열었다.
+          NEWEST_STAMP=202610090800
           newest() {    # $1 = 기기, $2 = 맨 위로 올릴 노트 (첫 노트로 열린다)
             local docs="$(xcrun simctl get_app_container "$1" "$BUNDLE_ID" data)/Documents"
-            touch -t 202610090900 "$docs/$2"
+            NEWEST_STAMP=$((NEWEST_STAMP + 100))
+            touch -t "$NEWEST_STAMP" "$docs/$2"
           }
 
           check() {     # $1 = 파일 — 아직 안 그려진 화면은 단색이라 작다
