@@ -1,6 +1,6 @@
 ---
 title: 출시 주 홍보 묶음 — 추천 신청 · 인앱 이벤트 · 캠페인 링크 · 글 초안
-updated: 2026-10-11
+updated: 2026-10-12
 ---
 
 # 출시 주 홍보 묶음 (브레인스토밍 4 · 5)
@@ -15,12 +15,15 @@ updated: 2026-10-11
 
 ## 0. 한 주의 차례
 
+> **D = 2026-11-02 (월)** (2026-10-12 사용자 — *출시 주 홍보 첫 단계부터 하자*). 1.1.4 는 이미 나왔고 1.1.5 는 심사 중이라 *판 출시 날* 이 아니라
+> **홍보 주**로 잡았다 — 애플이 권하는 추천 신청 시간(3주)을 지키고, 그 주에 인앱 이벤트 · 블로그 · 커뮤니티를 몰아 낸다. 그때 나와 있는 판(1.1.5 이후)을 알린다.
+
 | 언제 | 할 일 | 어디 |
 |---|---|---|
-| 출시 **3주 전** (가능하면 6주) | 애플 추천 신청 (§2) | App Store Connect → 추천(Featuring) → 신청 |
-| 2주 전 | 인앱 이벤트 만들기 · 심사 (§3) — 이벤트는 따로 심사받는다 | App Store Connect → 인앱 이벤트 |
-| 1주 전 | 캠페인 링크 만들기 (§1) · 글 초안 다듬기 (§4~§6) | 이 문서 |
-| **출시 날 (D)** | 판 출시 · 프로모션 텍스트 갈기 · 블로그 글 (§4) | 네이버 블로그 |
+| **3주 전 — 10-12 (지금)** | 애플 추천 신청 (§2) | App Store Connect → 추천(Featuring) → 신청 |
+| 2주 전 — 10-19 | 인앱 이벤트 만들기 · 심사 (§3) — 이벤트는 따로 심사받는다 · 그림 두 장 | App Store Connect → 인앱 이벤트 |
+| 1주 전 — 10-26 | 캠페인 링크 만들기 (§1) · 글 초안 다듬기 (§4~§6) | 이 문서 |
+| **D — 11-02 (월)** | 인앱 이벤트 시작 · 프로모션 텍스트 갈기 · 블로그 글 (§4) | 네이버 블로그 |
 | D+1 | 국내 커뮤니티 두 곳 (§5) | 메이커 모임 · 개발자 소식 |
 | D+2 | 스레드 · 맥 · 아이폰 사용자 게시판 (§5) | |
 | D+3~4 | 해외 — Product Hunt 하루 · Reddit · Show HN (§6) | 영어판 |
@@ -52,27 +55,30 @@ App Store Connect 의 **추천 신청**은 편집팀에 *이런 앱 · 이런 �
 
 | 칸 | 값 |
 |---|---|
-| 신청 이름 (우리끼리 보는 이름) | `Slow Margin — collect links in one note` |
+| 신청 이름 (우리끼리 보는 이름) | `Slow Margin — gather links, photos and videos as files` |
 | 종류 | **App Enhancements** (업데이트) |
-| 출시 예정일 | 1.1.4 출시 예정일 (최소 3주 뒤로) |
+| 날짜 (알릴 때) | **2026-11-02** (D — 홍보 주 첫날). 그때 나와 있는 판을 알린다 |
 | 나라 | 대한민국 · 미국 (+ 전 세계) |
-| 관련 인앱 이벤트 | §3 의 이벤트 (만들었으면) |
+| 관련 인앱 이벤트 | §3 의 이벤트 (10-19 에 만든 뒤 이어 붙인다 — 지금은 비워 둔다) |
 
-**설명 (영어 · 그대로 붙인다)**
+**설명 (영어 · 그대로 붙인다 · 892자 — 2026-10-12 다시 씀: 1.1.5 의 깔끔한 미리보기 · 사진 · 동영상 붙여넣기를 더함)**
 
 ```
 Slow Margin is a Markdown notes app for iPhone and iPad, made by a solo developer in Korea around one promise: your writing stays as plain files. There is no app database and no account. Every note is a .md file in your own iCloud folder, visible in the Files app, readable in any editor, and still there if you delete the app.
 
-Recent updates add a quiet way to collect: share a video or a web page from any app, pick a pinned note, and its title and link are added as a new line at the end of that note. When an app shares only a bare link, Slow Margin reads the page title once so the note stays readable. Code blocks in Read mode now have Copy and Expand buttons with optional line wrapping, and notices are calmer.
+Recent updates make it a calm place to gather what you find. Share a video or a web page from any app, pick a pinned note, and its title and link are added as a new line at the end of that note. Paste a note that mixes text, photos and videos, and each photo and video lands in its place, saved as a real file next to the note. The note list and search results now show clean text instead of Markdown symbols, and code blocks in Read mode have Copy and Expand buttons.
 
 The app is fully localized in Korean and English, follows Dynamic Type, and collects no data.
 ```
 
 **한국어 뜻 (확인용 — 내지 않는다).** 느린 여백은 *글은 파일로 남는다* 는 약속 하나로 한국의 1인 개발자가 만든 아이폰 · 아이패드 마크다운 노트 앱입니다.
 앱 데이터베이스도 계정도 없습니다 — 모든 노트는 사용자 iCloud 폴더의 `.md` 파일이고, 파일 앱에서 보이며 어떤 편집기로도 열리고, 앱을 지워도 남습니다.
-최근 업데이트로 *모으는 길* 이 생겼습니다 — 어떤 앱에서든 동영상이나 웹 쪽을 공유하고 고정한 노트를 고르면 그 노트 끝에 제목과 링크가 한 줄씩 쌓입니다.
-주소만 보내는 앱이면 쪽 제목을 한 번 읽어 와 노트가 읽기 좋게 남습니다. 읽기 화면의 코드 상자에 복사 · 크게 보기(줄바꿈 선택) 단추가 생겼고 안내가 차분해졌습니다.
-한국어 · 영어로 모두 쓸 수 있고, 글자 크기 설정을 따르며, 데이터를 모으지 않습니다.
+최근 업데이트로 *찾은 것을 차분히 모으는 곳* 이 되었습니다 — 어떤 앱에서든 동영상이나 웹 쪽을 공유하고 고정한 노트를 고르면 그 노트 끝에 제목과 링크가 한 줄씩 쌓입니다.
+글 · 사진 · 동영상이 섞인 노트를 붙여 넣으면 사진과 동영상이 제자리에 들어가고, 노트 옆에 진짜 파일로 저장됩니다. 노트 목록과 검색 결과는 마크다운 기호 대신 깔끔한 글을 보여 주고,
+읽기 화면의 코드 상자에는 복사 · 크게 보기 단추가 있습니다. 한국어 · 영어로 모두 쓸 수 있고, 글자 크기 설정을 따르며, 데이터를 모으지 않습니다.
+
+**콘솔에서 (사용자):** App Store Connect → 위의 **앱** 이 아니라 홈 화면 → **추천 신청**(Featuring Nominations 또는 *Nominations*) → **+** →
+앱 *느린 여백* 고르기 → 위 표대로 채우기 → 설명 붙이기 → **제출**. 칸이 위와 다르면(이름 · 한도 · 고를 것) 화면을 보내 주신다 — 맞춰 고친다.
 
 ## 3. 인앱 이벤트 — 검색 결과 · 투데이 탭의 카드
 
