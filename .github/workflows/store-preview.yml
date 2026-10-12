@@ -1,7 +1,8 @@
 name: 영어 앱 미리보기 영상
 
 # 2026-10-12 사용자 — *내가 직접 촬영하지 않고도 영어 버전 영상을 만들 수 있다면 만들어줘.*
-# 시뮬레이터 화면을 녹화하는 동안 UI 시험(`Tools/store/preview/StorePreviewUITests.swift`)이 손가락 대신 앱을 조작한다.
+# UI 시험(`Tools/store/preview/StorePreviewUITests.swift`)이 손가락 대신 앱을 조작하며 장면마다 화면을 찍고,
+# `Tools/store/preview/stitch.py` 가 그림들을 이어 붙인다 (시뮬레이터 녹화는 읽기 화면을 놓쳐 그만뒀다).
 # 시험 대상은 **이 흐름 안에서만** `project.yml` 사본에 붙인다 (`add-target.py`) — 앱 빌드 · 테스트플라이트는 그대로.
 # 결과: `docs/store/preview/slow-margin-preview-en.mp4` — 886 × 1920 · 30fps · H.264 · 빈 소리 칸 (아이폰 6.1" 칸의 앱 미리보기).
 # 돌리는 법: `Tools/store/preview-request.txt` 에 한 줄을 더해 푸시한다.
@@ -131,40 +132,24 @@ jobs:
           xcrun simctl spawn "$UDID" defaults write "$BUNDLE_ID" mode.reading -bool YES
           ls -la "$DOCS"
 
-      - name: 녹화하며 시험 돌리기
+      - name: 시험 돌리기 (장면마다 화면 찍기)
         run: |
           set -uo pipefail
           UDID="${{ steps.sim.outputs.phone }}"
           mkdir -p raw-video
-          xcrun simctl io "$UDID" recordVideo --codec=h264 --force raw-video/raw.mov > raw-video/rec.log 2>&1 &
-          REC=$!
-          # 영상의 0초 = *Recording started* 가 찍힌 때 (명령을 낸 때보다 1.8초 늦었다 — 네 번째 녹화). 그 순간을 잰다.
-          python3 -c "
-          import pathlib, sys, time
-          log = pathlib.Path('raw-video/rec.log'); end = time.time() + 30
-          while time.time() < end:
-              if 'Recording started' in log.read_text(errors='replace'):
-                  print('%.3f' % time.time()); sys.exit(0)
-              time.sleep(0.05)
-          sys.exit('녹화가 시작되지 않았다')
-          " > raw-video/record-start || { cat raw-video/rec.log; echo "::error::녹화가 시작되지 않았다"; exit 1; }
-          sleep 1
+          # 시험이 장면마다 화면을 찍어 결과 묶음(xcresult)에 남긴다 — 시뮬레이터 녹화는 읽기 화면을 놓쳐 그만뒀다 (첫~아홉 번째).
           xcodebuild test-without-building -project Notebook.xcodeproj -scheme StorePreview \
-            -destination "id=$UDID" -derivedDataPath build \
-            -only-testing:StorePreviewUITests/StorePreviewUITests/testPreview 2>&1 | tee raw-video/test.log | grep -E "PREVIEW_MARK|error|failed|passed|Test Case" || true
-          sleep 1
-          kill -INT "$REC" || true
-          wait "$REC" || true
-          ls -la raw-video
-          grep -q "PREVIEW_MARK END" raw-video/test.log || { echo "::error::시험이 끝까지 가지 못했다 (test.log 를 본다)"; exit 1; }
+            -destination "id=$UDID" -derivedDataPath build -resultBundlePath raw-video/Preview.xcresult \
+            -only-testing:StorePreviewUITests/StorePreviewUITests/testPreview 2>&1 | tee raw-video/test.log | grep -E "error|failed|passed|Test Case" || true
+          grep -q "testPreview\]' passed" raw-video/test.log || { echo "::error::시험이 끝까지 가지 못했다 (test.log 를 본다)"; exit 1; }
+          xcrun xcresulttool export attachments --path raw-video/Preview.xcresult --output-path raw-video/shots
+          ls raw-video/shots | head -5; echo "그림 $(ls raw-video/shots/*.png 2>/dev/null | wc -l)장"
 
-      - name: 잘라서 규격으로 (멈춘 시간 줄이기 · 886 × 1920 · 30fps · 빈 소리 칸)
+      - name: 이어 붙여 규격으로 (886 × 1920 · 30fps · 빈 소리 칸)
         run: |
           set -euo pipefail
           FF=$(cat /tmp/ffmpeg-path)
-          # 시험은 97초 · 170초가 됐다 (두 · 네 번째 녹화) — 멈춤은 그 길이로, 글자 구간은 빨리 감고, 나머지 기다림은 줄인다
-          .ci-venv/bin/python Tools/store/preview/cut.py "$FF" raw-video/raw.mov raw-video/test.log raw-video/record-start \
-            docs/store/preview/slow-margin-preview-en.mp4
+          .ci-venv/bin/python Tools/store/preview/stitch.py "$FF" raw-video/shots docs/store/preview/slow-margin-preview-en.mp4
 
       - name: 결과 보관
         if: always()
