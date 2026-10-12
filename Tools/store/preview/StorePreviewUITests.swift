@@ -43,6 +43,7 @@ final class StorePreviewUITests: XCTestCase {
         pause(0.8)
         shot(0.8, fade: true)
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "New Note".count))
+        settle(editor, endingWith: "#")
         shot(0.3)
         type(editor, [("To", 0.25), ("day", 0.6)])
         type(editor, [("\nWrite ", 0.3), ("in ", 0.25), ("plain ", 0.25), ("text. ", 0.35)])
@@ -82,6 +83,7 @@ final class StorePreviewUITests: XCTestCase {
     private func type(_ element: XCUIElement, _ pieces: [(String, Double)]) {
         for (piece, seconds) in pieces {
             element.typeText(piece)
+            settle(element, endingWith: piece)
             shot(seconds)
         }
     }
@@ -96,6 +98,20 @@ final class StorePreviewUITests: XCTestCase {
         attachment.name = String(format: "PV_%03d_%04d_%@", count, Int((seconds * 100).rounded()), fade ? "fade" : "cut")
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    /// 친 글자가 앱에 다 들어갈 때까지 — 러너가 느린 날 `later` 를 치고 찍었더니 `Read it l` 이 2초 동안 보였다 (열네 번째).
+    /// 못 맞춰도 5초 뒤에는 넘어간다 (찍힌 화면이 무엇이 보였는지 말해 준다).
+    private func settle(_ element: XCUIElement, endingWith piece: String) {
+        let want = piece.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !want.isEmpty else { return }
+        let end = Date().addingTimeInterval(5)
+        while Date() < end {
+            let text = (element.value as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if text.hasSuffix(want) { break }
+            pause(0.2)
+        }
+        pause(0.3)
     }
 
     private func back(_ app: XCUIApplication) {
