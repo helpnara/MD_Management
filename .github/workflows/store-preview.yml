@@ -136,10 +136,19 @@ jobs:
           set -uo pipefail
           UDID="${{ steps.sim.outputs.phone }}"
           mkdir -p raw-video
-          xcrun simctl io "$UDID" recordVideo --codec=h264 --force raw-video/raw.mov &
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force raw-video/raw.mov > raw-video/rec.log 2>&1 &
           REC=$!
-          sleep 3
-          python3 -c "import time; print('%.3f' % time.time())" > raw-video/record-start
+          # 영상의 0초 = *Recording started* 가 찍힌 때 (명령을 낸 때보다 1.8초 늦었다 — 네 번째 녹화). 그 순간을 잰다.
+          python3 -c "
+          import pathlib, sys, time
+          log = pathlib.Path('raw-video/rec.log'); end = time.time() + 30
+          while time.time() < end:
+              if 'Recording started' in log.read_text(errors='replace'):
+                  print('%.3f' % time.time()); sys.exit(0)
+              time.sleep(0.05)
+          sys.exit('녹화가 시작되지 않았다')
+          " > raw-video/record-start || { cat raw-video/rec.log; echo "::error::녹화가 시작되지 않았다"; exit 1; }
+          sleep 1
           xcodebuild test-without-building -project Notebook.xcodeproj -scheme StorePreview \
             -destination "id=$UDID" -derivedDataPath build \
             -only-testing:StorePreviewUITests/StorePreviewUITests/testPreview 2>&1 | tee raw-video/test.log | grep -E "PREVIEW_MARK|error|failed|passed|Test Case" || true
@@ -153,7 +162,7 @@ jobs:
         run: |
           set -euo pipefail
           FF=$(cat /tmp/ffmpeg-path)
-          # 시험은 동작마다 멈춰 있어 97초가 됐다 (두 번째 녹화) — 표시한 멈춤만 그 길이로, 나머지 기다림은 줄인다
+          # 시험은 97초 · 170초가 됐다 (두 · 네 번째 녹화) — 멈춤은 그 길이로, 글자 구간은 빨리 감고, 나머지 기다림은 줄인다
           .ci-venv/bin/python Tools/store/preview/cut.py "$FF" raw-video/raw.mov raw-video/test.log raw-video/record-start \
             docs/store/preview/slow-margin-preview-en.mp4
 

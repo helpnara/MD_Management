@@ -27,7 +27,7 @@ final class StorePreviewUITests: XCTestCase {
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.04)).tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "키보드가 안 올라왔다")
         pause(0.6)
-        editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "New Note".count))
+        typing { editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "New Note".count)) }
         pause(0.3)
         type(editor, ["To", "day"])
         hold(0.5)
@@ -61,10 +61,20 @@ final class StorePreviewUITests: XCTestCase {
 
     /// 낱말 조각마다 조금 쉬어 사람이 치는 것처럼.
     private func type(_ element: XCUIElement, _ pieces: [String]) {
-        for piece in pieces {
-            element.typeText(piece)
-            pause(0.18)
+        typing {
+            for piece in pieces {
+                element.typeText(piece)
+                pause(0.18)
+            }
         }
+    }
+
+    /// **글자 치는 구간** — 자르는 단계가 이 구간을 남는 시간에 맞춰 빨리 감는다. 러너에서는 한 글자에 수백 ms 가 걸려
+    /// (네 번째 녹화 — 시험 170초, 장면 2071개) 원래 빠르기로는 30초에 못 들어갔다.
+    private func typing(_ body: () -> Void) {
+        let start = Date().timeIntervalSince1970
+        body()
+        print(String(format: "PREVIEW_TYPE %.3f %.3f", start, Date().timeIntervalSince1970))
     }
 
     private func pause(_ seconds: Double) {
