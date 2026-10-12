@@ -5,9 +5,9 @@
 수백 ms 가 걸려 그대로 두면 97초 · 170초가 됐다 (두 · 네 번째 녹화). 그래서 녹화의 시간을 **구간마다 다르게** 다시 편다:
 
 - `PREVIEW_HOLD <시각> <초>` 부터 그 초 동안 — **그 길이 그대로** (링크 모음 · 여행 노트를 보여 주는 멈춤).
-- `PREVIEW_TYPE <시작> <끝>` — 글자 치는 구간. 남는 시간에 맞춰 **같은 비율로 빨리 감는다** (느려지게는 안 한다).
-- 나머지 — 기계가 기다린 시간이라 장면마다 **CAP 초까지만** (넘기는 움직임은 원래 빠르기 그대로).
-- 글자 구간에 줄 시간이 TYPE_MIN 보다 적으면 CAP 을 줄이고, 그래도 모자라면 멈춤들을 같은 비율로 줄인다.
+- `PREVIEW_TYPE <시작> <끝>` — 글자 치는 구간. 남는 시간에 맞춰 **같은 비율로 빨리 감는다** (적어도 TYPE_MIN 초 · 느려지게는 안 한다).
+- 나머지 — 기계가 기다린 시간. 장면마다 **CAP 초까지** 자르고, 그래도 남는 몫보다 길면 **같은 비율로 빨리 감는다**.
+- 나머지를 REST_MIN 배보다 빨리 감아야 하면 멈춤들을 같은 비율로 줄인다 (0.7배까지).
 
 장면 하나가 여러 구간에 걸치면 구간마다 따로 펴서 더한다.
 
@@ -23,6 +23,7 @@ from pathlib import Path
 LIMIT = 29.5        # 애플 한도 30초 — 끝의 반올림 몫
 CAP = 0.35          # 기계 기다림을 줄이는 한도 (초 · 장면마다)
 TYPE_MIN = 6.0      # 글자 구간 전체에 적어도 이만큼 (초) — 더 빠르면 무엇을 쳤는지 못 읽는다
+REST_MIN = 0.3      # 나머지를 이보다 빨리 감아야 하면 멈춤들을 줄인다 (0.7배까지)
 
 
 def main() -> int:
@@ -71,25 +72,25 @@ def main() -> int:
     rest_s = [max(0.0, (b - a) - h - t) for (a, b), h, t in zip(spans, hold_s, type_s)]
     typed = sum(type_s)
 
-    def plan(cap: float, hold_scale: float) -> tuple[list[float], float]:
-        fixed = sum(h * hold_scale + min(r, cap) for h, r in zip(hold_s, rest_s))
-        speed = min(1.0, (LIMIT - fixed) / typed) if typed else 1.0
-        durs = [h * hold_scale + t * speed + min(r, cap) for h, t, r in zip(hold_s, type_s, rest_s)]
-        return durs, speed
-
-    cap, scale = CAP, 1.0
-    durs, speed = plan(cap, scale)
-    while typed and speed * typed < TYPE_MIN and cap > 0.08:
-        cap -= 0.03
-        durs, speed = plan(cap, scale)
-    while typed and speed * typed < TYPE_MIN and scale > 0.6:
-        scale -= 0.05
-        durs, speed = plan(cap, scale)
-    durs = [max(0.001, d) for d in durs]
-    print(f"멈춤 {sum(hold_s):.1f}초 → {sum(hold_s) * scale:.1f}초 · 글자 {typed:.1f}초 → {typed * speed:.1f}초 ({1 / speed if speed else 0:.1f}배 빠르게) · "
-          f"나머지 {sum(rest_s):.1f}초 → {sum(min(r, cap) for r in rest_s):.1f}초 (한도 {cap:.2f})")
+    # 몫을 나눈다 — 러너 빠르기가 매번 세 배씩 달라(시험 63초 · 180초, 다섯 · 여섯 번째 녹화) 한도 하나를 줄여 가는 것으로는 못 맞췄다.
+    capped = [min(r, CAP) for r in rest_s]
+    rest0 = sum(capped)
+    for scale in (1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7):
+        held = sum(hold_s) * scale
+        typed_out = min(typed, max(TYPE_MIN, LIMIT - held - rest0))
+        rest_out = LIMIT - held - typed_out
+        rest_speed = min(1.0, rest_out / rest0) if rest0 else 1.0
+        if rest_speed >= REST_MIN:
+            break
+    if rest_out <= 0.5:
+        print("::error::30초 안에 못 넣었다 — 멈춤 · 글자만으로 다 찼다")
+        return 1
+    type_speed = typed_out / typed if typed else 1.0
+    durs = [max(0.001, h * scale + t * type_speed + c * rest_speed) for h, t, c in zip(hold_s, type_s, capped)]
+    print(f"멈춤 {sum(hold_s):.1f}초 → {held:.1f}초 · 글자 {typed:.1f}초 → {typed_out:.1f}초 · "
+          f"나머지 {sum(rest_s):.1f}초 → (장면마다 {CAP}초까지) {rest0:.1f}초 → {rest0 * rest_speed:.1f}초")
     print(f"길이 {sum(durs):.2f}초")
-    if sum(durs) > 30 or speed <= 0:
+    if sum(durs) > 30:
         print("::error::30초 안에 못 넣었다")
         return 1
 
