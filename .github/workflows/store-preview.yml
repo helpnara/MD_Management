@@ -1,0 +1,197 @@
+name: 영어 앱 미리보기 영상
+
+# 2026-10-12 사용자 — *내가 직접 촬영하지 않고도 영어 버전 영상을 만들 수 있다면 만들어줘.*
+# 시뮬레이터 화면을 녹화하는 동안 UI 시험(`Tools/store/preview/StorePreviewUITests.swift`)이 손가락 대신 앱을 조작한다.
+# 시험 대상은 **이 흐름 안에서만** `project.yml` 사본에 붙인다 (`add-target.py`) — 앱 빌드 · 테스트플라이트는 그대로.
+# 결과: `docs/store/preview/slow-margin-preview-en.mp4` — 886 × 1920 · 30fps · H.264 · 빈 소리 칸 (아이폰 6.1" 칸의 앱 미리보기).
+# 돌리는 법: `Tools/store/preview-request.txt` 에 한 줄을 더해 푸시한다.
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - "Tools/store/preview-request.txt"
+      - ".github/workflows/store-preview.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: store-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: 영어 미리보기 영상
+    runs-on: macos-26
+    permissions:
+      contents: write
+    env:
+      BUNDLE_ID: com.helpnara.markdown
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Xcode 26 이상 선택
+        run: |
+          set -uo pipefail
+          xcver() {
+            [ -f "$1/Contents/version.plist" ] || return 1
+            /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$1/Contents/version.plist" 2>/dev/null
+          }
+          CUR_APP=$(xcode-select -p 2>/dev/null || true); CUR_APP=${CUR_APP%/Contents/Developer}
+          CUR_V=$(xcver "$CUR_APP" || true)
+          echo "현재 선택: ${CUR_APP:-(없음)} ${CUR_V:-(?)}"
+          NEED=1
+          case "${CUR_V%%.*}" in ''|*[!0-9]*) ;; *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;; esac
+          if [ "$NEED" -eq 1 ]; then
+            BEST=""; BEST_K=0
+            for app in /Applications/Xcode*.app; do
+              v=$(xcver "$app" || true); [ -n "$v" ] || continue
+              k=$(echo "$v" | awk -F. '{printf "%d", ($1*10000)+($2*100)+$3}')
+              if [ "$k" -gt "$BEST_K" ]; then BEST_K=$k; BEST="$app"; fi
+            done
+            [ -n "$BEST" ] && sudo xcode-select -s "$BEST/Contents/Developer"
+          fi
+          xcodebuild -version
+
+      - name: XcodeGen 설치 · 시험 대상 붙이기 · 프로젝트 생성
+        run: |
+          brew install xcodegen
+          python3 Tools/store/preview/add-target.py
+          xcodegen generate
+
+      - name: 시뮬레이터 고르기 (iPhone 17 Pro — 1206 × 2622)
+        id: sim
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, re, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))["devices"]
+          found = []
+          for runtime, devices in data.items():
+              m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              if not m:
+                  continue
+              for d in devices:
+                  if d.get("isAvailable") and d["name"] in ("iPhone 17 Pro", "iPhone 17", "iPhone 16 Pro"):
+                      order = ["iPhone 17 Pro", "iPhone 17", "iPhone 16 Pro"].index(d["name"])
+                      found.append(((int(m.group(1)), int(m.group(2))), -order, d["udid"], d["name"]))
+          best = max(found) if found else None
+          print(f"phone={best[2] if best else ''}")
+          print(f"phone_name={best[3] if best else ''}")
+          PY
+          cat "$GITHUB_OUTPUT"
+
+      - name: 빌드 (시험까지)
+        run: |
+          set -o pipefail
+          if ! xcodebuild build-for-testing -project Notebook.xcodeproj -scheme StorePreview -configuration Debug \
+            -destination "id=${{ steps.sim.outputs.phone }}" -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee /tmp/build.log; then
+            grep -E "error:|error " /tmp/build.log | head -40 || true
+            exit 1
+          fi
+
+      - name: 영상 도구 준비 (ffmpeg)
+        run: |
+          python3 -m venv .ci-venv
+          .ci-venv/bin/pip install --quiet --disable-pip-version-check imageio-ffmpeg pillow
+          .ci-venv/bin/python -c "import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())" > /tmp/ffmpeg-path
+          cat /tmp/ffmpeg-path
+
+      - name: 시뮬레이터 준비 (영어 · 견본 · 9:41)
+        run: |
+          set -uo pipefail
+          UDID="${{ steps.sim.outputs.phone }}"
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' ! -name '*Runner*' | head -1)
+          echo "앱: $APP"
+          # 화면 키보드를 띄운다 (맥 키보드에 붙어 있으면 안 뜬다)
+          defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false || true
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl spawn "$UDID" defaults write -g AppleLanguages -array en
+          xcrun simctl spawn "$UDID" defaults write -g AppleLocale en_US
+          xcrun simctl shutdown "$UDID" || true
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --dataNetwork wifi --wifiMode active \
+            --wifiBars 3 --batteryState charged --batteryLevel 100
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl launch "$UDID" "$BUNDLE_ID" -AppleLanguages "(en)" -storeFolder >/dev/null 2>&1 || true
+          sleep 6
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+          DOCS="$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)/Documents"
+          rm -rf "$DOCS"; mkdir -p "$DOCS/.여백"
+          cp -R docs/samples/en/. "$DOCS/"
+          printf '["Weekly Plan.md","Watch Later.md"]' > "$DOCS/.여백/고정.json"
+          stamp=202610010900
+          for name in "Groceries.md" "Reading Log.md" "Meeting Notes.md" "Lisbon Trip.md" "Watch Later.md" "Weekly Plan.md"; do
+            touch -t "$stamp" "$DOCS/$name"; stamp=$((stamp + 10000))
+          done
+          # 이미 있는 노트는 읽기 모드로 연다 (링크 모음 · 여행 노트가 읽는 모습으로 보이게)
+          xcrun simctl spawn "$UDID" defaults write "$BUNDLE_ID" mode.reading -bool YES
+          ls -la "$DOCS"
+
+      - name: 녹화하며 시험 돌리기
+        run: |
+          set -uo pipefail
+          UDID="${{ steps.sim.outputs.phone }}"
+          mkdir -p raw-video
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force raw-video/raw.mov &
+          REC=$!
+          sleep 3
+          python3 -c "import time; print('%.3f' % time.time())" > raw-video/record-start
+          xcodebuild test-without-building -project Notebook.xcodeproj -scheme StorePreview \
+            -destination "id=$UDID" -derivedDataPath build \
+            -only-testing:StorePreviewUITests/StorePreviewUITests/testPreview 2>&1 | tee raw-video/test.log | grep -E "PREVIEW_MARK|error|failed|passed|Test Case" || true
+          sleep 1
+          kill -INT "$REC" || true
+          wait "$REC" || true
+          ls -la raw-video
+          grep -q "PREVIEW_MARK END" raw-video/test.log || { echo "::error::시험이 끝까지 가지 못했다 (test.log 를 본다)"; exit 1; }
+
+      - name: 잘라서 규격으로 (886 × 1920 · 30fps · 빈 소리 칸)
+        run: |
+          set -euo pipefail
+          FF=$(cat /tmp/ffmpeg-path)
+          REC_START=$(cat raw-video/record-start)
+          START=$(grep -o "PREVIEW_MARK START [0-9.]*" raw-video/test.log | awk '{print $3}' | head -1)
+          END=$(grep -o "PREVIEW_MARK END [0-9.]*" raw-video/test.log | awk '{print $3}' | head -1)
+          # 녹화가 시작 표시보다 3초 먼저 켜졌다 — 녹화 안의 자리 = 표시 시각 - 녹화 시각 + 3
+          SS=$(python3 -c "print(max(0, $START - $REC_START + 3))")
+          TT=$(python3 -c "print(min(30.0, $END - $START))")
+          echo "자르기: $SS 초부터 $TT 초 (시험 $(python3 -c "print(round($END - $START, 2))") 초)"
+          "$FF" -hide_banner -i raw-video/raw.mov 2>&1 | grep -E "Duration|Stream" || true
+          mkdir -p docs/store/preview
+          "$FF" -hide_banner -loglevel error -y -ss "$SS" -t "$TT" -i raw-video/raw.mov \
+            -f lavfi -t 40 -i anullsrc=channel_layout=stereo:sample_rate=44100 \
+            -filter_complex "[0:v]scale=886:-2:flags=lanczos,crop=886:1920:0:(ih-1920)/2,fps=30,format=yuv420p,setsar=1[v]" \
+            -map "[v]" -map 1:a -shortest -r 30 -fps_mode cfr -c:v libx264 -profile:v high -level 4.0 -preset slow -crf 16 \
+            -maxrate 10M -bufsize 20M -c:a aac -b:a 128k -movflags +faststart docs/store/preview/slow-margin-preview-en.mp4
+          "$FF" -hide_banner -i docs/store/preview/slow-margin-preview-en.mp4 2>&1 | grep -E "Duration|Stream"
+          # 1초마다 한 장 — 세션이 열어 본다
+          mkdir -p raw-video/frames
+          "$FF" -hide_banner -loglevel error -i docs/store/preview/slow-margin-preview-en.mp4 -vf "fps=1,scale=300:-1" raw-video/frames/%02d.png
+
+      - name: 결과 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-preview-en
+          path: |
+            docs/store/preview/slow-margin-preview-en.mp4
+            raw-video
+
+      - name: 브랜치에 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/store/preview/slow-margin-preview-en.mp4
+          if git diff --cached --quiet; then echo "변화 없음"; exit 0; fi
+          git commit -m "chore: 영어 앱 미리보기 영상 (store-preview.yml) [skip ci]"
+          git reset -q --hard HEAD; git clean -qfd
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then exit 0; fi
+            git fetch origin ${{ github.ref_name }}
+            git rebase origin/${{ github.ref_name }} || { git rebase --abort || true; sleep $((attempt * 5)); continue; }
+          done
+          exit 1
