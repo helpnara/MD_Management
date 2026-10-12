@@ -4797,6 +4797,44 @@
         "plain": null
       },
       {
+        "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 3.0px 0.0px; font: 26.0px '.AppleSystemUIFont'}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 16.0px '.AppleSystemUIFont'; min-height: 21.0px}\np.p3 {margin: 9.0px 0.0px 8.0px 0.0px; font: 16.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 16.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: 'UICTFontTextStyleBody'; font-weight: bold; font-style: normal; font-size: 26.00px}\nspan.s2 {font-family: 'UICTFontTextStyleBody'; font-weight: normal; font-style: normal; font-size: 16.00px}\n</style>\n</head>\n<body>\n<p class=\"p1\"><span class=\"s1\">테스트</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p3\"><span class=\"s2\"><object data=\"file:///app-preview-886x1920.mp4\">app-preview-886x1920.mp4</object></span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p4\"><span class=\"s2\">테스트</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p3\"><span class=\"s2\"><img src=\"file:///IMG_6846.png\" alt=\"IMG_6846.png\"></span></p>\n</body>\n</html>\n",
+        "images": [
+          {
+            "alt": "",
+            "src": "file:///app-preview-886x1920.mp4"
+          },
+          {
+            "alt": "IMG_6846.png",
+            "src": "file:///IMG_6846.png"
+          }
+        ],
+        "keeps": true,
+        "markdown": "# 테스트\n\n￼\n\n테스트\n\n￼",
+        "name": "메모 — 동영상은 <object>, 사진은 <img> (243 · 2026-10-12 사용자 진단 · 시험 메모)",
+        "plain": "테스트\n\n\n\n테스트\n\n\n\n"
+      },
+      {
+        "html": "<p>앞 글<video controls><source src=\"file:///clip.mov\">이 브라우저는 동영상을 못 보여 줍니다</video>가운데<audio src=\"file:///voice.m4a\">녹음</audio><embed src=\"file:///doc.pdf\">끝</p>",
+        "images": [
+          {
+            "alt": "",
+            "src": "file:///clip.mov"
+          },
+          {
+            "alt": "",
+            "src": "file:///voice.m4a"
+          },
+          {
+            "alt": "",
+            "src": "file:///doc.pdf"
+          }
+        ],
+        "keeps": null,
+        "markdown": "앞 글￼가운데￼￼끝",
+        "name": "<video> · <audio> · <embed> 도 자리 하나 · 안의 대체 글은 안 붙인다",
+        "plain": null
+      },
+      {
         "html": "<table><tr><th>이름</th><th>값</th></tr><tr><td>가</td><td>1</td></tr></table>",
         "images": [],
         "keeps": null,
@@ -7688,6 +7726,156 @@
         "fileName": "각.pdf",
         "name": "NFD 이름은 NFC 로",
         "result": "각.pdf"
+      }
+    ],
+    "matches": [
+      {
+        "name": "메모 진단 그대로 — 자리는 동영상 · 사진, 첨부도 그 차례",
+        "names": [
+          "app-preview-886x1920.mp4",
+          "IMG_6846.png"
+        ],
+        "result": [
+          0,
+          1
+        ],
+        "slots": [
+          "file:///app-preview-886x1920.mp4",
+          "file:///IMG_6846.png"
+        ]
+      },
+      {
+        "name": "차례가 달라도 이름으로",
+        "names": [
+          "voice.m4a",
+          "IMG_6846.png"
+        ],
+        "result": [
+          1,
+          0
+        ],
+        "slots": [
+          "file:///IMG_6846.png",
+          "file:///voice.m4a"
+        ]
+      },
+      {
+        "name": "예전 결함 — 자리 하나(사진) · 첨부 둘(동영상 · 사진)",
+        "names": [
+          "app-preview-886x1920.mp4",
+          "IMG_6846.png"
+        ],
+        "result": [
+          1
+        ],
+        "slots": [
+          "file:///IMG_6846.png"
+        ]
+      },
+      {
+        "name": "이름이 없으면 차례로",
+        "names": [
+          null,
+          null
+        ],
+        "result": [
+          0,
+          1
+        ],
+        "slots": [
+          "",
+          ""
+        ]
+      },
+      {
+        "name": "이름으로 맞춘 것은 건너뛰고 남은 차례로",
+        "names": [
+          "a.png",
+          "b.png",
+          "c.png"
+        ],
+        "result": [
+          0,
+          1,
+          2
+        ],
+        "slots": [
+          "",
+          "file:///b.png",
+          ""
+        ]
+      },
+      {
+        "name": "웹 · data 주소 자리는 첨부를 안 쓴다",
+        "names": [
+          "b.png"
+        ],
+        "result": [
+          null,
+          0,
+          null
+        ],
+        "slots": [
+          null,
+          "file:///b.png",
+          null
+        ]
+      },
+      {
+        "name": "첨부가 모자라면 빈 자리",
+        "names": [
+          "a.png"
+        ],
+        "result": [
+          0,
+          null,
+          null
+        ],
+        "slots": [
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "name": "퍼센트 부호 · NFD · 대소문자",
+        "names": [
+          "x.png",
+          "녹음.m4a"
+        ],
+        "result": [
+          1
+        ],
+        "slots": [
+          "file:///%E1%84%82%E1%85%A9%E1%86%A8%E1%84%8B%E1%85%B3%E1%86%B7.M4A"
+        ]
+      },
+      {
+        "name": "같은 이름 둘 — 하나씩",
+        "names": [
+          "a.png",
+          "a.png"
+        ],
+        "result": [
+          0,
+          1
+        ],
+        "slots": [
+          "file:///a.png",
+          "file:///a.png"
+        ]
+      },
+      {
+        "name": "자리 이름이 첨부에 없으면 남은 차례로",
+        "names": [
+          "a.png"
+        ],
+        "result": [
+          0
+        ],
+        "slots": [
+          "file:///zzz.png"
+        ]
       }
     ]
   },

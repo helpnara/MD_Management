@@ -65,6 +65,40 @@ public enum PastedFile {
         return nameExtension(name) != nil ? name : name + "." + ext
     }
 
+    /// **첨부 자리마다 쓸 첨부의 차례** (243, 2026-10-12 사용자 진단 — 메모는 동영상을 `<object data="file:///이름">`, 사진을
+    /// `<img src="file:///이름">` 로 싣고, 첨부(RTFD)도 따로 실었다. 예전에는 차례로만 짝지어 첫 첨부(동영상)가 사진 자리에 들어갔다).
+    ///
+    /// `slots` 는 자리의 주소 — `nil` 이면 첨부를 안 쓰는 자리(웹 · `data:` 주소). `names` 는 첨부가 실어 온 이름.
+    /// ① **이름으로 먼저** — 자리 주소의 파일 이름과 첨부 이름이 같으면(퍼센트 부호 · NFC · 대소문자 무시). ② 남은 자리는 안 쓴 첨부를
+    /// 차례대로. 모자라면 `nil`. 파이썬 쌍둥이: `pasted_file_matches`.
+    public static func matches(slots: [String?], names: [String?]) -> [Int?] {
+        var out = [Int?](repeating: nil, count: slots.count)
+        var used = Set<Int>()
+        let keys = names.map(fileKey)
+        for (i, slot) in slots.enumerated() {
+            guard let slot, let want = fileKey(slot) else { continue }
+            if let k = keys.indices.first(where: { !used.contains($0) && keys[$0] == want }) {
+                out[i] = k
+                used.insert(k)
+            }
+        }
+        for (i, slot) in slots.enumerated() where slot != nil && out[i] == nil {
+            if let k = names.indices.first(where: { !used.contains($0) }) {
+                out[i] = k
+                used.insert(k)
+            }
+        }
+        return out
+    }
+
+    /// 주소 · 이름의 **파일 이름 열쇠** — 마지막 `/` 뒤, 퍼센트 부호 풀기, NFC, 소문자. 비면 `nil`.
+    static func fileKey(_ text: String?) -> String? {
+        guard let text, !text.isEmpty else { return nil }
+        let last = text.split(separator: "/", omittingEmptySubsequences: false).last.map(String.init) ?? text
+        let name = (last.removingPercentEncoding ?? last).precomposedStringWithCanonicalMapping.lowercased()
+        return name.isEmpty ? nil : name
+    }
+
     /// 이름의 확장자 — 영어 · 숫자 1~8 자일 때만 (소문자). 아니면 `nil`.
     static func nameExtension(_ fileName: String?) -> String? {
         guard let fileName, !fileName.isEmpty else { return nil }

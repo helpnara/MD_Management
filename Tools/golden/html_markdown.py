@@ -28,6 +28,10 @@ BLOCK = {"address", "article", "aside", "blockquote", "body", "center", "dd", "d
          "dl", "dt", "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5",
          "h6", "header", "hr", "html", "li", "main", "nav", "ol", "p", "pre", "section", "summary",
          "table", "tbody", "td", "tfoot", "th", "thead", "tr", "ul"}
+# **첨부 자리** (207 · 243) — 사진(`img`) 말고도 메모는 동영상 · 녹음을 `<object data="file:///이름">이름</object>` 로 싣는다
+# (2026-10-12 사용자 진단). 모두 U+FFFC 한 자로 자리만 남기고 **안의 대체 글은 읽지 않는다** — 예전에는 `<object>` 안의
+# 파일 이름이 보통 글로 붙고, 자리는 `<img>` 만 세어 첫 첨부(동영상)가 사진 자리에 들어갔다.
+MEDIA = {"img", "object", "embed", "video", "audio"}
 HEADINGS = {"h1": 1, "h2": 2, "h3": 3, "h4": 4, "h5": 5, "h6": 6}
 SPACE = {" ", "\t", "\n", "\r", "\f"}
 NBSP = " "
@@ -379,7 +383,7 @@ class Doc:
             return self._block_memo[key]
         found = False
         for ch in el.children:
-            if isinstance(ch, El) and ch.name not in SKIP and (ch.name in BLOCK or self.has_block(ch)):
+            if isinstance(ch, El) and ch.name not in SKIP and ch.name not in MEDIA and (ch.name in BLOCK or self.has_block(ch)):
                 found = True
                 break
         self._block_memo[key] = found
@@ -562,7 +566,7 @@ def inline_runs(doc: Doc, nodes: list, style: Style, state: RunState, out: list)
             out.append(Run("\n", None, br=True))
             state.last_space = True
             continue
-        if ch.name == "img":
+        if ch.name in MEDIA:
             out.append(Run(OBJECT, style))
             state.last_space = False
             continue
@@ -737,7 +741,7 @@ def text_content(doc: Doc, el: El) -> str:
         for ch in node.children:
             if isinstance(ch, str):
                 parts.append(ch)
-            elif ch.name not in SKIP:
+            elif ch.name not in SKIP and ch.name not in MEDIA:
                 walk(ch)
 
     walk(el)
@@ -850,7 +854,7 @@ def pre_block(doc: Doc, el: El) -> list:
                 parts.append(ch)
             elif ch.name == "br":
                 parts.append("\n")
-            elif ch.name == "img":
+            elif ch.name in MEDIA:
                 parts.append(OBJECT)
             elif ch.name not in SKIP:
                 walk(ch)
@@ -1076,8 +1080,22 @@ def convert(html: str):
     return out if out else None
 
 
+def media_src(el: El) -> str:
+    """첨부 요소가 가리키는 주소 — `img` · `embed` · `video` · `audio` 는 `src`, `object` 는 `data`,
+    `video` · `audio` 에 `src` 가 없으면 안의 첫 `<source src>`."""
+    if el.name == "object":
+        return _trim(el.attrs.get("data", ""))
+    src = _trim(el.attrs.get("src", ""))
+    if not src and el.name in ("video", "audio"):
+        for ch in el.children:
+            if isinstance(ch, El) and ch.name == "source":
+                return _trim(ch.attrs.get("src", ""))
+    return src
+
+
 def image_slots(html: str) -> list:
-    """사진 자리 — 문서 차례대로 `<img>` 와 글 속 U+FFFC. `convert` 의 U+FFFC 와 수 · 차례가 같다."""
+    """첨부 자리 — 문서 차례대로 첨부 요소(MEDIA)와 글 속 U+FFFC. `convert` 의 U+FFFC 와 수 · 차례가 같다.
+    첨부 요소 안은 들여다보지 않는다 (대체 글 · 안의 `<img>` 는 자리가 아니다 — convert 도 그렇다)."""
     root = build_tree(html)
     out = []
 
@@ -1086,8 +1104,9 @@ def image_slots(html: str) -> list:
             if isinstance(ch, str):
                 out.extend({"src": "", "alt": ""} for c in ch if c == OBJECT)
             elif ch.name not in SKIP:
-                if ch.name == "img":
-                    out.append({"src": _trim(ch.attrs.get("src", "")), "alt": _trim(ch.attrs.get("alt", ""))})
+                if ch.name in MEDIA:
+                    out.append({"src": media_src(ch), "alt": _trim(ch.attrs.get("alt", ""))})
+                    continue
                 walk(ch)
 
     walk(root)

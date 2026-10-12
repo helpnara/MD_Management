@@ -502,8 +502,14 @@ final class LibraryModel: ObservableObject {
     private func placeAttachments(_ markdown: String, slots: [HTMLMarkdown.ImageSlot],
                                   pasted: MarkdownTextView.PastedItem) -> (text: String, saved: Int) {
         guard !slots.isEmpty else { return (HTMLMarkdown.fillImages(markdown, links: []), 0) }
-        var attachments: [MarkdownTextView.Attachment]?
-        var nextAttachment = 0
+        // 첨부를 쓰는 자리(웹 · `data:` 주소가 아닌 자리)와 짝 — **이름으로 먼저, 남은 것은 차례로** (243 · `PastedFile.matches`).
+        // 메모는 동영상을 `<object>`, 사진을 `<img>` 로 싣는다 — 차례로만 짝지었더니 첫 첨부(동영상)가 사진 자리에 들어갔다.
+        let wanted: [String?] = slots.map { slot in
+            let lowered = slot.src.lowercased()
+            return lowered.hasPrefix("http://") || lowered.hasPrefix("https://") || lowered.hasPrefix("data:") ? nil : slot.src
+        }
+        let attachments: [MarkdownTextView.Attachment] = wanted.contains { $0 != nil } ? pasted.loadAttachments() : []
+        let pairing = PastedFile.matches(slots: wanted, names: attachments.map(\.name))
         let folder = noteFolderForLink
         let assets = folder.isEmpty ? "assets" : folder + "/assets"
         var taken = Set(vaultPaths.map { $0.lowercased() })
@@ -525,7 +531,7 @@ final class LibraryModel: ObservableObject {
         }
         func relative(_ path: String) -> String { String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1)) }
         func size(_ data: Data) -> String { ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file) }
-        for slot in slots {
+        for (index, slot) in slots.enumerated() {
             let lowered = slot.src.lowercased()
             if lowered.hasPrefix("http://") || lowered.hasPrefix("https://") {
                 links.append(ImageImport.markdownImage(path: slot.src))
@@ -534,15 +540,11 @@ final class LibraryModel: ObservableObject {
             }
             var data: Data?
             var name: String?
-            if lowered.hasPrefix("data:image/") {
-                data = Self.dataURIContents(slot.src)
-            } else {
-                if attachments == nil { attachments = pasted.loadAttachments() }
-                if let all = attachments, nextAttachment < all.count {
-                    data = all[nextAttachment].data
-                    name = all[nextAttachment].name
-                }
-                nextAttachment += 1
+            if lowered.hasPrefix("data:") {
+                data = lowered.hasPrefix("data:image/") ? Self.dataURIContents(slot.src) : nil
+            } else if let k = pairing[index] {
+                data = attachments[k].data
+                name = attachments[k].name
             }
             guard let data else {
                 links.append(nil)
@@ -567,8 +569,9 @@ final class LibraryModel: ObservableObject {
                 pastedAttachmentNotes.append("모르는 첨부 · 넣지 않음" + (name.map { " · " + $0 } ?? "") + " · \(size(data))")
             }
         }
-        if attachments != nil, let all = attachments, all.count != nextAttachment {
-            pastedAttachmentNotes.append("자리 \(nextAttachment)개 · 첨부 \(all.count)개 — 수가 다르다")
+        let using = wanted.compactMap { $0 }.count
+        if !attachments.isEmpty, attachments.count != using {
+            pastedAttachmentNotes.append("자리 \(using)개 · 첨부 \(attachments.count)개 — 수가 다르다")
         }
         if !writes.isEmpty { writePastedFiles(writes) }
         return (HTMLMarkdown.fillImages(markdown, links: links), writes.count)

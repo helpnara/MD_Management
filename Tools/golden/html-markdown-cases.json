@@ -221,6 +221,17 @@
     "pre": 1,
     "p": 2
    }
+  },
+  {
+   "name": "메모 — 동영상은 <object>, 사진은 <img> (243 · 2026-10-12 사용자 진단 · 시험 메모)",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 3.0px 0.0px; font: 26.0px '.AppleSystemUIFont'}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 16.0px '.AppleSystemUIFont'; min-height: 21.0px}\np.p3 {margin: 9.0px 0.0px 8.0px 0.0px; font: 16.0px '.AppleSystemUIFont'}\np.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 16.0px '.AppleSystemUIFont'}\nspan.s1 {font-family: 'UICTFontTextStyleBody'; font-weight: bold; font-style: normal; font-size: 26.00px}\nspan.s2 {font-family: 'UICTFontTextStyleBody'; font-weight: normal; font-style: normal; font-size: 16.00px}\n</style>\n</head>\n<body>\n<p class=\"p1\"><span class=\"s1\">테스트</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p3\"><span class=\"s2\"><object data=\"file:///app-preview-886x1920.mp4\">app-preview-886x1920.mp4</object></span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p4\"><span class=\"s2\">테스트</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p3\"><span class=\"s2\"><img src=\"file:///IMG_6846.png\" alt=\"IMG_6846.png\"></span></p>\n</body>\n</html>\n",
+   "plain": "테스트\n\n\n\n테스트\n\n\n\n",
+   "images": 2
+  },
+  {
+   "name": "<video> · <audio> · <embed> 도 자리 하나 · 안의 대체 글은 안 붙인다",
+   "html": "<p>앞 글<video controls><source src=\"file:///clip.mov\">이 브라우저는 동영상을 못 보여 줍니다</video>가운데<audio src=\"file:///voice.m4a\">녹음</audio><embed src=\"file:///doc.pdf\">끝</p>",
+   "images": 3
   }
  ],
  "fill": [

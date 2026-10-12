@@ -17,9 +17,16 @@ final class PastedFileGoldenTests: XCTestCase {
             let ext: String
             let result: String
         }
+        struct Match: Decodable {
+            let name: String
+            let slots: [String?]
+            let names: [String?]
+            let result: [Int?]
+        }
         struct Cases: Decodable {
             let kinds: [Kind]
             let labels: [Label]
+            let matches: [Match]
         }
         let pastedFileCases: Cases
     }
@@ -62,6 +69,14 @@ final class PastedFileGoldenTests: XCTestCase {
         XCTAssertFalse(cases.isEmpty, "정답표가 비었다")
         for item in cases {
             XCTAssertEqual(PastedFile.label(fileName: item.fileName, ext: item.ext, fallback: "첨부"), item.result, "[\(item.name)]")
+        }
+    }
+
+    func testMatchesMatchGolden() throws {
+        let cases = try load().matches
+        XCTAssertFalse(cases.isEmpty, "정답표가 비었다")
+        for item in cases {
+            XCTAssertEqual(PastedFile.matches(slots: item.slots, names: item.names), item.result, "[\(item.name)]")
         }
     }
 }

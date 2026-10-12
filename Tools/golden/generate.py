@@ -2427,12 +2427,13 @@ def _source_letters(html: str) -> list:
             super().__init__(convert_charrefs=True)
             self.parts, self.skip = [], 0
         def handle_starttag(self, tag, attrs):
-            if tag in hm.SKIP and tag not in hm.VOID:
-                self.skip += 1
-            if tag == "img" and not self.skip:
+            # 첨부 요소(243 — img · object · embed · video · audio)는 자리 하나 · 안의 대체 글은 글이 아니다.
+            if tag in hm.MEDIA and not self.skip:
                 self.parts.append(hm.OBJECT)
+            if (tag in hm.SKIP or tag in hm.MEDIA) and tag not in hm.VOID:
+                self.skip += 1
         def handle_endtag(self, tag):
-            if tag in hm.SKIP and tag not in hm.VOID and self.skip:
+            if (tag in hm.SKIP or tag in hm.MEDIA) and tag not in hm.VOID and self.skip:
                 self.skip -= 1
         def handle_data(self, data):
             if not self.skip:
@@ -3061,6 +3062,41 @@ def pasted_file_label(file_name, ext: str, fallback: str = "첨부") -> str:
     return name if _name_ext(name) else name + "." + ext
 
 
+def _file_key(text):
+    """주소 · 이름의 **파일 이름 열쇠** — 마지막 `/` 뒤, 퍼센트 부호 풀기, NFC, 소문자. 비면 None."""
+    if not text:
+        return None
+    last = text.rsplit("/", 1)[-1]
+    name = unicodedata.normalize("NFC", urllib.parse.unquote(last)).lower()
+    return name or None
+
+
+def pasted_file_matches(slots, names):
+    """첨부 자리마다 쓸 첨부의 차례 (243). 자리가 None 이면(웹 · data 주소) 첨부를 안 쓴다.
+    ① 이름으로 먼저 — 자리 주소의 파일 이름과 첨부 이름이 같으면. ② 남은 자리는 안 쓴 첨부를 차례대로. 모자라면 None."""
+    out = [None] * len(slots)
+    used = set()
+    keys = [_file_key(n) for n in names]
+    for i, slot in enumerate(slots):
+        want = _file_key(slot) if slot is not None else None
+        if want is None:
+            continue
+        for k, key in enumerate(keys):
+            if k not in used and key == want:
+                out[i] = k
+                used.add(k)
+                break
+    for i, slot in enumerate(slots):
+        if slot is None or out[i] is not None:
+            continue
+        for k in range(len(names)):
+            if k not in used:
+                out[i] = k
+                used.add(k)
+                break
+    return out
+
+
 def build_pasted_file_cases() -> dict:
     spec = json.loads(PASTED_FILE_CASES.read_text(encoding="utf-8"))
     kinds, labels = [], []
@@ -3074,7 +3110,13 @@ def build_pasted_file_cases() -> dict:
         if got != case["expect"]:
             raise SystemExit(f"::error::[{case['name']}] 첨부 이름: 뜻 {case['expect']!r} · 셈 {got!r}")
         labels.append({"name": case["name"], "fileName": case.get("fileName"), "ext": case["ext"], "result": got})
-    return {"kinds": kinds, "labels": labels}
+    matches = []
+    for case in spec["matches"]:
+        got = pasted_file_matches(case["slots"], case["names"])
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 첨부 짝: 뜻 {case['expect']!r} · 셈 {got!r}")
+        matches.append({"name": case["name"], "slots": case["slots"], "names": case["names"], "result": got})
+    return {"kinds": kinds, "labels": labels, "matches": matches}
 
 
 # 242 — 목록 · 검색 결과에 보이는 한 줄 (Swift `PreviewLine.plain`). 셈은 `preview_line.py` (쌍둥이),
@@ -4054,7 +4096,7 @@ def tally(loaded: dict) -> str:
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
     files = loaded.get("pastedFileCases")
     if files:
-        counted.append(f"붙여넣은 첨부 {len(files['kinds'])}·{len(files['labels'])}건")
+        counted.append(f"붙여넣은 첨부 {len(files['kinds'])}·{len(files['labels'])}·{len(files['matches'])}건")
     # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.
     convert = loaded.get("pasteConvertCases")
     if convert:
