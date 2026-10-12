@@ -86,13 +86,14 @@ final class StorePreviewUITests: XCTestCase {
         }
     }
 
-    /// **이 화면을 영상에 이만큼** — 이름에 차례 · 길이 · 넘기는 법을 적어 남긴다 (`PV_<차례>_<초>_<cut|fade>`).
+    /// **이 화면을 영상에 이만큼** — 이름에 차례 · 길이 · 넘기는 법을 적어 남긴다 (`PV_<차례>_<100분의 1초>_<cut|fade>`).
     /// `stitch.py` 가 이름을 읽어 이어 붙인다. 화면이 다 그려지도록 조금 쉬고 찍는다.
     private func shot(_ seconds: Double, fade: Bool = false) {
         pause(0.4)
         count += 1
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        attachment.name = String(format: "PV_%03d_%.2f_%@", count, seconds, fade ? "fade" : "cut")
+        // 길이는 100분의 1초 정수로 — 결과 묶음이 이름의 점을 확장자로 읽어 `0.60` 이 쪼개졌다 (열한 번째).
+        attachment.name = String(format: "PV_%03d_%04d_%@", count, Int((seconds * 100).rounded()), fade ? "fade" : "cut")
         attachment.lifetime = .keepAlways
         add(attachment)
     }

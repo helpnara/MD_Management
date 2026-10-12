@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """**시험이 찍은 화면들을 30초 안의 앱 미리보기로** (`store-preview.yml`).
 
-`StorePreviewUITests.swift` 가 장면마다 화면을 찍어 `PV_<차례>_<초>_<cut|fade>` 이름으로 남긴다.
+`StorePreviewUITests.swift` 가 장면마다 화면을 찍어 `PV_<차례>_<100분의 1초>_<cut|fade>` 이름으로 남긴다.
 흐름이 결과 묶음(xcresult)에서 그림을 꺼내면(`xcresulttool export attachments` — `manifest.json` 과 그림들) 이 스크립트가:
 
 - 차례대로 늘어놓고, 이름에 적힌 초만큼 보여 준다.
@@ -21,7 +21,7 @@ from pathlib import Path
 LIMIT = 29.5        # 애플 한도 30초 — 끝의 반올림 몫
 FADE = 0.3          # 화면이 바뀌는 자리의 겹침 (초)
 WIDTH, HEIGHT = 886, 1920
-NAME = re.compile(r"PV_(\d+)_([0-9.]+)_(cut|fade)")
+NAME = re.compile(r"PV_(\d{3})_(\d{4})_(cut|fade)")   # 길이는 100분의 1초 — 이름의 점은 확장자로 읽혀 쪼개졌다 (열한 번째)
 
 
 def shots(folder: Path) -> list[tuple[int, float, bool, Path]]:
@@ -34,7 +34,7 @@ def shots(folder: Path) -> list[tuple[int, float, bool, Path]]:
             label = " ".join(str(node.get(k, "")) for k in ("suggestedHumanReadableName", "name"))
             m = NAME.search(label) or (NAME.search(file) if file else None)
             if file and m:
-                found[int(m.group(1))] = (int(m.group(1)), float(m.group(2)), m.group(3) == "fade", folder / file)
+                found[int(m.group(1))] = (int(m.group(1)), int(m.group(2)) / 100, m.group(3) == "fade", folder / file)
             for value in node.values():
                 walk(value)
         elif isinstance(node, list):
