@@ -43,6 +43,7 @@
 | . 되돌리기로 무를 수 있습니다. | . You can undo this. |
 | CP949 (예전 한글 윈도) | CP949 (legacy Korean Windows) |
 | [마크다운 갈래]↵ | [Markdown]↵ |
+| [첨부]↵ | [Attachments]↵ |
 | [평문]↵ | [Plain text]↵ |
 | `규모 시험` 폴더에 노트 300개(합쳐 약 20MB)를 만듭니다. **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `색인 크기` · `마지막 검색` 을 보면 S1 과 A5 를 한 번에 잴 수 있습니다. 지우기는 휴지통으로 갑니다. | Creates 300 notes (about 20 MB in total) in a folder named `규모 시험`. **iCloud will upload all of it**, which uses data and takes time. Afterwards, check List Load Time · Last Index Update · Index Size · Last Search Time above to measure S1 and A5 at once. Deleting moves it to the Trash. |
 | `규모 시험` 폴더에 약 20MB 를 만듭니다. iCloud 가 그만큼을 올립니다 — 데이터와 시간이 듭니다. 지울 때는 휴지통으로 갑니다. | Creates about 20 MB in a folder named `규모 시험`. iCloud will upload all of it, which uses data and takes time. Deleting moves it to the Trash. |
@@ -164,10 +165,11 @@
 | 복사 | Copy |
 | 복사했습니다 | Copied |
 | 붙여넣기가 이상하게 바뀌었을 때 이것을 복사해 보내 주세요. **붙여넣은 글이 그대로 담깁니다** — 앱을 끄면 사라집니다. | If a paste came out wrong, copy this and send it to us. **It contains the pasted text as is** — it's cleared when you quit the app. |
-| 붙여넣은 사진 %lld장을 저장하지 못했습니다. | one: Couldn't save %lld pasted photo. / other: Couldn't save %lld pasted photos. |
 | 붙여넣은 서식 복사 | Copy Pasted Formatting |
+| 붙여넣은 첨부 %lld개를 저장하지 못했습니다. | one: Couldn't save %lld pasted attachment. / other: Couldn't save %lld pasted attachments. |
 | 비우기 | Empty |
 | 사진 %lld장을 넣지 못했습니다 | one: Couldn't add %lld photo / other: Couldn't add %lld photos |
+| 사진 · 파일 %lld개를 노트 옆 assets 폴더에 넣었습니다 | one: Saved %lld photo or file to the assets folder next to the note / other: Saved %lld photos and files to the assets folder next to the note |
 | 사진을 저장하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 사진은 %@ 옆 assets 폴더에 있습니다. | You moved to another note while the photos were being saved, so they were not added to the text. The photos are in the assets folder next to %@. |
 | 사진첩에서 | Photo Library |
 | 살펴보기 | Review |
@@ -268,6 +270,7 @@
 | 찾는 파일이 없습니다 | No Matching Files |
 | 찾을 수 없는 첨부가 있습니다 | Some Attachments Are Missing |
 | 찾을 수 없습니다 | Not found |
+| 첨부 | Attachment |
 | 첨부 %lld개 · %@ | Attachments: %lld · %@ |
 | 첨부 %lld개를 옮기지 못했습니다. | one: Couldn't move %lld attachment. / other: Couldn't move %lld attachments. |
 | 첨부 %lld개를 휴지통으로 옮길까요? | one: Move %lld Attachment to Trash? / other: Move %lld Attachments to Trash? |
