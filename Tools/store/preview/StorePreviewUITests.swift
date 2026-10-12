@@ -21,7 +21,12 @@ final class StorePreviewUITests: XCTestCase {
         app.buttons["New Note"].firstMatch.tap()
         let editor = app.textViews.firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 10), "편집기가 안 떴다")
-        pause(1.0)
+        pause(0.8)
+        // 시뮬레이터에서는 새 노트의 편집기에 커서가 저절로 안 들어간다 (첫 녹화 — *Neither element nor any descendant has keyboard focus*).
+        // 제목 줄의 오른쪽 끝을 눌러 커서를 `# New Note` 끝에 둔다.
+        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.04)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "키보드가 안 올라왔다")
+        pause(0.6)
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "New Note".count))
         pause(0.3)
         type(editor, ["To", "day"])
