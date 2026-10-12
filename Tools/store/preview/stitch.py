@@ -21,6 +21,7 @@ from pathlib import Path
 LIMIT = 29.5        # 애플 한도 30초 — 끝의 반올림 몫
 FADE = 0.3          # 화면이 바뀌는 자리의 겹침 (초)
 WIDTH, HEIGHT = 886, 1920
+FPS = 30
 NAME = re.compile(r"PV_(\d{3})_(\d{4})_(cut|fade)")   # 길이는 100분의 1초 — 이름의 점은 확장자로 읽혀 쪼개졌다 (열한 번째)
 
 
@@ -60,27 +61,33 @@ def main() -> int:
     print(f"장면 {len(items)}장 · {total:.2f}초" + (f" → {total * scale:.2f}초 ({scale:.2f}배)" if scale < 1 else ""))
 
     # 장면 k 는 d_k 초 — 다음 장면이 fade 면 FADE 만큼 더 길게 둬서 겹치는 동안에도 제 길이를 보인다.
+    # 길이는 **프레임 수**로 자른다 — 초(`-t`)로 주면 장면마다 프레임 수가 반올림되고, 러너의 영상 도구는 내림이라
+    # 짧은 장면 19개를 잇는 동안 모자람이 쌓여 겹쳐 넘기기 시작점이 앞 영상의 끝을 넘었다 → 영상이 11.5초에서 끊겼다 (열두 번째).
+    fade_n = round(FADE * FPS)
+    frames = [max(1, round(d * scale * FPS)) for _, d, _, _ in items]
     inputs, chains = [], []
-    durs = [d * scale for _, d, _, _ in items]
     for k, (_, _, _, path) in enumerate(items):
         nxt_fade = k + 1 < len(items) and items[k + 1][2]
-        length = durs[k] + (FADE if nxt_fade else 0)
-        inputs += ["-loop", "1", "-framerate", "30", "-t", f"{length:.3f}", "-i", str(path)]
+        n = frames[k] + (fade_n if nxt_fade else 0)
+        inputs += ["-loop", "1", "-framerate", str(FPS), "-i", str(path)]
         chains.append(
-            f"[{k}:v]scale={WIDTH}:-2:flags=lanczos,crop={WIDTH}:{HEIGHT}:0:(ih-{HEIGHT})/2,"
-            f"fps=30,format=rgb24,setsar=1,settb=1/30[s{k}]")
-    acc, length = "s0", durs[0] + (FADE if len(items) > 1 and items[1][2] else 0)
+            f"[{k}:v]trim=end_frame={n},setpts=N/({FPS}*TB),"
+            f"scale={WIDTH}:-2:flags=lanczos,crop={WIDTH}:{HEIGHT}:0:(ih-{HEIGHT})/2,"
+            f"format=rgb24,setsar=1,settb=1/{FPS},fps={FPS}[s{k}]")
+    acc, length = "s0", frames[0] + (fade_n if len(items) > 1 and items[1][2] else 0)
     for k in range(1, len(items)):
-        own = durs[k] + (FADE if k + 1 < len(items) and items[k + 1][2] else 0)
+        own = frames[k] + (fade_n if k + 1 < len(items) and items[k + 1][2] else 0)
         if items[k][2]:
-            chains.append(f"[{acc}][s{k}]xfade=transition=fade:duration={FADE}:offset={length - FADE:.3f},settb=1/30[a{k}]")
-            length += own - FADE
+            chains.append(f"[{acc}][s{k}]xfade=transition=fade:duration={fade_n / FPS:.4f}:"
+                          f"offset={(length - fade_n) / FPS:.4f},settb=1/{FPS},fps={FPS}[a{k}]")
+            length += own - fade_n
         else:
-            chains.append(f"[{acc}][s{k}]concat=n=2:v=1:a=0,settb=1/30[a{k}]")
+            chains.append(f"[{acc}][s{k}]concat=n=2:v=1:a=0,settb=1/{FPS},fps={FPS}[a{k}]")
             length += own
         acc = f"a{k}"
     chains.append(f"[{acc}]scale=out_color_matrix=bt709:out_range=tv,format=yuv420p[v]")
-    print(f"이어 붙인 길이 {length:.2f}초")
+    seconds = length / FPS
+    print(f"이어 붙인 길이 {length}장 = {seconds:.2f}초")
 
     script = Path(out).with_suffix(".filter.txt")
     script.parent.mkdir(parents=True, exist_ok=True)
@@ -89,7 +96,7 @@ def main() -> int:
         [ffmpeg, "-hide_banner", "-loglevel", "error", "-y", *inputs,
          "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
          "-filter_complex_script", str(script), "-map", "[v]", "-map", f"{len(items)}:a",
-         "-t", f"{length:.3f}", "-r", "30",
+         "-frames:v", str(length), "-t", f"{seconds:.3f}", "-r", str(FPS),
          "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv",
          "-c:v", "libx264", "-profile:v", "high", "-level", "4.0", "-preset", "slow", "-crf", "16",
          "-maxrate", "10M", "-bufsize", "20M", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", out],
@@ -103,6 +110,14 @@ def main() -> int:
     h, m, sec = re.search(r"Duration: (\d+):(\d+):([0-9.]+)", probe).groups()
     if int(h) * 3600 + int(m) * 60 + float(sec) > 30:
         print("::error::결과 영상이 30초를 넘는다")
+        return 1
+    # 영상 줄기가 끝까지 있는가 — 소리 칸 때문에 길이는 맞아 보여도 그림이 11.5초에서 끊긴 적이 있다 (열두 번째).
+    count = subprocess.run([ffmpeg, "-hide_banner", "-i", out, "-map", "0:v", "-f", "null", "-"],
+                           capture_output=True, text=True).stderr
+    got = int(re.findall(r"frame=\s*(\d+)", count)[-1])
+    print(f"영상 장면 {got}장 (기대 {length}장)")
+    if abs(got - length) > 2:
+        print("::error::영상 줄기가 중간에 끊겼다")
         return 1
     return 0
 
