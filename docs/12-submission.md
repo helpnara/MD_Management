@@ -12,7 +12,7 @@ updated: 2026-10-11
 
 ---
 
-## 0. 지금 상태 (2026-10-11 — **1.1.3 (빌드 101) 승인 · 배포** · 한국어 + 영어(Slow Margin) · `main` = 1.1.3 · 1.1.2 는 심사를 거두어 출시되지 않음 · **1.1.4 (빌드 102) 심사 중 — 2026-10-12 제출**)
+## 0. 지금 상태 (2026-10-12 — **1.1.4 (빌드 102) 승인 · 배포** · 한국어 + 영어(Slow Margin) · `main` = 1.1.4 · **1.1.5 = 빌드 104 제출 준비 끝** (242 미리보기 줄 · 243 사진 · 동영상 붙여넣기 · 미리보기 영상 둘 — *1.1.5 제출 순서* · `main` 병합))
 
 | | |
 |---|---|
@@ -170,6 +170,18 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.5 제출 순서 (2026-10-12 사용자 — *심사 준비하자*)
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.5`
+2. **빌드** 칸에서 **104** 를 고른다 (`1.1.5 (104)` — 103 은 동영상이 사진 자리에 들어가던 판이라 쓰지 않는다)
+3. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 울타리 (`docs/store/1.1.5-새로운-기능.txt`)
+4. 한국어 **아이폰 6.1"** 칸 → 스크린샷 위 **앱 미리보기** 자리에 `docs/store/preview/slow-margin-preview-ko.mp4` 를 올린다
+   (886 × 1920 · 29.1초 · 30fps · 소리 칸 있음). 대표 그림(포스터 프레임)은 기본값 그대로 두거나, 쓰기 화면이 보이는 앞쪽을 고른다
+5. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New* (§1-영어) → **아이폰 6.1"** 칸 앱 미리보기에 `docs/store/preview/slow-margin-preview-en.mp4` (886 × 1920 · 26.5초) → **저장**
+   — 영상은 올린 뒤 애플이 처리하느라 몇 분 *처리 중* 으로 보일 수 있다. 처리 중이어도 제출할 수 있다
+6. 부제 · 키워드 · 스크린샷은 1.1.4 그대로 (따라온다)
+7. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+
 ### 1.1.4 제출 순서 (2026-10-11 사용자 — *착수 하자*)
 
 1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.4`
@@ -290,10 +302,12 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.4** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.3 의 글은 `docs/store/1.1.3-새로운-기능.txt`.
+> **1.1.5** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.4 의 글은 `docs/store/1.1.4-새로운-기능.txt`.
 
 ```
-• After you’ve used the app for a few days, it may occasionally ask for a rating as you leave a note you edited. It never asks while you write, and asks at most once per version. Your rating means a lot to a one-person app.
+• Previews in the note list and search results now look like Read mode: plain text instead of Markdown symbols such as ** or [title](link). Links show just their title, and to-dos show a ☐.
+• When you copy and paste text that mixes photos, videos and words, the photos and videos now land in the right places. Videos and documents are saved under their original names in the assets folder next to the note and added as links — tap one in Read mode to open it.
+• Fixed pasted videos being mistaken for photos and failing to save.
 ```
 
 ---
@@ -411,6 +425,8 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-10-12 | **1.1.5 (빌드 104) 준비** (사용자 — *심사 준비하자*). 새로운 기능 세 줄(한국어 · 영어) · 미리보기 영상 둘(한국어 29.1초 · 영어 26.5초, 아이폰 6.1" 칸) · `main` 병합 |
+| 2026-10-12 | ✅ **1.1.4 (빌드 102) 승인 · 배포** (사용자 — *1.1.4 심사 완료됐고 배포도 완료했어*). 다음은 1.1.5 (빌드 104) |
 | 2026-10-12 | ✅ **1.1.4 (빌드 102) 제출** (사용자 — *심사 제출 완료했어*). 부제 · 키워드 안 A · 스크린샷 스무 장(한국어 아이폰 칸이 6.1" 로 바뀌어 1206 × 2622 로 맞춤). 자동 출시 · 단계적 출시 끔 |
 | 2026-10-11 | **1.1.4 (빌드 102) 준비** (사용자 — *0-2번 확인 완료*). 평가 부탁 · 새로운 기능 한 줄 · 부제 · 키워드 안 A · 스크린샷 스무 장 (글귀 · 한국어 아이패드 세로로). `main` 병합 |
 | 2026-10-11 | ✅ **1.1.3 (빌드 101) 승인 · 배포** (사용자 — *심사 완료됐고 배포도 완료했어*). 출시된 판 = 1.1.3 |
@@ -504,11 +520,13 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.4** (2026-10-11 — 평가 부탁 · 스토어 손질(스크린샷 · 부제 · 키워드)). 글은 `docs/store/1.1.4-새로운-기능.txt`. 1.1.3 의 글은 `docs/store/1.1.3-새로운-기능.txt`.
+> **1.1.5** (2026-10-12 — 242 미리보기 줄 · 243 사진 · 동영상 붙여넣기). 글은 `docs/store/1.1.5-새로운-기능.txt`. 1.1.4 의 글은 `docs/store/1.1.4-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 앱을 며칠 써 보신 분께, 고친 노트를 닫고 나올 때 가끔 별점을 부탁드립니다. 쓰는 도중에는 묻지 않고, 같은 판에서는 한 번만 묻습니다. 남겨 주시는 평가가 혼자 만드는 앱에 큰 힘이 됩니다.
+• 노트 목록과 검색 결과의 미리보기 줄이 읽기 화면처럼 보입니다. ** 나 [제목](주소) 같은 마크다운 기호 대신 글만 보이고, 링크는 제목만, 할 일은 ☐ 로 보입니다.
+• 사진 · 동영상 · 글이 섞인 글을 통째로 복사해 붙이면 사진과 동영상이 제자리에 들어갑니다. 동영상 · 문서는 원래 이름 그대로 노트 옆 assets 폴더에 저장되고 링크로 들어가며, 읽기 화면에서 누르면 바로 열립니다.
+• 붙여 넣은 동영상을 사진으로 잘못 알아 저장하지 못하던 문제를 고쳤습니다.
 ```
 

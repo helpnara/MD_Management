@@ -36,19 +36,25 @@ actor SearchIndex {
     /// - v2 (빌드 35 · 115): 미리보기 규칙이 바뀌었다(110 — 첫 줄은 제목이므로 건너뛴다).
     ///   판을 안 올렸더니 **고치지 않은 노트는 옛 미리보기를 그대로 들고 있었다** —
     ///   목록에 제목과 같은 글이 두 번 나왔다 (빌드 34 · 1번, 사용자).
-    private static let version = 2
+    /// - v3 (빌드 103 · 242): 미리보기 줄을 보이는 글로(`PreviewLine`) — 링크는 제목만, `**` 등은 뗀다.
+    private static let version = 3
 
     private var db: OpaquePointer?
     private let fileURL: URL
     private(set) var status = IndexStatus()
 
-    /// 폴더마다 색인 하나. `Application Support/Index/<폴더 이름>-v1.sqlite`. **iCloud 로 안 간다.**
+    /// 폴더마다 색인 하나. `Application Support/Index/<폴더 이름>-v<판>.sqlite`. **iCloud 로 안 간다.**
     init(for root: URL) {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let folder = support.appendingPathComponent("Index", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let stem = Paths.safeFileName(root.path.replacingOccurrences(of: "/", with: "_"), fallback: "root")
-        fileURL = folder.appendingPathComponent("\(String(stem.suffix(120)))-v\(Self.version).sqlite")
+        let name = String(stem.suffix(120))
+        fileURL = folder.appendingPathComponent("\(name)-v\(Self.version).sqlite")
+        // 옛 판 색인은 지운다 — 판을 올릴 때마다 옛 파일이 그대로 남아 있었다 (242 에서 봄). 캐시라 지워도 된다.
+        for old in 1..<Self.version {
+            try? FileManager.default.removeItem(at: folder.appendingPathComponent("\(name)-v\(old).sqlite"))
+        }
     }
 
     /// 손을 뗀다. 폴더를 바꿀 때 모델이 부른다 — 액터의 `deinit` 은 `OpaquePointer` 를
@@ -256,15 +262,15 @@ actor SearchIndex {
 
     /// 낱말 하나라도 든 **첫 줄**. 머리말 · 빈 줄 · 제목 표시는 건너뛴다.
     /// `skipping` 은 제목 — 제목이 맞은 노트에서 제목 줄을 되풀이하지 않는다 (80).
+    /// 맞는지는 **원문 줄**로 보고(주소 속 낱말도 찾는다), 보여 주는 것은 **보이는 글**이다 (242 — `shown`).
     static func matchingLine(in text: String, terms: [String], skipping title: String = "") -> String? {
         let body = FrontMatterParser.parse(text).body
         for line in body.components(separatedBy: "\n") {
-            let cleaned = tidy(line)
-            if cleaned.isEmpty || cleaned == title { continue }
             let lowered = line.lowercased()
-            if terms.contains(where: { lowered.contains($0) }) {
-                return cleaned
-            }
+            guard terms.contains(where: { lowered.contains($0) }) else { continue }
+            let cleaned = shown(line)
+            if cleaned.isEmpty || cleaned == title { continue }
+            return cleaned
         }
         return nil
     }
@@ -284,17 +290,19 @@ actor SearchIndex {
                 passedTitle = true
                 continue
             }
-            return tidy(trimmed)
+            // 보이는 글이 없는 줄(대체 글 없는 사진 `![](…)` 하나 등)은 건너뛴다.
+            let cleaned = shown(trimmed)
+            if cleaned.isEmpty { continue }
+            return cleaned
         }
         return ""
     }
 
-    private static func tidy(_ line: String) -> String {
-        var s = line.trimmingCharacters(in: .whitespaces)
-        while s.hasPrefix("#") || s.hasPrefix(">") || s.hasPrefix("-") || s.hasPrefix("*") {
-            s = String(s.dropFirst()).trimmingCharacters(in: .whitespaces)
-        }
-        return String(s.prefix(120))
+    /// **화면에 보이는 한 줄** (242 — 2026-10-12 사용자 미리보기 영상 검토: 검색 결과에 `[시니어 명소](<>)` 가,
+    /// 목록에 `**…**` 가 원문째 보였다). 블록 표시 · 링크 · 굵게 등은 `Core.PreviewLine` 이 읽는다 — markdown-it 이
+    /// 심판한 정답표로 시험한다. 예전 `tidy` 는 앞의 `#` `>` `-` `*` 만 떼서 `**굵게**` 로 시작하는 줄의 별까지 떼었다.
+    static func shown(_ line: String) -> String {
+        String(PreviewLine.plain(line).prefix(120))
     }
 
     // MARK: - SQLite 속

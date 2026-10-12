@@ -411,6 +411,16 @@
         }
       }
     },
+    "[첨부]\n" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "[Attachments]\n"
+          }
+        }
+      }
+    },
     "[평문]\n" : {
       "localizations" : {
         "en" : {
@@ -1693,7 +1703,17 @@
         }
       }
     },
-    "붙여넣은 사진 %lld장을 저장하지 못했습니다." : {
+    "붙여넣은 서식 복사" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Pasted Formatting"
+          }
+        }
+      }
+    },
+    "붙여넣은 첨부 %lld개를 저장하지 못했습니다." : {
       "localizations" : {
         "en" : {
           "variations" : {
@@ -1701,26 +1721,16 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Couldn't save %lld pasted photo."
+                  "value" : "Couldn't save %lld pasted attachment."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "Couldn't save %lld pasted photos."
+                  "value" : "Couldn't save %lld pasted attachments."
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "붙여넣은 서식 복사" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy Pasted Formatting"
           }
         }
       }
@@ -1750,6 +1760,28 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "Couldn't add %lld photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "사진 · 파일 %lld개를 노트 옆 assets 폴더에 넣었습니다" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Saved %lld photo or file to the assets folder next to the note"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Saved %lld photos and files to the assets folder next to the note"
                 }
               }
             }
@@ -2801,6 +2833,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not found"
+          }
+        }
+      }
+    },
+    "첨부" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attachment"
           }
         }
       }

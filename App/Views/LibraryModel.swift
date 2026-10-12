@@ -368,6 +368,7 @@ final class LibraryModel: ObservableObject {
     ///
     /// **바꿨으면 알린다.** 사람이 모르게 본문이 달라지지 않는다. 되돌리기는 한 번이다.
     func repairPastedLinks(_ pasted: MarkdownTextView.PastedItem) -> String? {
+        pastedAttachmentNotes = []
         // 1. 주소 하나
         let address = pasted.url ?? pasted.plain
         if Pasting.isWebAddress(pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines))
@@ -380,7 +381,7 @@ final class LibraryModel: ObservableObject {
         // 2. 서식 있는 글 — 글 전체를 마크다운으로
         if let html = pasted.html, let converted = HTMLMarkdown.convert(html) {
             if HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: converted) {
-                var text = placeImages(converted, slots: HTMLMarkdown.imageSlots(html), pasted: pasted)
+                var text = placeAttachments(converted, slots: HTMLMarkdown.imageSlots(html), pasted: pasted).text
                 if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) { text = fixed.text }
                 recordPaste(pasted, outcome: "서식을 마크다운으로 바꿈")
                 guard text != pasted.plain else { return nil }
@@ -394,14 +395,15 @@ final class LibraryModel: ObservableObject {
         if let given = pasted.markdown?.trimmingCharacters(in: .whitespacesAndNewlines), !given.isEmpty,
            HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: given) {
             // 표의 빈 머리줄은 첫 줄로 — 우리 변환과 같은 모양 (2026-10-03 사용자).
-            let markdown = HTMLMarkdown.promoteEmptyHeaders(given)
+            var markdown = HTMLMarkdown.promoteEmptyHeaders(given)
+            // 첨부 자리(U+FFFC)가 있으면 서식 있는 글의 첨부로 채운다 (243) — 예전에는 빈 자리 글자가 그대로 남았다.
+            if Self.hasAttachmentMarks(markdown) {
+                markdown = placeAttachments(markdown, slots: Self.blankSlots(markdown), pasted: pasted).text
+            }
             recordPaste(pasted, outcome: "보낸 앱의 마크다운을 씀")
             guard markdown != pasted.plain else { return nil }
             notify(String(localized: "서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다."), aboutNote: true)
             return markdown
-        }
-        if pasted.html != nil || pasted.markdown != nil {
-            recordPaste(pasted, outcome: "평문으로 붙임")
         }
         // 3. 평문 — 번호 겹침과 링크 고치기
         var text = pasted.plain
@@ -420,9 +422,35 @@ final class LibraryModel: ObservableObject {
             text = repair.text
             notes.append(String(localized: "링크 \(repair.fixed)개를 이 노트에서 열리도록 고쳤습니다"))
         }
-        guard !notes.isEmpty, text != pasted.plain else { return nil }
-        notify(notes.joined(separator: ". ") + String(localized: ". 되돌리기로 무를 수 있습니다."), aboutNote: true)
+        // 3-1. 글 속 첨부 자리 (243) — 메모의 평문에도 사진 · 녹음 자리(U+FFFC)가 남는다. 예전에는 그 글자가 그대로 붙어
+        // 사진 · 녹음은 사라지고 보이지 않는 글자만 남았다. **링크 고치기 뒤에** 채운다 — 새로 쓸 파일은 아직 목록에 없어
+        // 고치기가 이름으로 엉뚱하게 손댈 수 있다. 짝이 없는 자리는 지운다.
+        if Self.hasAttachmentMarks(text) {
+            let placed = placeAttachments(text, slots: Self.blankSlots(text), pasted: pasted)
+            text = placed.text
+            if placed.saved > 0 {
+                notes.append(String(localized: "사진 · 파일 \(placed.saved)개를 노트 옆 assets 폴더에 넣었습니다"))
+            }
+        }
+        if pasted.html != nil || pasted.markdown != nil || !pastedAttachmentNotes.isEmpty {
+            recordPaste(pasted, outcome: "평문으로 붙임")
+        }
+        guard text != pasted.plain else { return nil }
+        // 보이지 않는 첨부 자리만 지웠으면 알리지 않는다 — 보이는 글은 그대로다.
+        if !notes.isEmpty {
+            notify(notes.joined(separator: ". ") + String(localized: ". 되돌리기로 무를 수 있습니다."), aboutNote: true)
+        }
         return text
+    }
+
+    private static func hasAttachmentMarks(_ text: String) -> Bool {
+        text.unicodeScalars.contains(HTMLMarkdown.objectMark)
+    }
+
+    /// 평문 · 보낸 앱의 마크다운에는 `<img>` 가 없다 — 첨부 자리 수만큼 빈 자리 (서식 있는 글의 첨부를 차례로 쓴다).
+    private static func blankSlots(_ text: String) -> [HTMLMarkdown.ImageSlot] {
+        let count = text.unicodeScalars.filter { $0 == HTMLMarkdown.objectMark }.count
+        return Array(repeating: HTMLMarkdown.ImageSlot(src: "", alt: ""), count: count)
     }
 
     /// **마지막 붙여넣기** (206) — 클립보드의 갈래와 HTML. 메모리에만 두고, 진단 화면에서 사람이 복사할 때만 밖으로 나간다.
@@ -434,11 +462,14 @@ final class LibraryModel: ObservableObject {
         let plain: String
         /// 어떻게 붙였나 — 서식을 바꿨나 · 보낸 앱의 마크다운을 썼나 · 평문으로 붙였나.
         let outcome: String
+        /// 첨부를 어떻게 했나 — 한 줄에 하나 (243). `사진 · jpg · 1.2 MB` · `파일 · m4a · 새로운 녹음 3.m4a · 340 KB` · `못 읽음`.
+        let attachments: [String]
 
         /// 진단 화면에서 복사할 글 — 갈래마다 머리를 달아 **있는 그대로** 잇는다.
         var report: String {
             var parts = ["갈래: " + types.joined(separator: ", "), "결과: " + outcome]
             parts.append(String(localized: "[평문]\n") + plain)
+            if !attachments.isEmpty { parts.append(String(localized: "[첨부]\n") + attachments.joined(separator: "\n")) }
             if let markdown { parts.append(String(localized: "[마크다운 갈래]\n") + markdown) }
             if let html { parts.append("[HTML]\n" + html) }
             return parts.joined(separator: "\n\n")
@@ -446,58 +477,111 @@ final class LibraryModel: ObservableObject {
     }
 
     @Published private(set) var lastPaste: PasteRecord?
+    /// 이번 붙여넣기에서 첨부를 어떻게 했나 — `placeAttachments` 가 적고 `recordPaste` 가 기록에 싣는다.
+    private var pastedAttachmentNotes: [String] = []
 
     private func recordPaste(_ pasted: MarkdownTextView.PastedItem, outcome: String) {
         lastPaste = PasteRecord(types: pasted.types, html: pasted.html, markdown: pasted.markdown,
-                                plain: pasted.plain, outcome: outcome)
-        log("붙여넣기: " + outcome)
+                                plain: pasted.plain, outcome: outcome, attachments: pastedAttachmentNotes)
+        log("붙여넣기: " + outcome + (pastedAttachmentNotes.isEmpty ? "" : " · 첨부 \(pastedAttachmentNotes.count)개"))
     }
 
-    /// **붙여넣은 글 속 사진을 파일로** (207, 2026-10-02 사용자 — *중간에 이미지가 있다면 이미지도 함께 파일로 저장하고
-    /// 링크로 변환*). 사진 자리(U+FFFC)마다 노트 옆 `assets/` 의 새 이름을 **지금** 정해 링크를 넣고, 파일은 곧이어 쓴다 —
+    /// **붙여넣은 글 속 첨부를 파일로** (207 · 243, 2026-10-02 사용자 — *중간에 이미지가 있다면 이미지도 함께 파일로 저장하고
+    /// 링크로 변환* · 2026-10-12 사용자 — *메모의 사진 · 아이폰 녹음 · 글을 전체 복사해 붙이면 올바르게 안 된다*).
+    /// 첨부 자리(U+FFFC · `<img>`)마다 노트 옆 `assets/` 의 새 이름을 **지금** 정해 링크를 넣고, 파일은 곧이어 쓴다 —
     /// 붙여넣기는 한 번의 바꾸기로 끝나야 되돌리기가 한 번에 걸린다.
     ///
-    /// 사진은 `data:` 주소에 든 것 · 클립보드의 서식 있는 글(RTFD)에 든 것을 **문서 차례대로** 맞춘다. 웹 주소의 사진은
+    /// 무엇인지는 `Core.PastedFile` 이 앞 바이트 · 이름으로 가른다. **사진**은 `![](…)` (사진기 사진은 줄여 JPEG),
+    /// **녹음 · 동영상 · 문서**는 원래 바이트 그대로 원래 이름으로 두고 `[새로운 녹음 3.m4a](<assets/…>)` — 문서 첨부(78)와 같은 모양.
+    /// 예전에는 첨부를 모두 사진으로 여겨, 녹음(m4a — 사진과 같은 `ftyp` 상자로 시작한다)을 사진으로 줄이려다 실패하고
+    /// 깨진 사진 링크를 남겼다.
+    ///
+    /// 첨부는 `data:` 주소에 든 것 · 클립보드의 서식 있는 글(RTFD)에 든 것을 **문서 차례대로** 맞춘다. 웹 주소의 사진은
     /// 받아오지 않고(이 앱은 통신하지 않는다) 주소 그대로 링크로 둔다. 짝을 못 찾은 자리는 지운다 —
-    /// 엉뚱한 사진을 엉뚱한 자리에 넣지 않는다 (`HTMLMarkdown.fillImages`).
-    private func placeImages(_ markdown: String, slots: [HTMLMarkdown.ImageSlot],
-                             pasted: MarkdownTextView.PastedItem) -> String {
-        guard !slots.isEmpty else { return HTMLMarkdown.fillImages(markdown, links: []) }
-        var attachments: [Data]?
-        var nextAttachment = 0
+    /// 엉뚱한 것을 엉뚱한 자리에 넣지 않는다 (`HTMLMarkdown.fillImages`).
+    private func placeAttachments(_ markdown: String, slots: [HTMLMarkdown.ImageSlot],
+                                  pasted: MarkdownTextView.PastedItem) -> (text: String, saved: Int) {
+        guard !slots.isEmpty else { return (HTMLMarkdown.fillImages(markdown, links: []), 0) }
+        // 첨부를 쓰는 자리(웹 · `data:` 주소가 아닌 자리)와 짝 — **이름으로 먼저, 남은 것은 차례로** (243 · `PastedFile.matches`).
+        // 메모는 동영상을 `<object>`, 사진을 `<img>` 로 싣는다 — 차례로만 짝지었더니 첫 첨부(동영상)가 사진 자리에 들어갔다.
+        let wanted: [String?] = slots.map { slot in
+            let lowered = slot.src.lowercased()
+            return lowered.hasPrefix("http://") || lowered.hasPrefix("https://") || lowered.hasPrefix("data:") ? nil : slot.src
+        }
+        let attachments: [MarkdownTextView.Attachment] = wanted.contains { $0 != nil } ? pasted.loadAttachments() : []
+        let pairing = PastedFile.matches(slots: wanted, names: attachments.map(\.name))
         let folder = noteFolderForLink
         let assets = folder.isEmpty ? "assets" : folder + "/assets"
-        let taken = Set(vaultPaths.map { $0.lowercased() })
+        var taken = Set(vaultPaths.map { $0.lowercased() })
         let stem = ImageImport.stem() + "-" + Self.pasteClock.string(from: Date())
         var sequence = 0
-        var writes: [(path: String, data: Data, ext: String)] = []
+        var writes: [PastedWrite] = []
         var links: [String?] = []
-        for slot in slots {
-            var data: Data?
-            if slot.src.lowercased().hasPrefix("data:image/") {
-                data = Self.dataURIContents(slot.src)
-            } else if slot.src.lowercased().hasPrefix("http://") || slot.src.lowercased().hasPrefix("https://") {
-                links.append(ImageImport.markdownImage(path: slot.src))
-                continue
-            } else {
-                if attachments == nil { attachments = pasted.loadImages() }
-                if let all = attachments, nextAttachment < all.count { data = all[nextAttachment] }
-                nextAttachment += 1
+        /// 겹치지 않는 경로 — `numbered` 면 언제나 `-1` 부터(날짜 이름), 아니면 이름 그대로 먼저 · 겹치면 `-2` 부터(원래 이름).
+        func reserve(_ base: String, _ ext: String, numbered: Bool) -> String {
+            var path = numbered ? "" : assets + "/" + base + "." + ext
+            var n = numbered ? 0 : 1
+            while path.isEmpty || taken.contains(path.lowercased()) {
+                n += 1
+                if numbered { sequence += 1 }
+                path = assets + "/" + base + "-\(numbered ? sequence : n)." + ext
             }
-            guard let data, let ext = ImageImport.pastedExtension(of: data) else {
-                links.append(nil)
-                continue
-            }
-            var path = ""
-            repeat {
-                sequence += 1
-                path = assets + "/" + stem + "-\(sequence)." + ext
-            } while taken.contains(path.lowercased())
-            writes.append((path, data, ext))
-            links.append(ImageImport.markdownImage(path: String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))))
+            taken.insert(path.lowercased())
+            return path
         }
-        if !writes.isEmpty { writePastedImages(writes) }
-        return HTMLMarkdown.fillImages(markdown, links: links)
+        func relative(_ path: String) -> String { String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1)) }
+        func size(_ data: Data) -> String { ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file) }
+        for (index, slot) in slots.enumerated() {
+            let lowered = slot.src.lowercased()
+            if lowered.hasPrefix("http://") || lowered.hasPrefix("https://") {
+                links.append(ImageImport.markdownImage(path: slot.src))
+                pastedAttachmentNotes.append("웹 사진 · 주소 그대로")
+                continue
+            }
+            var data: Data?
+            var name: String?
+            if lowered.hasPrefix("data:") {
+                data = lowered.hasPrefix("data:image/") ? Self.dataURIContents(slot.src) : nil
+            } else if let k = pairing[index] {
+                data = attachments[k].data
+                name = attachments[k].name
+            }
+            guard let data else {
+                links.append(nil)
+                pastedAttachmentNotes.append("못 읽음" + (name.map { " · " + $0 } ?? ""))
+                continue
+            }
+            switch ImageImport.pastedKind(of: data, name: name) {
+            case .image(let ext):
+                let path = reserve(stem, ext, numbered: true)
+                writes.append(PastedWrite(path: path, data: data, shrink: ext == "jpg"))
+                links.append(ImageImport.markdownImage(path: relative(path)))
+                pastedAttachmentNotes.append("사진 · \(ext) · \(size(data))")
+            case .file(let ext):
+                let label = PastedFile.label(fileName: name, ext: ext, fallback: String(localized: "첨부"))
+                let base = Paths.safeFileName(Paths.baseName(label), fallback: stem)
+                let path = reserve(base, ext, numbered: false)
+                writes.append(PastedWrite(path: path, data: data, shrink: false))
+                links.append(ImageImport.markdownLink(label: label, path: relative(path)))
+                pastedAttachmentNotes.append("파일 · \(ext) · \(label) · \(size(data))")
+            case .unknown:
+                links.append(nil)
+                pastedAttachmentNotes.append("모르는 첨부 · 넣지 않음" + (name.map { " · " + $0 } ?? "") + " · \(size(data))")
+            }
+        }
+        let using = wanted.compactMap { $0 }.count
+        if !attachments.isEmpty, attachments.count != using {
+            pastedAttachmentNotes.append("자리 \(using)개 · 첨부 \(attachments.count)개 — 수가 다르다")
+        }
+        if !writes.isEmpty { writePastedFiles(writes) }
+        return (HTMLMarkdown.fillImages(markdown, links: links), writes.count)
+    }
+
+    private struct PastedWrite {
+        let path: String
+        let data: Data
+        /// 사진기 사진(JPEG · HEIC)을 사진 넣기와 같이 줄여 JPEG 로.
+        let shrink: Bool
     }
 
     private static let pasteClock: DateFormatter = {
@@ -513,14 +597,14 @@ final class LibraryModel: ObservableObject {
         return Data(base64Encoded: String(uri[uri.index(after: comma)...]), options: .ignoreUnknownCharacters)
     }
 
-    /// 정해 둔 이름으로 사진을 쓴다. JPEG · HEIC 처럼 줄일 수 있는 것은 사진 넣기와 같이 줄여 JPEG 로, PNG · GIF 는 그대로.
-    private func writePastedImages(_ writes: [(path: String, data: Data, ext: String)]) {
+    /// 정해 둔 이름으로 첨부를 쓴다. 사진기 사진은 사진 넣기와 같이 줄여 JPEG 로, PNG · GIF · 녹음 · 문서는 그대로.
+    private func writePastedFiles(_ writes: [PastedWrite]) {
         guard let store else { return }
         Task { [weak self] in
             var failed = 0
             for item in writes {
                 let data: Data?
-                if item.ext == "jpg" {
+                if item.shrink {
                     let original = item.data
                     data = await Task.detached(priority: .userInitiated) { ImageImport.jpeg(from: original) }.value
                 } else {
@@ -537,8 +621,8 @@ final class LibraryModel: ObservableObject {
                 }
             }
             guard let self else { return }
-            self.log("붙여넣기: 사진 \(writes.count - failed)장 저장" + (failed > 0 ? " · \(failed)장 실패" : ""))
-            if failed > 0 { self.report(String(localized: "붙여넣은 사진 \(failed)장을 저장하지 못했습니다.")) }
+            self.log("붙여넣기: 첨부 \(writes.count - failed)개 저장" + (failed > 0 ? " · \(failed)개 실패" : ""))
+            if failed > 0 { self.report(String(localized: "붙여넣은 첨부 \(failed)개를 저장하지 못했습니다.")) }
             self.refreshVaultPaths()
         }
     }

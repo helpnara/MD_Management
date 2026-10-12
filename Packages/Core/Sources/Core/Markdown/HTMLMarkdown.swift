@@ -53,8 +53,10 @@ public enum HTMLMarkdown {
                     }
                 case .element(let el):
                     guard !skip.contains(el.name) else { continue }
-                    if el.name == "img" {
-                        out.append(ImageSlot(src: trim(el.attrs["src"] ?? ""), alt: trim(el.attrs["alt"] ?? "")))
+                    // 첨부 요소 안은 들여다보지 않는다 — 대체 글 · 안의 `<img>` 는 자리가 아니다 (convert 도 그렇다).
+                    if media.contains(el.name) {
+                        out.append(ImageSlot(src: mediaSource(el), alt: trim(el.attrs["alt"] ?? "")))
+                        continue
                     }
                     walk(el)
                 }
@@ -62,6 +64,19 @@ public enum HTMLMarkdown {
         }
         walk(root)
         return out
+    }
+
+    /// 첨부 요소가 가리키는 주소 — `img` · `embed` · `video` · `audio` 는 `src`, `object` 는 `data`,
+    /// `video` · `audio` 에 `src` 가 없으면 안의 첫 `<source src>`.
+    static func mediaSource(_ el: El) -> String {
+        if el.name == "object" { return trim(el.attrs["data"] ?? "") }
+        let src = trim(el.attrs["src"] ?? "")
+        if src.isEmpty, el.name == "video" || el.name == "audio" {
+            for child in el.children {
+                if case .element(let inner) = child, inner.name == "source" { return trim(inner.attrs["src"] ?? "") }
+            }
+        }
+        return src
     }
 
     /// U+FFFC 를 차례로 링크로 바꾼다 (`nil` 이면 지운다). **수가 안 맞으면 모두 지운다** — 엉뚱한 사진을 엉뚱한 자리에
@@ -170,6 +185,10 @@ public enum HTMLMarkdown {
                                      "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "html", "li", "main", "nav",
                                      "ol", "p", "pre", "section", "summary", "table", "tbody", "td", "tfoot", "th",
                                      "thead", "tr", "ul"]
+    /// **첨부 자리** (207 · 243) — 사진(`img`) 말고도 메모는 동영상 · 녹음을 `<object data="file:///이름">이름</object>` 로 싣는다
+    /// (2026-10-12 사용자 진단). 모두 U+FFFC 한 자로 자리만 남기고 **안의 대체 글은 읽지 않는다** — 예전에는 `<object>` 안의
+    /// 파일 이름이 보통 글로 붙고, 자리는 `<img>` 만 세어 첫 첨부(동영상)가 사진 자리에 들어갔다. 파이썬 `MEDIA` 와 같다.
+    static let media: Set<String> = ["img", "object", "embed", "video", "audio"]
     static let headings: [String: Int] = ["h1": 1, "h2": 2, "h3": 3, "h4": 4, "h5": 5, "h6": 6]
     static let nbsp: Unicode.Scalar = "\u{00A0}"
 
@@ -627,6 +646,7 @@ public enum HTMLMarkdown {
             var found = false
             for child in el.children {
                 if case .element(let inner) = child, !HTMLMarkdown.skip.contains(inner.name),
+                   !HTMLMarkdown.media.contains(inner.name),
                    HTMLMarkdown.block.contains(inner.name) || hasBlock(inner) {
                     found = true
                     break
@@ -793,7 +813,7 @@ public enum HTMLMarkdown {
                     state.lastSpace = true
                     continue
                 }
-                if el.name == "img" {
+                if media.contains(el.name) {
                     out.append(Run(text: string([objectMark]), style: style))
                     state.lastSpace = false
                     continue
@@ -955,7 +975,7 @@ public enum HTMLMarkdown {
             for child in node.children {
                 switch child {
                 case .text(let text): parts += text
-                case .element(let inner): if !skip.contains(inner.name) { walk(inner) }
+                case .element(let inner): if !skip.contains(inner.name), !media.contains(inner.name) { walk(inner) }
                 }
             }
         }
@@ -1055,7 +1075,7 @@ public enum HTMLMarkdown {
                 case .text(let text): parts += text
                 case .element(let inner):
                     if inner.name == "br" { parts += "\n" }
-                    else if inner.name == "img" { parts += string([objectMark]) }
+                    else if media.contains(inner.name) { parts += string([objectMark]) }
                     else if !skip.contains(inner.name) { walk(inner) }
                 }
             }

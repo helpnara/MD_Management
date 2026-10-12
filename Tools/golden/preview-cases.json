@@ -1,0 +1,40 @@
+{
+  "_왜": "242 — 목록 · 검색 결과에 보이는 한 줄 (PreviewLine). 값은 generate.py 가 셈하고 줄 안 부분은 markdown-it 으로 심판한다. expect 는 사례가 지키려는 뜻이고, 셈과 다르면 멈춘다. fuzz 는 같은 씨앗으로 뒤섞은 줄 — 심판과만 견준다.",
+  "cases": [
+    {"name": "링크는 제목만 (빈 주소)", "line": "[시니어 명소](<>) 와 함께", "expect": "시니어 명소 와 함께"},
+    {"name": "굵게 표시를 뗀다", "line": "This week is about **clearing what’s piled up**. Nothing new gets started.", "expect": "This week is about clearing what’s piled up. Nothing new gets started."},
+    {"name": "목록의 웹 링크", "line": "- [How to Walk Slowly — a 10-Minute Story](https://example.com/watch/slow-walk)", "expect": "How to Walk Slowly — a 10-Minute Story"},
+    {"name": "공유로 덧붙인 링크 · 메모", "line": "- [영상 제목](https://youtu.be/abc) — 메모", "expect": "영상 제목 — 메모"},
+    {"name": "할 일 상자 — 안 함", "line": "- [ ] Apples", "expect": "☐ Apples"},
+    {"name": "할 일 상자 — 함", "line": "* [x] Milk", "expect": "☑ Milk"},
+    {"name": "인용 속 목록 속 상자", "line": "> - [X] done **well**", "expect": "☑ done well"},
+    {"name": "목록이 아니면 상자도 글자", "line": "[ ] 목록 아님", "expect": "[ ] 목록 아님"},
+    {"name": "제목 표시", "line": "## Day by day", "expect": "Day by day"},
+    {"name": "제목 끝 # 줄", "line": "### Notes ###", "expect": "Notes"},
+    {"name": "C# 은 둔다", "line": "# Learn C#", "expect": "Learn C#"},
+    {"name": "번호 목록", "line": "1. First **step**", "expect": "First step"},
+    {"name": "괄호 번호 목록", "line": "2) Second", "expect": "Second"},
+    {"name": "이미지는 대체 글", "line": "![Lisbon at sunset](assets/river.jpg)", "expect": "Lisbon at sunset"},
+    {"name": "대체 글 없는 이미지는 빈칸", "line": "![](assets/x.png)", "expect": ""},
+    {"name": "코드 안은 그대로", "line": "Run `make **all**` now", "expect": "Run make **all** now"},
+    {"name": "취소선 둘 · 하나", "line": "~~old~~ and ~one~ new", "expect": "old and one new"},
+    {"name": "기울임 두 가지", "line": "*italic* and _under_", "expect": "italic and under"},
+    {"name": "짝 없는 별은 글자", "line": "2 * 3 = 6", "expect": "2 * 3 = 6"},
+    {"name": "낱말 속 밑줄은 글자", "line": "snake_case_name", "expect": "snake_case_name"},
+    {"name": "한글 곁 굵게", "line": "이것은**굵게**다", "expect": "이것은굵게다"},
+    {"name": "빗금 풀기", "line": "\\*not bold\\*", "expect": "*not bold*"},
+    {"name": "자동 링크는 주소", "line": "See <https://example.com> now", "expect": "See https://example.com now"},
+    {"name": "문자 참조", "line": "Tom &amp; Jerry &#39;24", "expect": "Tom & Jerry '24"},
+    {"name": "나쁜 주소는 링크가 아니다", "line": "[click](javascript:alert(1))", "expect": "[click](javascript:alert(1))"},
+    {"name": "HTML 태그는 그대로", "line": "a <b>bold</b> b", "expect": "a <b>bold</b> b"},
+    {"name": "링크 안 굵게", "line": "[**Bold** link](x.md \"title\")", "expect": "Bold link"},
+    {"name": "빈 줄", "line": "", "expect": ""},
+    {"name": "제목 표시뿐", "line": "#", "expect": ""}
+  ],
+  "fuzz": {
+    "seed": 242,
+    "count": 300,
+    "maxPieces": 24,
+    "pieces": ["a", "b", " ", "가", "*", "_", "~", "`", "[", "]", "(", ")", "!", "<", ">", "\\", "\"", "'", "&amp;", "&#39;", "&#x41;", "&copy;", "https://x.y", ":", "/", "@", "c.d", "**", "~~", "](", "<a>", "</b>", "다.", "。", "“", "”", "😀", "\t", "<https://a.b>", "<m@x.io>", "\"t\"", "javascript:", "<!-- c -->", "___", "***", "# ", "> ", "- ", "1. ", "[ ] ", "[x] "]
+  }
+}

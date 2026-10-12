@@ -2427,12 +2427,13 @@ def _source_letters(html: str) -> list:
             super().__init__(convert_charrefs=True)
             self.parts, self.skip = [], 0
         def handle_starttag(self, tag, attrs):
-            if tag in hm.SKIP and tag not in hm.VOID:
-                self.skip += 1
-            if tag == "img" and not self.skip:
+            # 첨부 요소(243 — img · object · embed · video · audio)는 자리 하나 · 안의 대체 글은 글이 아니다.
+            if tag in hm.MEDIA and not self.skip:
                 self.parts.append(hm.OBJECT)
+            if (tag in hm.SKIP or tag in hm.MEDIA) and tag not in hm.VOID:
+                self.skip += 1
         def handle_endtag(self, tag):
-            if tag in hm.SKIP and tag not in hm.VOID and self.skip:
+            if (tag in hm.SKIP or tag in hm.MEDIA) and tag not in hm.VOID and self.skip:
                 self.skip -= 1
         def handle_data(self, data):
             if not self.skip:
@@ -2747,6 +2748,8 @@ def build() -> dict:
         "shareEntryCases": build_share_entry_cases(),
         "shareAppendCases": build_share_append_cases(),
         "reviewCases": build_review_cases(),
+        "previewCases": build_preview_cases(),
+        "pastedFileCases": build_pasted_file_cases(),
     }
 
 
@@ -2990,6 +2993,176 @@ def build_review_cases() -> list[dict]:
         out.append({"name": case["name"], "activeDays": case["activeDays"], "daysSinceFirstUse": case["daysSinceFirstUse"],
                     "daysSinceLastAsk": case.get("daysSinceLastAsk"), "askedThisVersion": case.get("askedThisVersion", False),
                     "result": got})
+    return out
+
+
+# 243 — 붙여넣은 첨부의 종류 (Swift `PastedFile.kind` · `PastedFile.label`).
+PASTED_FILE_CASES = ROOT / "Tools" / "golden" / "pasted-file-cases.json"
+HEIF_IMAGE_BRANDS = {"heic", "heif", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1", "avif", "avis"}
+NAMED_IMAGE_EXTS = {"png", "jpg", "jpeg", "gif", "heic", "heif", "webp", "tif", "tiff", "bmp"}
+
+
+def _name_ext(file_name):
+    """이름의 확장자 — 영어 · 숫자 1~8 자일 때만 (소문자). 아니면 None."""
+    if not file_name:
+        return None
+    base = file_name.rsplit("/", 1)[-1]
+    if "." not in base:
+        return None
+    ext = base.rsplit(".", 1)[1]
+    if not (1 <= len(ext) <= 8) or not all(c.isascii() and c.isalnum() for c in ext):
+        return None
+    return ext.lower()
+
+
+def pasted_file_kind(head: bytes, file_name):
+    h = head
+    if h[:4] == b"\x89PNG":
+        return "image:png"
+    if h[:4] == b"GIF8":
+        return "image:gif"
+    if h[:3] == b"\xff\xd8\xff":
+        return "image:jpg"
+    if len(h) >= 12 and h[4:8] == b"ftyp":
+        brand = h[8:12].decode("latin-1")
+        if brand.lower() in HEIF_IMAGE_BRANDS:
+            return "image:jpg"
+        if brand == "M4A ":
+            return "file:m4a"
+        if brand == "M4B ":
+            return "file:m4b"
+        if brand == "M4V ":
+            return "file:m4v"
+        if brand == "qt  ":
+            return "file:mov"
+        if brand.startswith("3g"):
+            return "file:3gp"
+        named = _name_ext(file_name)
+        return "file:" + (named if named in ("mp4", "m4a", "mov", "m4v") else "mp4")
+    if h[:4] == b"%PDF":
+        return "file:pdf"
+    if h[:4] == b"RIFF" and h[8:12] == b"WAVE":
+        return "file:wav"
+    if h[:3] == b"ID3" or h[:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2"):
+        return "file:mp3"
+    if h[:4] == b"caff":
+        return "file:caf"
+    if h[:4] == b"PK\x03\x04":
+        return "file:" + (_name_ext(file_name) or "zip")
+    named = _name_ext(file_name)
+    if named and named not in NAMED_IMAGE_EXTS:
+        return "file:" + named
+    return "unknown"
+
+
+def pasted_file_label(file_name, ext: str, fallback: str = "첨부") -> str:
+    name = unicodedata.normalize("NFC", (file_name or "").strip())
+    if not name:
+        return fallback + "." + ext
+    return name if _name_ext(name) else name + "." + ext
+
+
+def _file_key(text):
+    """주소 · 이름의 **파일 이름 열쇠** — 마지막 `/` 뒤, 퍼센트 부호 풀기, NFC, 소문자. 비면 None."""
+    if not text:
+        return None
+    last = text.rsplit("/", 1)[-1]
+    name = unicodedata.normalize("NFC", urllib.parse.unquote(last)).lower()
+    return name or None
+
+
+def pasted_file_matches(slots, names):
+    """첨부 자리마다 쓸 첨부의 차례 (243). 자리가 None 이면(웹 · data 주소) 첨부를 안 쓴다.
+    ① 이름으로 먼저 — 자리 주소의 파일 이름과 첨부 이름이 같으면. ② 남은 자리는 안 쓴 첨부를 차례대로. 모자라면 None."""
+    out = [None] * len(slots)
+    used = set()
+    keys = [_file_key(n) for n in names]
+    for i, slot in enumerate(slots):
+        want = _file_key(slot) if slot is not None else None
+        if want is None:
+            continue
+        for k, key in enumerate(keys):
+            if k not in used and key == want:
+                out[i] = k
+                used.add(k)
+                break
+    for i, slot in enumerate(slots):
+        if slot is None or out[i] is not None:
+            continue
+        for k in range(len(names)):
+            if k not in used:
+                out[i] = k
+                used.add(k)
+                break
+    return out
+
+
+def build_pasted_file_cases() -> dict:
+    spec = json.loads(PASTED_FILE_CASES.read_text(encoding="utf-8"))
+    kinds, labels = [], []
+    for case in spec["cases"]:
+        got = pasted_file_kind(bytes.fromhex(case["head"]), case.get("fileName"))
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 첨부 종류: 뜻 {case['expect']!r} · 셈 {got!r}")
+        kinds.append({"name": case["name"], "head": case["head"], "fileName": case.get("fileName"), "result": got})
+    for case in spec["labels"]:
+        got = pasted_file_label(case.get("fileName"), case["ext"])
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 첨부 이름: 뜻 {case['expect']!r} · 셈 {got!r}")
+        labels.append({"name": case["name"], "fileName": case.get("fileName"), "ext": case["ext"], "result": got})
+    matches = []
+    for case in spec["matches"]:
+        got = pasted_file_matches(case["slots"], case["names"])
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 첨부 짝: 뜻 {case['expect']!r} · 셈 {got!r}")
+        matches.append({"name": case["name"], "slots": case["slots"], "names": case["names"], "result": got})
+    return {"kinds": kinds, "labels": labels, "matches": matches}
+
+
+# 242 — 목록 · 검색 결과에 보이는 한 줄 (Swift `PreviewLine.plain`). 셈은 `preview_line.py` (쌍둥이),
+# 줄 안 부분의 심판은 markdown-it (`make_parser` — 읽기 화면과 같은 설정).
+PREVIEW_CASES = ROOT / "Tools" / "golden" / "preview-cases.json"
+
+
+def _inline_text(children) -> str:
+    out = []
+    for t in children or []:
+        if t.type in ("text", "code_inline", "text_special", "html_inline"):
+            out.append(t.content)
+        elif t.type in ("softbreak", "hardbreak"):
+            out.append(" ")
+        elif t.type == "image":
+            out.append(_inline_text(t.children))
+    return "".join(out)
+
+
+def build_preview_cases() -> list[dict]:
+    sys.path.insert(0, str(ROOT / "Tools" / "golden"))
+    import preview_line as pl
+    import random
+    spec = json.loads(PREVIEW_CASES.read_text(encoding="utf-8"))
+    md = make_parser()
+    lines = [(case["name"], case["line"], case.get("expect")) for case in spec["cases"]]
+    fuzz = spec["fuzz"]
+    rng = random.Random(fuzz["seed"])
+    pieces = fuzz["pieces"]
+    for k in range(fuzz["count"]):
+        # random() 만 쓴다 — 파이썬 판이 달라도 같은 줄이 나온다 (choice · randint 는 보장되지 않는다).
+        n = 1 + int(rng.random() * fuzz["maxPieces"])
+        line = "".join(pieces[int(rng.random() * len(pieces))] for _ in range(n))
+        lines.append((f"뒤섞기 {k + 1:03d}", line, None))
+    out = []
+    for name, line, expect in lines:
+        box, rest = pl.strip_block(line)
+        mine = pl.Inline(rest).text(0, len(rest))
+        tokens = md.parseInline(rest) if rest else []
+        judged = _inline_text(tokens[0].children) if tokens else ""
+        if mine != judged:
+            raise SystemExit(f"::error::[{name}] 보이는 줄: 쌍둥이 {mine!r} · markdown-it {judged!r} ({line!r})")
+        got = pl.preview(line)
+        if expect is not None and got != expect:
+            raise SystemExit(f"::error::[{name}] 보이는 줄: 뜻 {expect!r} · 셈 {got!r}")
+        out.append({"name": name, "line": line, "result": got})
     return out
 
 
@@ -3918,9 +4091,12 @@ def tally(loaded: dict) -> str:
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
-        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"), ("평가 부탁", "reviewCases"),
+        ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"), ("평가 부탁", "reviewCases"), ("보이는 줄", "previewCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
+    files = loaded.get("pastedFileCases")
+    if files:
+        counted.append(f"붙여넣은 첨부 {len(files['kinds'])}·{len(files['labels'])}·{len(files['matches'])}건")
     # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.
     convert = loaded.get("pasteConvertCases")
     if convert:
