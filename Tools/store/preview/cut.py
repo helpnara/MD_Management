@@ -37,10 +37,12 @@ def main() -> int:
     frames.mkdir(parents=True, exist_ok=True)
     for old in frames.glob("*.jpg"):
         old.unlink()
+    # 장면 시각은 showinfo 가 원래 값으로 적는다. 그 뒤로는 시간 단위를 1/600 으로 맞추고 시각 대신 **차례 번호**(settb · setpts=N)를 넘긴다 — 세 번째 녹화에서
+    # 15ms 간격 장면들이 그림 인코더의 거친 시간 단위로 반올림돼 같은 시각이 되어 멈췄다 (`Invalid pts (2) <= last (2)`).
     run = subprocess.run(
         [ffmpeg, "-hide_banner", "-ss", f"{seg0:.3f}", "-to", f"{seg1:.3f}", "-i", raw,
-         "-fps_mode", "passthrough",
-         "-vf", "showinfo,scale=886:-2:flags=lanczos,crop=886:1920:0:(ih-1920)/2",
+         "-fps_mode", "passthrough", "-enc_time_base", "1/600",
+         "-vf", "showinfo,settb=1/600,setpts=N,scale=886:-2:flags=lanczos,crop=886:1920:0:(ih-1920)/2",
          "-q:v", "2", str(frames / "%05d.jpg")],
         capture_output=True, text=True)
     if run.returncode != 0:
