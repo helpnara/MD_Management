@@ -105,7 +105,10 @@ def main() -> int:
         [ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
          "-f", "concat", "-safe", "0", "-i", str(listing),
          "-f", "lavfi", "-t", "40", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
-         "-vf", "fps=30,format=yuv420p,setsar=1", "-map", "0:v", "-map", "1:a", "-shortest",
+         # 그림(JPEG)은 전 범위로 뽑힌다 — 영상의 제한 범위로 되돌린다. 그냥 두면 `yuvj420p(pc)` 로 남았다 (다섯 번째 녹화).
+         # 뽑을 때 색 행렬은 바뀌지 않아(BT.709 그대로) 행렬은 둘 다 BT.709 — 여기서 파랑 · 회색을 재어 원본과 같은 값인 조합이다.
+         "-vf", "fps=30,scale=in_range=pc:in_color_matrix=bt709:out_range=tv:out_color_matrix=bt709,format=yuv420p,setsar=1",
+         "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv", "-map", "0:v", "-map", "1:a", "-shortest",
          "-r", "30", "-fps_mode", "cfr", "-c:v", "libx264", "-profile:v", "high", "-level", "4.0",
          "-preset", "slow", "-crf", "16", "-maxrate", "10M", "-bufsize", "20M",
          "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", out],

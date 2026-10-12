@@ -13,6 +13,11 @@ final class StorePreviewUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-storeFolder"]
         app.launch()
         XCTAssertTrue(app.staticTexts["Watch Later"].firstMatch.waitForExistence(timeout: 30), "목록이 안 떴다")
+        // 읽기 화면을 미리 데운다 — 러너에서는 첫 읽기 화면이 그려지기까지 몇 초가 걸려 멈춤 구간이 흰 화면이 됐다 (다섯 번째 녹화).
+        app.staticTexts["Weekly Plan"].firstMatch.tap()
+        waitForReading("Weekly Plan")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.staticTexts["Watch Later"].firstMatch.waitForExistence(timeout: 10), "목록으로 못 돌아왔다")
         pause(2.0)
         mark("START")
         hold(1.2)
@@ -43,6 +48,7 @@ final class StorePreviewUITests: XCTestCase {
 
         // ③ 링크 모음 (읽기)
         app.staticTexts["Watch Later"].firstMatch.tap()
+        waitForReading("Walk Slowly")
         hold(3.2)
         app.navigationBars.buttons.element(boundBy: 0).tap()
         hold(1.0)
@@ -55,6 +61,7 @@ final class StorePreviewUITests: XCTestCase {
         type(search, ["Lis", "bon"])
         hold(1.8)
         app.staticTexts["Lisbon Trip"].firstMatch.tap()
+        waitForReading("Day by day")
         hold(3.5)
         mark("END")
     }
@@ -75,6 +82,15 @@ final class StorePreviewUITests: XCTestCase {
         let start = Date().timeIntervalSince1970
         body()
         print(String(format: "PREVIEW_TYPE %.3f %.3f", start, Date().timeIntervalSince1970))
+    }
+
+    /// 읽기 화면(웹 보기)에 이 글이 보일 때까지 — 그 뒤 그림이 화면에 칠해지도록 조금 더. 기다린 시간은 영상에서 줄어든다.
+    private func waitForReading(_ text: String) {
+        let app = XCUIApplication()
+        let found = app.webViews.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+        XCTAssertTrue(found.waitForExistence(timeout: 30), "읽기 화면에 \(text) 가 안 떴다")
+        pause(0.8)
     }
 
     private func pause(_ seconds: Double) {
