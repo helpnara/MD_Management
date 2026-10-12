@@ -140,7 +140,7 @@ jobs:
           # 시험이 장면마다 화면을 찍어 결과 묶음(xcresult)에 남긴다 — 시뮬레이터 녹화는 읽기 화면을 놓쳐 그만뒀다 (첫~아홉 번째).
           xcodebuild test-without-building -project Notebook.xcodeproj -scheme StorePreview \
             -destination "id=$UDID" -derivedDataPath build -resultBundlePath raw-video/Preview.xcresult \
-            -only-testing:StorePreviewUITests/StorePreviewUITests/testPreview 2>&1 | tee raw-video/test.log | grep -E "error|failed|passed|Test Case" || true
+            -only-testing:StorePreviewUITests/StorePreviewUITests/testPreview 2>&1 | tee raw-video/test.log | grep -E "error|failed|passed|Test Case|PREVIEW_WARN" || true
           grep -q "testPreview\]' passed" raw-video/test.log || { echo "::error::시험이 끝까지 가지 못했다 (test.log 를 본다)"; exit 1; }
           xcrun xcresulttool export attachments --path raw-video/Preview.xcresult --output-path raw-video/shots
           ls raw-video/shots | head -5; echo "그림 $(ls raw-video/shots/*.png 2>/dev/null | wc -l)장"
