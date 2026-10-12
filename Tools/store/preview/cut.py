@@ -117,11 +117,13 @@ def main() -> int:
     run = subprocess.run(
         [ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
          "-f", "concat", "-safe", "0", "-i", str(listing),
-         "-f", "lavfi", "-t", "40", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+         "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
          # 그림(JPEG)은 전 범위로 뽑힌다 — 영상의 제한 범위로 되돌린다. 그냥 두면 `yuvj420p(pc)` 로 남았다 (다섯 번째 녹화).
          # 뽑을 때 색 행렬은 바뀌지 않아(BT.709 그대로) 행렬은 둘 다 BT.709 — 여기서 파랑 · 회색을 재어 원본과 같은 값인 조합이다.
          "-vf", "fps=30,scale=in_range=pc:in_color_matrix=bt709:out_range=tv:out_color_matrix=bt709,format=yuv420p,setsar=1",
-         "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv", "-map", "0:v", "-map", "1:a", "-shortest",
+         "-colorspace", "bt709", "-color_primaries", "bt709", "-color_trc", "bt709", "-color_range", "tv", "-map", "0:v", "-map", "1:a",
+         # 길이는 숫자로 — `-shortest` 는 소리를 10초까지 미리 쌓아 영상이 33.7초가 됐다 (여덟 번째 녹화).
+         "-t", f"{sum(durs):.3f}",
          "-r", "30", "-fps_mode", "cfr", "-c:v", "libx264", "-profile:v", "high", "-level", "4.0",
          "-preset", "slow", "-crf", "16", "-maxrate", "10M", "-bufsize", "20M",
          "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", out],
@@ -131,6 +133,10 @@ def main() -> int:
         return 1
     probe = subprocess.run([ffmpeg, "-hide_banner", "-i", out], capture_output=True, text=True).stderr
     print("\n".join(l for l in probe.splitlines() if "Duration" in l or "Stream" in l))
+    h, m, sec = re.search(r"Duration: (\d+):(\d+):([0-9.]+)", probe).groups()
+    if int(h) * 3600 + int(m) * 60 + float(sec) > 30:
+        print("::error::결과 영상이 30초를 넘는다")
+        return 1
     return 0
 
 
@@ -140,13 +146,19 @@ def find_dark(ffmpeg: str, raw: str, until: float) -> float | None:
         [ffmpeg, "-hide_banner", "-t", f"{max(until, 5):.3f}", "-i", raw,
          "-vf", "scale=120:-2,showinfo", "-f", "null", "-"],
         capture_output=True, text=True)
-    last_light = None
+    # 화면이 멈춰 있으면 녹화는 장면을 안 남긴다 — 밝은 장면과 어두운 장면 사이가 몇 초여도 된다 (여덟 번째 녹화에서 *1.5초 안* 으로 묶었다가 못 찾았다).
+    light = False
+    seen = []
     for t, y in re.findall(r"pts_time:\s*(-?[0-9.]+).*?mean:\[(\d+)", run.stderr):
         t, y = float(t), int(y)
+        if not seen or abs(y - seen[-1][1]) >= 40:
+            seen.append((t, y))
         if y >= LIGHT:
-            last_light = t
-        elif y <= DARK and last_light is not None and t - last_light < 1.5:
+            light = True
+        elif y <= DARK and light:
+            print(f"어두워진 장면: {t:.2f}초 (밝기 {y})")
             return t
+    print("밝기가 크게 바뀐 자리: " + " · ".join(f"{t:.1f}초 {y}" for t, y in seen[:40]))
     return None
 
 
