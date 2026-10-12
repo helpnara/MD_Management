@@ -15,7 +15,7 @@ final class StorePreviewUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Watch Later"].firstMatch.waitForExistence(timeout: 30), "목록이 안 떴다")
         pause(2.0)
         mark("START")
-        pause(1.2)
+        hold(1.2)
 
         // ① 새 노트 — 제목을 Today 로, 본문은 커서 줄만 기호가 보이는 모습
         app.buttons["New Note"].firstMatch.tap()
@@ -30,22 +30,22 @@ final class StorePreviewUITests: XCTestCase {
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "New Note".count))
         pause(0.3)
         type(editor, ["To", "day"])
-        pause(0.5)
+        hold(0.5)
         type(editor, ["\n", "Write ", "in ", "plain ", "text. "])
         type(editor, ["Only ", "this ", "line ", "shows ", "**", "marks", "**"])
-        pause(1.2)
+        hold(1.2)
         type(editor, ["\n", "- [ ] ", "Read ", "it ", "later"])
-        pause(1.8)
+        hold(1.8)
 
         // ② 목록으로
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        pause(1.5)
+        hold(1.5)
 
         // ③ 링크 모음 (읽기)
         app.staticTexts["Watch Later"].firstMatch.tap()
-        pause(3.2)
+        hold(3.2)
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        pause(1.2)
+        hold(1.0)
 
         // ④ 검색 → 읽기 (사진 · 표)
         let search = app.searchFields.firstMatch
@@ -53,9 +53,9 @@ final class StorePreviewUITests: XCTestCase {
         search.tap()
         pause(0.6)
         type(search, ["Lis", "bon"])
-        pause(1.8)
+        hold(1.8)
         app.staticTexts["Lisbon Trip"].firstMatch.tap()
-        pause(3.5)
+        hold(3.5)
         mark("END")
     }
 
@@ -69,6 +69,13 @@ final class StorePreviewUITests: XCTestCase {
 
     private func pause(_ seconds: Double) {
         Thread.sleep(forTimeInterval: seconds)
+    }
+
+    /// **영상에서 이만큼 보여 준다** — 자르는 단계(`cut.py`)가 이 자리의 장면을 이 길이로 둔다. 다른 기다림은 줄인다
+    /// (UI 시험은 동작마다 1~3초씩 멈춰 있어, 그대로면 97초가 됐다 — 두 번째 녹화).
+    private func hold(_ seconds: Double) {
+        print(String(format: "PREVIEW_HOLD %.3f %.2f", Date().timeIntervalSince1970, seconds))
+        pause(seconds)
     }
 
     private func mark(_ name: String) {

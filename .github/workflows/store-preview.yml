@@ -149,28 +149,13 @@ jobs:
           ls -la raw-video
           grep -q "PREVIEW_MARK END" raw-video/test.log || { echo "::error::시험이 끝까지 가지 못했다 (test.log 를 본다)"; exit 1; }
 
-      - name: 잘라서 규격으로 (886 × 1920 · 30fps · 빈 소리 칸)
+      - name: 잘라서 규격으로 (멈춘 시간 줄이기 · 886 × 1920 · 30fps · 빈 소리 칸)
         run: |
           set -euo pipefail
           FF=$(cat /tmp/ffmpeg-path)
-          REC_START=$(cat raw-video/record-start)
-          START=$(grep -o "PREVIEW_MARK START [0-9.]*" raw-video/test.log | awk '{print $3}' | head -1)
-          END=$(grep -o "PREVIEW_MARK END [0-9.]*" raw-video/test.log | awk '{print $3}' | head -1)
-          # 녹화가 시작 표시보다 3초 먼저 켜졌다 — 녹화 안의 자리 = 표시 시각 - 녹화 시각 + 3
-          SS=$(python3 -c "print(max(0, $START - $REC_START + 3))")
-          TT=$(python3 -c "print(min(30.0, $END - $START))")
-          echo "자르기: $SS 초부터 $TT 초 (시험 $(python3 -c "print(round($END - $START, 2))") 초)"
-          "$FF" -hide_banner -i raw-video/raw.mov 2>&1 | grep -E "Duration|Stream" || true
-          mkdir -p docs/store/preview
-          "$FF" -hide_banner -loglevel error -y -ss "$SS" -t "$TT" -i raw-video/raw.mov \
-            -f lavfi -t 40 -i anullsrc=channel_layout=stereo:sample_rate=44100 \
-            -filter_complex "[0:v]scale=886:-2:flags=lanczos,crop=886:1920:0:(ih-1920)/2,fps=30,format=yuv420p,setsar=1[v]" \
-            -map "[v]" -map 1:a -shortest -r 30 -fps_mode cfr -c:v libx264 -profile:v high -level 4.0 -preset slow -crf 16 \
-            -maxrate 10M -bufsize 20M -c:a aac -b:a 128k -movflags +faststart docs/store/preview/slow-margin-preview-en.mp4
-          "$FF" -hide_banner -i docs/store/preview/slow-margin-preview-en.mp4 2>&1 | grep -E "Duration|Stream"
-          # 1초마다 한 장 — 세션이 열어 본다
-          mkdir -p raw-video/frames
-          "$FF" -hide_banner -loglevel error -i docs/store/preview/slow-margin-preview-en.mp4 -vf "fps=1,scale=300:-1" raw-video/frames/%02d.png
+          # 시험은 동작마다 멈춰 있어 97초가 됐다 (두 번째 녹화) — 표시한 멈춤만 그 길이로, 나머지 기다림은 줄인다
+          .ci-venv/bin/python Tools/store/preview/cut.py "$FF" raw-video/raw.mov raw-video/test.log raw-video/record-start \
+            docs/store/preview/slow-margin-preview-en.mp4
 
       - name: 결과 보관
         if: always()
