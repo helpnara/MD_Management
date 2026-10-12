@@ -2748,6 +2748,7 @@ def build() -> dict:
         "shareAppendCases": build_share_append_cases(),
         "reviewCases": build_review_cases(),
         "previewCases": build_preview_cases(),
+        "pastedFileCases": build_pasted_file_cases(),
     }
 
 
@@ -2992,6 +2993,88 @@ def build_review_cases() -> list[dict]:
                     "daysSinceLastAsk": case.get("daysSinceLastAsk"), "askedThisVersion": case.get("askedThisVersion", False),
                     "result": got})
     return out
+
+
+# 243 — 붙여넣은 첨부의 종류 (Swift `PastedFile.kind` · `PastedFile.label`).
+PASTED_FILE_CASES = ROOT / "Tools" / "golden" / "pasted-file-cases.json"
+HEIF_IMAGE_BRANDS = {"heic", "heif", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1", "avif", "avis"}
+NAMED_IMAGE_EXTS = {"png", "jpg", "jpeg", "gif", "heic", "heif", "webp", "tif", "tiff", "bmp"}
+
+
+def _name_ext(file_name):
+    """이름의 확장자 — 영어 · 숫자 1~8 자일 때만 (소문자). 아니면 None."""
+    if not file_name:
+        return None
+    base = file_name.rsplit("/", 1)[-1]
+    if "." not in base:
+        return None
+    ext = base.rsplit(".", 1)[1]
+    if not (1 <= len(ext) <= 8) or not all(c.isascii() and c.isalnum() for c in ext):
+        return None
+    return ext.lower()
+
+
+def pasted_file_kind(head: bytes, file_name):
+    h = head
+    if h[:4] == b"\x89PNG":
+        return "image:png"
+    if h[:4] == b"GIF8":
+        return "image:gif"
+    if h[:3] == b"\xff\xd8\xff":
+        return "image:jpg"
+    if len(h) >= 12 and h[4:8] == b"ftyp":
+        brand = h[8:12].decode("latin-1")
+        if brand.lower() in HEIF_IMAGE_BRANDS:
+            return "image:jpg"
+        if brand == "M4A ":
+            return "file:m4a"
+        if brand == "M4B ":
+            return "file:m4b"
+        if brand == "M4V ":
+            return "file:m4v"
+        if brand == "qt  ":
+            return "file:mov"
+        if brand.startswith("3g"):
+            return "file:3gp"
+        named = _name_ext(file_name)
+        return "file:" + (named if named in ("mp4", "m4a", "mov", "m4v") else "mp4")
+    if h[:4] == b"%PDF":
+        return "file:pdf"
+    if h[:4] == b"RIFF" and h[8:12] == b"WAVE":
+        return "file:wav"
+    if h[:3] == b"ID3" or h[:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2"):
+        return "file:mp3"
+    if h[:4] == b"caff":
+        return "file:caf"
+    if h[:4] == b"PK\x03\x04":
+        return "file:" + (_name_ext(file_name) or "zip")
+    named = _name_ext(file_name)
+    if named and named not in NAMED_IMAGE_EXTS:
+        return "file:" + named
+    return "unknown"
+
+
+def pasted_file_label(file_name, ext: str, fallback: str = "첨부") -> str:
+    name = unicodedata.normalize("NFC", (file_name or "").strip())
+    if not name:
+        return fallback + "." + ext
+    return name if _name_ext(name) else name + "." + ext
+
+
+def build_pasted_file_cases() -> dict:
+    spec = json.loads(PASTED_FILE_CASES.read_text(encoding="utf-8"))
+    kinds, labels = [], []
+    for case in spec["cases"]:
+        got = pasted_file_kind(bytes.fromhex(case["head"]), case.get("fileName"))
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 첨부 종류: 뜻 {case['expect']!r} · 셈 {got!r}")
+        kinds.append({"name": case["name"], "head": case["head"], "fileName": case.get("fileName"), "result": got})
+    for case in spec["labels"]:
+        got = pasted_file_label(case.get("fileName"), case["ext"])
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 첨부 이름: 뜻 {case['expect']!r} · 셈 {got!r}")
+        labels.append({"name": case["name"], "fileName": case.get("fileName"), "ext": case["ext"], "result": got})
+    return {"kinds": kinds, "labels": labels}
 
 
 # 242 — 목록 · 검색 결과에 보이는 한 줄 (Swift `PreviewLine.plain`). 셈은 `preview_line.py` (쌍둥이),
@@ -3969,6 +4052,9 @@ def tally(loaded: dict) -> str:
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"), ("평가 부탁", "reviewCases"), ("보이는 줄", "previewCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]
+    files = loaded.get("pastedFileCases")
+    if files:
+        counted.append(f"붙여넣은 첨부 {len(files['kinds'])}·{len(files['labels'])}건")
     # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.
     convert = loaded.get("pasteConvertCases")
     if convert:

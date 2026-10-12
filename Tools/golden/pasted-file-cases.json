@@ -1,0 +1,39 @@
+{
+  "_왜": "243 — 붙여넣은 첨부의 종류 (PastedFile.kind). 메모에서 사진 · 녹음 · 글을 함께 복사하면 첨부가 서식 있는 글(RTFD)에 같이 온다. 예전 판별은 ftyp 상자면 무조건 사진(HEIC)으로 봐서 녹음(m4a)을 사진으로 저장하려다 실패했다. head 는 앞 바이트(16진), expect 는 뜻 — 셈과 다르면 멈춘다.",
+  "cases": [
+    {"name": "PNG", "head": "89504e470d0a1a0a0000000d", "expect": "image:png"},
+    {"name": "GIF", "head": "474946383961", "expect": "image:gif"},
+    {"name": "JPEG", "head": "ffd8ffe000104a464946", "expect": "image:jpg"},
+    {"name": "HEIC 사진 (아이폰 사진)", "head": "0000001866747970686569630000", "expect": "image:jpg"},
+    {"name": "heif 브랜드", "head": "000000186674797068656966", "expect": "image:jpg"},
+    {"name": "mif1 브랜드", "head": "00000018667479706d69663100", "expect": "image:jpg"},
+    {"name": "AVIF", "head": "0000001c6674797061766966", "expect": "image:jpg"},
+    {"name": "아이폰 녹음 (M4A)", "head": "00000020667479704d34412000000000", "fileName": "새로운 녹음 3.m4a", "expect": "file:m4a"},
+    {"name": "녹음 — 이름 없이도", "head": "00000020667479704d344120", "expect": "file:m4a"},
+    {"name": "오디오북 M4B", "head": "00000020667479704d344220", "expect": "file:m4b"},
+    {"name": "아이폰 동영상 (qt)", "head": "0000001466747970717420200000", "fileName": "IMG_0001.MOV", "expect": "file:mov"},
+    {"name": "MP4 isom", "head": "0000001c6674797069736f6d", "expect": "file:mp4"},
+    {"name": "isom 이지만 이름이 m4a", "head": "0000001c6674797069736f6d", "fileName": "voice.m4a", "expect": "file:m4a"},
+    {"name": "3GP", "head": "00000014667479703367703400", "expect": "file:3gp"},
+    {"name": "PDF", "head": "255044462d312e370a", "fileName": "계약서.pdf", "expect": "file:pdf"},
+    {"name": "WAV", "head": "52494646a40d000057415645666d7420", "expect": "file:wav"},
+    {"name": "RIFF 이지만 WAVE 아님", "head": "524946460000000041564920", "expect": "unknown"},
+    {"name": "MP3 ID3", "head": "4944330400000000", "expect": "file:mp3"},
+    {"name": "MP3 프레임", "head": "fffb9064000000", "expect": "file:mp3"},
+    {"name": "CAF", "head": "6361666600010000", "expect": "file:caf"},
+    {"name": "ZIP · 이름이 docx", "head": "504b030414000600", "fileName": "보고서.docx", "expect": "file:docx"},
+    {"name": "ZIP · 이름 없음", "head": "504b030414000600", "expect": "file:zip"},
+    {"name": "모르는 바이트 · 이름 txt", "head": "68656c6c6f", "fileName": "메모.TXT", "expect": "file:txt"},
+    {"name": "모르는 바이트 · 이름이 사진", "head": "000102030405", "fileName": "photo.heic", "expect": "unknown"},
+    {"name": "모르는 바이트 · 이름 없음", "head": "000102030405", "expect": "unknown"},
+    {"name": "이상한 확장자는 안 믿는다", "head": "000102", "fileName": "a.b/c d", "expect": "unknown"},
+    {"name": "빈 데이터", "head": "", "expect": "unknown"}
+  ],
+  "labels": [
+    {"name": "이름 그대로", "fileName": "새로운 녹음 3.m4a", "ext": "m4a", "expect": "새로운 녹음 3.m4a"},
+    {"name": "이름에 확장자가 없으면 붙인다", "fileName": "새로운 녹음", "ext": "m4a", "expect": "새로운 녹음.m4a"},
+    {"name": "이름이 없으면 기본 이름", "fileName": null, "ext": "m4a", "expect": "첨부.m4a"},
+    {"name": "빈칸뿐인 이름", "fileName": "  ", "ext": "pdf", "expect": "첨부.pdf"},
+    {"name": "NFD 이름은 NFC 로", "fileName": "각.pdf", "ext": "pdf", "expect": "각.pdf"}
+  ]
+}

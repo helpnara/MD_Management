@@ -60,8 +60,18 @@ final class MarkdownTextView: UITextView {
         let sourceNote: String?
         /// 클립보드에 실린 갈래 이름들 — 진단 화면이 마지막 붙여넣기를 보여 줄 때 쓴다 (206).
         let types: [String]
-        /// **서식 있는 글에 든 사진들** (207) — 문서 차례. 사진이 있을 때만 읽으므로 늦게 부른다.
-        let loadImages: @MainActor () -> [Data]
+        /// **서식 있는 글에 든 첨부들** (207 · 243) — 문서 차례. 사진만이 아니다 — 메모의 녹음(m4a) · 문서도 여기 같이 온다.
+        /// 첨부 자리가 있을 때만 읽으므로 늦게 부른다.
+        let loadAttachments: @MainActor () -> [Attachment]
+    }
+
+    /// 붙여넣은 글에 든 첨부 하나 (243).
+    struct Attachment {
+        /// 파일 바이트. **못 읽은 첨부도 자리는 지킨다**(`nil`) — 빼 버리면 뒤의 것들이 한 칸씩 당겨져
+        /// 엉뚱한 사진이 엉뚱한 자리에 간다.
+        let data: Data?
+        /// 첨부가 실어 온 이름 (`새로운 녹음 3.m4a`). 없을 수 있다.
+        let name: String?
     }
 
     // MARK: 복사 — 원래 노트를 함께 싣는다 (177 둘째)
@@ -123,7 +133,7 @@ final class MarkdownTextView: UITextView {
                               selection: text(in: target) ?? "",
                               sourceNote: Self.sourceNote(from: board, plain: plain),
                               types: board.types,
-                              loadImages: { Self.images(from: board) })
+                              loadAttachments: { Self.attachments(from: board) })
         guard let made = onPaste?(item), made != plain else {
             super.paste(sender)
             return
@@ -154,26 +164,31 @@ final class MarkdownTextView: UITextView {
         return nil
     }
 
-    /// **서식 있는 글 속의 사진** (207) — 메모 · 메일처럼 글과 사진을 함께 복사하면 사진은 RTFD 갈래의 첨부로 온다.
-    /// 문서 차례대로 원래 파일 그대로(PNG · JPEG · HEIC)를 준다. 그 갈래가 없으면 클립보드의 사진들.
-    private static func images(from board: UIPasteboard) -> [Data] {
+    /// **서식 있는 글 속의 첨부** (207 · 243) — 메모 · 메일처럼 글과 사진 · 녹음을 함께 복사하면 그것들은 RTFD 갈래의 첨부로 온다.
+    /// 문서 차례대로 원래 파일 그대로(PNG · JPEG · HEIC · M4A …)를 이름과 함께 준다. 그 갈래가 없으면 클립보드의 사진들.
+    /// 무엇인지는 모델이 가른다 (`Core.PastedFile`) — 예전에는 모두 사진으로 여겨 녹음을 사진으로 저장하려다 실패했다.
+    private static func attachments(from board: UIPasteboard) -> [Attachment] {
         for type in ["com.apple.flat-rtfd", "com.apple.rtfd"] {
             guard let data = board.data(forPasteboardType: type),
                   let text = try? NSAttributedString(
                     data: data, options: [.documentType: NSAttributedString.DocumentType.rtfd],
                     documentAttributes: nil) else { continue }
-            var found: [Data] = []
+            var found: [Attachment] = []
             text.enumerateAttribute(.attachment, in: NSRange(location: 0, length: text.length)) { value, _, _ in
                 guard let attachment = value as? NSTextAttachment else { return }
-                if let contents = attachment.fileWrapper?.regularFileContents ?? attachment.contents {
-                    found.append(contents)
+                let wrapper = attachment.fileWrapper
+                let name = wrapper?.preferredFilename ?? wrapper?.filename
+                if let contents = wrapper?.regularFileContents ?? attachment.contents {
+                    found.append(Attachment(data: contents, name: name))
                 } else if let png = attachment.image?.pngData() {
-                    found.append(png)
+                    found.append(Attachment(data: png, name: nil))
+                } else {
+                    found.append(Attachment(data: nil, name: name))
                 }
             }
             if !found.isEmpty { return found }
         }
-        return board.images?.compactMap { $0.pngData() } ?? []
+        return (board.images ?? []).compactMap { $0.pngData() }.map { Attachment(data: $0, name: nil) }
     }
 
     /// 주소와 함께 오는 **페이지 이름**. 사파리가 이 갈래로 제목을 실어 준다.

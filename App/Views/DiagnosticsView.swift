@@ -161,6 +161,10 @@ struct DiagnosticsView: View {
                         LabeledContent("결과", value: paste.outcome)
                         LabeledContent("서식 글 길이", value: String(localized: "\(paste.html?.count ?? 0)자"))
                         LabeledContent("갈래", value: String(localized: "\(paste.types.count)개"))
+                        // 243 — 메모의 사진 · 녹음이 어떻게 됐나. 자세한 것은 복사한 글의 `[첨부]` 칸에 한 줄씩.
+                        if !paste.attachments.isEmpty {
+                            LabeledContent("첨부", value: String(localized: "\(paste.attachments.count)개"))
+                        }
                         Button {
                             UIPasteboard.general.string = paste.report
                             pasteCopied = true

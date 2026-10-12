@@ -7493,6 +7493,204 @@
       }
     ]
   },
+  "pastedFileCases": {
+    "kinds": [
+      {
+        "fileName": null,
+        "head": "89504e470d0a1a0a0000000d",
+        "name": "PNG",
+        "result": "image:png"
+      },
+      {
+        "fileName": null,
+        "head": "474946383961",
+        "name": "GIF",
+        "result": "image:gif"
+      },
+      {
+        "fileName": null,
+        "head": "ffd8ffe000104a464946",
+        "name": "JPEG",
+        "result": "image:jpg"
+      },
+      {
+        "fileName": null,
+        "head": "0000001866747970686569630000",
+        "name": "HEIC 사진 (아이폰 사진)",
+        "result": "image:jpg"
+      },
+      {
+        "fileName": null,
+        "head": "000000186674797068656966",
+        "name": "heif 브랜드",
+        "result": "image:jpg"
+      },
+      {
+        "fileName": null,
+        "head": "00000018667479706d69663100",
+        "name": "mif1 브랜드",
+        "result": "image:jpg"
+      },
+      {
+        "fileName": null,
+        "head": "0000001c6674797061766966",
+        "name": "AVIF",
+        "result": "image:jpg"
+      },
+      {
+        "fileName": "새로운 녹음 3.m4a",
+        "head": "00000020667479704d34412000000000",
+        "name": "아이폰 녹음 (M4A)",
+        "result": "file:m4a"
+      },
+      {
+        "fileName": null,
+        "head": "00000020667479704d344120",
+        "name": "녹음 — 이름 없이도",
+        "result": "file:m4a"
+      },
+      {
+        "fileName": null,
+        "head": "00000020667479704d344220",
+        "name": "오디오북 M4B",
+        "result": "file:m4b"
+      },
+      {
+        "fileName": "IMG_0001.MOV",
+        "head": "0000001466747970717420200000",
+        "name": "아이폰 동영상 (qt)",
+        "result": "file:mov"
+      },
+      {
+        "fileName": null,
+        "head": "0000001c6674797069736f6d",
+        "name": "MP4 isom",
+        "result": "file:mp4"
+      },
+      {
+        "fileName": "voice.m4a",
+        "head": "0000001c6674797069736f6d",
+        "name": "isom 이지만 이름이 m4a",
+        "result": "file:m4a"
+      },
+      {
+        "fileName": null,
+        "head": "00000014667479703367703400",
+        "name": "3GP",
+        "result": "file:3gp"
+      },
+      {
+        "fileName": "계약서.pdf",
+        "head": "255044462d312e370a",
+        "name": "PDF",
+        "result": "file:pdf"
+      },
+      {
+        "fileName": null,
+        "head": "52494646a40d000057415645666d7420",
+        "name": "WAV",
+        "result": "file:wav"
+      },
+      {
+        "fileName": null,
+        "head": "524946460000000041564920",
+        "name": "RIFF 이지만 WAVE 아님",
+        "result": "unknown"
+      },
+      {
+        "fileName": null,
+        "head": "4944330400000000",
+        "name": "MP3 ID3",
+        "result": "file:mp3"
+      },
+      {
+        "fileName": null,
+        "head": "fffb9064000000",
+        "name": "MP3 프레임",
+        "result": "file:mp3"
+      },
+      {
+        "fileName": null,
+        "head": "6361666600010000",
+        "name": "CAF",
+        "result": "file:caf"
+      },
+      {
+        "fileName": "보고서.docx",
+        "head": "504b030414000600",
+        "name": "ZIP · 이름이 docx",
+        "result": "file:docx"
+      },
+      {
+        "fileName": null,
+        "head": "504b030414000600",
+        "name": "ZIP · 이름 없음",
+        "result": "file:zip"
+      },
+      {
+        "fileName": "메모.TXT",
+        "head": "68656c6c6f",
+        "name": "모르는 바이트 · 이름 txt",
+        "result": "file:txt"
+      },
+      {
+        "fileName": "photo.heic",
+        "head": "000102030405",
+        "name": "모르는 바이트 · 이름이 사진",
+        "result": "unknown"
+      },
+      {
+        "fileName": null,
+        "head": "000102030405",
+        "name": "모르는 바이트 · 이름 없음",
+        "result": "unknown"
+      },
+      {
+        "fileName": "a.b/c d",
+        "head": "000102",
+        "name": "이상한 확장자는 안 믿는다",
+        "result": "unknown"
+      },
+      {
+        "fileName": null,
+        "head": "",
+        "name": "빈 데이터",
+        "result": "unknown"
+      }
+    ],
+    "labels": [
+      {
+        "ext": "m4a",
+        "fileName": "새로운 녹음 3.m4a",
+        "name": "이름 그대로",
+        "result": "새로운 녹음 3.m4a"
+      },
+      {
+        "ext": "m4a",
+        "fileName": "새로운 녹음",
+        "name": "이름에 확장자가 없으면 붙인다",
+        "result": "새로운 녹음.m4a"
+      },
+      {
+        "ext": "m4a",
+        "fileName": null,
+        "name": "이름이 없으면 기본 이름",
+        "result": "첨부.m4a"
+      },
+      {
+        "ext": "pdf",
+        "fileName": "  ",
+        "name": "빈칸뿐인 이름",
+        "result": "첨부.pdf"
+      },
+      {
+        "ext": "pdf",
+        "fileName": "각.pdf",
+        "name": "NFD 이름은 NFC 로",
+        "result": "각.pdf"
+      }
+    ]
+  },
   "pinCases": [
     {
       "followed": [
