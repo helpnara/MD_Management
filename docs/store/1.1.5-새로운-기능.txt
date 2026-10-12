@@ -1,0 +1,8 @@
+• 노트 목록과 검색 결과의 미리보기 줄이 읽기 화면처럼 보입니다. ** 나 [제목](주소) 같은 마크다운 기호 대신 글만 보이고, 링크는 제목만, 할 일은 ☐ 로 보입니다.
+• 사진 · 동영상 · 글이 섞인 글을 통째로 복사해 붙이면 사진과 동영상이 제자리에 들어갑니다. 동영상 · 문서는 원래 이름 그대로 노트 옆 assets 폴더에 저장되고 링크로 들어가며, 읽기 화면에서 누르면 바로 열립니다.
+• 붙여 넣은 동영상을 사진으로 잘못 알아 저장하지 못하던 문제를 고쳤습니다.
+
+— English —
+• Previews in the note list and search results now look like Read mode: plain text instead of Markdown symbols such as ** or [title](link). Links show just their title, and to-dos show a ☐.
+• When you copy and paste text that mixes photos, videos and words, the photos and videos now land in the right places. Videos and documents are saved under their original names in the assets folder next to the note and added as links — tap one in Read mode to open it.
+• Fixed pasted videos being mistaken for photos and failing to save.
