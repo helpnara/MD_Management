@@ -23,6 +23,8 @@ from pathlib import Path
 LIMIT = 29.5        # 애플 한도 30초 — 끝의 반올림 몫
 CAP = 0.35          # 기계 기다림을 줄이는 한도 (초 · 장면마다)
 TYPE_MIN = 6.0      # 글자 구간 전체에 적어도 이만큼 (초) — 더 빠르면 무엇을 쳤는지 못 읽는다
+LIGHT, DARK = 170, 110  # 밝은 화면 · 어두운 화면의 평균 밝기 (0~255) — 시계 맞춤 장면을 가른다
+SYNC_LAG = 0.15     # 시험이 시각을 찍고 화면이 실제로 바뀌기까지 (초 · 어림)
 REST_MIN = 0.3      # 나머지를 이보다 빨리 감아야 하면 멈춤들을 줄인다 (0.7배까지)
 
 
@@ -36,8 +38,18 @@ def main() -> int:
              for t, s in re.findall(r"PREVIEW_HOLD ([0-9.]+) ([0-9.]+)", text)]
     typing = [(float(a) - start, float(b) - start)
               for a, b in re.findall(r"PREVIEW_TYPE ([0-9.]+) ([0-9.]+)", text)]
-    # record-start = 녹화 도구가 *Recording started* 를 찍은 때 = 영상의 0초 (워크플로가 잰다).
+    # 영상의 0초가 시험 시계로 언제인가. 녹화 도구가 *Recording started* 를 찍은 때(워크플로가 잰다)로는 4~5초 어긋났다
+    # (일곱 번째 녹화) — 그래서 시험이 화면을 어둡게 바꾼 장면(PREVIEW_SYNC)을 녹화에서 찾아 맞춘다. 못 찾으면 그 시각으로.
     rec0 = float(Path(rec_start_file).read_text().strip())
+    sync = re.search(r"PREVIEW_SYNC ([0-9.]+)", text)
+    if sync:
+        seen = find_dark(ffmpeg, raw, float(sync.group(1)) - rec0 + 10)
+        if seen is None:
+            print("::warning::어두워지는 장면을 못 찾았다 — Recording started 시각으로 자른다")
+        else:
+            fixed = float(sync.group(1)) + SYNC_LAG - seen
+            print(f"시계 맞춤: 어두워진 장면 {seen:.2f}초 → 영상 0초를 {fixed - rec0:+.2f}초 옮김")
+            rec0 = fixed
     seg0, seg1 = start - rec0, end - rec0
     print(f"시험 {end - start:.1f}초 · 녹화 안의 자리 {seg0:.2f} ~ {seg1:.2f} · 멈춤 {len(holds)}곳 · 글자 {len(typing)}곳")
 
@@ -120,6 +132,22 @@ def main() -> int:
     probe = subprocess.run([ffmpeg, "-hide_banner", "-i", out], capture_output=True, text=True).stderr
     print("\n".join(l for l in probe.splitlines() if "Duration" in l or "Stream" in l))
     return 0
+
+
+def find_dark(ffmpeg: str, raw: str, until: float) -> float | None:
+    """녹화의 처음부터 until 초까지에서 **밝던 화면이 어두워진 첫 장면**의 시각."""
+    run = subprocess.run(
+        [ffmpeg, "-hide_banner", "-t", f"{max(until, 5):.3f}", "-i", raw,
+         "-vf", "scale=120:-2,showinfo", "-f", "null", "-"],
+        capture_output=True, text=True)
+    last_light = None
+    for t, y in re.findall(r"pts_time:\s*(-?[0-9.]+).*?mean:\[(\d+)", run.stderr):
+        t, y = float(t), int(y)
+        if y >= LIGHT:
+            last_light = t
+        elif y <= DARK and last_light is not None and t - last_light < 1.5:
+            return t
+    return None
 
 
 def overlap(a: float, b: float, windows: list[tuple[float, float]]) -> float:

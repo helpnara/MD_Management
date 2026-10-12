@@ -18,6 +18,13 @@ final class StorePreviewUITests: XCTestCase {
         waitForReading("Weekly Plan")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.staticTexts["Watch Later"].firstMatch.waitForExistence(timeout: 10), "목록으로 못 돌아왔다")
+        // **시계 맞추기** — 녹화의 시각과 이 시험의 시각이 4~5초 어긋났다 (일곱 번째 녹화 — 녹화는 화면이 처음 바뀔 때부터 센다).
+        // 화면을 잠깐 어둡게 바꾸고 그 시각을 찍는다. 자르는 단계가 녹화에서 밝던 화면이 어두워지는 장면을 찾아 두 시계를 맞춘다.
+        pause(1.0)
+        print(String(format: "PREVIEW_SYNC %.3f", Date().timeIntervalSince1970))
+        XCUIDevice.shared.appearance = .dark
+        pause(1.5)
+        XCUIDevice.shared.appearance = .light
         pause(2.0)
         mark("START")
         hold(1.2)
