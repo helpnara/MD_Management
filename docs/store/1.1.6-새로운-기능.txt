@@ -1,0 +1,10 @@
+• 다른 앱에서 공유할 때 넣을 곳에 고정한 노트와 함께 최근 고친 노트 다섯 개가 보입니다. 고정하지 않은 노트에도 링크를 바로 덧붙일 수 있습니다.
+• 검색 칸에 자음만 치면 노트 제목의 첫소리로 찾습니다. 예: ㅎㅇㄹ → 회의록
+• iCloud 에서 아직 받지 않은 노트도 제목으로 바로 찾습니다. 받지 않은 노트가 아주 많은 폴더에서는 모두 내려받지 않고 제목만 색인해 데이터와 배터리를 아낍니다.
+• 설정 → 편집에 [[ 를 쳐서 노트를 잇는 방법을 적었습니다.
+
+— English —
+• When you share from another app, Save to now lists your five most recently edited notes along with your pinned notes, so you can add a link to any note you are working on.
+• Search now finds notes by the initial consonants of Korean titles (for example, ㅎㅇㄹ finds 회의록).
+• Notes not yet downloaded from iCloud now show up in search by title right away. In very large folders, the app indexes titles only instead of downloading every note, saving data and battery.
+• Settings › Editing now explains how to link notes by typing [[.

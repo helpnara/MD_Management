@@ -170,6 +170,18 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.6 제출 순서 (2026-10-13 사용자 — *1.1.6 심사 제출 준비하자*)
+
+> 1.1.5 가 오늘 나갔는데 바로 내는 까닭 — 실제 기능 넷이 있고(§6 *실제로 바뀐 것만*), 홍보 주(11-02) 전에 출시되어야 초성 검색까지 알릴 수 있다.
+> §6 의 *1~2주에 한 번* 간격보다 이르다 — 이번 한 번의 예외로 적어 둔다.
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.6`
+2. **빌드** 칸에서 **105** 를 고른다 (`1.1.6 (105)`)
+3. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 울타리 (`docs/store/1.1.6-새로운-기능.txt`)
+4. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New* (§1-영어) → **저장**
+5. 부제 · 키워드 · 스크린샷 · 미리보기 영상은 1.1.5 그대로 (따라온다)
+6. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+
 ### 1.1.5 제출 순서 (2026-10-12 사용자 — *심사 준비하자*)
 
 1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.5`
@@ -302,12 +314,13 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.5** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.4 의 글은 `docs/store/1.1.4-새로운-기능.txt`.
+> **1.1.6** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.5 의 글은 `docs/store/1.1.5-새로운-기능.txt`.
 
 ```
-• Previews in the note list and search results now look like Read mode: plain text instead of Markdown symbols such as ** or [title](link). Links show just their title, and to-dos show a ☐.
-• When you copy and paste text that mixes photos, videos and words, the photos and videos now land in the right places. Videos and documents are saved under their original names in the assets folder next to the note and added as links — tap one in Read mode to open it.
-• Fixed pasted videos being mistaken for photos and failing to save.
+• When you share from another app, Save to now lists your five most recently edited notes along with your pinned notes, so you can add a link to any note you are working on.
+• Search now finds notes by the initial consonants of Korean titles (for example, ㅎㅇㄹ finds 회의록).
+• Notes not yet downloaded from iCloud now show up in search by title right away. In very large folders, the app indexes titles only instead of downloading every note, saving data and battery.
+• Settings › Editing now explains how to link notes by typing [[.
 ```
 
 ---
@@ -425,6 +438,7 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-10-13 | **1.1.6 (빌드 105) 준비** (사용자 — *1.1.6 심사 제출 준비하자*). 새로운 기능 네 줄(한국어 · 영어) · `main` 병합 |
 | 2026-10-13 | ✅ **1.1.5 (빌드 104) 승인 · 배포** (사용자 — *1.1.5 심사 완료됐고 배포도 완료했어*). 다음은 1.1.6 (빌드 105 — 244 ~ 247) |
 | 2026-10-12 | ✅ **1.1.5 (빌드 104) 제출** (사용자 — *1.1.5 심사 제출 완료했어*). 새로운 기능 세 줄 · 미리보기 영상 둘(한국어 · 영어, 아이폰 6.1" 칸) · 자동 출시 |
 | 2026-10-12 | **1.1.5 (빌드 104) 준비** (사용자 — *심사 준비하자*). 새로운 기능 세 줄(한국어 · 영어) · 미리보기 영상 둘(한국어 29.1초 · 영어 26.5초, 아이폰 6.1" 칸) · `main` 병합 |
@@ -522,13 +536,14 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.5** (2026-10-12 — 242 미리보기 줄 · 243 사진 · 동영상 붙여넣기). 글은 `docs/store/1.1.5-새로운-기능.txt`. 1.1.4 의 글은 `docs/store/1.1.4-새로운-기능.txt`.
+> **1.1.6** (2026-10-13 — 244 넣을 곳에 최근 고친 노트 · 245 안 받은 노트 제목만 색인 · 246 제목 초성 검색 · 247 노트 잇기 안내). 글은 `docs/store/1.1.6-새로운-기능.txt`. 1.1.5 의 글은 `docs/store/1.1.5-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 노트 목록과 검색 결과의 미리보기 줄이 읽기 화면처럼 보입니다. ** 나 [제목](주소) 같은 마크다운 기호 대신 글만 보이고, 링크는 제목만, 할 일은 ☐ 로 보입니다.
-• 사진 · 동영상 · 글이 섞인 글을 통째로 복사해 붙이면 사진과 동영상이 제자리에 들어갑니다. 동영상 · 문서는 원래 이름 그대로 노트 옆 assets 폴더에 저장되고 링크로 들어가며, 읽기 화면에서 누르면 바로 열립니다.
-• 붙여 넣은 동영상을 사진으로 잘못 알아 저장하지 못하던 문제를 고쳤습니다.
+• 다른 앱에서 공유할 때 넣을 곳에 고정한 노트와 함께 최근 고친 노트 다섯 개가 보입니다. 고정하지 않은 노트에도 링크를 바로 덧붙일 수 있습니다.
+• 검색 칸에 자음만 치면 노트 제목의 첫소리로 찾습니다. 예: ㅎㅇㄹ → 회의록
+• iCloud 에서 아직 받지 않은 노트도 제목으로 바로 찾습니다. 받지 않은 노트가 아주 많은 폴더에서는 모두 내려받지 않고 제목만 색인해 데이터와 배터리를 아낍니다.
+• 설정 → 편집에 [[ 를 쳐서 노트를 잇는 방법을 적었습니다.
 ```
 
