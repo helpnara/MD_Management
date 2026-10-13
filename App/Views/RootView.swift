@@ -674,6 +674,12 @@ private struct NoteList: View {
                     }
                     .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }   // 121
                 }
+                // 245 — 본문을 못 읽은 노트는 제목으로만 찾혔다는 것을 알린다 (없는 것을 *없다* 고 믿지 않게).
+                if library.indexStatus.titleOnlyCount > 0 && !library.searchResults.isEmpty {
+                    Text("아직 이 기기로 받지 않은 노트 \(library.indexStatus.titleOnlyCount)개는 제목으로만 찾았습니다.")
+                        .font(.scaled(.footnote))
+                        .foregroundStyle(Palette.inkFaint)
+                }
             }
         }
         // 검색 (ADR-0003). 150ms 디바운스는 모델이 한다. `⌘F` 로 칸을 연다 (S9).

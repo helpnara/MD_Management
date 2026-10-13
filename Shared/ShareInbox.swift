@@ -27,10 +27,13 @@ actor ShareInbox {
     }
 
     /// **공유 창이 고를 수 있는 노트** (241) — 앱이 고정한 노트를 적어 둔다. 경로와 보여 줄 이름뿐 — 본문은 없다 (ADR-0001).
+    /// 244 부터 **최근 고친 노트**도 함께 적는다 (`recent`). 예전 판이 적은 파일(이 열쇠가 없는 것)은 고정한 노트로 읽힌다.
     struct Target: Codable, Sendable, Hashable, Identifiable {
         var path: String
         var name: String
+        var recent: Bool? = nil
         var id: String { path }
+        var isRecent: Bool { recent == true }
     }
 
     struct Entry: Sendable {

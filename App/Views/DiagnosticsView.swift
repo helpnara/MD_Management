@@ -75,6 +75,12 @@ struct DiagnosticsView: View {
 
                     row(String(localized: "색인 크기"), "\(library.indexStatus.fileBytes / 1024)KB")
 
+                    // 245 — 아직 안 내려와 제목만 넣은 노트. 안 받은 노트가 500개를 넘으면 내려받기를 시키지 않는다.
+                    row(String(localized: "제목만 색인"),
+                        library.indexStatus.downloadsWithheld
+                            ? String(localized: "\(library.indexStatus.titleOnlyCount)개 · 안 받은 노트가 많아 내려받지 않음")
+                            : String(localized: "\(library.indexStatus.titleOnlyCount)개"))
+
                     row(String(localized: "마지막 갱신"), String(format: String(localized: "%.2f초"), library.indexStatus.lastRefreshSeconds))
 
                     // 앱이 스스로 잰 값이다 — 사람이 초시계를 들 수는 없다 (S1 · A5c).

@@ -1,0 +1,168 @@
+{
+  "_왜": "246 — 제목 초성 찾기 (HangulInitials). 검색 말이 한글 자음만(빈칸 빼고 둘 이상)이면 제목의 첫소리와 견준다. 아이폰 자판이 합친 겹자음(ㄳ)은 풀어 본다. expect 는 뜻 — 셈과 다르면 멈춘다.",
+  "initials": [
+    {
+      "name": "음절",
+      "title": "회의록",
+      "expect": "ㅎㅇㄹ"
+    },
+    {
+      "name": "숫자 · 빈칸은 건너뜀",
+      "title": "2026 회의록",
+      "expect": "ㅎㅇㄹ"
+    },
+    {
+      "name": "영어 섞임",
+      "title": "Weekly 계획 v2",
+      "expect": "ㄱㅎ"
+    },
+    {
+      "name": "된소리는 그대로",
+      "title": "까치와 가치",
+      "expect": "ㄲㅊㅇㄱㅊ"
+    },
+    {
+      "name": "제목에 자음 글자",
+      "title": "ㅋㅋ 모음",
+      "expect": "ㅋㅋㅁㅇ"
+    },
+    {
+      "name": "제목의 겹자음은 풀어서",
+      "title": "ㄳ 메모",
+      "expect": "ㄱㅅㅁㅁ"
+    },
+    {
+      "name": "모음 글자는 건너뜀",
+      "title": "ㅠㅠ 일기",
+      "expect": "ㅇㄱ"
+    },
+    {
+      "name": "풀어 쓴 한글(NFD) 제목",
+      "title": "회의록",
+      "expect": "ㅎㅇㄹ"
+    },
+    {
+      "name": "빈 제목",
+      "title": "",
+      "expect": ""
+    },
+    {
+      "name": "영어 제목",
+      "title": "Meeting Notes",
+      "expect": ""
+    }
+  ],
+  "queries": [
+    {
+      "name": "자음 셋",
+      "raw": "ㅎㅇㄹ",
+      "expect": "ㅎㅇㄹ"
+    },
+    {
+      "name": "자음 하나는 아님",
+      "raw": "ㅎ",
+      "expect": null
+    },
+    {
+      "name": "빈칸은 뺀다",
+      "raw": "ㅎ ㅇ",
+      "expect": "ㅎㅇ"
+    },
+    {
+      "name": "자판이 합친 겹자음",
+      "raw": "ㄳ",
+      "expect": "ㄱㅅ"
+    },
+    {
+      "name": "된소리 하나는 아님",
+      "raw": "ㄲ",
+      "expect": null
+    },
+    {
+      "name": "된소리 둘",
+      "raw": "ㄲㅊ",
+      "expect": "ㄲㅊ"
+    },
+    {
+      "name": "음절이 섞이면 아님",
+      "raw": "회ㅇ",
+      "expect": null
+    },
+    {
+      "name": "모음은 아님",
+      "raw": "ㅏㅏ",
+      "expect": null
+    },
+    {
+      "name": "영어는 아님",
+      "raw": "abc",
+      "expect": null
+    },
+    {
+      "name": "빈칸뿐",
+      "raw": "  ",
+      "expect": null
+    },
+    {
+      "name": "끝 줄바꿈",
+      "raw": "ㅎㅎ\n",
+      "expect": "ㅎㅎ"
+    }
+  ],
+  "matches": [
+    {
+      "name": "맞음",
+      "title": "회의록",
+      "raw": "ㅎㅇㄹ",
+      "expect": true
+    },
+    {
+      "name": "가운데 이어서",
+      "title": "2026 회의록",
+      "raw": "ㅇㄹ",
+      "expect": true
+    },
+    {
+      "name": "건너뛰면 안 맞음",
+      "title": "회의록",
+      "raw": "ㅎㄹ",
+      "expect": false
+    },
+    {
+      "name": "겹자음으로 찾기",
+      "title": "감사 노트",
+      "raw": "ㄳ",
+      "expect": true
+    },
+    {
+      "name": "된소리는 예사소리와 다름",
+      "title": "가치",
+      "raw": "ㄲㅊ",
+      "expect": false
+    },
+    {
+      "name": "된소리끼리",
+      "title": "까치",
+      "raw": "ㄲㅊ",
+      "expect": true
+    },
+    {
+      "name": "낱말을 건너 이어짐",
+      "title": "주간 계획",
+      "raw": "ㄱㄱ",
+      "expect": true
+    },
+    {
+      "name": "영어 제목",
+      "title": "Meeting Notes",
+      "raw": "ㅁㄴ",
+      "expect": false
+    },
+    {
+      "name": "초성 찾기가 아닌 말",
+      "title": "회의록",
+      "raw": "회의",
+      "expect": false
+    }
+  ]
+}
