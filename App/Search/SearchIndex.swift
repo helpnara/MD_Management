@@ -20,6 +20,10 @@ struct IndexStatus: Sendable {
     var lastRefresh: Date?
     var lastRefreshSeconds: Double = 0
     var fileBytes: Int = 0
+    /// **제목만 넣은 노트** (245) — 아직 이 기기로 안 내려와 본문을 못 읽은 것. 검색 결과 아래 · 진단에 보인다.
+    var titleOnlyCount = 0
+    /// 안 받은 노트가 `SearchIndex.downloadLimit` 를 넘어 **내려받기를 시키지 않은** 때 (245).
+    var downloadsWithheld = false
 }
 
 /// **SQLite FTS5 색인 — 캐시다** (ADR-0003). 언제 지워도 되고, 판이 다르면 통째로 다시 만든다.
@@ -38,6 +42,15 @@ actor SearchIndex {
     ///   목록에 제목과 같은 글이 두 번 나왔다 (빌드 34 · 1번, 사용자).
     /// - v3 (빌드 103 · 242): 미리보기 줄을 보이는 글로(`PreviewLine`) — 링크는 제목만, `**` 등은 뗀다.
     private static let version = 3
+
+    /// **안 받은 노트가 이보다 많으면 내려받기를 시키지 않는다** (245, 2026-10-13 사용자 — *만약 수천개라면 유사한 상황이
+    /// 발생할 가능성 · a 방식이 나을 것*). 그 아래면 예전처럼 받아서 본문까지 — 노트 150개쯤인 폴더는 본문 검색이 그대로다.
+    /// 넘으면 안 받은 노트는 **제목만** 색인한다 (데이터 · 배터리). 사용자가 열면 그 노트는 내려오고, 다음 새로 고침에 본문까지 들어간다.
+    static let downloadLimit = 500
+
+    /// 제목만 넣은 줄의 `mtime` — 파일의 고친 시각과 늘 달라서, 다 내려오면 도장이 어긋나 본문까지 다시 읽는다.
+    /// 표가 그대로라 색인 판은 올리지 않았다 (옛 색인에는 이 줄이 없을 뿐 — 다음 새로 고침이 채운다).
+    private static let titleOnlyStamp = -1
 
     private var db: OpaquePointer?
     private let fileURL: URL
@@ -132,11 +145,35 @@ actor SearchIndex {
         }
         let wanted = Set(notes.map(\.relativePath))
         var changed = 0
+        // 245 — 안 받은 노트가 많으면 내려받기를 시키지 않는다. `reader` 가 읽으려다 iCloud 에 받기를 시킨다.
+        let pending = notes.reduce(0) { $0 + ($1.isDownloaded ? 0 : 1) }
+        let fetchBodies = pending <= Self.downloadLimit
+        status.downloadsWithheld = !fetchBodies
 
         for note in notes {
             let mtime = Int(note.modifiedAt.timeIntervalSince1970)
-            if let old = known[note.relativePath], old.mtime == mtime, old.size == note.size { continue }
-            guard let text = try? await reader(note.relativePath) else { continue }
+            let old = known[note.relativePath]
+            if let old, old.mtime == mtime, old.size == note.size { continue }
+            // **본문을 못 읽는 노트도 제목으로는 찾히게** (245) — 예전에는 다 내려올 때까지 색인에 아예 없었다
+            // (검색 · `[[` 목록 모두에서 빠졌다). 이미 줄이 있으면(옛 본문 · 제목만) 그대로 둔다 — 다 내려오면 바뀐다.
+            if !note.isDownloaded, !fetchBodies {
+                if old == nil {
+                    writeTitleOnly(note)
+                    changed += 1
+                }
+                continue
+            }
+            let text: String
+            do {
+                text = try await reader(note.relativePath)
+            } catch {
+                // 아직 안 내려왔다(받기는 시켜 두었다) · 못 읽는다.
+                if old == nil {
+                    writeTitleOnly(note)
+                    changed += 1
+                }
+                continue
+            }
             let parsed = FrontMatterParser.parse(text)
             let tags = " " + (parsed.frontMatter?.tags ?? []).map { Paths.normalized($0) }.joined(separator: " ") + " "
             let firstLine = Self.firstBodyLine(of: parsed.body)
@@ -157,10 +194,24 @@ actor SearchIndex {
         }
         _ = db
         status.noteCount = Int(query("SELECT COUNT(*) FROM note").first?.first ?? "0") ?? 0
+        status.titleOnlyCount = Int(query("SELECT COUNT(*) FROM note WHERE mtime = ?",
+                                          [String(Self.titleOnlyStamp)]).first?.first ?? "0") ?? 0
         status.lastRefresh = Date()
         status.lastRefreshSeconds = Date().timeIntervalSince(started)
         status.fileBytes = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? Int) ?? 0
         return changed
+    }
+
+    /// **제목만** 넣는다 (245) — 본문 · 태그 · 미리보기는 비운다. `mtime` 은 `titleOnlyStamp`.
+    private func writeTitleOnly(_ note: NoteSummary) {
+        run("DELETE FROM note_fts WHERE rel_path = ?", [note.relativePath])
+        run("INSERT INTO note_fts(rel_path, title, body, tags) VALUES(?,?,?,?)",
+            [note.relativePath, note.title, "", ""])
+        run("""
+        INSERT INTO note(rel_path, title, mtime, size, tags, first_line) VALUES(?,?,?,?,?,?)
+        ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
+          size=excluded.size, tags=excluded.tags, first_line=excluded.first_line
+        """, [note.relativePath, note.title, String(Self.titleOnlyStamp), String(note.size), "", ""])
     }
 
     /// 목록의 **첫 줄 미리보기** — 색인에서만 가져온다 (설계서 §7.5). 색인 전이면 빈칸.
@@ -207,9 +258,28 @@ actor SearchIndex {
     }
 
     func search(_ raw: String) -> [SearchHit] {
+        do { try open() } catch { return [] }
+        var hits = textHits(raw)
+        // **제목 초성** (246) — 말이 한글 자음만이면 제목의 첫소리와도 견준다. 보통 검색에 **더한다**
+        // (본문에 `ㅎㅎ` 를 쓴 노트도 그대로 찾힌다). 제목 수천 개도 한순간이라 표를 따로 두지 않는다.
+        if let initials = HangulInitials.query(raw) {
+            var seen = Set(hits.map(\.relativePath))
+            for row in query("SELECT rel_path, title, first_line FROM note")
+            where HangulInitials.matches(title: row[1], query: initials) {
+                guard seen.insert(row[0]).inserted else { continue }
+                hits.append(SearchHit(relativePath: row[0], title: row[1], line: row[2], byTitle: true))
+            }
+        }
+        return hits.sorted { a, b in
+            if a.byTitle != b.byTitle { return a.byTitle }
+            return a.title.localizedStandardCompare(b.title) == .orderedAscending
+        }
+    }
+
+    /// 보통 검색 — 3글자 이상은 `MATCH`, 짧은 말은 `LIKE`. 차례는 `search` 가 세운다.
+    private func textHits(_ raw: String) -> [SearchHit] {
         let queryText = SearchQueryParser.parse(raw)
         guard !queryText.isEmpty else { return [] }
-        do { try open() } catch { return [] }
 
         // trigram 이 없으면 전부 LIKE 로 (A4 후퇴).
         var q = queryText
@@ -252,10 +322,7 @@ actor SearchIndex {
                 ?? Self.firstBodyLine(of: FrontMatterParser.parse(body).body)
             hits.append(SearchHit(relativePath: path, title: title, line: line, byTitle: byTitle))
         }
-        return hits.sorted { a, b in
-            if a.byTitle != b.byTitle { return a.byTitle }
-            return a.title.localizedStandardCompare(b.title) == .orderedAscending
-        }
+        return hits
     }
 
     // MARK: - 줄 고르기 (순수)

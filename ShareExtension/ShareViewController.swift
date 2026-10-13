@@ -58,6 +58,9 @@ final class ShareModel: ObservableObject {
     /// **넣을 곳** (241) — 앱이 적어 둔 고정한 노트들. nil 이면 받은 글 폴더에 새 노트.
     @Published var targets: [ShareInbox.Target] = []
     @Published var target: String?
+    /// 고정한 노트 · 최근 고친 노트 (244) — 넣을 곳 목록을 두 묶음으로.
+    var pinnedTargets: [ShareInbox.Target] { targets.filter { !$0.isRecent } }
+    var recentTargets: [ShareInbox.Target] { targets.filter(\.isRecent) }
     /// 마지막에 고른 곳 — 같은 주제를 이어 모을 때 다시 고르지 않게. 확장 자기 설정에만 둔다.
     static let targetKey = "share.target"
 
@@ -98,7 +101,7 @@ final class ShareModel: ObservableObject {
         url = separated.url
         imageCount = imageProviders.count
         targets = await ShareInbox().targets()
-        // 마지막에 고른 노트가 아직 고정돼 있으면 그대로 고른다.
+        // 마지막에 고른 노트가 아직 목록에 있으면(고정 · 최근 고친) 그대로 고른다.
         let remembered = UserDefaults.standard.string(forKey: Self.targetKey)
         target = targets.contains { $0.path == remembered } ? remembered : nil
         isLoading = false
@@ -275,8 +278,20 @@ struct ShareView: View {
                         Section {
                             Picker("넣을 곳", selection: $model.target) {
                                 Text("새 노트").tag(String?.none)
-                                ForEach(model.targets) { item in
-                                    Text(item.name).tag(String?.some(item.path))
+                                if !model.pinnedTargets.isEmpty {
+                                    Section("고정한 노트") {
+                                        ForEach(model.pinnedTargets) { item in
+                                            Text(item.name).tag(String?.some(item.path))
+                                        }
+                                    }
+                                }
+                                // 244 — 최근 고친 노트 (덧붙인 노트 · 고쳐 쓴 노트).
+                                if !model.recentTargets.isEmpty {
+                                    Section("최근 고친 노트") {
+                                        ForEach(model.recentTargets) { item in
+                                            Text(item.name).tag(String?.some(item.path))
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -287,7 +302,7 @@ struct ShareView: View {
                              : String(localized: "앱을 열면 고른 노트의 맨 끝에 한 줄로 덧붙입니다."))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                        if model.targets.isEmpty {
+                        if model.pinnedTargets.isEmpty {
                             Text("노트를 고정해 두면 여기서 그 노트에 덧붙일 수 있습니다.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)

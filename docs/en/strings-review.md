@@ -29,6 +29,7 @@
 | %lld | %lld |
 | %lld개 | %lld |
 | %lld개 · %@ | %lld · %@ |
+| %lld개 · 안 받은 노트가 많아 내려받지 않음 | %lld · not downloading (too many notes not yet downloaded) |
 | %lld개를 찾을 수 없어 빼고 보냅니다. | one: %lld attachment couldn’t be found and will be left out. / other: %lld attachments couldn’t be found and will be left out. |
 | %lld자 | one: %lld character / other: %lld characters |
 | %lld째 줄 | Line %lld |
@@ -37,6 +38,7 @@
 | **%@** 폴더를 안의 노트 · 폴더와 함께 옮깁니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. 노트 안의 링크는 새 자리에 맞게 고칩니다. | Moves the folder **%@** with all its notes and folders. If the name is taken, a number is added. Links inside the notes are updated for the new location. |
 | **Slow Margin 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다. | **Files inside the Slow Margin folder open right away.** For files outside it, you'll be asked whether to import them. |
 | **공유** → 목록에서 **느린 여백** 을 고릅니다. | Tap **Share**, then choose **Slow Margin**. |
+| **노트 잇기** — 글 안에서 `[[` 를 치고 제목을 이어 치면 노트 목록이 뜹니다. 고르면 그 노트로 가는 링크가 들어갑니다. | **Linking notes** — Type `[[` in your text and keep typing a title to see a list of notes. Pick one to insert a link to that note. |
 | **되돌리기**는 원래 있던 폴더로 돌려놓습니다. 줄을 왼쪽으로 밀면 **영구 삭제**할 수 있습니다. 영구 삭제는 되돌릴 수 없어 확인 문구를 입력해야 합니다. 노트를 영구 삭제하면 **그 노트만 쓰던 첨부**도 함께 지워집니다. | **Restore** puts a note back in its original folder. Swipe left on a row to **delete it permanently**. Because this can't be undone, you'll be asked to type a confirmation word. Permanently deleting a note also deletes **any attachments used only by that note**. |
 | **비우기**를 하면 첨부도 모두 지워집니다. | **Empty** also deletes all attachments. |
 | **이미 마크다운을 모아 둔 폴더**가 있다면 그대로 열 수 있습니다. 점으로 시작하는 숨김 폴더는 목록에 보이지 않습니다. 고른 폴더는 다른 앱과 같이 쓰는 곳이므로, 아래 **파일을 바꾸는 설정** 을 끄는 편이 안전합니다. | If you **already keep Markdown files in a folder**, you can open it as is. Hidden folders (names that start with a dot) aren't shown. Since a chosen folder is shared with other apps, it's safer to turn off the **Settings That Change Files** below. |
@@ -200,6 +202,7 @@
 | 아니오 | No |
 | 아직 받지 않은 노트 %lld개는 확인하지 못했습니다 | one: Couldn't check %lld note that hasn't been downloaded yet / other: Couldn't check %lld notes that haven't been downloaded yet |
 | 아직 안 받음 | Not downloaded |
+| 아직 이 기기로 받지 않은 노트 %lld개는 제목으로만 찾았습니다. | %lld notes not yet downloaded to this device were matched by title only. |
 | 안 쓰는 첨부 | Unused Attachments |
 | 안 쓰는 첨부가 없습니다 | No Unused Attachments |
 | 안 열리는 링크 %lld개 | one: %lld broken link / other: %lld broken links |
@@ -249,6 +252,7 @@
 | 접기 | Collapse |
 | 제목 · 본문 · tag: · path: | Title, text, tag:, path: |
 | 제목대로 이름을 바꾸지 못했습니다: %@ | Couldn't rename to match the title: %@ |
+| 제목만 색인 | Title-Only Index |
 | 제목에서 찾음 | Found in title |
 | 제목을 따라 파일 이름이 바뀝니다 | File Names Will Follow Titles |
 | 주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다. | Turned the URL into a link. You can undo this. |
@@ -335,6 +339,7 @@
 
 | 한국어 | English |
 |---|---|
+| 고정한 노트 | Pinned Notes |
 | 글 | Text |
 | 넣을 곳 | Save to |
 | 노트를 고정해 두면 여기서 그 노트에 덧붙일 수 있습니다. | Pin a note to add to it from here. |
@@ -346,4 +351,5 @@
 | 앱을 열면 고른 노트의 맨 끝에 한 줄로 덧붙입니다. | When you open the app, it’s added as a new line at the end of the chosen note. |
 | 앱을 열면 받은 글 폴더에 새 노트로 들어갑니다. | When you open the app, it's added as a new note in the Inbox folder. |
 | 주소 | Link |
+| 최근 고친 노트 | Recently Edited |
 | 취소 | Cancel |

@@ -2750,6 +2750,7 @@ def build() -> dict:
         "reviewCases": build_review_cases(),
         "previewCases": build_preview_cases(),
         "pastedFileCases": build_pasted_file_cases(),
+        "initialsCases": build_initials_cases(),
     }
 
 
@@ -3117,6 +3118,65 @@ def build_pasted_file_cases() -> dict:
             raise SystemExit(f"::error::[{case['name']}] 첨부 짝: 뜻 {case['expect']!r} · 셈 {got!r}")
         matches.append({"name": case["name"], "slots": case["slots"], "names": case["names"], "result": got})
     return {"kinds": kinds, "labels": labels, "matches": matches}
+
+
+# 246 — 제목 초성 찾기 (Swift `HangulInitials`). Swift 는 음절 번호로 셈하고, 여기는 **글자 이름**으로 셈한다 —
+# 풀어 쓴(NFD) 첫 자모 `HANGUL CHOSEONG 이름` → 호환 자음 `HANGUL LETTER 이름`, 겹자음 `HANGUL LETTER A-B` → A · B.
+INITIALS_CASES = ROOT / "Tools" / "golden" / "initials-cases.json"
+
+
+def _is_compat_consonant(ch: str) -> bool:
+    return 0x3131 <= ord(ch) <= 0x314E
+
+
+def _expand_consonant(ch: str) -> str:
+    name = unicodedata.name(ch)[len("HANGUL LETTER "):]
+    return "".join(unicodedata.lookup("HANGUL LETTER " + part) for part in name.split("-"))
+
+
+def hangul_initials(title: str) -> str:
+    out = []
+    for ch in unicodedata.normalize("NFC", title):
+        if 0xAC00 <= ord(ch) <= 0xD7A3:
+            lead = unicodedata.normalize("NFD", ch)[0]
+            out.append(unicodedata.lookup("HANGUL LETTER " + unicodedata.name(lead)[len("HANGUL CHOSEONG "):]))
+        elif _is_compat_consonant(ch):
+            out.append(_expand_consonant(ch))
+    return "".join(out)
+
+
+def hangul_initials_query(raw: str):
+    out = []
+    for ch in unicodedata.normalize("NFC", raw):
+        if ch.isspace():
+            continue
+        if not _is_compat_consonant(ch):
+            return None
+        out.append(_expand_consonant(ch))
+    text = "".join(out)
+    return text if len(text) >= 2 else None
+
+
+def build_initials_cases() -> dict:
+    spec = json.loads(INITIALS_CASES.read_text(encoding="utf-8"))
+    initials, queries, matches = [], [], []
+    for case in spec["initials"]:
+        got = hangul_initials(case["title"])
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 첫소리: 뜻 {case['expect']!r} · 셈 {got!r}")
+        initials.append({"name": case["name"], "title": case["title"], "result": got})
+    for case in spec["queries"]:
+        got = hangul_initials_query(case["raw"])
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 초성 말: 뜻 {case['expect']!r} · 셈 {got!r}")
+        queries.append({"name": case["name"], "raw": case["raw"], "result": got})
+    for case in spec["matches"]:
+        q = hangul_initials_query(case["raw"])
+        got = q is not None and q in hangul_initials(case["title"])
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 초성 맞춤: 뜻 {case['expect']!r} · 셈 {got!r}")
+        matches.append({"name": case["name"], "title": case["title"], "raw": case["raw"], "result": got})
+    return {"initials": initials, "queries": queries, "matches": matches}
 
 
 # 242 — 목록 · 검색 결과에 보이는 한 줄 (Swift `PreviewLine.plain`). 셈은 `preview_line.py` (쌍둥이),
@@ -4097,6 +4157,9 @@ def tally(loaded: dict) -> str:
     files = loaded.get("pastedFileCases")
     if files:
         counted.append(f"붙여넣은 첨부 {len(files['kinds'])}·{len(files['labels'])}·{len(files['matches'])}건")
+    initials = loaded.get("initialsCases")
+    if initials:
+        counted.append(f"제목 초성 {len(initials['initials'])}·{len(initials['queries'])}·{len(initials['matches'])}건")
     # **바꿔 붙이기는 셋이 한 묶음**이다 (157 · 158 · 159) — 안쪽까지 세어 보여 준다.
     convert = loaded.get("pasteConvertCases")
     if convert:

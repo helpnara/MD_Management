@@ -1,6 +1,6 @@
 ---
 title: 출시 주 홍보 묶음 — 추천 신청 · 인앱 이벤트 · 캠페인 링크 · 글 초안
-updated: 2026-10-11
+updated: 2026-10-12
 ---
 
 # 출시 주 홍보 묶음 (브레인스토밍 4 · 5)
@@ -15,12 +15,15 @@ updated: 2026-10-11
 
 ## 0. 한 주의 차례
 
+> **D = 2026-11-02 (월)** (2026-10-12 사용자 — *출시 주 홍보 첫 단계부터 하자*). 1.1.4 는 이미 나왔고 1.1.5 는 심사 중이라 *판 출시 날* 이 아니라
+> **홍보 주**로 잡았다 — 애플이 권하는 추천 신청 시간(3주)을 지키고, 그 주에 인앱 이벤트 · 블로그 · 커뮤니티를 몰아 낸다. 그때 나와 있는 판(1.1.5 이후)을 알린다.
+
 | 언제 | 할 일 | 어디 |
 |---|---|---|
-| 출시 **3주 전** (가능하면 6주) | 애플 추천 신청 (§2) | App Store Connect → 추천(Featuring) → 신청 |
-| 2주 전 | 인앱 이벤트 만들기 · 심사 (§3) — 이벤트는 따로 심사받는다 | App Store Connect → 인앱 이벤트 |
-| 1주 전 | 캠페인 링크 만들기 (§1) · 글 초안 다듬기 (§4~§6) | 이 문서 |
-| **출시 날 (D)** | 판 출시 · 프로모션 텍스트 갈기 · 블로그 글 (§4) | 네이버 블로그 |
+| ✅ 3주 전 — 10-12 | 애플 추천 신청 (§2) — **제출함** (2026-10-12 사용자) | App Store Connect → 앱 → 느린 여백 → 사이드바 Featuring → Nominations |
+| **2주 전 — 10-19 (다음)** | 인앱 이벤트 만들기 · 심사 (§3) — 이벤트는 따로 심사받는다 · 그림 두 장 | App Store Connect → 인앱 이벤트 |
+| 1주 전 — 10-26 | 캠페인 링크 만들기 (§1) · 글 초안 다듬기 (§4~§6) | 이 문서 |
+| **D — 11-02 (월)** | 인앱 이벤트 시작 · 프로모션 텍스트 갈기 · 블로그 글 (§4) | 네이버 블로그 |
 | D+1 | 국내 커뮤니티 두 곳 (§5) | 메이커 모임 · 개발자 소식 |
 | D+2 | 스레드 · 맥 · 아이폰 사용자 게시판 (§5) | |
 | D+3~4 | 해외 — Product Hunt 하루 · Reddit · Show HN (§6) | 영어판 |
@@ -52,27 +55,36 @@ App Store Connect 의 **추천 신청**은 편집팀에 *이런 앱 · 이런 �
 
 | 칸 | 값 |
 |---|---|
-| 신청 이름 (우리끼리 보는 이름) | `Slow Margin — collect links in one note` |
+| 신청 이름 (우리끼리 보는 이름) | `Slow Margin — gather links, photos and videos as files` |
 | 종류 | **App Enhancements** (업데이트) |
-| 출시 예정일 | 1.1.4 출시 예정일 (최소 3주 뒤로) |
+| 날짜 (알릴 때) | **2026-11-02** (D — 홍보 주 첫날). 그때 나와 있는 판을 알린다 |
 | 나라 | 대한민국 · 미국 (+ 전 세계) |
-| 관련 인앱 이벤트 | §3 의 이벤트 (만들었으면) |
+| 관련 인앱 이벤트 | §3 의 이벤트 (10-19 에 만든 뒤 이어 붙인다 — 지금은 비워 둔다) |
 
-**설명 (영어 · 그대로 붙인다)**
+**설명 (영어 · 그대로 붙인다 · 892자 — 2026-10-12 다시 씀: 1.1.5 의 깔끔한 미리보기 · 사진 · 동영상 붙여넣기를 더함)**
 
 ```
 Slow Margin is a Markdown notes app for iPhone and iPad, made by a solo developer in Korea around one promise: your writing stays as plain files. There is no app database and no account. Every note is a .md file in your own iCloud folder, visible in the Files app, readable in any editor, and still there if you delete the app.
 
-Recent updates add a quiet way to collect: share a video or a web page from any app, pick a pinned note, and its title and link are added as a new line at the end of that note. When an app shares only a bare link, Slow Margin reads the page title once so the note stays readable. Code blocks in Read mode now have Copy and Expand buttons with optional line wrapping, and notices are calmer.
+Recent updates make it a calm place to gather what you find. Share a video or a web page from any app, pick a pinned note, and its title and link are added as a new line at the end of that note. Paste a note that mixes text, photos and videos, and each photo and video lands in its place, saved as a real file next to the note. The note list and search results now show clean text instead of Markdown symbols, and code blocks in Read mode have Copy and Expand buttons.
 
 The app is fully localized in Korean and English, follows Dynamic Type, and collects no data.
 ```
 
 **한국어 뜻 (확인용 — 내지 않는다).** 느린 여백은 *글은 파일로 남는다* 는 약속 하나로 한국의 1인 개발자가 만든 아이폰 · 아이패드 마크다운 노트 앱입니다.
 앱 데이터베이스도 계정도 없습니다 — 모든 노트는 사용자 iCloud 폴더의 `.md` 파일이고, 파일 앱에서 보이며 어떤 편집기로도 열리고, 앱을 지워도 남습니다.
-최근 업데이트로 *모으는 길* 이 생겼습니다 — 어떤 앱에서든 동영상이나 웹 쪽을 공유하고 고정한 노트를 고르면 그 노트 끝에 제목과 링크가 한 줄씩 쌓입니다.
-주소만 보내는 앱이면 쪽 제목을 한 번 읽어 와 노트가 읽기 좋게 남습니다. 읽기 화면의 코드 상자에 복사 · 크게 보기(줄바꿈 선택) 단추가 생겼고 안내가 차분해졌습니다.
-한국어 · 영어로 모두 쓸 수 있고, 글자 크기 설정을 따르며, 데이터를 모으지 않습니다.
+최근 업데이트로 *찾은 것을 차분히 모으는 곳* 이 되었습니다 — 어떤 앱에서든 동영상이나 웹 쪽을 공유하고 고정한 노트를 고르면 그 노트 끝에 제목과 링크가 한 줄씩 쌓입니다.
+글 · 사진 · 동영상이 섞인 노트를 붙여 넣으면 사진과 동영상이 제자리에 들어가고, 노트 옆에 진짜 파일로 저장됩니다. 노트 목록과 검색 결과는 마크다운 기호 대신 깔끔한 글을 보여 주고,
+읽기 화면의 코드 상자에는 복사 · 크게 보기 단추가 있습니다. 한국어 · 영어로 모두 쓸 수 있고, 글자 크기 설정을 따르며, 데이터를 모으지 않습니다.
+
+**콘솔에서 (사용자):** App Store Connect **웹 사이트** → **앱**(Apps) → *느린 여백* → 왼쪽 사이드바 **Featuring** 제목 아래 **Nominations** →
+**+** (처음이면 **Get Started**) → 위 표대로 채우기 → 설명 붙이기 → **제출**. 제출 전에는 초안으로 남는다.
+역할이 Account Holder · Admin · App Manager · Marketing 중 하나여야 메뉴가 보인다.
+칸이 위와 다르면(이름 · 한도 · 고를 것) 화면을 보내 주신다 — 맞춰 고친다.
+(2026-10-12 고침 — 처음에 *홈 화면 → 추천 신청* 으로 잘못 적어 사용자가 메뉴를 못 찾았다. 애플 도움말 *Nominate your app for featuring* 기준.)
+
+> ✅ **제출함 — 2026-10-12** (사용자 — *추천 신청 제출 완료했어*). 관련 인앱 이벤트 칸은 비워 냈다 — §3 의 이벤트를 만든 뒤 이을 수 있으면 잇는다.
+> 뽑혔는지는 따로 알려 주지 않는다 — D 주에 투데이 탭 · 검색을 보고 §7 에 적는다.
 
 ## 3. 인앱 이벤트 — 검색 결과 · 투데이 탭의 카드
 
@@ -87,8 +99,18 @@ The app is fully localized in Korean and English, follows Dynamic Type, and coll
 | 목적 | 기존 사용자에게 알리기 · 새 사용자 끌기 | |
 | 바로 가기 | 없음 (앱이 열린다) | |
 
-**그림 두 장이 더 필요하다** — 카드 **1920 × 1080** (가로) · 상세 **1080 × 1920** (세로), 글자 없이 앱 화면이 보이는 것. 스크린샷 3번(링크 모음)을
-`Tools/store/frame.py` 와 같은 길로 다시 짜면 된다 — **스크린샷이 확정된 뒤에** 만든다 (남은 일).
+**그림 두 장 — 만들었다 (2026-10-12 사용자 — *그림 두 장 지금 만들어 줘*).** `python3 Tools/store/event_art.py` →
+
+| 칸 | 한국어 | 영어 |
+|---|---|---|
+| 이벤트 카드 (가로 1920 × 1080) | `docs/store/event/ko-card.png` | `docs/store/event/en-card.png` |
+| 이벤트 상세 (세로 1080 × 1920) | `docs/store/event/ko-detail.png` | `docs/store/event/en-detail.png` |
+
+- 원본은 1.1.5 와 함께 낸 스토어 스크린샷 3번(링크 모음)에서 **앱 화면만** 도로 잘라 썼다 — 글귀는 없다.
+- 앱 스토어가 이벤트 이름 · 짧은 설명을 **그림 아래쪽에 얹는다** — 앱 화면은 위쪽 · 가운데에 두고(카드는 양옆이 조금 잘릴 수 있다),
+  아래쪽은 먹색으로 서서히 어둡게 했다. 링크 줄은 카드에서 위 62% 안, 상세에서 위 55% 안에 있다.
+- 이벤트는 언어마다 그림을 따로 올린다 — 한국어 칸에 `ko-…`, 영어 칸에 `en-…`.
+- 애플은 안전 영역을 숫자로 밝히지 않는다 — 콘솔의 **미리보기**에서 글이 링크 줄을 가리면 화면을 보내 주신다 (`LAYOUTS` 의 `top` · `width` 를 고친다).
 
 ## 4. 블로그 글 — 출시 날 (네이버 · 1 · 2 · 3편과 같은 꼴: 본문에 기호 없음 · ▌ 줄만 소제목 · [사진 n] 자리)
 

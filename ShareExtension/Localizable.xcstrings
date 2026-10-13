@@ -1,6 +1,16 @@
 {
   "sourceLanguage" : "ko",
   "strings" : {
+    "고정한 노트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pinned Notes"
+          }
+        }
+      }
+    },
     "글" : {
       "localizations" : {
         "en" : {
@@ -119,6 +129,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Link"
+          }
+        }
+      }
+    },
+    "최근 고친 노트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Edited"
           }
         }
       }
