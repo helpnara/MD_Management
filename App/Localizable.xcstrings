@@ -247,6 +247,16 @@
         }
       }
     },
+    "%lld개 · 안 받은 노트가 많아 내려받지 않음" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld · not downloading (too many notes not yet downloaded)"
+          }
+        }
+      }
+    },
     "%lld개를 찾을 수 없어 빼고 보냅니다." : {
       "localizations" : {
         "en" : {
@@ -347,6 +357,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap **Share**, then choose **Slow Margin**."
+          }
+        }
+      }
+    },
+    "**노트 잇기** — 글 안에서 `[[` 를 치고 제목을 이어 치면 노트 목록이 뜹니다. 고르면 그 노트로 가는 링크가 들어갑니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Linking notes** — Type `[[` in your text and keep typing a title to see a list of notes. Pick one to insert a link to that note."
           }
         }
       }
@@ -2101,6 +2121,16 @@
         }
       }
     },
+    "아직 이 기기로 받지 않은 노트 %lld개는 제목으로만 찾았습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld notes not yet downloaded to this device were matched by title only."
+          }
+        }
+      }
+    },
     "안 쓰는 첨부" : {
       "localizations" : {
         "en" : {
@@ -2623,6 +2653,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't rename to match the title: %@"
+          }
+        }
+      }
+    },
+    "제목만 색인" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title-Only Index"
           }
         }
       }
