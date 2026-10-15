@@ -1,0 +1,4 @@
+• 느린 여백을 여는 주소 slowmargin:// 를 더했습니다. 브라우저나 다른 앱에서 이 주소를 누르면 느린 여백이 열립니다.
+
+— English —
+• Added the slowmargin:// link. Tapping it in a browser or another app opens Slow Margin.

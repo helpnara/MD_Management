@@ -1168,6 +1168,12 @@ final class LibraryModel: ObservableObject {
     /// 모르는 파일에 자동 저장을 걸면 저장이 조용히 실패한다 — 이 앱에서 가장
     /// 피하고 싶은 일이다 (ADR-0001).
     func open(fileURL url: URL) async {
+        // **파일이 아닌 주소는 앱만 연다** (248) — `slowmargin://event` (인앱 이벤트의 바로 가기). 예전에는 받은 주소를 모두
+        // 파일로 보고 가져오려 해, 이 주소가 오면 *가져오지 못했다* 띠가 떴을 것이다. 아무것도 쓰지 · 고르지 않는다.
+        guard url.isFileURL else {
+            log("앱 주소로 열림: \(url.absoluteString)")
+            return
+        }
         guard let store else {
             // 폴더가 아직 안 섰다. `use(_:)` 끝에서 이어 받는다.
             pendingOpen = url
