@@ -26,7 +26,7 @@ packages:
 
 settings:
   base:
-    MARKETING_VERSION: "1.1.6"
+    MARKETING_VERSION: "1.1.7"
     # CI 가 실행 번호를 넣는다 — 빌드 번호와 실행 번호가 늘 같게.
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "6.0"
@@ -131,6 +131,14 @@ targets:
             UTTypeTagSpecification:
               public.filename-extension: [md, markdown, mdown, mkd, mkdn]
               public.mime-type: [text/markdown, text/x-markdown]
+
+        # **앱을 여는 주소 `slowmargin://`** (248, 2026-10-15 사용자 — 인앱 이벤트의 *바로 가기(딥 링크)* 가 필수 칸이다).
+        # 이벤트 카드에서 열기를 누르면 이 주소로 앱이 열린다 (`slowmargin://event`). 주소는 **앱만 연다** — 무엇을 지우거나
+        # 쓰지 않는다 (`LibraryModel.open(fileURL:)` 의 첫 줄). 유니버설 링크는 못 쓴다 — 사이트가 `helpnara.github.io/MD_Management`
+        # 아래라 연결 파일(apple-app-site-association)을 도메인 맨 위에 둘 수 없다.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.helpnara.markdown
+            CFBundleURLSchemes: [slowmargin]
 
         CFBundleDocumentTypes:
           - CFBundleTypeName: 마크다운 문서

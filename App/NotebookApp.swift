@@ -10,6 +10,7 @@ struct NotebookApp: App {
                 .environmentObject(library)
                 // `파일` 앱에서 `.md` 를 눌렀을 때 (`CFBundleDocumentTypes`).
                 // 폴더가 아직 안 섰으면 `LibraryModel` 이 붙들고 있다가 연다.
+                // 앱 주소 `slowmargin://` (248 — 인앱 이벤트 바로 가기)도 여기로 온다 — 앱만 연다.
                 .onOpenURL { url in
                     Task { await library.open(fileURL: url) }
                 }
