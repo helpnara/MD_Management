@@ -170,6 +170,18 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.7 제출 순서 (2026-10-15 — 빌드 106 *0-5번 확인 완료*)
+
+> 인앱 이벤트의 바로 가기(필수 칸)를 채우려고 낸 판이다 (248) — 홍보 일정 때문에 §6 간격의 예외.
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.7`
+2. **빌드** 칸에서 **106** 을 고른다 (`1.1.7 (106)`)
+3. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 울타리 (`docs/store/1.1.7-새로운-기능.txt`)
+4. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New* (§1-영어) → **저장**
+5. 부제 · 키워드 · 스크린샷 · 미리보기 영상은 1.1.6 그대로 (따라온다)
+6. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+7. 1.1.7 이 나오면 — 저장해 둔 인앱 이벤트의 **바로 가기** 에 `slowmargin://event` → **이벤트 심사 제출** (`docs/promo/launch-kit.md` §3)
+
 ### 1.1.6 제출 순서 (2026-10-13 사용자 — *1.1.6 심사 제출 준비하자*)
 
 > 1.1.5 가 오늘 나갔는데 바로 내는 까닭 — 실제 기능 넷이 있고(§6 *실제로 바뀐 것만*), 홍보 주(11-02) 전에 출시되어야 초성 검색까지 알릴 수 있다.
@@ -314,13 +326,10 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.6** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.5 의 글은 `docs/store/1.1.5-새로운-기능.txt`.
+> **1.1.7** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.6 의 글은 `docs/store/1.1.6-새로운-기능.txt`.
 
 ```
-• When you share from another app, Save to now lists your five most recently edited notes along with your pinned notes, so you can add a link to any note you are working on.
-• Search now finds notes by the initial consonants of Korean titles (for example, ㅎㅇㄹ finds 회의록).
-• Notes not yet downloaded from iCloud now show up in search by title right away. In very large folders, the app indexes titles only instead of downloading every note, saving data and battery.
-• Settings › Editing now explains how to link notes by typing [[.
+• Added the slowmargin:// link. Tapping it in a browser or another app opens Slow Margin.
 ```
 
 ---
@@ -438,6 +447,7 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-10-15 | **1.1.7 (빌드 106) 준비** (빌드 106 *0-5번 확인 완료*). 248 앱 주소 `slowmargin://` · 새로운 기능 한 줄 · `main` 병합 |
 | 2026-10-14 | ✅ **1.1.6 (빌드 105) 승인 · 배포** (사용자 — *심사 배포 완료*) |
 | 2026-10-13 | ✅ **1.1.6 (빌드 105) 제출** (사용자 — *심사 제출 했어*). 새로운 기능 네 줄 · 자동 출시 |
 | 2026-10-13 | **1.1.6 (빌드 105) 준비** (사용자 — *1.1.6 심사 제출 준비하자*). 새로운 기능 네 줄(한국어 · 영어) · `main` 병합 |
@@ -538,14 +548,11 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.6** (2026-10-13 — 244 넣을 곳에 최근 고친 노트 · 245 안 받은 노트 제목만 색인 · 246 제목 초성 검색 · 247 노트 잇기 안내). 글은 `docs/store/1.1.6-새로운-기능.txt`. 1.1.5 의 글은 `docs/store/1.1.5-새로운-기능.txt`.
+> **1.1.7** (2026-10-15 — 248 앱을 여는 주소 `slowmargin://` · 인앱 이벤트 바로 가기). 글은 `docs/store/1.1.7-새로운-기능.txt`. 1.1.6 의 글은 `docs/store/1.1.6-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
-> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
+> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6). 이벤트는 아직 승인 전이라 적지 않았다 — 주소가 하는 일만.
 
 ```
-• 다른 앱에서 공유할 때 넣을 곳에 고정한 노트와 함께 최근 고친 노트 다섯 개가 보입니다. 고정하지 않은 노트에도 링크를 바로 덧붙일 수 있습니다.
-• 검색 칸에 자음만 치면 노트 제목의 첫소리로 찾습니다. 예: ㅎㅇㄹ → 회의록
-• iCloud 에서 아직 받지 않은 노트도 제목으로 바로 찾습니다. 받지 않은 노트가 아주 많은 폴더에서는 모두 내려받지 않고 제목만 색인해 데이터와 배터리를 아낍니다.
-• 설정 → 편집에 [[ 를 쳐서 노트를 잇는 방법을 적었습니다.
+• 느린 여백을 여는 주소 slowmargin:// 를 더했습니다. 브라우저나 다른 앱에서 이 주소를 누르면 느린 여백이 열립니다.
 ```
 
