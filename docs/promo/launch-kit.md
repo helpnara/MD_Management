@@ -121,7 +121,7 @@ The app is fully localized in Korean and English, follows Dynamic Type, and coll
 | 이벤트 시작 · 끝 (최대 31일) | **2026-11-02 09:00 ~ 2026-11-30 23:00** (한국 시각) |
 | 목적 | 하나만 고른다 — **모든 사용자에게 적합** (Appropriate for All Users). 없으면 가장 가까운 것 |
 | 우선순위 | 보통 (이벤트가 하나뿐) |
-| 바로 가기(딥 링크) | 비워 둔다 — 앱이 열린다 |
+| 바로 가기(딥 링크) | **필수 칸이다** (2026-10-15 사용자) — `slowmargin://event` · 이 주소를 여는 판(1.1.7 · 248)이 **먼저 나와 있어야** 한다 |
 | 나라 | 전체 (앱 판매 지역과 같게) |
 
 1. App Store Connect → **앱** → *느린 여백* → 왼쪽 사이드바 **인앱 이벤트**(In-App Events) → **+** (처음이면 *인앱 이벤트 만들기*)
@@ -130,7 +130,7 @@ The app is fully localized in Korean and English, follows Dynamic Type, and coll
    **이벤트 카드** 칸에 `docs/store/event/ko-card.png` · **이벤트 상세** 칸에 `docs/store/event/ko-detail.png`
 4. 미리보기에서 이름 · 짧은 설명이 링크 줄을 가리는지 본다 — 가리면 화면을 보내 주신다 (그림을 고친다)
 5. **현지화**에 **영어(미국)** 를 더한다 → 영어 이름 · 짧은 설명 · 긴 설명 · `docs/store/event/en-card.png` · `en-detail.png`
-6. **이벤트 정보** — 목적 · 우선순위 · 바로 가기(비움) · **일정** — 공개 시작 · 이벤트 시작 · 끝 · 나라 (위 표)
+6. **이벤트 정보** — 목적 · 우선순위 · 바로 가기(`slowmargin://event` — 1.1.7 출시 뒤) · **일정** — 공개 시작 · 이벤트 시작 · 끝 · 나라 (위 표)
 7. **저장** → **심사에 추가** → **심사에 제출**. 앱 판 없이 이벤트만 따로 심사받는다
 8. 승인되면 알려 주신다 — 추천 신청(§2)을 고칠 수 있으면 *관련 인앱 이벤트* 에 이 이벤트를 잇는다
 
