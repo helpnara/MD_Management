@@ -88,8 +88,14 @@ final class LibraryModel: ObservableObject {
     }
 
     /// 고정된 것 · 아닌 것으로 가른 목록. 화면은 이 둘만 그린다.
+    ///
+    /// **둘 다 `notes` 의 차례(최근 고친 순)를 그대로 쓴다** (249, 2026-10-16 사용자 — *고정된 노트 목록에서 가장 최근에 수정한
+    /// 노트가 위에 나올 수 있도록 · 고정되지 않은 노트는 되거든*). 예전에는 고정 쪽만 `pinned`(고정한 차례 — 새로 고정한 것이 위)를
+    /// 따라 돌아, 고친 노트가 위로 오지 않았다. 차례를 정하는 곳은 `notes` 하나다 — 읽을 때(`FolderStore.notes`)와 저장할 때
+    /// (`write` 의 다시 정렬) 모두 최근 고친 순 (CLAUDE.md §1 — 같은 것을 재는 곳이 둘이면 갈린다).
     var pinnedNotes: [NoteSummary] {
-        pinned.compactMap { path in notes.first { $0.relativePath == path } }
+        let set = Set(pinned)
+        return notes.filter { set.contains($0.relativePath) }
     }
     var looseNotes: [NoteSummary] {
         let set = Set(pinned)
@@ -2645,7 +2651,11 @@ final class LibraryModel: ObservableObject {
     /// 읽는다(`scheduleIndexRefresh` → `noteRecentTargets`) — 따로 적어 두는 기록이 없어 이름 바꾸기 · 옮기기 · 휴지통을 저절로 따라간다
     /// (*연* 기록을 따로 두면 고정이 지나는 다섯 자리를 모두 따라가야 한다 — CLAUDE §1). 고정과 겹치는 것은 한 번만.
     private func publishShareTargets() {
-        let pinnedNotes = pinned.filter { Paths.isNoteFile($0) }
+        // 고정한 노트도 목록과 같은 차례(최근 고친 순)로 (249). 고친 시각을 모르는 것(폴더 전체 목록에 아직 없음)은 뒤에 고정한 차례로.
+        let order = Dictionary(recentOrder.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        let pinnedNotes = pinned.filter { Paths.isNoteFile($0) }.enumerated()
+            .sorted { (order[$0.element] ?? Int.max, $0.offset) < (order[$1.element] ?? Int.max, $1.offset) }
+            .map(\.element)
         let recents = recentTargetPaths.filter { !pinnedNotes.contains($0) }.prefix(Self.recentTargetCount)
         var targets: [ShareInbox.Target] = []
         if !isSample {
@@ -2662,16 +2672,21 @@ final class LibraryModel: ObservableObject {
     static let recentTargetCount = 5
     /// 고친 시각 순 노트 경로 (앞 몇 개만) — 고정과 겹치는 것을 빼고도 다섯이 남게 넉넉히 둔다.
     private var recentTargetPaths: [String] = []
+    /// 폴더 전체의 고정한 노트를 최근 고친 순으로 (249) — 공유 창의 고정한 노트 묶음도 목록과 같은 차례로.
+    private var recentOrder: [String] = []
     private var publishedShareTargets: [ShareInbox.Target]?
 
     /// 폴더 전체 목록(고친 시각 순 — `FolderStore.allNotes`)에서 최근 고친 노트를 받아 둔다 (244).
     private func noteRecentTargets(_ all: [NoteSummary]) {
-        let paths = all.sorted { $0.modifiedAt > $1.modifiedAt }
+        let sorted = all.sorted { $0.modifiedAt > $1.modifiedAt }
             .map(\.relativePath)
             .filter { Paths.isNoteFile($0) }
-            .prefix(Self.recentTargetCount + pinned.count)
-        guard Array(paths) != recentTargetPaths else { return }
-        recentTargetPaths = Array(paths)
+        let paths = Array(sorted.prefix(Self.recentTargetCount + pinned.count))
+        let pinnedSet = Set(pinned)
+        let pinnedOrder = sorted.filter { pinnedSet.contains($0) }
+        guard paths != recentTargetPaths || pinnedOrder != recentOrder else { return }
+        recentTargetPaths = paths
+        recentOrder = pinnedOrder
         publishShareTargets()
     }
 

@@ -38,8 +38,8 @@ public enum Pins {
         tidy(mine + theirs)
     }
 
-    /// 빈 것을 걷어내고 NFC 로 맞추고 겹치는 것을 한 번만. 차례는 그대로 둔다 —
-    /// 고정한 순서가 곧 위에서 아래 순서다.
+    /// 빈 것을 걷어내고 NFC 로 맞추고 겹치는 것을 한 번만. 차례는 그대로 둔다 (고정한 차례).
+    /// **화면의 차례는 이것이 아니다** — 목록은 고정한 노트도 최근 고친 순으로 보인다 (249 · `LibraryModel.pinnedNotes`).
     public static func tidy(_ paths: [String]) -> [String] {
         var seen: Set<String> = []
         var out: [String] = []
