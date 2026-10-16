@@ -295,6 +295,12 @@ jobs:
               name=$(basename "$f"); n=$(echo "$name" | sed -E 's/^[a-z]+-([0-9]).*/\1/')
               slot=ipad-13; case "$name" in iphone-*) slot=$phone_slot ;; esac
               .ci-venv/bin/python Tools/store/frame.py "$f" "$slot" "$(caption "$lang" "$n")" "$OUT/$lang/$name"
+              # **아이폰 6.5" 칸도 함께** (2026-10-16 사용자 — 앱 스토어 아이폰 스크린샷이 옛것). 1.1.4 때 콘솔이 6.1" 칸을 보여 줘
+              # 거기만 갈았는데, 9월에 올린 6.5" 칸의 옛 석 장이 남아 큰 아이폰에는 그것이 보였다. 두 칸 모두 같은 다섯 장으로 간다.
+              case "$name" in iphone-*)
+                mkdir -p "$OUT/$lang/6.5"
+                .ci-venv/bin/python Tools/store/frame.py "$f" iphone-6.5 "$(caption "$lang" "$n")" "$OUT/$lang/6.5/$name" ;;
+              esac
             done
           done
           .ci-venv/bin/python - <<'PY'
@@ -316,6 +322,14 @@ jobs:
                   print(f"::error::{lang} 이 {len(files)}장뿐"); sys.exit(1)
               if len(files) < 10:
                   print(f"::warning::{lang} 은 {len(files)}장 — 파일 앱을 못 찍은 것")
+              large = sorted(glob.glob(f"docs/store/screenshots/{lang}/6.5/*.png"))
+              for path in large:
+                  im = Image.open(path)
+                  ok = im.size == (1242, 2688) and im.mode == "RGB"
+                  bad += not ok
+                  print(("OK  " if ok else "틀림") + f" {path} {im.size} {im.mode} (칸 (1242, 2688))")
+              if len(large) < 4:
+                  print(f"::error::{lang} 6.5 칸이 {len(large)}장뿐"); sys.exit(1)
           if bad:
               print("::error::칸 크기와 다른 그림이 있다"); sys.exit(1)
           PY
