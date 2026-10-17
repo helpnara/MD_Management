@@ -1,0 +1,4 @@
+• 고정된 노트도 최근에 고친 노트가 맨 위에 오도록 바꿨습니다. 다른 앱에서 공유할 때 넣을 곳의 고정한 노트도 같은 차례로 보입니다.
+
+— English —
+• Pinned notes are now sorted by most recently edited, like the rest of your notes. Pinned notes in Save to, when you share from another app, follow the same order.
