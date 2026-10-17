@@ -20,6 +20,7 @@ on:
       - "Tools/probe/**"
       - ".github/workflows/probe.yml"
       - ".github/workflows/store-preview.yml"
+      - ".github/workflows/store-shots.yml"
   workflow_dispatch:
 
 concurrency:
