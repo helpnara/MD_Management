@@ -815,7 +815,7 @@ private struct NoteList: View {
             Label("이동", systemImage: "folder")
         }
         .tint(Palette.inkFaint)
-        // **고정** (T10). 고정한 차례가 곧 위에서 아래 차례다.
+        // **고정** (T10). 고정된 노트도 목록은 최근 고친 순이다 (249 — `LibraryModel.pinnedNotes`).
         Button {
             Task { await library.togglePin(note) }
         } label: {
