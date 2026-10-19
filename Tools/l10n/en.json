@@ -319,6 +319,7 @@
  "줄바꿈 켜기": "Turn On Line Wrap",
  "지금 목록에 없는 노트입니다 — **%@** 의 파일": "This note isn't in the current list — it's a file in **%@**",
  "지금 쓰는 곳은 **이 기기 안**입니다. `파일` 앱의 iCloud Drive 에는 폴더가 생기지 않고, 다른 기기와도 안 맞춰집니다.": "Your notes are stored **on this device**. No folder appears in iCloud Drive in the Files app, and nothing syncs with your other devices.",
+ "지도 장소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다.": "Turned the map places into links. You can undo this.",
  "지우기": "Delete",
  "지우면": "If you delete it,",
  "지우지 못했습니다: %@": "Couldn't delete: %@",

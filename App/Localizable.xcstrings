@@ -2737,6 +2737,16 @@
         }
       }
     },
+    "지도 장소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turned the map places into links. You can undo this."
+          }
+        }
+      }
+    },
     "지우기" : {
       "localizations" : {
         "en" : {
