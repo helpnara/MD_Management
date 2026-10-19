@@ -12,6 +12,7 @@ import Foundation
 /// - 주소는 `[주소의 제목](주소)` — 노트 연결과 같은 `NoteLinking.markdownLink` (대괄호는 역슬래시로 피한다).
 ///   받은 글에 주소가 이미 들어 있으면 또 붙이지 않는다 (사파리는 글과 주소를 함께 줄 때가 있다).
 /// - 사진은 줄마다 `![](assets/…)` — 사진 넣기와 같은 꼴.
+/// - 지도 앱의 장소 글은 장소마다 링크 한 줄 (252 · `MapPlaces`).
 ///
 /// 파이썬 쌍둥이: `Tools/golden/generate.py` 의 `incoming_share` (`shareCases`).
 public enum IncomingShare {
@@ -48,6 +49,15 @@ public enum IncomingShare {
     ///   - fallback: 제목으로 쓸 것이 하나도 없을 때 (`받은 글 2026-10-04 07-30`).
     public static func note(text: String, url: String?, pageTitle: String?,
                             images: [String], fallback: String) -> Note {
+        // **지도 장소** (252) — 장소마다 링크 한 줄. 제목은 첫 장소 이름이고 맨 위에 `# 제목` (링크 줄이 첫 줄이면 파일 이름이 주소가 된다).
+        // 따로 온 주소는 붙이지 않는다 — 장소마다 제 주소를 이미 링크로 가졌다.
+        // 카카오맵은 글과 주소를 따로 준다 — 이어 읽는다 (`MapPlaces.places(in: pieces)`).
+        if let places = MapPlaces.places(in: [text] + (url.map { [$0] } ?? [])) {
+            let title = places[0].name
+            let parts = ["# " + title, places.map(MapPlaces.line).joined(separator: "\n\n")]
+                + images.map { "!" + NoteLinking.markdownLink(label: "", path: $0) }
+            return Note(title: title, markdown: parts.joined(separator: "\n\n") + "\n")
+        }
         let body = trimmedLines(text.replacingOccurrences(of: "\r\n", with: "\n")
                                     .replacingOccurrences(of: "\r", with: "\n"))
         let address = url.map { oneLine($0) }.flatMap { $0.isEmpty ? nil : $0 }
@@ -82,6 +92,11 @@ public enum IncomingShare {
     ///
     /// 파이썬 쌍둥이: `share_entry` (`shareEntryCases`).
     public static func entry(text: String, url: String?, pageTitle: String?, images: [String]) -> String? {
+        // **지도 장소** (252) — 장소마다 목록 한 줄, 사진은 마지막 장소 아래. 따로 온 주소는 붙이지 않는다 (`note` 와 같게).
+        if let places = MapPlaces.places(in: [text] + (url.map { [$0] } ?? [])) {
+            return (places.map { "- " + MapPlaces.line($0) }
+                    + images.map { "  !" + NoteLinking.markdownLink(label: "", path: $0) }).joined(separator: "\n")
+        }
         let memo = text.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
             .components(separatedBy: "\n").map { trimmed($0) }.filter { !$0.isEmpty }.joined(separator: " ")
         let address = url.map { oneLine($0) }.flatMap { $0.isEmpty ? nil : $0 }

@@ -12,12 +12,12 @@ updated: 2026-10-11
 
 ---
 
-## 0. 지금 상태 (2026-10-15 — **1.1.7 (빌드 106) 승인 · 배포** (248 앱 주소 `slowmargin://` — 인앱 이벤트 바로 가기) · 한국어 + 영어(Slow Margin) · `main` = 1.1.7)
+## 0. 지금 상태 (2026-10-17 — **1.1.8 (빌드 107) 승인 · 배포** (249 고정된 노트 정렬 · 250 한국어 아이폰 그림 모두 갈기) · 한국어 + 영어(Slow Margin) · `main` = 1.1.8)
 
 | | |
 |---|---|
 | 번들 ID | `com.helpnara.markdown` |
-| 출시된 판 | **1.1.7** (빌드 106 · 2026-10-15 배포) — 한국어 · 영어. 그 앞 1.1.6 (빌드 105) |
+| 출시된 판 | **1.1.8** (빌드 107 · 2026-10-17 배포) — 한국어 · 영어. 그 앞 1.1.7 (빌드 106) |
 | 빌드 번호 | **CI 실행 번호와 같다** (`testflight.yml` 이 `github.run_number` 를 넣는다) — 심사에 낼 빌드를 확인 목록 0번의 판으로 고른다 |
 | 처리방침 · 지원 | 한국어 `/privacy/` · 영어 `/en/privacy/` (열리는 것 확인 — 2026-09-24 · 2026-10-07) |
 | 스크린샷 | 한국어 — 아이폰 6.5" 석 장 · 아이패드 13" 가로 넉 장 (2026-09-24). 영어 — 아이폰 **6.1"** 넉 장 · 아이패드 13" 세로 석 장 (2026-10-08, `docs/11-store-screenshots.md`) |
@@ -60,6 +60,7 @@ markdown,md,메모장,기록,일기,글쓰기,아이클라우드,icloud,에디�
 
 ### 설명
 
+> **1.1.10 에서 보강했다** (2026-10-19 — 1.1.6 의 제목 초성 찾기(246) · 1.1.10 의 지도 장소 붙여넣기(252) 한 줄씩). 그 앞:
 > **1.0.7 에서 보강했다** (2026-10-06 · 2026-10-03 사용자 — *누락된 추가 기능 설명은 다음 버전할때 포함시키자*): 1.0.6 의 새 기능 셋 —
 > 읽기 화면에서 체크상자 누르기(211) · 이 노트를 가리키는 노트(212) · 다른 앱의 공유 메뉴로 보내기(213). 글자 수는 `Tools/store/count.py` 로.
 > 설명은 **새 판을 낼 때만** 고칠 수 있다 — 1.0.7 판 화면의 설명 칸에 이 울타리 전체를 다시 붙인다.
@@ -103,6 +104,7 @@ PDF 같은 문서도 붙일 수 있고, 눌러서 바로 봅니다.
 
 웹 주소를 붙이면 링크가 되고, 표를 복사해 오면 마크다운 표가 됩니다.
 이미 번호를 쳐 둔 줄에 목록을 붙여도 번호가 겹치지 않습니다.
+지도 앱에서 복사한 장소는 장소 이름 링크와 주소 한 줄이 됩니다.
 
 — 다른 앱에서 보내기
 
@@ -112,6 +114,7 @@ PDF 같은 문서도 붙일 수 있고, 눌러서 바로 봅니다.
 — 찾기
 
 본문과 제목을 한 번에 찾습니다. 두 글자부터 됩니다.
+제목은 초성으로도 찾습니다. ㅎㅇㄹ 만 쳐도 회의록이 나옵니다.
 
 — 계정이 없습니다
 
@@ -170,6 +173,20 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.10 제출 순서 (2026-10-19 사용자 — *1.1.10 제출 준비하자*)
+
+> 251 새 아이콘 · 252 지도 장소 붙여넣기 · 253~257 큰 폴더 속도. **1.1.9 는 내지 않고 건너뛴다** — 빌드 108~111 의 것이 모두 빌드 112 에 들었다.
+> 홍보 주(11-02) 전에 나와야 새 기능을 글에 넣을 수 있다.
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.10`
+2. **빌드** 칸에서 **112** 를 고른다 (`1.1.10 (112)`) — 108 ~ 111 은 고르지 않는다
+3. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 울타리 (`docs/store/1.1.10-새로운-기능.txt`)
+4. 한국어 칸 **설명** — §1 *설명* 울타리 **전체**를 갈아 붙인다 (두 줄 더함: *지도 앱에서 복사한 장소는 …* · *제목은 초성으로도 …*)
+5. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New* · *Description* (§1-영어 — Description 은 한 문장 더함) → **저장**
+6. 스크린샷 · 미리보기 영상 · 부제 · 키워드 · 프로모션 텍스트는 1.1.8 그대로 (따라온다). **앱 아이콘은 빌드에 들어 있어** 스토어 아이콘도 함께 바뀐다
+7. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+8. 제출하면 세션에 알린다 — 작업 브랜치를 `main` 에 병합한다 (CLAUDE.md §5)
+
 ### 1.1.8 제출 순서 (2026-10-17 사용자 — *1.1.8 심사 제출 준비하자*)
 
 > 249 고정된 노트 정렬 + **250 아이폰 칸 모두 갈기**. 그림은 묶음 파일 `slow-margin-1.1.8-store.zip` (대화에 보낸 것 — 원본 `docs/store/screenshots/` · `docs/store/preview/`).
@@ -184,6 +201,8 @@ https://helpnara.github.io/MD_Management/privacy/
    - **iPhone Duo** 탭: 옛 그림이 있으면 지운다 (칸에 적힌 크기가 맞으면 대형 것을 넣어도 된다)
    - **아이패드 13"** 탭: 다섯 장을 묶음의 `한국어/3 아이패드 13in` 으로 갈아 끼운다 (목록 미리보기 줄의 `**` 가 사라진 새 화면)
 5. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New* (§1-영어) → 4 를 `English/` 폴더로 똑같이 → **저장**
+   — **2026-10-17 사용자: 영어 그림은 그대로 두었다** (*스크린샷은 한글만 잘못되고 영어 버전은 잘 나와서*). 영어 칸은 처음부터 6.1" 칸뿐이라 옛 6.5" 석 장이 없었다.
+   영어 *What’s New* 만 넣는다. (영어 아이패드 · 아이폰 그림은 1.1.4 때 것 — 목록 미리보기 줄에 `**` 가 보일 수 있다. 갈고 싶으면 다음 판에 묶음의 `English/` 로)
 6. 칸마다 **첫 장이 글귀 얹은 새 그림**인지 · 1 → 5 차례인지 눈으로 본다
 7. 부제 · 키워드 · 프로모션 텍스트는 그대로
 8. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
@@ -330,7 +349,7 @@ There’s also a place that gathers every link that doesn’t open.
 
 — Paste, and it fits
 
-Paste a web address and it becomes a link. Copy a table and it becomes a Markdown table. Paste a list onto lines you’ve already numbered, and the numbers won’t double up.
+Paste a web address and it becomes a link. Copy a table and it becomes a Markdown table. Paste a list onto lines you’ve already numbered, and the numbers won’t double up. Paste a place copied from a map app and it becomes one line: the place name as a link, then the address.
 
 — Send from other apps
 
@@ -363,10 +382,12 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.8** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.7 의 글은 `docs/store/1.1.7-새로운-기능.txt`.
+> **1.1.10** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.8 의 글은 `docs/store/1.1.8-새로운-기능.txt` 끝.
 
 ```
-• Pinned notes are now sorted by most recently edited, like the rest of your notes. Pinned notes in Save to, when you share from another app, follow the same order.
+• A new app icon.
+• Paste a place copied from a map app and it becomes one line: the place name as a link, then the address. The same happens when you send it from a map app’s share menu.
+• Faster in large folders. Opening a note and saving no longer read through the whole folder, and building the search index takes a few seconds even for a thousand notes.
 ```
 
 ---
@@ -484,6 +505,9 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-10-18 | ✅ **250 닫힘** — 컴퓨터 브라우저(apps.apple.com)에는 새 아이폰 그림 (사용자). 아이폰 앱 스토어는 아직 옛 그림 — 기기에 남은 예전 쪽. **스토어 그림이 바뀌었는지는 브라우저로 본다** |
+| 2026-10-17 | ✅ **1.1.8 (빌드 107) 승인 · 배포** (사용자 — *1.1.8 심사 배포 완료*). 250 은 큰 아이폰에서 앱 스토어 *미리 보기* 확인 뒤 닫는다 |
+| 2026-10-17 | ✅ **1.1.8 (빌드 107) 제출** (사용자 — *1.1.8 심사 제출했어*). 새로운 기능 한 줄 · 한국어 아이폰 칸(대형 · 중형 · Duo) · 아이패드 그림 갈기 · 영어 그림은 그대로 · 자동 출시 |
 | 2026-10-17 | **1.1.8 (빌드 107) 준비** (사용자 — *1.1.8 심사 제출 준비하자*). 249 · 새로운 기능 한 줄 · 250 아이폰 칸 모두 갈기(묶음 파일) · `main` 병합 |
 | 2026-10-15 | ✅ **1.1.7 (빌드 106) 승인 · 배포** (사용자 — *심사 배포 완료*). 다음은 인앱 이벤트 바로 가기 `slowmargin://event` 를 넣고 이벤트 심사 |
 | 2026-10-15 | ✅ **1.1.7 (빌드 106) 제출** (사용자 — *1.1.7 심사 제출 했어*). 새로운 기능 한 줄 · 자동 출시. 나오면 인앱 이벤트 바로 가기 `slowmargin://event` 를 넣고 이벤트 심사 |
@@ -588,11 +612,15 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.8** (2026-10-17 — 249 고정된 노트도 최근 고친 순). 글은 `docs/store/1.1.8-새로운-기능.txt`. 1.1.7 의 글은 `docs/store/1.1.7-새로운-기능.txt`.
+> **1.1.10** (2026-10-19 — 251 새 아이콘 · 252 지도 장소 · 253~257 속도). 글은 `docs/store/1.1.10-새로운-기능.txt`. 1.1.8 의 글은 `docs/store/1.1.8-새로운-기능.txt`.
+> 1.1.9 는 내지 않고 건너뛰었다 (빌드 108~111 의 것이 모두 1.1.10 에 들었다).
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
-> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
+> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6). 지도 앱 이름은 적지 않는다 (§6 — 남의 상표).
+> *천 개도 몇 초* 는 빌드 112 에서 사용자가 잰 값(노트 1,000개 처음 색인 4.26초)에 기댄다.
 
 ```
-• 고정된 노트도 최근에 고친 노트가 맨 위에 오도록 바꿨습니다. 다른 앱에서 공유할 때 넣을 곳의 고정한 노트도 같은 차례로 보입니다.
+• 앱 아이콘을 새로 바꿨습니다.
+• 지도 앱에서 복사한 장소를 붙여 넣으면 장소 이름 링크와 주소 한 줄이 됩니다. 지도 앱의 공유 메뉴로 느린 여백에 보내도 같습니다.
+• 노트가 많은 폴더에서 빨라졌습니다. 노트를 열거나 저장할 때 더는 폴더 전체를 읽지 않고, 검색 색인은 노트 천 개도 몇 초면 만듭니다.
 ```
 

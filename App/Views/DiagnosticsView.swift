@@ -88,6 +88,14 @@ struct DiagnosticsView: View {
 
                     row(String(localized: "마지막 검색"), String(format: String(localized: "%.2f초"), library.searchSeconds))
 
+                    // 노트 하나를 여는 데 걸린 시간 (253 · 전수 조사) — 읽기 · 그리기 · 역링크. 큰 폴더에서 어디가 느린지 여기서 본다.
+                    if !library.openTiming.path.isEmpty {
+                        row(String(localized: "마지막 열기"),
+                            String(format: String(localized: "%.2f초 (읽기 %.2f · 그리기 %.2f · 가리키는 노트 %.2f)"),
+                                   library.openTiming.total, library.openTiming.read,
+                                   library.openTiming.render, library.openTiming.backlinks))
+                    }
+
                     if library.isIndexing {
                         HStack {
                             ProgressView()
@@ -247,6 +255,7 @@ struct TestToolsView: View {
     @EnvironmentObject private var library: LibraryModel
     /// 300개를 만들기 전에 한 번 더 묻는다 — 되돌리기가 20MB 짜리다.
     @State private var confirmingScale = false
+    @State private var scaleCount = LibraryModel.scaleCount
 
     var body: some View {
         List {
@@ -293,15 +302,22 @@ struct TestToolsView: View {
                 if let made = library.scaleProgress {
                     HStack {
                         ProgressView()
-                        Text("만드는 중 \(made) / \(LibraryModel.scaleCount)")
+                        Text("만드는 중 \(made) / \(library.scaleTarget)")
                             .font(.scaled(.subheadline))
                             .foregroundStyle(Palette.inkFaint)
                     }
                 } else {
-                    Button {
-                        confirmingScale = true
-                    } label: {
-                        Label("노트 300개 만들기 (약 20MB)", systemImage: "square.stack.3d.up")
+                    // 개수를 고른다 (전수 조사) — 1,000 · 3,000 은 노트를 작게 만들어 합이 20MB 안쪽이다. 노트 **수**가 비용인 자리를 잰다.
+                    ForEach(LibraryModel.scaleCounts, id: \.self) { count in
+                        Button {
+                            scaleCount = count
+                            confirmingScale = true
+                        } label: {
+                            Label(count == LibraryModel.scaleCount
+                                  ? String(localized: "노트 300개 만들기 (약 20MB)")
+                                  : String(localized: "노트 \(count)개 만들기 (작은 노트 · 약 20MB)"),
+                                  systemImage: "square.stack.3d.up")
+                        }
                     }
                     Button(role: .destructive) {
                         Task { await library.removeScaleTest() }
@@ -312,15 +328,15 @@ struct TestToolsView: View {
             } header: {
                 Text("규모 시험")
             } footer: {
-                Text("`규모 시험` 폴더에 노트 300개(합쳐 약 20MB)를 만듭니다. **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `색인 크기` · `마지막 검색` 을 보면 S1 과 A5 를 한 번에 잴 수 있습니다. 지우기는 휴지통으로 갑니다.")
+                Text("`규모 시험` 폴더에 노트를 만듭니다 (어느 것이든 합쳐 약 20MB — 1,000 · 3,000 개는 작은 노트). **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 이미 있으면 뒤에 이어 붙입니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `마지막 열기` · `마지막 검색` 을 보면 규모에서 어디가 느린지 잴 수 있습니다. 지우기는 휴지통으로 갑니다.")
             }
         }
         .navigationTitle("시험 도구")
         .navigationBarTitleDisplayMode(.inline)
         // **한 번 더 묻는다** (122 · T11-4). 300개는 iCloud 가 20MB 를 올리므로
         // 잘못 눌렀을 때 값이 크다.
-        .confirmationDialog("노트 300개를 만들까요?", isPresented: $confirmingScale, titleVisibility: .visible) {
-            Button("만들기") { Task { await library.makeScaleTest() } }
+        .confirmationDialog(String(localized: "노트 \(scaleCount)개를 만들까요?"), isPresented: $confirmingScale, titleVisibility: .visible) {
+            Button("만들기") { Task { await library.makeScaleTest(count: scaleCount) } }
             Button("취소", role: .cancel) { }
         } message: {
             Text("`규모 시험` 폴더에 약 20MB 를 만듭니다. iCloud 가 그만큼을 올립니다 — 데이터와 시간이 듭니다. 지울 때는 휴지통으로 갑니다.")

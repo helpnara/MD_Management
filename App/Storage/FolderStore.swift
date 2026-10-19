@@ -68,10 +68,17 @@ actor FolderStore {
     }
 
     func notes(in relativeFolder: String = "", includingHidden: Bool = false) -> [NoteSummary] {
+        scan(relativeFolder, includingHidden: includingHidden).notes.sorted { $0.modifiedAt > $1.modifiedAt }
+    }
+
+    /// 한 폴더를 **한 번만** 읽어 노트와 하위 폴더를 같이 거른다 (256). 예전에는 `allNotes` 가 폴더마다 목록을 두 번 읽었다
+    /// (노트 한 번 · 하위 폴더 한 번). 하위 폴더는 숨김 · `assets` 를 뺀다.
+    private func scan(_ relativeFolder: String, includingHidden: Bool) -> (notes: [NoteSummary], subfolders: [String]) {
         openScopeIfNeeded()
         let folder = relativeFolder.isEmpty ? root : root.appendingPathComponent(relativeFolder)
 
-        var result: [NoteSummary] = []
+        var notes: [NoteSummary] = []
+        var subfolders: [String] = []
         coordinateRead(folder) { url in
             let keys: [URLResourceKey] = [
                 .isDirectoryKey, .contentModificationDateKey, .fileSizeKey,
@@ -85,13 +92,16 @@ actor FolderStore {
             for entry in entries {
                 let name = Paths.normalized(entry.lastPathComponent)
                 let values = try? entry.resourceValues(forKeys: Set(keys))
+                let isDirectory = values?.isDirectory == true
+                let relative = relativeFolder.isEmpty ? name : "\(relativeFolder)/\(name)"
+                if isDirectory {
+                    if !name.hasPrefix("."), name != "assets" { subfolders.append(relative) }
+                    continue
+                }
                 // **세는 쪽과 같은 거름망을 쓴다** (153). 예전에는 이 조건을 여기서 손으로
                 // 풀고, 폴더 화면의 숫자는 따로 셌다 — 둘이 갈라져 개수가 안 맞았다.
-                guard Paths.countsAsNote(name: name, isDirectory: values?.isDirectory == true)
-                else { continue }
-
-                let relative = relativeFolder.isEmpty ? name : "\(relativeFolder)/\(name)"
-                result.append(NoteSummary(
+                guard Paths.countsAsNote(name: name, isDirectory: false) else { continue }
+                notes.append(NoteSummary(
                     relativePath: relative,
                     title: Paths.baseName(name),
                     preview: "",
@@ -101,26 +111,17 @@ actor FolderStore {
                 ))
             }
         }
-        return result.sorted { $0.modifiedAt > $1.modifiedAt }
+        return (notes, subfolders)
     }
 
-    /// 폴더 **전체**의 노트 — 하위 폴더까지, 숨김은 빼고. 색인이 쓴다 (ADR-0003).
+    /// 폴더 **전체**의 노트 — 하위 폴더까지, 숨김은 빼고. 색인이 쓴다 (ADR-0003). 폴더마다 목록을 한 번만 읽는다 (256).
     func allNotes() -> [NoteSummary] {
-        openScopeIfNeeded()
         var result: [NoteSummary] = []
         var pending = [""]
         while let folder = pending.popLast() {
-            result += notes(in: folder)
-            let url = folder.isEmpty ? root : root.appendingPathComponent(folder)
-            guard let entries = try? FileManager.default.contentsOfDirectory(
-                at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
-            ) else { continue }
-            for entry in entries {
-                let name = Paths.normalized(entry.lastPathComponent)
-                guard !name.hasPrefix("."), name != "assets",
-                      (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { continue }
-                pending.append(folder.isEmpty ? name : folder + "/" + name)
-            }
+            let found = scan(folder, includingHidden: false)
+            result += found.notes.sorted { $0.modifiedAt > $1.modifiedAt }
+            pending += found.subfolders
         }
         return result
     }
@@ -151,14 +152,16 @@ actor FolderStore {
         return count
     }
 
-    /// 하위 폴더 목록 — **모든 깊이** (203). 숨김 폴더는 뺀다 — 옵시디언 볼트의 `.obsidian/` (A6).
+    /// 하위 폴더 목록 — **모든 깊이** (203) 과 **최상위에 바로 든 노트 수**. 숨김 폴더는 뺀다 — 옵시디언 볼트의 `.obsidian/` (A6).
     ///
     /// 폴더 화면은 이 가운데 두 단계까지 펼치고(`FolderTree.sidebar`), 더 깊은 폴더는 두 번째 단계 폴더를 열면 나온다.
     /// 노트 수는 폴더마다 **바로 든** 노트다 (153). 차례는 이름 차례 — 부모 아래 자식이 같은 셈으로 놓인다.
-    func folders() -> [FolderSummary] {
+    ///
+    /// **한 번 훑으며 센다** (256). 예전에는 폴더를 다 모은 뒤 폴더마다 `noteCount(in:)` 로 목록을 **한 번 더** 읽었다 —
+    /// 15초마다 폴더 수 × 2 번. 거름망은 그대로 `Paths.countsAsNote` 하나다 (153).
+    func folders() -> FolderScan {
         openScopeIfNeeded()
-        // **이름만 먼저 모으고 조정 밖에서 센다** (153). 조정 읽기 **안에서** 또 조정
-        // 읽기를 부르면 겹친다 — 읽기끼리는 막지 않지만 겹쳐 부를 까닭이 없다.
+        var counts: [String: Int] = [:]
         var paths: [String] = []
         var pending: [(path: String, depth: Int)] = [("", 0)]
         while let next = pending.popLast() {
@@ -167,27 +170,31 @@ actor FolderStore {
             // 아주 깊은 폴더는 끝까지 안 내려간다 — 고리(별칭)나 남의 앱 자료가 끝없이 깊을 때.
             guard depth < 12 else { continue }
             let url = folder.isEmpty ? root : root.appendingPathComponent(folder)
+            var count = 0
             coordinateRead(url) { readURL in
                 guard let entries = try? FileManager.default.contentsOfDirectory(
                     at: readURL, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
                 ) else { return }
                 for entry in entries {
                     let name = Paths.normalized(entry.lastPathComponent)
-                    guard !name.hasPrefix("."), name != "assets" else { continue }
-                    guard (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { continue }
+                    let isDirectory = (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
+                    if Paths.countsAsNote(name: name, isDirectory: isDirectory) { count += 1 }
+                    guard isDirectory, !name.hasPrefix("."), name != "assets" else { continue }
                     let path = folder.isEmpty ? name : folder + "/" + name
                     paths.append(path)
                     pending.append((path, depth + 1))
                 }
             }
+            counts[folder] = count
         }
-        return paths
+        let summaries = paths
             .map { path in
                 FolderSummary(relativePath: path,
                               name: path.split(separator: "/").last.map(String.init) ?? path,
-                              noteCount: noteCount(in: path))
+                              noteCount: counts[path] ?? 0)
             }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        return FolderScan(folders: summaries, rootNoteCount: counts[""] ?? 0)
     }
 
     // MARK: - 읽기 · 쓰기
@@ -619,6 +626,10 @@ actor FolderStore {
     /// 링크**를 만들면서 그 약속이 깨졌다. 다른 폴더 노트의 사진이 휴지통으로 가던 자리다.
     /// 셈은 `AttachmentLedger` 하나다 — 정리 화면(174) · 영구 삭제(173)와 같은 셈.
     private func exclusiveAttachments(of notePath: String) -> [String] {
+        // **이 노트가 첨부를 하나도 안 가리키면 폴더 전체를 읽지 않는다** (253). 셈(`trashing`)은 이 노트의 링크 가운데서만
+        // 고르므로 비면 결과도 비어 있다 — 대부분의 노트가 여기서 끝난다. 첨부가 있는 노트만 예전처럼 전체를 본다 (잘못 치우면 사진이 깨진다).
+        guard let text = try? readText(at: notePath),
+              !AttachmentLedger.preciseReferences(of: notePath, text: text).isEmpty else { return [] }
         let census = attachmentCensus()
         return AttachmentLedger.trashing(notePath, notes: census.notes,
                                          trashed: census.trashed, files: census.files)
@@ -873,9 +884,11 @@ actor FolderStore {
     func deleteTrashed(_ relativePath: String) throws {
         guard relativePath.hasPrefix(".trash/") else { return }
         openScopeIfNeeded()
-        let census = attachmentCensus()
-        let attachments = AttachmentLedger.purging(relativePath, notes: census.notes,
-                                                   trashed: census.trashed, files: census.files)
+        // 첨부를 안 가리키는 노트는 폴더 전체를 읽지 않는다 (253 · `exclusiveAttachments` 와 같은 까닭).
+        let references = (try? readText(at: relativePath)).map { AttachmentLedger.preciseReferences(of: relativePath, text: $0) } ?? []
+        let census = references.isEmpty ? AttachmentCensus() : attachmentCensus()
+        let attachments = references.isEmpty ? [] : AttachmentLedger.purging(relativePath, notes: census.notes,
+                                                                             trashed: census.trashed, files: census.files)
         try remove(root.appendingPathComponent(relativePath))
         for path in attachments where path.hasPrefix(".trash/") {
             try? remove(root.appendingPathComponent(path))
@@ -948,11 +961,6 @@ actor FolderStore {
     func incomingLinkCount(toFolder folder: String) -> Int {
         let census = attachmentCensus()
         return AttachmentLedger.incomingLinks(to: folder, notes: census.notes)
-    }
-
-    /// **이 노트를 가리키는 노트** (212). 폴더 링크 셈(168)과 같은 훑기 · 같은 셈이다. 못 읽은 노트는 세지 못한다.
-    func backlinks(to path: String) -> [String] {
-        AttachmentLedger.backlinks(to: path, notes: attachmentCensus().notes)
     }
 
     /// `.trash/` 를 통째로 지운다. 다음 지우기가 다시 만든다.

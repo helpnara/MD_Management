@@ -118,8 +118,8 @@ public enum AttachmentLedger {
     }
 
     /// 노트의 링크가 가리키는 **폴더 안 경로** — 링크마다 하나 (같은 곳을 두 번 가리키면 두 번).
-    /// 바깥 주소 · 폴더 밖 · 빈 링크는 뺀다. 168 · 212 가 같이 부른다.
-    static func linkTargets(of path: String, text: String) -> [String] {
+    /// 바깥 주소 · 폴더 밖 · 빈 링크는 뺀다. 168 · 212 가 같이 부른다. **색인도 이것을 적어 둔다** (253 — 역링크는 색인에서 찾는다).
+    public static func linkTargets(of path: String, text: String) -> [String] {
         MarkdownLinks.extract(from: text).compactMap { link in
             if case .relative(let target) = Paths.resolve(link: link.destination, fromNoteAt: path) { return target }
             return nil
@@ -129,7 +129,8 @@ public enum AttachmentLedger {
     // MARK: - 셈의 속
 
     /// 노트가 **링크로** 가리키는 파일 (노트로 가는 링크는 빼고). 금고 기준 경로.
-    static func preciseReferences(of notePath: String, text: String) -> Set<String> {
+    /// 지우기(172)는 이것이 비면 폴더 전체를 읽지 않는다 (253) — `trashing` 은 이 집합의 부분집합만 돌려준다.
+    public static func preciseReferences(of notePath: String, text: String) -> Set<String> {
         Set(MarkdownHTML.referencedPaths(markdown: text, notePath: notePath)
             .filter { !Paths.isNoteFile($0) })
     }

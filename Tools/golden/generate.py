@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import argparse
+import html as html_lib
 import json
 import pathlib
 import re
@@ -1474,12 +1475,17 @@ def markdown_link(label: str, path: str) -> str:
 
     대괄호는 **역슬래시로 피한다** (152) — 빈칸으로 바꾸면 사람이 고른 글자가 망가진다.
     """
+    return "[" + escaped_label(label) + "](" + ("<" + path + ">" if " " in path else path) + ")"
+
+
+def escaped_label(label: str) -> str:
+    """링크 이름의 `[` · `]` · `\\` 를 역슬래시로 피한다 (Swift `NoteLinking.escapedLabel`)."""
     safe = ""
     for ch in label:
         if ch in "[]\\":
             safe += "\\"
         safe += ch
-    return "[" + safe + "](" + ("<" + path + ">" if " " in path else path) + ")"
+    return safe
 
 
 def link_edit(title: str, path: str, note_folder: str, query: dict) -> dict:
@@ -2751,6 +2757,7 @@ def build() -> dict:
         "previewCases": build_preview_cases(),
         "pastedFileCases": build_pasted_file_cases(),
         "initialsCases": build_initials_cases(),
+        "mapCases": build_map_cases(),
     }
 
 
@@ -2770,6 +2777,12 @@ def incoming_share(text: str, url, page_title, images: list, fallback: str) -> d
 
     제목은 첫 줄(`first_line` — 제목을 따라 파일 이름을 바꿀 때와 같은 셈). 첫 줄이 없으면 주소의 제목 → 주소 →
     fallback 이고, 글 맨 위에 `# 제목` 을 넣는다. 주소는 `markdown_link` (노트 연결과 같은 꼴), 글에 이미 있으면 안 붙인다."""
+    places = map_places_pieces([text] + ([url] if url is not None else []))
+    if places is not None:
+        # 252 — 지도 장소: 제목은 첫 장소 이름, 장소마다 링크 한 줄. 따로 온 주소는 붙이지 않는다.
+        title = places[0]["name"]
+        parts = ["# " + title, "\n\n".join(map_line(p) for p in places)] + ["!" + markdown_link("", p) for p in images]
+        return {"title": title, "markdown": "\n\n".join(parts) + "\n"}
     lines = [_share_trim(l, leading=False) for l in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
     while lines and not _share_trim(lines[0]):
         lines.pop(0)
@@ -2890,6 +2903,10 @@ def build_shared_address_cases() -> list[dict]:
 # 241 — 이미 있는 노트에 덧붙이기 (Swift `IncomingShare.entry` · `appending`).
 def share_entry(text: str, url, page_title, images: list):
     """노트 끝에 덧붙일 한 항목. 받은 글은 한 줄로, 주소는 `[제목](주소)`, 사진은 두 칸 들여 아래에. 없으면 None."""
+    places = map_places_pieces([text] + ([url] if url is not None else []))
+    if places is not None:
+        # 252 — 지도 장소: 장소마다 목록 한 줄, 사진은 마지막 장소 아래.
+        return "\n".join(["- " + map_line(p) for p in places] + ["  !" + markdown_link("", p) for p in images])
     lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
     memo = " ".join(t for t in (_share_trim(l) for l in lines) if t)
     address = _share_one_line(url) if url is not None else None
@@ -2931,7 +2948,8 @@ def build_share_entry_cases() -> list[dict]:
             raise SystemExit(f"::error::[{case['name']}] 덧붙일 항목: 뜻 {case['expect']!r} · 셈 {got!r}")
         if got is not None:
             html = cmark_html(got)
-            if html.count("<li>") != 1:
+            places = map_places_pieces([case.get("text", "")] + ([url] if (url := case.get("url")) is not None else []))
+            if html.count("<li>") != (len(places) if places else 1):
                 raise SystemExit(f"::error::[{case['name']}] 항목이 목록 한 줄이 아니다:\n{html}")
             url = case.get("url")
             if url and url.strip() and url.strip() not in case.get("text", "") and html.count("<a href=") != 1:
@@ -3179,6 +3197,128 @@ def build_initials_cases() -> dict:
     return {"initials": initials, "queries": queries, "matches": matches}
 
 
+# 252 — 지도 앱이 공유한 장소 글을 링크로 (Swift `MapPlaces`). **장소는 머리말에서 다음 머리말까지** (빌드 109 — 줄로 나눴더니
+# 한 줄로 붙어 온 두 장소 · 보이지 않는 글자가 낀 빈 줄을 못 읽었다). 장소 안에서 `http(s)://` 주소 앞의 글 줄은 첫 줄이 이름,
+# 나머지가 주소. 글 전체가 장소들이어야만 바꾼다. 빈칸 · 줄바꿈은 못 박은 목록 — 플랫폼마다 *빈칸* 의 뜻이 다르다.
+MAP_CASES = ROOT / "Tools" / "golden" / "map-cases.json"
+MAP_HEADERS = ("[네이버지도]", "[카카오맵]")
+MAP_BREAKS = "\n\r\x0b\x0c\x85\u2028\u2029"
+MAP_BLANKS = MAP_BREAKS + " \t\xa0\u1680" + "".join(chr(c) for c in range(0x2000, 0x200E)) + "\u202f\u205f\u2060\u3000\ufeff"
+
+
+def _map_web_address(text: str) -> bool:
+    """Swift `Pasting.isWebAddress` 와 같은 셈 — `http` · `https` 하나, 빈칸 · 줄바꿈 없음, 뒤에 뭐라도."""
+    if not text or " " in text or "\n" in text:
+        return False
+    lower = text.lower()
+    if not (lower.startswith("http://") or lower.startswith("https://")):
+        return False
+    return len(text) > (8 if lower.startswith("https://") else 7)
+
+
+def _map_place(seg: str):
+    found = [i for i in (seg.find("https://"), seg.find("http://")) if i >= 0]
+    if not found:
+        return None
+    start = min(found)
+    stop = start
+    while stop < len(seg) and seg[stop] not in MAP_BLANKS:
+        stop += 1
+    url = seg[start:stop]
+    if any(c not in MAP_BLANKS for c in seg[stop:]) or not _map_web_address(url) or "<" in url or ">" in url:
+        return None
+    texts, line = [], ""
+    for ch in seg[:start] + "\n":
+        if ch in MAP_BREAKS:
+            t = line.strip(MAP_BLANKS)
+            if t:
+                texts.append(t)
+            line = ""
+        else:
+            line += ch
+    if not texts:
+        return None
+    return {"name": texts[0], "address": " ".join(texts[1:]) or None, "url": url}
+
+
+def map_places(text: str):
+    s = unicodedata.normalize("NFC", text)
+    marks, i = [], 0
+    while i < len(s):
+        header = next((h for h in MAP_HEADERS if s.startswith(h, i)), None)
+        if header:
+            marks.append((i, i + len(header)))
+            i += len(header)
+        else:
+            i += 1
+    if not marks or any(c not in MAP_BLANKS for c in s[:marks[0][0]]):
+        return None
+    places = []
+    for n, (_, end) in enumerate(marks):
+        stop = marks[n + 1][0] if n + 1 < len(marks) else len(s)
+        place = _map_place(s[end:stop])
+        if place is None:
+            return None
+        places.append(place)
+    return places
+
+
+def map_joined(pieces: list) -> str:
+    """항목들을 줄바꿈으로 잇는다 — 빈 항목 · 앞 항목에 이미 든 항목은 뺀다 (Swift `MapPlaces.joined`)."""
+    kept = []
+    for piece in pieces:
+        if piece and not any(piece in k for k in kept):
+            kept.append(piece)
+    return "\n".join(kept)
+
+
+def map_places_pieces(pieces: list):
+    """글과 주소가 따로 온 공유 (카카오맵) — 이어 읽고, 안 되면 첫 항목만 (Swift `MapPlaces.places(in: pieces)`)."""
+    got = map_places(map_joined(pieces))
+    if got is None and pieces:
+        got = map_places(pieces[0])
+    return got
+
+
+def map_line(place: dict) -> str:
+    return "[" + escaped_label(place["name"]) + "](<" + place["url"] + ">)" + (" : " + place["address"] if place["address"] else "")
+
+
+def map_pasted(pieces: list):
+    places = map_places_pieces(pieces)
+    return None if places is None else "\n\n".join(map_line(p) for p in places)
+
+
+def build_map_cases() -> list[dict]:
+    """정답을 셈하고 **cmark-gfm 으로 그려 본다** — 장소마다 문단 하나 · 링크 하나, 링크 글자는 장소 이름 그대로,
+    주소는 공유 글의 주소 그대로, 공유 글의 글자(머리말 빼고)가 하나도 빠지지 않아야 한다."""
+    spec = json.loads(MAP_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        pieces = case.get("pieces", [case.get("text", "")])
+        got = map_pasted(pieces)
+        if got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 지도 장소: 뜻 {case['expect']!r} · 셈 {got!r}")
+        if got is not None:
+            places = map_places_pieces(pieces)
+            html = cmark_html(got)
+            links = re.findall(r'<a href="([^"]*)">(.*?)</a>', html)
+            if html.count("<p>") != len(places) or len(links) != len(places):
+                raise SystemExit(f"::error::[{case['name']}] 장소마다 문단 · 링크 하나가 아니다:\n{html}")
+            for (href, label), place in zip(links, places):
+                if html_lib.unescape(href) != place["url"] or html_lib.unescape(label) != place["name"]:
+                    raise SystemExit(f"::error::[{case['name']}] 링크가 장소와 다르다: {href!r} {label!r}")
+            read = map_joined(pieces) if map_places(map_joined(pieces)) is not None else pieces[0]   # 읽은 항목만
+            body = re.sub(r"(https?://)", r" \1", unicodedata.normalize("NFC", read))   # 카카오맵은 이름과 주소가 붙어 온다
+            for h in MAP_HEADERS:
+                body = body.replace(h, " ")
+            for word in re.findall(r"\w+", body):
+                if word not in got:
+                    raise SystemExit(f"::error::[{case['name']}] 글자 {word!r} 가 빠졌다")
+        out.append({"name": case["name"], "pieces": pieces, "result": got})
+    return out
+
+
 # 242 — 목록 · 검색 결과에 보이는 한 줄 (Swift `PreviewLine.plain`). 셈은 `preview_line.py` (쌍둥이),
 # 줄 안 부분의 심판은 markdown-it (`make_parser` — 읽기 화면과 같은 설정).
 PREVIEW_CASES = ROOT / "Tools" / "golden" / "preview-cases.json"
@@ -3267,7 +3407,10 @@ def build_share_cases() -> list[dict]:
                 raise SystemExit(f"::error::[{case['name']}] 주소가 링크 하나로 안 나왔다:\n{html}")
         if html.count("<img ") != len(case.get("images", [])):
             raise SystemExit(f"::error::[{case['name']}] 사진 수가 다르다:\n{html}")
-        for word in re.findall(r"\w+", case.get("text", "")):
+        body = case.get("text", "")
+        for header in MAP_HEADERS:
+            body = body.replace(header, " ")   # 지도 장소의 머리말은 링크로 바뀌며 빠진다 (252)
+        for word in re.findall(r"\w+", body):
             if word not in got["markdown"]:
                 raise SystemExit(f"::error::[{case['name']}] 글자 {word!r} 가 빠졌다")
         want = case.get("expect", {})
@@ -4157,6 +4300,9 @@ def tally(loaded: dict) -> str:
     files = loaded.get("pastedFileCases")
     if files:
         counted.append(f"붙여넣은 첨부 {len(files['kinds'])}·{len(files['labels'])}·{len(files['matches'])}건")
+    maps = loaded.get("mapCases")
+    if maps:
+        counted.append(f"지도 장소 {len(maps)}건")
     initials = loaded.get("initialsCases")
     if initials:
         counted.append(f"제목 초성 {len(initials['initials'])}·{len(initials['queries'])}·{len(initials['matches'])}건")

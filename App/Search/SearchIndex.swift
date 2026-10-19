@@ -41,7 +41,9 @@ actor SearchIndex {
     ///   판을 안 올렸더니 **고치지 않은 노트는 옛 미리보기를 그대로 들고 있었다** —
     ///   목록에 제목과 같은 글이 두 번 나왔다 (빌드 34 · 1번, 사용자).
     /// - v3 (빌드 103 · 242): 미리보기 줄을 보이는 글로(`PreviewLine`) — 링크는 제목만, `**` 등은 뗀다.
-    private static let version = 3
+    /// - v4 (빌드 112 · 253 · 255): `note.links`(이 노트가 가리키는 폴더 안 경로 — 역링크를 여기서 찾는다) ·
+    ///   `note_fts` 의 rowid 를 `note.id` 로 맞춤(지우기가 표 전체를 훑지 않게) · 트랜잭션.
+    private static let version = 4
 
     /// **안 받은 노트가 이보다 많으면 내려받기를 시키지 않는다** (245, 2026-10-13 사용자 — *만약 수천개라면 유사한 상황이
     /// 발생할 가능성 · a 방식이 나을 것*). 그 아래면 예전처럼 받아서 본문까지 — 노트 150개쯤인 폴더는 본문 검색이 그대로다.
@@ -122,7 +124,8 @@ actor SearchIndex {
           mtime INTEGER NOT NULL,
           size INTEGER NOT NULL,
           tags TEXT NOT NULL DEFAULT '',
-          first_line TEXT NOT NULL DEFAULT ''
+          first_line TEXT NOT NULL DEFAULT '',
+          links TEXT NOT NULL DEFAULT ''
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS note_fts USING fts5(
           rel_path UNINDEXED, title, body, tags, tokenize='\(tokenize)'
@@ -130,14 +133,34 @@ actor SearchIndex {
         """)
     }
 
+    /// **한 묶음으로 쓴다** (255). 문장마다 자동 커밋(디스크 동기화)하던 것을 하나로 — 처음 색인이 노트 수 × 3번 커밋이었다.
+    /// 안에서 던지면 되돌리고 다시 던진다.
+    private func transaction<T>(_ body: () throws -> T) rethrows -> T {
+        try? exec("BEGIN IMMEDIATE")
+        do {
+            let result = try body()
+            try? exec("COMMIT")
+            return result
+        } catch {
+            try? exec("ROLLBACK")
+            throw error
+        }
+    }
+
     // MARK: - 새로 고침
+
+    /// **받기를 시킨 노트** (254) — 제목만 넣은 줄은 도장이 늘 어긋나(`titleOnlyStamp`), 예전에는 새로 고침마다 그 노트들에
+    /// 다시 받기를 시키고 자원값을 물었다. 한 번 시킨 것은 다 내려올 때까지 건너뛴다 (`isDownloaded` 가 참이 되면 본문을 읽는다).
+    private var downloadRequested: Set<String> = []
 
     /// 목록의 도장과 색인의 도장을 견줘 **바뀐 것만** 다시 읽는다 (설계서 §7.5).
     /// 목록에 없는 것은 지운다. 읽기는 `reader` 가 한다 — 파일은 `FolderStore` 의 것이다.
+    ///
+    /// **취소를 본다** (254) — 부른 쪽이 접으면(`Task.isCancelled`) 그때까지 쓴 것을 남기고 물러난다. 다음 바퀴가 나머지를 한다.
     func refresh(_ notes: [NoteSummary], reader: @Sendable (String) async throws -> String) async -> Int {
         let started = Date()
         do { try open() } catch { return 0 }
-        guard let db else { return 0 }
+        guard db != nil else { return 0 }
 
         var known: [String: (mtime: Int, size: Int)] = [:]
         for row in query("SELECT rel_path, mtime, size FROM note") {
@@ -150,68 +173,139 @@ actor SearchIndex {
         let fetchBodies = pending <= Self.downloadLimit
         status.downloadsWithheld = !fetchBodies
 
+        // 본문은 묶음 밖에서 읽는다 (`await` — actor 가 다른 일을 받을 수 있다). 쓰기만 묶는다.
+        var batch: [(NoteSummary, String)] = []
+        var titleOnly: [NoteSummary] = []
+        func flush() {
+            guard !batch.isEmpty || !titleOnly.isEmpty else { return }
+            transaction {
+                for note in titleOnly { writeTitleOnly(note) }
+                for (note, text) in batch { write(note, text: text) }
+            }
+            changed += batch.count + titleOnly.count
+            batch = []
+            titleOnly = []
+        }
         for note in notes {
+            if Task.isCancelled { break }
             let mtime = Int(note.modifiedAt.timeIntervalSince1970)
             let old = known[note.relativePath]
             if let old, old.mtime == mtime, old.size == note.size { continue }
             // **본문을 못 읽는 노트도 제목으로는 찾히게** (245) — 예전에는 다 내려올 때까지 색인에 아예 없었다
             // (검색 · `[[` 목록 모두에서 빠졌다). 이미 줄이 있으면(옛 본문 · 제목만) 그대로 둔다 — 다 내려오면 바뀐다.
-            if !note.isDownloaded, !fetchBodies {
-                if old == nil {
-                    writeTitleOnly(note)
-                    changed += 1
+            if !note.isDownloaded {
+                if old == nil { titleOnly.append(note) }
+                // 받기는 한 번만 시킨다 (254). 시키는 길이 `reader` 라 한 번 불러 본다.
+                if fetchBodies, !downloadRequested.contains(note.relativePath) {
+                    downloadRequested.insert(note.relativePath)
+                    _ = try? await reader(note.relativePath)
                 }
                 continue
             }
+            downloadRequested.remove(note.relativePath)
             let text: String
             do {
                 text = try await reader(note.relativePath)
             } catch {
-                // 아직 안 내려왔다(받기는 시켜 두었다) · 못 읽는다.
-                if old == nil {
-                    writeTitleOnly(note)
-                    changed += 1
-                }
+                if old == nil { titleOnly.append(note) }
                 continue
             }
-            let parsed = FrontMatterParser.parse(text)
-            let tags = " " + (parsed.frontMatter?.tags ?? []).map { Paths.normalized($0) }.joined(separator: " ") + " "
-            let firstLine = Self.firstBodyLine(of: parsed.body)
-            run("DELETE FROM note_fts WHERE rel_path = ?", [note.relativePath])
-            run("INSERT INTO note_fts(rel_path, title, body, tags) VALUES(?,?,?,?)",
-                [note.relativePath, note.title, text, tags])
-            run("""
-            INSERT INTO note(rel_path, title, mtime, size, tags, first_line) VALUES(?,?,?,?,?,?)
-            ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
-              size=excluded.size, tags=excluded.tags, first_line=excluded.first_line
-            """, [note.relativePath, note.title, String(mtime), String(note.size), tags, firstLine])
-            changed += 1
+            batch.append((note, text))
+            if batch.count >= 50 { flush() }   // 50개마다 한 번 디스크에 — 접혀도 그만큼은 남는다
         }
-        for path in known.keys where !wanted.contains(path) {
-            run("DELETE FROM note WHERE rel_path = ?", [path])
-            run("DELETE FROM note_fts WHERE rel_path = ?", [path])
-            changed += 1
+        flush()
+        if !Task.isCancelled {
+            let gone = known.keys.filter { !wanted.contains($0) }
+            if !gone.isEmpty {
+                transaction { for path in gone { remove(path) } }
+                changed += gone.count
+            }
         }
-        _ = db
-        status.noteCount = Int(query("SELECT COUNT(*) FROM note").first?.first ?? "0") ?? 0
-        status.titleOnlyCount = Int(query("SELECT COUNT(*) FROM note WHERE mtime = ?",
-                                          [String(Self.titleOnlyStamp)]).first?.first ?? "0") ?? 0
+        if changed > 0 || status.lastRefresh == nil { countRows() }
         status.lastRefresh = Date()
         status.lastRefreshSeconds = Date().timeIntervalSince(started)
         status.fileBytes = (try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? Int) ?? 0
         return changed
     }
 
-    /// **제목만** 넣는다 (245) — 본문 · 태그 · 미리보기는 비운다. `mtime` 은 `titleOnlyStamp`.
-    private func writeTitleOnly(_ note: NoteSummary) {
-        run("DELETE FROM note_fts WHERE rel_path = ?", [note.relativePath])
-        run("INSERT INTO note_fts(rel_path, title, body, tags) VALUES(?,?,?,?)",
-            [note.relativePath, note.title, "", ""])
+    /// **방금 저장한 노트 하나만** (254). 저장마다 폴더 전체를 훑지 않는다 — 글은 저장한 쪽이 이미 들고 있어 파일을 다시 읽지 않는다.
+    /// 돌려주는 것은 목록에 보일 첫 줄 미리보기.
+    func update(_ note: NoteSummary, text: String) -> String {
+        do { try open() } catch { return "" }
+        downloadRequested.remove(note.relativePath)
+        return transaction { write(note, text: text) }
+    }
+
+    /// 제목을 따라 이름이 바뀌었다 (254) — 줄을 새 경로로. 본문은 그대로라 다시 읽지 않는다.
+    func rename(from old: String, to new: String) {
+        do { try open() } catch { return }
+        transaction {
+            run("UPDATE note SET rel_path = ? WHERE rel_path = ?", [new, old])
+            run("UPDATE note_fts SET rel_path = ? WHERE rel_path = ?", [new, old])
+        }
+    }
+
+    /// **이 노트를 가리키는 노트** (212 · 253). 색인할 때 적어 둔 `links` 에서 찾는다 — 예전에는 폴더의 모든 본문을 읽었다.
+    /// 아직 안 내려와 제목만 넣은 노트는 못 센다 (예전과 같은 한계). 차례는 `AttachmentLedger.ordered` 와 같게.
+    func backlinks(to path: String) -> [String] {
+        do { try open() } catch { return [] }
+        let needle = Self.linksSeparator + Paths.normalized(path) + Self.linksSeparator
+        let rows = query("SELECT rel_path FROM note WHERE rel_path <> ? AND instr(links, ?) > 0", [path, needle])
+        return AttachmentLedger.ordered(rows.map { $0[0] })
+    }
+
+    /// `links` 열의 구분자 — 경로에는 줄바꿈이 없다. 앞뒤에도 두어 `instr` 가 경로 하나에 꼭 맞게.
+    private static let linksSeparator = "\n"
+
+    /// 노트 한 줄을 쓴다 — `note` 표 · `note_fts` (rowid = note.id). 돌려주는 것은 첫 줄 미리보기.
+    @discardableResult
+    private func write(_ note: NoteSummary, text: String) -> String {
+        let mtime = Int(note.modifiedAt.timeIntervalSince1970)
+        let parsed = FrontMatterParser.parse(text)
+        let tags = " " + (parsed.frontMatter?.tags ?? []).map { Paths.normalized($0) }.joined(separator: " ") + " "
+        let firstLine = Self.firstBodyLine(of: parsed.body)
+        // 253 — 이 노트가 가리키는 폴더 안 경로 (역링크 · 폴더 링크 셈과 같은 `linkTargets`).
+        let targets = AttachmentLedger.linkTargets(of: note.relativePath, text: text)
+        let links = targets.isEmpty ? "" : Self.linksSeparator + targets.joined(separator: Self.linksSeparator) + Self.linksSeparator
         run("""
-        INSERT INTO note(rel_path, title, mtime, size, tags, first_line) VALUES(?,?,?,?,?,?)
+        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links) VALUES(?,?,?,?,?,?,?)
         ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
-          size=excluded.size, tags=excluded.tags, first_line=excluded.first_line
-        """, [note.relativePath, note.title, String(Self.titleOnlyStamp), String(note.size), "", ""])
+          size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links
+        """, [note.relativePath, note.title, String(mtime), String(note.size), tags, firstLine, links])
+        guard let id = rowID(of: note.relativePath) else { return firstLine }
+        run("DELETE FROM note_fts WHERE rowid = ?", [.int(id)])
+        run("INSERT INTO note_fts(rowid, rel_path, title, body, tags) VALUES(?,?,?,?,?)",
+            [.int(id), .text(note.relativePath), .text(note.title), .text(text), .text(tags)])
+        return firstLine
+    }
+
+    /// **제목만** 넣는다 (245) — 본문 · 태그 · 미리보기 · 링크는 비운다. `mtime` 은 `titleOnlyStamp`.
+    private func writeTitleOnly(_ note: NoteSummary) {
+        run("""
+        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links) VALUES(?,?,?,?,?,?,?)
+        ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
+          size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links
+        """, [note.relativePath, note.title, String(Self.titleOnlyStamp), String(note.size), "", "", ""])
+        guard let id = rowID(of: note.relativePath) else { return }
+        run("DELETE FROM note_fts WHERE rowid = ?", [.int(id)])
+        run("INSERT INTO note_fts(rowid, rel_path, title, body, tags) VALUES(?,?,?,?,?)",
+            [.int(id), .text(note.relativePath), .text(note.title), .text(""), .text("")])
+    }
+
+    /// `note` 표의 번호 — `note_fts` 의 rowid 와 같다.
+    private func rowID(of path: String) -> Int64? {
+        query("SELECT id FROM note WHERE rel_path = ?", [path]).first?.first.flatMap { Int64($0) }
+    }
+
+    private func remove(_ path: String) {
+        if let id = rowID(of: path) { run("DELETE FROM note_fts WHERE rowid = ?", [.int(id)]) }
+        run("DELETE FROM note WHERE rel_path = ?", [path])
+    }
+
+    private func countRows() {
+        status.noteCount = Int(query("SELECT COUNT(*) FROM note").first?.first ?? "0") ?? 0
+        status.titleOnlyCount = Int(query("SELECT COUNT(*) FROM note WHERE mtime = ?",
+                                          [String(Self.titleOnlyStamp)]).first?.first ?? "0") ?? 0
     }
 
     /// 목록의 **첫 줄 미리보기** — 색인에서만 가져온다 (설계서 §7.5). 색인 전이면 빈칸.
@@ -228,6 +322,7 @@ actor SearchIndex {
         db = nil
         try? FileManager.default.removeItem(at: fileURL)
         status = IndexStatus()
+        downloadRequested = []
     }
 
     // MARK: - 검색
@@ -390,14 +485,32 @@ actor SearchIndex {
 
     @discardableResult
     private func run(_ sql: String, _ binds: [String]) -> Bool {
+        run(sql, binds.map(Bind.text))
+    }
+
+    /// 문장에 넣을 값 — 글자 또는 정수. rowid 는 **정수로** 넣어야 한다 (255) — 글자 `'12'` 를 넣으면 FTS5 가 자료형이 다르다고 거절한다.
+    private enum Bind {
+        case text(String)
+        case int(Int64)
+    }
+
+    @discardableResult
+    private func run(_ sql: String, _ binds: [Bind]) -> Bool {
         guard let db else { return false }
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK, let statement else { return false }
         defer { sqlite3_finalize(statement) }
-        for (index, value) in binds.enumerated() {
-            sqlite3_bind_text(statement, Int32(index + 1), value, -1, Self.transient)
-        }
+        bindAll(binds, to: statement)
         return sqlite3_step(statement) == SQLITE_DONE
+    }
+
+    private func bindAll(_ binds: [Bind], to statement: OpaquePointer) {
+        for (index, value) in binds.enumerated() {
+            switch value {
+            case .text(let text): sqlite3_bind_text(statement, Int32(index + 1), text, -1, Self.transient)
+            case .int(let number): sqlite3_bind_int64(statement, Int32(index + 1), number)
+            }
+        }
     }
 
     private func query(_ sql: String, _ binds: [String] = []) -> [[String]] {

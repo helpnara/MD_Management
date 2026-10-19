@@ -60,6 +60,9 @@ final class MarkdownTextView: UITextView {
         let sourceNote: String?
         /// 클립보드에 실린 갈래 이름들 — 진단 화면이 마지막 붙여넣기를 보여 줄 때 쓴다 (206).
         let types: [String]
+        /// **클립보드의 모든 항목의 글 · 주소** (252 · 빌드 110). `plain` 은 첫 항목뿐이다 — 카카오맵은 `[카카오맵] 우레` 와
+        /// `https://kko.to/…` 를 다른 항목으로 싣는다.
+        let pieces: [String]
         /// **서식 있는 글에 든 첨부들** (207 · 243) — 문서 차례. 사진만이 아니다 — 메모의 녹음(m4a) · 문서도 여기 같이 온다.
         /// 첨부 자리가 있을 때만 읽으므로 늦게 부른다.
         let loadAttachments: @MainActor () -> [Attachment]
@@ -133,6 +136,7 @@ final class MarkdownTextView: UITextView {
                               selection: text(in: target) ?? "",
                               sourceNote: Self.sourceNote(from: board, plain: plain),
                               types: board.types,
+                              pieces: (board.strings ?? []) + (board.urls ?? []).map(\.absoluteString),
                               loadAttachments: { Self.attachments(from: board) })
         guard let made = onPaste?(item), made != plain else {
             super.paste(sender)

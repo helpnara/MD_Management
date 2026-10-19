@@ -14,6 +14,7 @@
   "other": " %lld links from notes in other folders that point inside this folder will also be updated."
  },
  "%.2f초": "%.2fs",
+ "%.2f초 (읽기 %.2f · 그리기 %.2f · 가리키는 노트 %.2f)": "%.2fs (read %.2f · render %.2f · linking notes %.2f)",
  "%@ (맨 위)": "%@ (Top Level)",
  "%@ (충돌 %@)": "%@ (Conflict %@)",
  "%@ · %@": "%@ · %@",
@@ -53,7 +54,7 @@
  "[마크다운 갈래]\n": "[Markdown]\n",
  "[첨부]\n": "[Attachments]\n",
  "[평문]\n": "[Plain text]\n",
- "`규모 시험` 폴더에 노트 300개(합쳐 약 20MB)를 만듭니다. **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `색인 크기` · `마지막 검색` 을 보면 S1 과 A5 를 한 번에 잴 수 있습니다. 지우기는 휴지통으로 갑니다.": "Creates 300 notes (about 20 MB in total) in a folder named `규모 시험`. **iCloud will upload all of it**, which uses data and takes time. Afterwards, check List Load Time · Last Index Update · Index Size · Last Search Time above to measure S1 and A5 at once. Deleting moves it to the Trash.",
+ "`규모 시험` 폴더에 노트를 만듭니다 (어느 것이든 합쳐 약 20MB — 1,000 · 3,000 개는 작은 노트). **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 이미 있으면 뒤에 이어 붙입니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `마지막 열기` · `마지막 검색` 을 보면 규모에서 어디가 느린지 잴 수 있습니다. 지우기는 휴지통으로 갑니다.": "Creates notes in a `Scale Test` folder (about 20MB in total either way — the 1,000 and 3,000 options use small notes). **iCloud uploads all of it** — it costs data and time. If the folder already exists, new notes are appended. Afterwards, `List read`, `Last refresh`, `Last open` and `Last search` above show where the app slows down at scale. Deleting moves it to the trash.",
  "`규모 시험` 폴더에 약 20MB 를 만듭니다. iCloud 가 그만큼을 올립니다 — 데이터와 시간이 듭니다. 지울 때는 휴지통으로 갑니다.": "Creates about 20 MB in a folder named `규모 시험`. iCloud will upload all of it, which uses data and takes time. Deleting moves it to the Trash.",
  "`첨부 시험.md` 와 `assets` 의 사진 둘을 만들고 **읽기 모드로 엽니다.** 사진 셋이 다 보이면 첨부가 제대로 도는 것입니다. 만든 파일은 언제든 지우셔도 됩니다.": "Creates `첨부 시험.md` and two photos in `assets`, then **opens it in reading mode.** If all three photos show, attachments work. You can delete the files any time.",
  "`큰 노트 시험.md` 를 300줄 · 20KB 안팎으로 만들고 **편집기로 엽니다.** 커서를 위아래로 훑어 지연이나 튐이 없으면 통과입니다. 만든 파일은 언제든 지우셔도 됩니다.": "Creates `큰 노트 시험.md` with about 300 lines (20 KB) and **opens it in the editor.** Move the cursor up and down — if nothing lags or jumps, it passes. You can delete the file any time.",
@@ -131,12 +132,13 @@
   "one": "%lld note",
   "other": "%lld notes"
  },
+ "노트 %lld개 만들기 (작은 노트 · 약 20MB)": "Create %lld notes (small notes · about 20MB)",
  "노트 %lld개는 그 사이 바뀌어 고치지 못했습니다": {
   "one": "%lld note had changed in the meantime and couldn't be updated",
   "other": "%lld notes had changed in the meantime and couldn't be updated"
  },
+ "노트 %lld개를 만들까요?": "Create %lld notes?",
  "노트 300개 만들기 (약 20MB)": "Create 300 Notes (about 20 MB)",
- "노트 300개를 만들까요?": "Create 300 Notes?",
  "노트가 없습니다": "No Notes",
  "노트를 고르세요": "Select a Note",
  "노트를 고정해 두면 여기서 그 노트에 덧붙일 수 있습니다.": "Pin a note to add to it from here.",
@@ -172,6 +174,7 @@
  "마지막 갱신": "Last Index Update",
  "마지막 검색": "Last Search Time",
  "마지막 붙여넣기": "Last Paste",
+ "마지막 열기": "Last open",
  "마지막 오류": "Last error",
  "만드는 중 %lld / %lld": "Creating %lld of %lld…",
  "만들기": "Create",
@@ -319,6 +322,7 @@
  "줄바꿈 켜기": "Turn On Line Wrap",
  "지금 목록에 없는 노트입니다 — **%@** 의 파일": "This note isn't in the current list — it's a file in **%@**",
  "지금 쓰는 곳은 **이 기기 안**입니다. `파일` 앱의 iCloud Drive 에는 폴더가 생기지 않고, 다른 기기와도 안 맞춰집니다.": "Your notes are stored **on this device**. No folder appears in iCloud Drive in the Files app, and nothing syncs with your other devices.",
+ "지도 장소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다.": "Turned the map places into links. You can undo this.",
  "지우기": "Delete",
  "지우면": "If you delete it,",
  "지우지 못했습니다: %@": "Couldn't delete: %@",

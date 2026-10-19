@@ -114,6 +114,26 @@
       "expect": {
         "title": "example.org"
       }
+    },
+    {
+      "name": "지도 장소 (252) — 제목은 첫 장소 이름 · 따로 온 주소는 안 붙인다",
+      "text": "[네이버지도]\n우레 분당 정자본점\n경기 성남시 분당구 정자일로 158 백궁프라자2 1층 105호, 106호 우레\nhttps://naver.me/GcAsok6a\n\n[네이버지도]\n미담 본점\n경기 성남시 분당구 성남대로331번길 9-13 1층\nhttps://naver.me/Fsop26XU",
+      "url": "https://naver.me/GcAsok6a",
+      "fallback": "받은 글",
+      "expect": {
+        "title": "우레 분당 정자본점",
+        "markdown": "# 우레 분당 정자본점\n\n[우레 분당 정자본점](<https://naver.me/GcAsok6a>) : 경기 성남시 분당구 정자일로 158 백궁프라자2 1층 105호, 106호 우레\n\n[미담 본점](<https://naver.me/Fsop26XU>) : 경기 성남시 분당구 성남대로331번길 9-13 1층\n"
+      }
+    },
+    {
+      "name": "카카오맵 공유 (252 · 빌드 110) — 글과 주소가 따로 온다",
+      "text": "[카카오맵] 우레",
+      "url": "https://kko.to/E6exlP7ZR2",
+      "fallback": "받은 글",
+      "expect": {
+        "title": "우레",
+        "markdown": "# 우레\n\n[우레](<https://kko.to/E6exlP7ZR2>)\n"
+      }
     }
   ],
   "inbox": [
@@ -458,6 +478,26 @@
       "name": "아무것도 없음",
       "text": "  \n ",
       "expect": null
+    },
+    {
+      "name": "지도 장소 (252) — 장소마다 목록 한 줄",
+      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t",
+      "url": "https://kko.to/E6exlP7ZR2",
+      "expect": "- [우레](<https://kko.to/E6exlP7ZR2>)\n- [미담휴](<https://kko.to/VFxP39Rn-t>)"
+    },
+    {
+      "name": "지도 장소 (252) — 사진은 마지막 장소 아래",
+      "text": "[네이버지도]\n미담 본점\n성남대로 9\nhttps://naver.me/Fsop26XU",
+      "images": [
+        "assets/2026-10-19-1.jpg"
+      ],
+      "expect": "- [미담 본점](<https://naver.me/Fsop26XU>) : 성남대로 9\n  ![](assets/2026-10-19-1.jpg)"
+    },
+    {
+      "name": "카카오맵 공유 (252 · 빌드 110) — 글과 주소가 따로 와도 장소 한 줄",
+      "text": "[카카오맵] 우레",
+      "url": "https://kko.to/E6exlP7ZR2",
+      "expect": "- [우레](<https://kko.to/E6exlP7ZR2>)"
     }
   ],
   "append": [

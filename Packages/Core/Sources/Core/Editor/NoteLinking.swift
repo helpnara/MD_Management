@@ -160,13 +160,18 @@ public enum NoteLinking {
         // **대괄호는 역슬래시로 피한다** (152). 예전에는 `]` 를 빈칸으로 바꿨는데, 그러면
         // 사람이 고른 글자가 **망가진다** — `[것]` 이 `[것 ` 이 됐다. 파이썬 대조가 잡았다.
         // 역슬래시로 피하면 두 파서 모두 `[것]` 을 그대로 보여 준다.
+        let needsBrackets = path.contains(" ")
+        return "[" + escapedLabel(label) + "](" + (needsBrackets ? "<" + path + ">" : path) + ")"
+    }
+
+    /// 링크 이름의 `[` · `]` · `\` 를 역슬래시로 피한다 — 링크를 짜는 곳(지도 장소 252 도)이 모두 이것을 쓴다.
+    public static func escapedLabel(_ label: String) -> String {
         var safeLabel = ""
         for character in label {
             if character == "[" || character == "]" || character == "\\" { safeLabel.append("\\") }
             safeLabel.append(character)
         }
-        let needsBrackets = path.contains(" ")
-        return "[" + safeLabel + "](" + (needsBrackets ? "<" + path + ">" : path) + ")"
+        return safeLabel
     }
 
     // MARK: - 자잘한 것

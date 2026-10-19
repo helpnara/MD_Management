@@ -58,6 +58,12 @@ struct FolderSummary: Identifiable, Hashable, Sendable {
     var id: String { relativePath }
 }
 
+/// 폴더를 한 번 훑은 결과 (256) — 모든 깊이의 폴더와 최상위에 바로 든 노트 수.
+struct FolderScan: Sendable {
+    let folders: [FolderSummary]
+    let rootNoteCount: Int
+}
+
 /// 어떤 폴더를 쓰고 있나. 진단 화면과 시작 화면이 이것을 보여 준다.
 enum FolderKind: String, Sendable {
     /// (a) 앱 iCloud Drive 컨테이너 — 기본 (ADR-0002)
