@@ -6871,138 +6871,233 @@
   "mapCases": [
     {
       "name": "네이버지도 둘 (2026-10-19 사용자 예)",
-      "result": "[우레 분당 정자본점](<https://naver.me/GcAsok6a>) : 경기 성남시 분당구 정자일로 158 백궁프라자2 1층 105호, 106호 우레\n\n[미담 본점](<https://naver.me/Fsop26XU>) : 경기 성남시 분당구 성남대로331번길 9-13 1층",
-      "text": "[네이버지도]\n우레 분당 정자본점\n경기 성남시 분당구 정자일로 158 백궁프라자2 1층 105호, 106호 우레\nhttps://naver.me/GcAsok6a\n\n[네이버지도]\n미담 본점\n경기 성남시 분당구 성남대로331번길 9-13 1층\nhttps://naver.me/Fsop26XU"
+      "pieces": [
+        "[네이버지도]\n우레 분당 정자본점\n경기 성남시 분당구 정자일로 158 백궁프라자2 1층 105호, 106호 우레\nhttps://naver.me/GcAsok6a\n\n[네이버지도]\n미담 본점\n경기 성남시 분당구 성남대로331번길 9-13 1층\nhttps://naver.me/Fsop26XU"
+      ],
+      "result": "[우레 분당 정자본점](<https://naver.me/GcAsok6a>) : 경기 성남시 분당구 정자일로 158 백궁프라자2 1층 105호, 106호 우레\n\n[미담 본점](<https://naver.me/Fsop26XU>) : 경기 성남시 분당구 성남대로331번길 9-13 1층"
     },
     {
       "name": "카카오맵 둘 — 이름과 주소 사이에 빈칸이 없다 (2026-10-19 사용자 예)",
-      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)"
     },
     {
       "name": "네이버지도 하나 — 빈 줄 없이 한 줄",
-      "result": "[미담 본점](<https://naver.me/Fsop26XU>) : 경기 성남시 분당구 성남대로331번길 9-13 1층",
-      "text": "[네이버지도]\n미담 본점\n경기 성남시 분당구 성남대로331번길 9-13 1층\nhttps://naver.me/Fsop26XU\n"
+      "pieces": [
+        "[네이버지도]\n미담 본점\n경기 성남시 분당구 성남대로331번길 9-13 1층\nhttps://naver.me/Fsop26XU\n"
+      ],
+      "result": "[미담 본점](<https://naver.me/Fsop26XU>) : 경기 성남시 분당구 성남대로331번길 9-13 1층"
     },
     {
       "name": "카카오맵 — 이름과 주소 사이에 빈칸이 있어도",
-      "result": "[우레](<https://kko.to/E6exlP7ZR2>)",
-      "text": "[카카오맵] 우레 https://kko.to/E6exlP7ZR2"
+      "pieces": [
+        "[카카오맵] 우레 https://kko.to/E6exlP7ZR2"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)"
     },
     {
       "name": "주소만 있는 장소 — 첫 글 줄이 이름",
-      "result": "[경기 성남시 분당구 정자일로 158](<https://naver.me/GcAsok6a>)",
-      "text": "[네이버지도]\n경기 성남시 분당구 정자일로 158\nhttps://naver.me/GcAsok6a"
+      "pieces": [
+        "[네이버지도]\n경기 성남시 분당구 정자일로 158\nhttps://naver.me/GcAsok6a"
+      ],
+      "result": "[경기 성남시 분당구 정자일로 158](<https://naver.me/GcAsok6a>)"
     },
     {
       "name": "주소가 두 줄 — 빈칸으로 잇는다",
-      "result": "[우레](<https://naver.me/GcAsok6a>) : 경기 성남시 분당구 정자일로 158",
-      "text": "[네이버지도]\n우레\n경기 성남시 분당구\n정자일로 158\nhttps://naver.me/GcAsok6a"
+      "pieces": [
+        "[네이버지도]\n우레\n경기 성남시 분당구\n정자일로 158\nhttps://naver.me/GcAsok6a"
+      ],
+      "result": "[우레](<https://naver.me/GcAsok6a>) : 경기 성남시 분당구 정자일로 158"
     },
     {
       "name": "네이버 · 카카오 섞임 · 앞뒤 빈 줄 · 줄 끝 빈칸 · 윈도 줄바꿈",
-      "result": "[미담 본점](<https://naver.me/Fsop26XU>) : 성남대로 9\n\n[우레](<https://kko.to/E6exlP7ZR2>)",
-      "text": "\r\n[네이버지도]  \r\n미담 본점\r\n성남대로 9\r\nhttps://naver.me/Fsop26XU  \r\n\r\n\r\n[카카오맵] 우레https://kko.to/E6exlP7ZR2\r\n"
+      "pieces": [
+        "\r\n[네이버지도]  \r\n미담 본점\r\n성남대로 9\r\nhttps://naver.me/Fsop26XU  \r\n\r\n\r\n[카카오맵] 우레https://kko.to/E6exlP7ZR2\r\n"
+      ],
+      "result": "[미담 본점](<https://naver.me/Fsop26XU>) : 성남대로 9\n\n[우레](<https://kko.to/E6exlP7ZR2>)"
     },
     {
       "name": "이름의 대괄호는 역슬래시로",
-      "result": "[\\[본점\\] 우레](<https://kko.to/E6exlP7ZR2>)",
-      "text": "[카카오맵] [본점] 우레https://kko.to/E6exlP7ZR2"
+      "pieces": [
+        "[카카오맵] [본점] 우레https://kko.to/E6exlP7ZR2"
+      ],
+      "result": "[\\[본점\\] 우레](<https://kko.to/E6exlP7ZR2>)"
     },
     {
       "name": "장소 앞에 다른 글 — 손대지 않는다",
-      "result": null,
-      "text": "오늘 갈 곳\n[카카오맵] 우레https://kko.to/E6exlP7ZR2"
+      "pieces": [
+        "오늘 갈 곳\n[카카오맵] 우레https://kko.to/E6exlP7ZR2"
+      ],
+      "result": null
     },
     {
       "name": "장소 뒤에 다른 글 — 손대지 않는다",
-      "result": null,
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n맛있다"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n맛있다"
+      ],
+      "result": null
     },
     {
       "name": "주소 뒤에 글이 남음 — 손대지 않는다",
-      "result": null,
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2 맛집"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2 맛집"
+      ],
+      "result": null
     },
     {
       "name": "주소 없이 끝남 — 손대지 않는다",
-      "result": null,
-      "text": "[네이버지도]\n우레\n경기 성남시"
+      "pieces": [
+        "[네이버지도]\n우레\n경기 성남시"
+      ],
+      "result": null
     },
     {
       "name": "장소 가운데 빈 줄 — 빈 줄은 버린다 (장소는 머리말에서 다음 머리말까지)",
-      "result": "[우레](<https://naver.me/GcAsok6a>) : 경기 성남시",
-      "text": "[네이버지도]\n우레\n\n경기 성남시\nhttps://naver.me/GcAsok6a"
+      "pieces": [
+        "[네이버지도]\n우레\n\n경기 성남시\nhttps://naver.me/GcAsok6a"
+      ],
+      "result": "[우레](<https://naver.me/GcAsok6a>) : 경기 성남시"
     },
     {
       "name": "주소 전에 다음 머리말 — 손대지 않는다",
-      "result": null,
-      "text": "[네이버지도]\n우레\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      "pieces": [
+        "[네이버지도]\n우레\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      ],
+      "result": null
     },
     {
       "name": "이름 없이 주소만 — 손대지 않는다",
-      "result": null,
-      "text": "[카카오맵] https://kko.to/E6exlP7ZR2"
+      "pieces": [
+        "[카카오맵] https://kko.to/E6exlP7ZR2"
+      ],
+      "result": null
     },
     {
       "name": "머리말 없는 평문 — 손대지 않는다",
-      "result": null,
-      "text": "우레\nhttps://kko.to/E6exlP7ZR2"
+      "pieces": [
+        "우레\nhttps://kko.to/E6exlP7ZR2"
+      ],
+      "result": null
     },
     {
       "name": "빈 글",
-      "result": null,
-      "text": ""
+      "pieces": [
+        ""
+      ],
+      "result": null
     },
     {
       "name": "꺾쇠가 든 주소 — 손대지 않는다",
-      "result": null,
-      "text": "[카카오맵] 우레https://kko.to/a<b"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/a<b"
+      ],
+      "result": null
     },
     {
       "name": "카카오맵 둘 사이에 빈 줄 (빌드 109 사용자 예)",
-      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)"
     },
     {
       "name": "카카오맵 둘이 한 줄로 붙어 옴 — 빈칸 하나 사이",
-      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2 [카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2 [카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)"
     },
     {
       "name": "카카오맵 둘이 빈칸도 없이 붙어 옴",
-      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)"
     },
     {
       "name": "빈 줄에 붙는 빈칸(U+00A0) · 폭 없는 빈칸(U+200B)",
-      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n ​\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t​"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n ​\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t​"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)"
     },
     {
       "name": "줄바꿈이 U+2028 (줄 나눔 글자)",
-      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
-      "text": "[카카오맵] 우레 https://kko.to/E6exlP7ZR2  [카카오맵] 미담휴 https://kko.to/VFxP39Rn-t"
+      "pieces": [
+        "[카카오맵] 우레 https://kko.to/E6exlP7ZR2  [카카오맵] 미담휴 https://kko.to/VFxP39Rn-t"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)"
     },
     {
       "name": "이름과 주소가 다른 줄 · 넓은 빈칸(U+3000)",
-      "result": "[우레](<https://kko.to/E6exlP7ZR2>) : 경기 성남시 분당구",
-      "text": "[카카오맵]　우레\n경기 성남시 분당구\nhttps://kko.to/E6exlP7ZR2"
+      "pieces": [
+        "[카카오맵]　우레\n경기 성남시 분당구\nhttps://kko.to/E6exlP7ZR2"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>) : 경기 성남시 분당구"
     },
     {
       "name": "풀어 쓴(NFD) 한글 머리말",
-      "result": "[우레](<https://kko.to/E6exlP7ZR2>)",
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)"
     },
     {
       "name": "한 줄로 붙었는데 둘째 장소에 주소가 없음 — 손대지 않는다",
-      "result": null,
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2 [카카오맵] 미담휴"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2 [카카오맵] 미담휴"
+      ],
+      "result": null
     },
     {
       "name": "주소 둘이 한 장소에 — 손대지 않는다",
-      "result": null,
-      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2 https://kko.to/VFxP39Rn-t"
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2 https://kko.to/VFxP39Rn-t"
+      ],
+      "result": null
+    },
+    {
+      "name": "카카오맵 앱에서 바로 복사 — 글과 주소가 다른 항목 (빌드 110 사용자)",
+      "pieces": [
+        "[카카오맵] 우레",
+        "https://kko.to/E6exlP7ZR2"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)"
+    },
+    {
+      "name": "글과 주소가 다른 항목 — 주소 항목이 글 꼴로 한 번 더",
+      "pieces": [
+        "[카카오맵] 우레",
+        "https://kko.to/E6exlP7ZR2",
+        "https://kko.to/E6exlP7ZR2"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)"
+    },
+    {
+      "name": "글에 주소가 이미 있음 — 주소 항목은 뺀다",
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2",
+        "https://kko.to/E6exlP7ZR2"
+      ],
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)"
+    },
+    {
+      "name": "네이버지도 글 + 다른 주소 항목 — 첫 항목만 읽는다",
+      "pieces": [
+        "[네이버지도]\n미담 본점\n성남대로 9\nhttps://naver.me/Fsop26XU",
+        "https://map.naver.com/p/entry/place/123"
+      ],
+      "result": "[미담 본점](<https://naver.me/Fsop26XU>) : 성남대로 9"
+    },
+    {
+      "name": "머리말 없는 글 + 주소 항목 — 손대지 않는다",
+      "pieces": [
+        "우레",
+        "https://kko.to/E6exlP7ZR2"
+      ],
+      "result": null
     }
   ],
   "nestingCases": [
@@ -11453,6 +11548,16 @@
       "text": "[네이버지도]\n우레 분당 정자본점\n경기 성남시 분당구 정자일로 158 백궁프라자2 1층 105호, 106호 우레\nhttps://naver.me/GcAsok6a\n\n[네이버지도]\n미담 본점\n경기 성남시 분당구 성남대로331번길 9-13 1층\nhttps://naver.me/Fsop26XU",
       "title": "우레 분당 정자본점",
       "url": "https://naver.me/GcAsok6a"
+    },
+    {
+      "fallback": "받은 글",
+      "images": [],
+      "markdown": "# 우레\n\n[우레](<https://kko.to/E6exlP7ZR2>)\n",
+      "name": "카카오맵 공유 (252 · 빌드 110) — 글과 주소가 따로 온다",
+      "pageTitle": null,
+      "text": "[카카오맵] 우레",
+      "title": "우레",
+      "url": "https://kko.to/E6exlP7ZR2"
     }
   ],
   "shareEntryCases": [
@@ -11558,6 +11663,14 @@
       "result": "- [미담 본점](<https://naver.me/Fsop26XU>) : 성남대로 9\n  ![](assets/2026-10-19-1.jpg)",
       "text": "[네이버지도]\n미담 본점\n성남대로 9\nhttps://naver.me/Fsop26XU",
       "url": null
+    },
+    {
+      "images": [],
+      "name": "카카오맵 공유 (252 · 빌드 110) — 글과 주소가 따로 와도 장소 한 줄",
+      "pageTitle": null,
+      "result": "- [우레](<https://kko.to/E6exlP7ZR2>)",
+      "text": "[카카오맵] 우레",
+      "url": "https://kko.to/E6exlP7ZR2"
     }
   ],
   "sharedAddressCases": [

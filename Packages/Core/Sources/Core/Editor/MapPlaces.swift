@@ -97,6 +97,23 @@ public enum MapPlaces {
         return Place(name: name, address: address.isEmpty ? nil : address, url: url)
     }
 
+    /// **글과 주소가 따로 온 공유** (빌드 110 사용자 — *카카오맵 앱에서 바로 복사하면 안 된다*). 카카오맵은 `[카카오맵] 우레` 와
+    /// `https://kko.to/…` 를 **클립보드의 다른 항목 · 공유의 다른 갈래로** 따로 싣는다 — 다른 앱에 붙이면 둘이 이어져 `우레https://…` 로 보였다.
+    /// 첫 글만 읽으면 주소가 없어 장소가 아니다. 그래서 **항목들을 이어 읽고**, 안 되면 첫 항목만 읽는다 (네이버지도처럼 글에 주소가
+    /// 이미 있고 따로 온 주소가 다를 때 — 이어 읽으면 장소 뒤에 남은 주소가 된다).
+    public static func places(in pieces: [String]) -> [Place]? {
+        places(in: joined(pieces)) ?? pieces.first.flatMap { places(in: $0) }
+    }
+
+    /// 항목들을 줄바꿈으로 잇는다 — 빈 항목 · **앞 항목에 이미 든 항목**(주소가 글 속에 있다)은 뺀다.
+    public static func joined(_ pieces: [String]) -> String {
+        var kept: [String] = []
+        for piece in pieces where !piece.isEmpty && !kept.contains(where: { $0.contains(piece) }) {
+            kept.append(piece)
+        }
+        return kept.joined(separator: "\n")
+    }
+
     /// 글에 지도 머리말이 들어 있나 — 장소로 못 읽었을 때 붙여넣기 진단에 남기려고 (빌드 109).
     public static func mentioned(in text: String) -> Bool {
         let scalars = Array(text.precomposedStringWithCanonicalMapping.unicodeScalars)
@@ -111,7 +128,12 @@ public enum MapPlaces {
 
     /// **붙여넣을 글** — 장소마다 한 줄, 사이에 빈 줄. 지도 장소 글이 아니면 nil.
     public static func pasted(_ text: String) -> String? {
-        places(in: text).map { $0.map(line).joined(separator: "\n\n") }
+        pasted([text])
+    }
+
+    /// 클립보드 항목들(글 · 주소)을 붙여넣을 글로 — `places(in: pieces)`.
+    public static func pasted(_ pieces: [String]) -> String? {
+        places(in: pieces).map { $0.map(line).joined(separator: "\n\n") }
     }
 
     // MARK: - 자잘한 것

@@ -8,7 +8,8 @@ final class MapPlacesGoldenTests: XCTestCase {
     struct Golden: Decodable {
         struct Case: Decodable {
             let name: String
-            let text: String
+            /// 클립보드 항목들 — 카카오맵은 글과 주소를 따로 싣는다 (빌드 110).
+            let pieces: [String]
             let result: String?
         }
         let mapCases: [Case]
@@ -20,7 +21,7 @@ final class MapPlacesGoldenTests: XCTestCase {
         let cases = try JSONDecoder().decode(Golden.self, from: try Data(contentsOf: url)).mapCases
         XCTAssertFalse(cases.isEmpty)
         for c in cases {
-            XCTAssertEqual(MapPlaces.pasted(c.text), c.result, c.name)
+            XCTAssertEqual(MapPlaces.pasted(c.pieces), c.result, c.name)
         }
     }
 }

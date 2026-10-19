@@ -1,5 +1,5 @@
 {
-  "_왜": "252 — 지도 앱이 공유한 장소 글을 링크로 (MapPlaces). 붙여넣기와 공유가 같은 셈을 쓴다. 글 전체가 장소들이어야만 바꾼다(아니면 null — 원래 글 그대로). expect 는 뜻 — 셈과 다르면 멈춘다.",
+  "_왜": "252 — 지도 앱이 공유한 장소 글을 링크로 (MapPlaces). 붙여넣기와 공유가 같은 셈을 쓴다. 글 전체가 장소들이어야만 바꾼다(아니면 null — 원래 글 그대로). expect 는 뜻 — 셈과 다르면 멈춘다. pieces 는 클립보드 항목들(글 · 주소) — 카카오맵은 글과 주소를 따로 싣는다 (빌드 110).",
   "cases": [
     {
       "name": "네이버지도 둘 (2026-10-19 사용자 예)",
@@ -134,6 +134,47 @@
     {
       "name": "주소 둘이 한 장소에 — 손대지 않는다",
       "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2 https://kko.to/VFxP39Rn-t",
+      "expect": null
+    },
+    {
+      "name": "카카오맵 앱에서 바로 복사 — 글과 주소가 다른 항목 (빌드 110 사용자)",
+      "pieces": [
+        "[카카오맵] 우레",
+        "https://kko.to/E6exlP7ZR2"
+      ],
+      "expect": "[우레](<https://kko.to/E6exlP7ZR2>)"
+    },
+    {
+      "name": "글과 주소가 다른 항목 — 주소 항목이 글 꼴로 한 번 더",
+      "pieces": [
+        "[카카오맵] 우레",
+        "https://kko.to/E6exlP7ZR2",
+        "https://kko.to/E6exlP7ZR2"
+      ],
+      "expect": "[우레](<https://kko.to/E6exlP7ZR2>)"
+    },
+    {
+      "name": "글에 주소가 이미 있음 — 주소 항목은 뺀다",
+      "pieces": [
+        "[카카오맵] 우레https://kko.to/E6exlP7ZR2",
+        "https://kko.to/E6exlP7ZR2"
+      ],
+      "expect": "[우레](<https://kko.to/E6exlP7ZR2>)"
+    },
+    {
+      "name": "네이버지도 글 + 다른 주소 항목 — 첫 항목만 읽는다",
+      "pieces": [
+        "[네이버지도]\n미담 본점\n성남대로 9\nhttps://naver.me/Fsop26XU",
+        "https://map.naver.com/p/entry/place/123"
+      ],
+      "expect": "[미담 본점](<https://naver.me/Fsop26XU>) : 성남대로 9"
+    },
+    {
+      "name": "머리말 없는 글 + 주소 항목 — 손대지 않는다",
+      "pieces": [
+        "우레",
+        "https://kko.to/E6exlP7ZR2"
+      ],
       "expect": null
     }
   ]

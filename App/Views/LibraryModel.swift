@@ -376,13 +376,14 @@ final class LibraryModel: ObservableObject {
     func repairPastedLinks(_ pasted: MarkdownTextView.PastedItem) -> String? {
         pastedAttachmentNotes = []
         // 0. 지도 앱이 공유한 장소 글 (252) — 장소마다 `[이름](<주소>) : 주소` 한 줄. 글 전체가 장소들일 때만.
-        if let places = MapPlaces.pasted(pasted.plain) {
+        // 카카오맵은 글과 주소를 클립보드의 다른 항목으로 싣는다 — 항목들을 이어 읽는다 (빌드 110 사용자).
+        if let places = MapPlaces.pasted([pasted.plain] + pasted.pieces) {
             recordPaste(pasted, outcome: "지도 장소를 링크로 바꿈")
             notify(String(localized: "지도 장소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다."), aboutNote: true)
             return places
         }
         // 머리말은 있는데 장소로 못 읽었다 — 진단의 *마지막 붙여넣기* 로 글을 받아 볼 수 있게 남긴다 (빌드 109 카카오맵).
-        if MapPlaces.mentioned(in: pasted.plain) {
+        if MapPlaces.mentioned(in: MapPlaces.joined([pasted.plain] + pasted.pieces)) {
             recordPaste(pasted, outcome: "지도 머리말이 있지만 장소로 못 읽음")
         }
         // 1. 주소 하나
@@ -480,6 +481,8 @@ final class LibraryModel: ObservableObject {
         let outcome: String
         /// 첨부를 어떻게 했나 — 한 줄에 하나 (243). `사진 · jpg · 1.2 MB` · `파일 · m4a · 새로운 녹음 3.m4a · 340 KB` · `못 읽음`.
         let attachments: [String]
+        /// 클립보드 항목마다의 글 · 주소 (빌드 110) — 항목이 둘 이상이면 복사한 글에 싣는다.
+        var pieces: [String] = []
 
         /// 진단 화면에서 복사할 글 — 갈래마다 머리를 달아 **있는 그대로** 잇는다.
         var report: String {
@@ -503,6 +506,9 @@ final class LibraryModel: ObservableObject {
                 }
                 parts.append("[보이지 않는 글자]\n" + order.map { "\($0) × \(counts[$0] ?? 0)" }.joined(separator: "\n"))
             }
+            if pieces.count > 1 {
+                parts.append("[항목 \(pieces.count)개]\n" + pieces.enumerated().map { "\($0.offset + 1). " + $0.element }.joined(separator: "\n"))
+            }
             if !attachments.isEmpty { parts.append(String(localized: "[첨부]\n") + attachments.joined(separator: "\n")) }
             if let markdown { parts.append(String(localized: "[마크다운 갈래]\n") + markdown) }
             if let html { parts.append("[HTML]\n" + html) }
@@ -516,7 +522,8 @@ final class LibraryModel: ObservableObject {
 
     private func recordPaste(_ pasted: MarkdownTextView.PastedItem, outcome: String) {
         lastPaste = PasteRecord(types: pasted.types, html: pasted.html, markdown: pasted.markdown,
-                                plain: pasted.plain, outcome: outcome, attachments: pastedAttachmentNotes)
+                                plain: pasted.plain, outcome: outcome, attachments: pastedAttachmentNotes,
+                                pieces: pasted.pieces)
         log("붙여넣기: " + outcome + (pastedAttachmentNotes.isEmpty ? "" : " · 첨부 \(pastedAttachmentNotes.count)개"))
     }
 

@@ -51,7 +51,8 @@ public enum IncomingShare {
                             images: [String], fallback: String) -> Note {
         // **지도 장소** (252) — 장소마다 링크 한 줄. 제목은 첫 장소 이름이고 맨 위에 `# 제목` (링크 줄이 첫 줄이면 파일 이름이 주소가 된다).
         // 따로 온 주소는 붙이지 않는다 — 장소마다 제 주소를 이미 링크로 가졌다.
-        if let places = MapPlaces.places(in: text) {
+        // 카카오맵은 글과 주소를 따로 준다 — 이어 읽는다 (`MapPlaces.places(in: pieces)`).
+        if let places = MapPlaces.places(in: [text] + (url.map { [$0] } ?? [])) {
             let title = places[0].name
             let parts = ["# " + title, places.map(MapPlaces.line).joined(separator: "\n\n")]
                 + images.map { "!" + NoteLinking.markdownLink(label: "", path: $0) }
@@ -92,7 +93,7 @@ public enum IncomingShare {
     /// 파이썬 쌍둥이: `share_entry` (`shareEntryCases`).
     public static func entry(text: String, url: String?, pageTitle: String?, images: [String]) -> String? {
         // **지도 장소** (252) — 장소마다 목록 한 줄, 사진은 마지막 장소 아래. 따로 온 주소는 붙이지 않는다 (`note` 와 같게).
-        if let places = MapPlaces.places(in: text) {
+        if let places = MapPlaces.places(in: [text] + (url.map { [$0] } ?? [])) {
             return (places.map { "- " + MapPlaces.line($0) }
                     + images.map { "  !" + NoteLinking.markdownLink(label: "", path: $0) }).joined(separator: "\n")
         }

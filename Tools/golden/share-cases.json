@@ -124,6 +124,16 @@
         "title": "우레 분당 정자본점",
         "markdown": "# 우레 분당 정자본점\n\n[우레 분당 정자본점](<https://naver.me/GcAsok6a>) : 경기 성남시 분당구 정자일로 158 백궁프라자2 1층 105호, 106호 우레\n\n[미담 본점](<https://naver.me/Fsop26XU>) : 경기 성남시 분당구 성남대로331번길 9-13 1층\n"
       }
+    },
+    {
+      "name": "카카오맵 공유 (252 · 빌드 110) — 글과 주소가 따로 온다",
+      "text": "[카카오맵] 우레",
+      "url": "https://kko.to/E6exlP7ZR2",
+      "fallback": "받은 글",
+      "expect": {
+        "title": "우레",
+        "markdown": "# 우레\n\n[우레](<https://kko.to/E6exlP7ZR2>)\n"
+      }
     }
   ],
   "inbox": [
@@ -482,6 +492,12 @@
         "assets/2026-10-19-1.jpg"
       ],
       "expect": "- [미담 본점](<https://naver.me/Fsop26XU>) : 성남대로 9\n  ![](assets/2026-10-19-1.jpg)"
+    },
+    {
+      "name": "카카오맵 공유 (252 · 빌드 110) — 글과 주소가 따로 와도 장소 한 줄",
+      "text": "[카카오맵] 우레",
+      "url": "https://kko.to/E6exlP7ZR2",
+      "expect": "- [우레](<https://kko.to/E6exlP7ZR2>)"
     }
   ],
   "append": [

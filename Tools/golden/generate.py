@@ -2777,7 +2777,7 @@ def incoming_share(text: str, url, page_title, images: list, fallback: str) -> d
 
     제목은 첫 줄(`first_line` — 제목을 따라 파일 이름을 바꿀 때와 같은 셈). 첫 줄이 없으면 주소의 제목 → 주소 →
     fallback 이고, 글 맨 위에 `# 제목` 을 넣는다. 주소는 `markdown_link` (노트 연결과 같은 꼴), 글에 이미 있으면 안 붙인다."""
-    places = map_places(text)
+    places = map_places_pieces([text] + ([url] if url is not None else []))
     if places is not None:
         # 252 — 지도 장소: 제목은 첫 장소 이름, 장소마다 링크 한 줄. 따로 온 주소는 붙이지 않는다.
         title = places[0]["name"]
@@ -2903,7 +2903,7 @@ def build_shared_address_cases() -> list[dict]:
 # 241 — 이미 있는 노트에 덧붙이기 (Swift `IncomingShare.entry` · `appending`).
 def share_entry(text: str, url, page_title, images: list):
     """노트 끝에 덧붙일 한 항목. 받은 글은 한 줄로, 주소는 `[제목](주소)`, 사진은 두 칸 들여 아래에. 없으면 None."""
-    places = map_places(text)
+    places = map_places_pieces([text] + ([url] if url is not None else []))
     if places is not None:
         # 252 — 지도 장소: 장소마다 목록 한 줄, 사진은 마지막 장소 아래.
         return "\n".join(["- " + map_line(p) for p in places] + ["  !" + markdown_link("", p) for p in images])
@@ -2948,7 +2948,7 @@ def build_share_entry_cases() -> list[dict]:
             raise SystemExit(f"::error::[{case['name']}] 덧붙일 항목: 뜻 {case['expect']!r} · 셈 {got!r}")
         if got is not None:
             html = cmark_html(got)
-            places = map_places(case.get("text", ""))
+            places = map_places_pieces([case.get("text", "")] + ([url] if (url := case.get("url")) is not None else []))
             if html.count("<li>") != (len(places) if places else 1):
                 raise SystemExit(f"::error::[{case['name']}] 항목이 목록 한 줄이 아니다:\n{html}")
             url = case.get("url")
@@ -3263,12 +3263,29 @@ def map_places(text: str):
     return places
 
 
+def map_joined(pieces: list) -> str:
+    """항목들을 줄바꿈으로 잇는다 — 빈 항목 · 앞 항목에 이미 든 항목은 뺀다 (Swift `MapPlaces.joined`)."""
+    kept = []
+    for piece in pieces:
+        if piece and not any(piece in k for k in kept):
+            kept.append(piece)
+    return "\n".join(kept)
+
+
+def map_places_pieces(pieces: list):
+    """글과 주소가 따로 온 공유 (카카오맵) — 이어 읽고, 안 되면 첫 항목만 (Swift `MapPlaces.places(in: pieces)`)."""
+    got = map_places(map_joined(pieces))
+    if got is None and pieces:
+        got = map_places(pieces[0])
+    return got
+
+
 def map_line(place: dict) -> str:
     return "[" + escaped_label(place["name"]) + "](<" + place["url"] + ">)" + (" : " + place["address"] if place["address"] else "")
 
 
-def map_pasted(text: str):
-    places = map_places(text)
+def map_pasted(pieces: list):
+    places = map_places_pieces(pieces)
     return None if places is None else "\n\n".join(map_line(p) for p in places)
 
 
@@ -3278,11 +3295,12 @@ def build_map_cases() -> list[dict]:
     spec = json.loads(MAP_CASES.read_text(encoding="utf-8"))
     out = []
     for case in spec["cases"]:
-        got = map_pasted(case["text"])
+        pieces = case.get("pieces", [case.get("text", "")])
+        got = map_pasted(pieces)
         if got != case["expect"]:
             raise SystemExit(f"::error::[{case['name']}] 지도 장소: 뜻 {case['expect']!r} · 셈 {got!r}")
         if got is not None:
-            places = map_places(case["text"])
+            places = map_places_pieces(pieces)
             html = cmark_html(got)
             links = re.findall(r'<a href="([^"]*)">(.*?)</a>', html)
             if html.count("<p>") != len(places) or len(links) != len(places):
@@ -3290,13 +3308,14 @@ def build_map_cases() -> list[dict]:
             for (href, label), place in zip(links, places):
                 if html_lib.unescape(href) != place["url"] or html_lib.unescape(label) != place["name"]:
                     raise SystemExit(f"::error::[{case['name']}] 링크가 장소와 다르다: {href!r} {label!r}")
-            body = re.sub(r"(https?://)", r" \1", unicodedata.normalize("NFC", case["text"]))   # 카카오맵은 이름과 주소가 붙어 온다
+            read = map_joined(pieces) if map_places(map_joined(pieces)) is not None else pieces[0]   # 읽은 항목만
+            body = re.sub(r"(https?://)", r" \1", unicodedata.normalize("NFC", read))   # 카카오맵은 이름과 주소가 붙어 온다
             for h in MAP_HEADERS:
                 body = body.replace(h, " ")
             for word in re.findall(r"\w+", body):
                 if word not in got:
                     raise SystemExit(f"::error::[{case['name']}] 글자 {word!r} 가 빠졌다")
-        out.append({"name": case["name"], "text": case["text"], "result": got})
+        out.append({"name": case["name"], "pieces": pieces, "result": got})
     return out
 
 
