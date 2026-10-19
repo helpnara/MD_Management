@@ -1116,14 +1116,14 @@ final class LibraryModel: ObservableObject {
 
     /// 만드는 중인가 · 몇 개까지 갔나. 화면이 멈춘 것처럼 보이면 안 된다.
     @Published private(set) var scaleProgress: Int?
-    @Published private(set) var scaleTarget = Self.scaleCount
+    @Published private(set) var scaleTarget = LibraryModel.scaleCount
 
     /// **300개 · 20MB 를 만든다** (S1 · A5 · A5b · A5c).
     ///
     /// 이 넷은 자료가 없어 못 재던 칸이다. 손으로 300개를 만들 수는 없으니 앱이 만든다.
     /// 만드는 동안 **iCloud 가 20MB 를 올린다** — 그것까지가 이 시험의 값이다.
     /// 끝나면 `규모 시험 지우기` 한 번으로 휴지통에 간다.
-    func makeScaleTest(count: Int = Self.scaleCount) async {
+    func makeScaleTest(count: Int = LibraryModel.scaleCount) async {
         guard let store else { return }
         guard scaleProgress == nil else { return }
         scaleProgress = 0
