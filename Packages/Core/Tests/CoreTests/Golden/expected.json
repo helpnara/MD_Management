@@ -6930,8 +6930,8 @@
       "text": "[네이버지도]\n우레\n경기 성남시"
     },
     {
-      "name": "장소 가운데 빈 줄 — 손대지 않는다",
-      "result": null,
+      "name": "장소 가운데 빈 줄 — 빈 줄은 버린다 (장소는 머리말에서 다음 머리말까지)",
+      "result": "[우레](<https://naver.me/GcAsok6a>) : 경기 성남시",
       "text": "[네이버지도]\n우레\n\n경기 성남시\nhttps://naver.me/GcAsok6a"
     },
     {
@@ -6958,6 +6958,51 @@
       "name": "꺾쇠가 든 주소 — 손대지 않는다",
       "result": null,
       "text": "[카카오맵] 우레https://kko.to/a<b"
+    },
+    {
+      "name": "카카오맵 둘 사이에 빈 줄 (빌드 109 사용자 예)",
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
+      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+    },
+    {
+      "name": "카카오맵 둘이 한 줄로 붙어 옴 — 빈칸 하나 사이",
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
+      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2 [카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+    },
+    {
+      "name": "카카오맵 둘이 빈칸도 없이 붙어 옴",
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
+      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2[카카오맵] 미담휴https://kko.to/VFxP39Rn-t"
+    },
+    {
+      "name": "빈 줄에 붙는 빈칸(U+00A0) · 폭 없는 빈칸(U+200B)",
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
+      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2\n ​\n[카카오맵] 미담휴https://kko.to/VFxP39Rn-t​"
+    },
+    {
+      "name": "줄바꿈이 U+2028 (줄 나눔 글자)",
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)\n\n[미담휴](<https://kko.to/VFxP39Rn-t>)",
+      "text": "[카카오맵] 우레 https://kko.to/E6exlP7ZR2  [카카오맵] 미담휴 https://kko.to/VFxP39Rn-t"
+    },
+    {
+      "name": "이름과 주소가 다른 줄 · 넓은 빈칸(U+3000)",
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>) : 경기 성남시 분당구",
+      "text": "[카카오맵]　우레\n경기 성남시 분당구\nhttps://kko.to/E6exlP7ZR2"
+    },
+    {
+      "name": "풀어 쓴(NFD) 한글 머리말",
+      "result": "[우레](<https://kko.to/E6exlP7ZR2>)",
+      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2"
+    },
+    {
+      "name": "한 줄로 붙었는데 둘째 장소에 주소가 없음 — 손대지 않는다",
+      "result": null,
+      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2 [카카오맵] 미담휴"
+    },
+    {
+      "name": "주소 둘이 한 장소에 — 손대지 않는다",
+      "result": null,
+      "text": "[카카오맵] 우레https://kko.to/E6exlP7ZR2 https://kko.to/VFxP39Rn-t"
     }
   ],
   "nestingCases": [

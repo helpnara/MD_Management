@@ -3197,15 +3197,13 @@ def build_initials_cases() -> dict:
     return {"initials": initials, "queries": queries, "matches": matches}
 
 
-# 252 — 지도 앱이 공유한 장소 글을 링크로 (Swift `MapPlaces`). 머리말 줄 → 글 줄들(첫 줄이 이름, 나머지가 주소) →
-# `http(s)://` 주소에서 장소가 끝난다. 글 전체가 장소들이어야만 바꾼다.
+# 252 — 지도 앱이 공유한 장소 글을 링크로 (Swift `MapPlaces`). **장소는 머리말에서 다음 머리말까지** (빌드 109 — 줄로 나눴더니
+# 한 줄로 붙어 온 두 장소 · 보이지 않는 글자가 낀 빈 줄을 못 읽었다). 장소 안에서 `http(s)://` 주소 앞의 글 줄은 첫 줄이 이름,
+# 나머지가 주소. 글 전체가 장소들이어야만 바꾼다. 빈칸 · 줄바꿈은 못 박은 목록 — 플랫폼마다 *빈칸* 의 뜻이 다르다.
 MAP_CASES = ROOT / "Tools" / "golden" / "map-cases.json"
 MAP_HEADERS = ("[네이버지도]", "[카카오맵]")
-
-
-def _map_address_start(text: str):
-    found = [i for i in (text.find("https://"), text.find("http://")) if i >= 0]
-    return min(found) if found else None
+MAP_BREAKS = "\n\r\x0b\x0c\x85\u2028\u2029"
+MAP_BLANKS = MAP_BREAKS + " \t\xa0\u1680" + "".join(chr(c) for c in range(0x2000, 0x200E)) + "\u202f\u205f\u2060\u3000\ufeff"
 
 
 def _map_web_address(text: str) -> bool:
@@ -3218,42 +3216,51 @@ def _map_web_address(text: str) -> bool:
     return len(text) > (8 if lower.startswith("https://") else 7)
 
 
+def _map_place(seg: str):
+    found = [i for i in (seg.find("https://"), seg.find("http://")) if i >= 0]
+    if not found:
+        return None
+    start = min(found)
+    stop = start
+    while stop < len(seg) and seg[stop] not in MAP_BLANKS:
+        stop += 1
+    url = seg[start:stop]
+    if any(c not in MAP_BLANKS for c in seg[stop:]) or not _map_web_address(url) or "<" in url or ">" in url:
+        return None
+    texts, line = [], ""
+    for ch in seg[:start] + "\n":
+        if ch in MAP_BREAKS:
+            t = line.strip(MAP_BLANKS)
+            if t:
+                texts.append(t)
+            line = ""
+        else:
+            line += ch
+    if not texts:
+        return None
+    return {"name": texts[0], "address": " ".join(texts[1:]) or None, "url": url}
+
+
 def map_places(text: str):
-    lines = [_share_trim(l) for l in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    s = unicodedata.normalize("NFC", text)
+    marks, i = [], 0
+    while i < len(s):
+        header = next((h for h in MAP_HEADERS if s.startswith(h, i)), None)
+        if header:
+            marks.append((i, i + len(header)))
+            i += len(header)
+        else:
+            i += 1
+    if not marks or any(c not in MAP_BLANKS for c in s[:marks[0][0]]):
+        return None
     places = []
-    i = 0
-    while i < len(lines):
-        if not lines[i]:
-            i += 1
-            continue
-        header = next((h for h in MAP_HEADERS if lines[i].startswith(h)), None)
-        if header is None:
+    for n, (_, end) in enumerate(marks):
+        stop = marks[n + 1][0] if n + 1 < len(marks) else len(s)
+        place = _map_place(s[end:stop])
+        if place is None:
             return None
-        rest = _share_trim(lines[i][len(header):])
-        texts = []
-        while True:
-            start = _map_address_start(rest)
-            if start is not None:
-                before = _share_trim(rest[:start])
-                tail = rest[start:]
-                url = re.match(r"[^ \t]*", tail).group(0)
-                if _share_trim(tail[len(url):]) or not _map_web_address(url) or "<" in url or ">" in url:
-                    return None
-                if before:
-                    texts.append(before)
-                break
-            if rest:
-                texts.append(rest)
-            i += 1
-            if i >= len(lines) or not lines[i] or any(lines[i].startswith(h) for h in MAP_HEADERS):
-                return None
-            rest = lines[i]
-        if not texts:
-            return None
-        address = " ".join(texts[1:])
-        places.append({"name": texts[0], "address": address or None, "url": url})
-        i += 1
-    return places or None
+        places.append(place)
+    return places
 
 
 def map_line(place: dict) -> str:
@@ -3283,7 +3290,7 @@ def build_map_cases() -> list[dict]:
             for (href, label), place in zip(links, places):
                 if html_lib.unescape(href) != place["url"] or html_lib.unescape(label) != place["name"]:
                     raise SystemExit(f"::error::[{case['name']}] 링크가 장소와 다르다: {href!r} {label!r}")
-            body = re.sub(r"(https?://)", r" \1", case["text"])   # 카카오맵은 이름과 주소가 붙어 온다
+            body = re.sub(r"(https?://)", r" \1", unicodedata.normalize("NFC", case["text"]))   # 카카오맵은 이름과 주소가 붙어 온다
             for h in MAP_HEADERS:
                 body = body.replace(h, " ")
             for word in re.findall(r"\w+", body):

@@ -377,8 +377,13 @@ final class LibraryModel: ObservableObject {
         pastedAttachmentNotes = []
         // 0. 지도 앱이 공유한 장소 글 (252) — 장소마다 `[이름](<주소>) : 주소` 한 줄. 글 전체가 장소들일 때만.
         if let places = MapPlaces.pasted(pasted.plain) {
+            recordPaste(pasted, outcome: "지도 장소를 링크로 바꿈")
             notify(String(localized: "지도 장소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다."), aboutNote: true)
             return places
+        }
+        // 머리말은 있는데 장소로 못 읽었다 — 진단의 *마지막 붙여넣기* 로 글을 받아 볼 수 있게 남긴다 (빌드 109 카카오맵).
+        if MapPlaces.mentioned(in: pasted.plain) {
+            recordPaste(pasted, outcome: "지도 머리말이 있지만 장소로 못 읽음")
         }
         // 1. 주소 하나
         let address = pasted.url ?? pasted.plain
@@ -480,6 +485,24 @@ final class LibraryModel: ObservableObject {
         var report: String {
             var parts = ["갈래: " + types.joined(separator: ", "), "결과: " + outcome]
             parts.append(String(localized: "[평문]\n") + plain)
+            // 보이지 않는 글자 (빌드 109) — 복사해 보낸 글에서는 안 보여 붙는 빈칸 · 줄 나눔 글자를 가려낼 수 없었다.
+            let hidden = plain.unicodeScalars.filter { scalar in
+                guard scalar != " ", scalar != "\n" else { return false }
+                switch scalar.properties.generalCategory {
+                case .control, .format, .spaceSeparator, .lineSeparator, .paragraphSeparator: return true
+                default: return false
+                }
+            }
+            if !hidden.isEmpty {
+                var counts: [String: Int] = [:]
+                var order: [String] = []
+                for scalar in hidden {
+                    let code = String(format: "U+%04X", scalar.value)
+                    if counts[code] == nil { order.append(code) }
+                    counts[code, default: 0] += 1
+                }
+                parts.append("[보이지 않는 글자]\n" + order.map { "\($0) × \(counts[$0] ?? 0)" }.joined(separator: "\n"))
+            }
             if !attachments.isEmpty { parts.append(String(localized: "[첨부]\n") + attachments.joined(separator: "\n")) }
             if let markdown { parts.append(String(localized: "[마크다운 갈래]\n") + markdown) }
             if let html { parts.append("[HTML]\n" + html) }
