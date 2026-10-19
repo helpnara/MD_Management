@@ -819,7 +819,7 @@ private struct NoteList: View {
         Button {
             Task { await library.togglePin(note) }
         } label: {
-            let isPinned = library.pinned.contains(note.relativePath)
+            let isPinned = library.isPinned(note.relativePath)
             Label(isPinned ? String(localized: "고정 해제") : String(localized: "고정"), systemImage: isPinned ? "pin.slash" : "pin")
         }
         .tint(Palette.accent)
@@ -832,7 +832,7 @@ private struct NoteList: View {
                         Text(note.title)
                             .font(.scaled(.body, weight: .medium))
                             .foregroundStyle(Palette.ink)
-                        if library.pinned.contains(note.relativePath) {
+                        if library.isPinned(note.relativePath) {
                             // 고정된 줄 (T10). 고정 구역 밖(검색 결과)에서도 알아볼 수 있게.
                             Image(systemName: "pin.fill")
                                 .font(.scaled(.caption))

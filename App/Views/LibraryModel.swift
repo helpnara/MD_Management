@@ -13,7 +13,10 @@ private enum SaveReentry {
 @MainActor
 final class LibraryModel: ObservableObject {
 
-    @Published private(set) var folders: [FolderSummary] = []
+    @Published private(set) var folders: [FolderSummary] = [] {
+        // 폴더 화면의 줄은 폴더 목록이 바뀔 때 한 번 (257) — 예전에는 그릴 때마다 F² 로 셌다.
+        didSet { sidebarFolders = Self.sidebar(of: folders) }
+    }
     /// **최상위 폴더에 바로 든 노트 수** (153).
     ///
     /// 예전에는 폴더 화면의 맨 윗줄이 `notes.count` 를 썼다. 그것은 **지금 고른 폴더**의
@@ -21,7 +24,10 @@ final class LibraryModel: ObservableObject {
     /// (사용자 · 2026-09-19 — *느린 여백 폴더에 노트 개수가 안 맞을 때가 있어*).
     /// 이제 아래 폴더들과 **같은 셈법**으로 따로 센다.
     @Published private(set) var rootNoteCount = 0
-    @Published private(set) var notes: [NoteSummary] = []
+    @Published private(set) var notes: [NoteSummary] = [] {
+        // 고정 · 아닌 것으로 가른 목록과 경로 사전을 **여기서 한 번** 만든다 (257). 예전에는 화면이 그릴 때마다 네 번 걸렀다.
+        didSet { splitNotes() }
+    }
     @Published private(set) var kind: FolderKind = .localDocuments
     /// iCloud 컨테이너를 잡을 수 있었나. `false` 인데 `kind == .localDocuments` 면
     /// **조용히 물러난 것**이다 — 진단 화면이 이것을 크게 보여 준다 (A2).
@@ -83,23 +89,40 @@ final class LibraryModel: ObservableObject {
     /// **고정된 노트** (T10). 목록 맨 위에 따로 선다. 폴더 안 숨김 파일에 적어 두므로
     /// iCloud 로 따라가고 본문은 한 글자도 안 건드린다.
     @Published private(set) var pinned: [String] = [] {
-        // 공유 창의 *넣을 곳* 목록도 함께 (241).
-        didSet { publishShareTargets() }
+        didSet {
+            pinnedSet = Set(pinned)
+            splitNotes()
+            // 공유 창의 *넣을 곳* 목록도 함께 (241).
+            publishShareTargets()
+        }
     }
+    /// 고정한 경로 — 줄마다 `contains` 를 배열로 돌지 않게 (257).
+    private(set) var pinnedSet: Set<String> = []
+    func isPinned(_ relativePath: String) -> Bool { pinnedSet.contains(relativePath) }
 
-    /// 고정된 것 · 아닌 것으로 가른 목록. 화면은 이 둘만 그린다.
+    /// 고정된 것 · 아닌 것으로 가른 목록. 화면은 이 둘만 그린다. **`notes` · `pinned` 가 바뀔 때 한 번** 계산한다 (257).
     ///
     /// **둘 다 `notes` 의 차례(최근 고친 순)를 그대로 쓴다** (249, 2026-10-16 사용자 — *고정된 노트 목록에서 가장 최근에 수정한
     /// 노트가 위에 나올 수 있도록 · 고정되지 않은 노트는 되거든*). 예전에는 고정 쪽만 `pinned`(고정한 차례 — 새로 고정한 것이 위)를
     /// 따라 돌아, 고친 노트가 위로 오지 않았다. 차례를 정하는 곳은 `notes` 하나다 — 읽을 때(`FolderStore.notes`)와 저장할 때
-    /// (`write` 의 다시 정렬) 모두 최근 고친 순 (CLAUDE.md §1 — 같은 것을 재는 곳이 둘이면 갈린다).
-    var pinnedNotes: [NoteSummary] {
-        let set = Set(pinned)
-        return notes.filter { set.contains($0.relativePath) }
-    }
-    var looseNotes: [NoteSummary] {
-        let set = Set(pinned)
-        return notes.filter { !set.contains($0.relativePath) }
+    /// (`write` 의 한 줄 옮기기) 모두 최근 고친 순 (CLAUDE.md §1 — 같은 것을 재는 곳이 둘이면 갈린다).
+    private(set) var pinnedNotes: [NoteSummary] = []
+    private(set) var looseNotes: [NoteSummary] = []
+    /// 경로 → 줄. `selectedNote` 가 목록을 처음부터 훑지 않게 (257).
+    private var notesByPath: [String: NoteSummary] = [:]
+
+    private func splitNotes() {
+        var pinnedOnes: [NoteSummary] = []
+        var looseOnes: [NoteSummary] = []
+        var byPath: [String: NoteSummary] = [:]
+        byPath.reserveCapacity(notes.count)
+        for note in notes {
+            if pinnedSet.contains(note.relativePath) { pinnedOnes.append(note) } else { looseOnes.append(note) }
+            byPath[note.relativePath] = note
+        }
+        pinnedNotes = pinnedOnes
+        looseNotes = looseOnes
+        notesByPath = byPath
     }
 
     // MARK: - 노트 수 (169)
@@ -124,8 +147,10 @@ final class LibraryModel: ObservableObject {
     //
     // `folders` 는 **모든 깊이**다. 무엇을 어디에 보일지는 Core 의 `FolderTree` 가 정한다 — 여기서는 요약을 붙여 건넨다.
 
-    /// 폴더 화면의 줄 — 최상위와 그 바로 아래 (두 단계).
-    var sidebarFolders: [SidebarFolder] {
+    /// 폴더 화면의 줄 — 최상위와 그 바로 아래 (두 단계). `folders` 가 바뀔 때 계산한다 (257).
+    private(set) var sidebarFolders: [SidebarFolder] = []
+
+    private static func sidebar(of folders: [FolderSummary]) -> [SidebarFolder] {
         let byPath = Dictionary(folders.map { ($0.relativePath, $0) }, uniquingKeysWith: { first, _ in first })
         return FolderTree.sidebar(folders.map(\.relativePath)).compactMap { entry in
             byPath[entry.path].map { SidebarFolder(folder: $0, depth: entry.depth, subfolders: entry.subfolders) }
@@ -886,7 +911,7 @@ final class LibraryModel: ObservableObject {
     var selectedNote: NoteSummary? {
         // 링크를 따라온 노트가 먼저다 — 목록(`notes`)에는 없을 수 있다 (T7).
         if let linked = linkedNote, linked.id == selectedNoteID { return linked }
-        return notes.first { $0.id == selectedNoteID }
+        return selectedNoteID.flatMap { notesByPath[$0] }
     }
 
     var folderName: String {
@@ -1084,34 +1109,40 @@ final class LibraryModel: ObservableObject {
 
     /// 규모 시험 자료가 들어가는 폴더. 한 곳에 모아 두면 지울 때도 한 번이다.
     static let scaleFolder = "규모 시험"
-    /// 만들 노트 수 · 노트 하나의 목표 크기. 300개 · 20MB 가 가정 표의 값이다.
+    /// 만들 노트 수 · 노트 하나의 목표 크기. 300개 · 20MB 가 가정 표의 값이다. 더 큰 규모(1,000 · 3,000)도 고를 수 있다 (전수 조사) —
+    /// 그때는 노트를 작게 만든다 (20MB 를 넘기지 않게 — iCloud 가 그만큼 올린다).
     static let scaleCount = 300
+    static let scaleCounts = [300, 1000, 3000]
 
     /// 만드는 중인가 · 몇 개까지 갔나. 화면이 멈춘 것처럼 보이면 안 된다.
     @Published private(set) var scaleProgress: Int?
+    @Published private(set) var scaleTarget = Self.scaleCount
 
     /// **300개 · 20MB 를 만든다** (S1 · A5 · A5b · A5c).
     ///
     /// 이 넷은 자료가 없어 못 재던 칸이다. 손으로 300개를 만들 수는 없으니 앱이 만든다.
     /// 만드는 동안 **iCloud 가 20MB 를 올린다** — 그것까지가 이 시험의 값이다.
     /// 끝나면 `규모 시험 지우기` 한 번으로 휴지통에 간다.
-    func makeScaleTest() async {
+    func makeScaleTest(count: Int = Self.scaleCount) async {
         guard let store else { return }
         guard scaleProgress == nil else { return }
         scaleProgress = 0
+        scaleTarget = count
         let started = Date()
         var bytes = 0
         do {
             let folder = try await store.createSubfolder(named: Self.scaleFolder)
-            for number in 1...Self.scaleCount {
-                let text = Self.scaleNote(number)
+            // 이미 있는 노트 뒤에 이어 붙인다 — 300개 뒤에 1,000개를 만들면 1,300개.
+            let existing = await store.noteCount(in: folder)
+            for number in (existing + 1)...(existing + count) {
+                let text = Self.scaleNote(number, compact: count > Self.scaleCount)
                 bytes += text.utf8.count
                 _ = try await store.createNote(named: "시험 \(number)", in: folder, text: text)
                 // 열 개마다 화면에 알린다 — 300번 다 알리면 그리는 데 더 든다.
-                if number % 10 == 0 { scaleProgress = number }
+                if number % 10 == 0 { scaleProgress = number - existing }
             }
             let seconds = Date().timeIntervalSince(started)
-            log("규모 시험 \(Self.scaleCount)개 만듦 — \(Self.readableBytes(bytes)) · "
+            log("규모 시험 \(count)개 만듦 — \(Self.readableBytes(bytes)) · "
                 + "\(String(format: "%.1f", seconds))초")
             scaleProgress = nil
             selectedFolder = folder
@@ -1146,7 +1177,7 @@ final class LibraryModel: ObservableObject {
     ///
     /// **검색이 실제로 걸릴 말을 심는다** — `회의`(두 글자, LIKE 폴백) · `노후자금`(세 글자,
     /// trigram) · `노후 자금`(구절). S6 가 재는 세 길이 그대로 여기 있다.
-    static func scaleNote(_ number: Int) -> String {
+    static func scaleNote(_ number: Int, compact: Bool = false) -> String {
         var lines = ["# 시험 \(number)", "",
                      "규모 시험용 노트입니다. **지워도 됩니다.**", ""]
         if number % 7 == 0 { lines.append("오늘 회의에서 정한 것을 적어 둡니다.") }
@@ -1155,7 +1186,8 @@ final class LibraryModel: ObservableObject {
         lines.append("")
         // 번호에 따라 두께를 달리한다 — 140 ~ 400 마디. 300개 합이 19.7MB · 평균 67KB 다
         // (파이썬으로 미리 재 뒀다). 작은 노트와 큰 노트가 섞여야 실제 폴더를 닮는다.
-        let blocks = 140 + (number % 261)
+        // 큰 규모(1,000 · 3,000)는 노트를 작게 — 3,000개 × 6KB ≈ 20MB. 노트 **수**가 비용인 자리를 재는 것이다.
+        let blocks = compact ? 8 + (number % 13) : 140 + (number % 261)
         for block in 1...blocks {
             lines.append("## \(number)-\(block)")
             lines.append("")
@@ -1499,8 +1531,7 @@ final class LibraryModel: ObservableObject {
             if draftPath == move.note.relativePath { clearNote() }
             if selectedNoteID == move.note.relativePath { selectedNoteID = nil }
             await reloadFolders()
-            await reloadNotes()
-            scheduleIndexRefresh()
+            await reloadNotes()   // 안에서 색인도 다시 돈다 (254 — 예전에는 여기서 한 번 더 불렀다)
             lastError = nil
         } catch {
             lastError = String(localized: "옮기지 못했습니다: \(error.localizedDescription)")
@@ -1975,6 +2006,17 @@ final class LibraryModel: ObservableObject {
     /// 마지막으로 목록을 읽는 데 걸린 시간 (S1) · 검색에 걸린 시간 (A5c). 진단에 보인다.
     @Published private(set) var listSeconds: Double = 0
     @Published private(set) var searchSeconds: Double = 0
+    /// **노트 하나를 여는 데 걸린 시간** (253 · 전수 조사) — 파일 읽기 · 읽기 화면 그리기 · 역링크 세기. 진단에 보인다.
+    /// `read` 에는 앞에 줄 선 파일 담당의 일을 기다린 시간이 섞인다 — 그래서 큰 폴더에서 이것이 늘면 어디가 막는지 알 수 있다.
+    struct OpenTiming: Equatable {
+        var path = ""
+        var read: Double = 0
+        var render: Double = 0
+        var backlinks: Double = 0
+        var total: Double = 0
+        var renderedNow = false
+    }
+    @Published private(set) var openTiming = OpenTiming()
     /// 목록의 첫 줄 미리보기 — **색인에서만** (설계서 §7.5). 색인 전이면 빈칸.
     private var previews: [String: String] = [:]
     private var searchTask: Task<Void, Never>?
@@ -2027,7 +2069,9 @@ final class LibraryModel: ObservableObject {
             guard let self else { return }
             // 접힌 것이면 끄지 않는다 — 뒤이어 선 작업이 그 깃발의 임자다.
             defer { if !Task.isCancelled { self.isIndexing = false } }
-            guard let index = self.index, let store = self.store else { return }
+            // **잠깐 기다렸다 돈다** (254) — 목록 다시 읽기가 잇달아 오면(폴더 바꾸기 · 옮기기 · 지켜보기) 앞 것을 접고 한 번만.
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled, let index = self.index, let store = self.store else { return }
             // 색인은 폴더 **전체**를 안다 — 하위 폴더까지. 목록은 보고 있는 폴더뿐이다.
             let all = await store.allNotes()
             guard !Task.isCancelled else { return }
@@ -2037,11 +2081,43 @@ final class LibraryModel: ObservableObject {
             self.indexStatus = await index.status
             if changed > 0 || self.previews.isEmpty {
                 self.previews = await index.firstLines()
-                self.notes = Self.withPreviews(self.notes, from: self.previews)
+                let refreshed = Self.withPreviews(self.notes, from: self.previews)
+                if refreshed != self.notes { self.notes = refreshed }   // 같으면 목록을 다시 그리지 않는다 (257)
                 if changed > 0 { self.log("색인 갱신: \(changed)개 (\(self.indexStatus.noteCount)개 · \(String(format: "%.2f", self.indexStatus.lastRefreshSeconds))초)") }
             }
+            // 다른 노트가 바뀌었으면 이 노트를 가리키는 노트도 달라졌을 수 있다 (253) — 색인에서 다시 센다 (가볍다).
+            if changed > 0, let path = self.draftPath, self.backlinksOwner == path { self.refreshBacklinks(for: path) }
             if !self.searchText.isEmpty { self.scheduleSearch() }
         }
+    }
+
+    /// **방금 저장한 노트 하나만 색인한다** (254). 예전에는 저장마다 폴더 전체를 훑고(`allNotes`) 색인 표 전체를 두 번 읽어
+    /// 목록을 통째로 다시 넣었다 — 치다 멈출 때마다. 이제 그 줄만: 색인 한 줄 · 미리보기 한 줄 · 공유 창의 최근 노트 한 자리.
+    private func indexSaved(_ path: String, text: String, stamp: FileStamp?) async {
+        guard let index else { return }
+        let name = path.split(separator: "/").last.map(String.init) ?? path
+        let summary = NoteSummary(relativePath: path, title: Paths.baseName(name), preview: "",
+                                  modifiedAt: stamp?.modifiedAt ?? Date(), size: stamp?.size ?? text.utf8.count,
+                                  isDownloaded: true)
+        let line = await index.update(summary, text: text)
+        previews[path] = line
+        indexStatus = await index.status
+        if let at = notes.firstIndex(where: { $0.relativePath == path }), notes[at].preview != line {
+            let old = notes[at]
+            notes[at] = NoteSummary(relativePath: old.relativePath, title: old.title, preview: line,
+                                    modifiedAt: old.modifiedAt, size: old.size, isDownloaded: old.isDownloaded)
+        }
+        // 방금 고친 노트가 가장 최근이다 — 공유 창의 *최근 고친 노트* 도 그 줄만 앞으로 (244 · 249).
+        if Paths.isNoteFile(path) {
+            recentTargetPaths.removeAll { $0 == path }
+            recentTargetPaths.insert(path, at: 0)
+            if pinnedSet.contains(path) {
+                recentOrder.removeAll { $0 == path }
+                recentOrder.insert(path, at: 0)
+            }
+            publishShareTargets()
+        }
+        if !searchText.isEmpty { scheduleSearch() }
     }
 
     /// 설정 · 진단의 **색인 다시 만들기** — 통째로 지우고 처음부터 (ADR-0003).
@@ -2155,7 +2231,7 @@ final class LibraryModel: ObservableObject {
                 noteText = text
                 draft = text
                 log("다른 기기의 변경을 불러옴: \(path)")
-                await renderReading(path: path, text: text)
+                if isReading { await renderReading(path: path, text: text) } else { pageIsStale = true }
             }
         }
         // **충돌 판본 훑기는 자주 하지 않는다.** 아직 안 내려온 판본을 읽으려면 iCloud 를
@@ -2404,15 +2480,19 @@ final class LibraryModel: ObservableObject {
             }
             // 목록은 최근 수정순인데 저장한다고 다시 읽지는 않는다 — 그러면 고친 노트가
             // 위로 안 올라온다 (48). 그 한 줄만 새 시각으로 바꿔 다시 정렬한다.
-            if let index = notes.firstIndex(where: { $0.relativePath == path }) {
-                let old = notes[index]
+            if let at = notes.firstIndex(where: { $0.relativePath == path }) {
+                let old = notes[at]
                 // **시각과 크기는 방금 잰 파일 도장으로** (216) — 목록을 읽는 쪽(`FolderStore.notes`)과 같은 값이라야 한다.
                 // 예전에는 지금 시각 · 글자 수(UTF-16)를 넣어, 한글 노트는 바이트 수와 늘 달랐다 — 15초 목록 견주기가 저장할 때마다
                 // *목록이 달라져 다시 읽음* 으로 읽었다 (2026-10-06 사용자 진단). 같은 것을 재는 곳이 둘이면 갈린다 (CLAUDE.md §1).
-                notes[index] = NoteSummary(relativePath: old.relativePath, title: old.title,
-                                           preview: old.preview, modifiedAt: draftStamp?.modifiedAt ?? Date(),
-                                           size: draftStamp?.size ?? old.size, isDownloaded: old.isDownloaded)
-                notes.sort { $0.modifiedAt > $1.modifiedAt }
+                let fresh = NoteSummary(relativePath: old.relativePath, title: old.title,
+                                        preview: old.preview, modifiedAt: draftStamp?.modifiedAt ?? Date(),
+                                        size: draftStamp?.size ?? old.size, isDownloaded: old.isDownloaded)
+                // **그 줄만 맨 앞으로** (254) — 목록은 최근 고친 순이고 방금 고친 것이 가장 최근이다. 전체를 다시 정렬하지 않는다.
+                var updated = notes
+                updated.remove(at: at)
+                updated.insert(fresh, at: 0)
+                notes = updated
             }
             // **읽기 화면이 보일 때만 다시 그린다** (229). 쓰는 동안에는 2초 자동 저장마다 노트 전체를 HTML 로 바꾸고
             // 있었다 — 보이지도 않는 페이지를. 이제 낡았다고 표시만 하고, 읽기로 넘어갈 때 그린다 (`finishToggle` · `isReading`).
@@ -2421,7 +2501,8 @@ final class LibraryModel: ObservableObject {
             if settlingTitle || !cursorOnTitleLine {
                 await followTitle(of: written, at: path)
             }
-            scheduleIndexRefresh()
+            // 저장한 노트 하나만 색인한다 (254). 이름이 바뀌었으면 `followTitle` 이 색인의 경로를 옮겼다 — 지금 경로로 쓴다.
+            if let now = draftPath, editorSession == session { await indexSaved(now, text: written, stamp: draftStamp) }
             if isDirty { scheduleAutosave() }
         } catch ReadError.notDownloaded {
             // 디스크를 확인할 수 없어 **덮지 않았다.** `isDirty` 를 그대로 둬 다음 기회에 다시 쓴다 (86).
@@ -2450,6 +2531,9 @@ final class LibraryModel: ObservableObject {
             guard moved != path else { return }
             // 이름이 바뀌면 고정도 따라간다 (T10) — 안 그러면 제목을 고쳤을 때 고정이 풀린다.
             pinned = await store.followPins(from: path, to: moved)
+            // 색인의 줄도 따라간다 (254) — 저장마다 전체를 훑지 않으므로 옛 경로가 남지 않게.
+            await index?.rename(from: path, to: moved)
+            if let line = previews.removeValue(forKey: path) { previews[moved] = line }
             if draftPath == path {
                 draftPath = moved
                 draftStamp = await store.stamp(of: moved)
@@ -2550,14 +2634,16 @@ final class LibraryModel: ObservableObject {
     /// 같은 목록을 다시 넣으면 화면이 까닭 없이 다시 그려진다.
     func reloadFolders() async {
         guard let store else { return }
-        let loaded = await store.folders()
-        if loaded != folders { folders = loaded }
-        // 맨 윗줄도 아래 폴더들과 **같은 셈법**으로 센다 (153).
-        let root = await store.noteCount(in: "")
-        if root != rootNoteCount { rootNoteCount = root }
+        // 폴더와 노트 수를 **한 번 훑으며** 센다 (256) — 맨 윗줄도 아래 폴더들과 같은 셈법이다 (153).
+        let scanned = await store.folders()
+        let changed = scanned.folders != folders
+        if changed { folders = scanned.folders }
+        if scanned.rootNoteCount != rootNoteCount { rootNoteCount = scanned.rootNoteCount }
         rootStamp = await store.stamp(of: "")
         lastFolderSweep = Date()
-        refreshVaultPaths()   // 폴더가 생기고 · 바뀌고 · 지워졌을 수 있다 (177)
+        // 폴더가 생기고 · 바뀌고 · 지워졌을 때만 금고 목록을 다시 읽는다 (177 · 256). 15초마다 이 길로 오는데 그때마다 금고 전체를
+        // 열거하고 있었다 — 파일이 생기는 다른 길(목록 다시 읽기 · 첨부 넣기)은 제각기 부른다.
+        if changed { refreshVaultPaths() }
     }
 
     // MARK: - 공유로 받은 글 (213)
@@ -2789,8 +2875,7 @@ final class LibraryModel: ObservableObject {
         // 노트를 떠난다 — 제목 줄에 커서가 있었어도 여기서 확정한다 (89). **같은 노트를 다시 읽을 때는 아니다** (216) —
         // 목록 다시 읽기가 이 길로 오는데, 제목 줄에서 치는 중에 이것이 내려가면 다음 자동 저장이 치다 만 제목으로 이름을 바꿨다.
         if selectedNote?.relativePath != draftPath { cursorOnTitleLine = false }
-        // 붙여넣을 때 쓸 금고 목록을 뒤에서 읽어 둔다 (144 · 177).
-        refreshVaultPaths()
+        // (금고 목록은 여기서 읽지 않는다 — 256. 목록 다시 읽기 · 폴더 바뀜 · 첨부 넣기가 읽는다. 노트를 고를 때마다 금고를 훑고 있었다.)
         // **읽기 전에 쓴다.** 노트를 바꾸는 길목이 여기다 — 남은 글을 먼저 파일에
         // 넣지 않으면 그대로 사라진다.
         await save()
@@ -2824,8 +2909,10 @@ final class LibraryModel: ObservableObject {
             log("열려 있는 노트를 다시 읽음 — 편집기가 글을 갈아 끼운다: \(note.relativePath)")
         }
         let textBefore = noteText
+        let opening = Date()
         do {
             let text = try await store.readText(at: note.relativePath)
+            let readSeconds = Date().timeIntervalSince(opening)
             // **이 파일이 UTF-8 이었나.** 아니면 예전 인코딩으로 읽어 낸 것이고,
             // 여는 것만으로 고쳐 쓰면 남의 파일을 바꾸는 셈이다 (62를 건너뛴다).
             let encoding = await store.encoding(of: note.relativePath)
@@ -2881,7 +2968,19 @@ final class LibraryModel: ObservableObject {
                 lastError = nil
                 errorIsAboutNote = false
             }
-            await renderReading(path: note.relativePath, text: text)
+            // **읽기 화면이 보일 때만 그린다** (253 · 229 와 같은 까닭). 쓰기 모드로 열면서도 노트 전체를 HTML 로 바꾸고 역링크까지
+            // 세고 있었다. 이제 낡았다고만 표시한다 — 읽기로 넘길 때 그린다 (`finishToggle` · `isReading`).
+            openTiming = OpenTiming(path: note.relativePath, read: readSeconds, renderedNow: isReading)
+            if isReading {
+                await renderReading(path: note.relativePath, text: text)
+            } else {
+                pageHTML = ""
+                pageIsStale = true
+            }
+            openTiming.total = Date().timeIntervalSince(opening)
+            if text.utf8.count >= 100_000 || openTiming.total > 0.5 {
+                log("열기 \(note.relativePath) — \(String(format: "%.2f", openTiming.total))초 (읽기 \(String(format: "%.2f", readSeconds)))")
+            }
         } catch ReadError.notDownloaded {
             // 아직 내려받는 중이다. **아무것도 쓰지 않는다** — 다 오면 지켜보기가 다시 부른다 (86).
             // 띠 대신 **내용 자리에 도는 표시**를 띄운다 — 띠는 잠깐 떴다 사라져 못 보고 지나친다.
@@ -2917,6 +3016,8 @@ final class LibraryModel: ObservableObject {
     private func renderReading(path: String, text: String) async {
         guard let store else { return }
         pageIsStale = false
+        let started = Date()
+        defer { if openTiming.path == path { openTiming.render = Date().timeIntervalSince(started) } }
         let referenced = MarkdownHTML.referencedPaths(markdown: text, notePath: path)
         let existing = await store.existingPaths(among: referenced)
         let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing,
@@ -2939,9 +3040,12 @@ final class LibraryModel: ObservableObject {
     private func refreshBacklinks(for path: String) {
         backlinksTask?.cancel()
         backlinksCounted = path
-        guard let store else { return }
+        guard let index else { return }
         backlinksTask = Task { [weak self] in
-            let found = await store.backlinks(to: path)
+            // **색인에서** (253) — 예전에는 폴더의 모든 노트 본문을 읽었다 (노트를 열 때마다 · 파일 담당이 그동안 묶였다).
+            let started = Date()
+            let found = await index.backlinks(to: path)
+            self?.openTiming.backlinks = Date().timeIntervalSince(started)
             guard let self, !Task.isCancelled, self.backlinksCounted == path, self.draftPath == path else { return }
             // 이미 그린 것과 같으면 다시 그리지 않는다 — 웹뷰가 한 번 깜빡인다.
             if self.backlinksOwner == path, found == self.backlinks { return }
