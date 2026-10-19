@@ -375,6 +375,11 @@ final class LibraryModel: ObservableObject {
     /// **바꿨으면 알린다.** 사람이 모르게 본문이 달라지지 않는다. 되돌리기는 한 번이다.
     func repairPastedLinks(_ pasted: MarkdownTextView.PastedItem) -> String? {
         pastedAttachmentNotes = []
+        // 0. 지도 앱이 공유한 장소 글 (252) — 장소마다 `[이름](<주소>) : 주소` 한 줄. 글 전체가 장소들일 때만.
+        if let places = MapPlaces.pasted(pasted.plain) {
+            notify(String(localized: "지도 장소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다."), aboutNote: true)
+            return places
+        }
         // 1. 주소 하나
         let address = pasted.url ?? pasted.plain
         if Pasting.isWebAddress(pasted.plain.trimmingCharacters(in: .whitespacesAndNewlines))
