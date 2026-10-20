@@ -111,6 +111,10 @@
     "note": null,
     "source": "%1$lld개 · %2$@"
    },
+   "%lld개 · 거기까지만 셌습니다": {
+    "note": null,
+    "source": "%lld개 · 거기까지만 셌습니다"
+   },
    "%lld개 · 안 받은 노트가 많아 내려받지 않음": {
     "note": null,
     "source": "%lld개 · 안 받은 노트가 많아 내려받지 않음"
@@ -406,6 +410,10 @@
    "글머리표": {
     "note": null,
     "source": "글머리표"
+   },
+   "금고 파일": {
+    "note": null,
+    "source": "금고 파일"
    },
    "기록": {
     "note": null,
