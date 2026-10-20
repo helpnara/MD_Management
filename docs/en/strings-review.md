@@ -30,6 +30,7 @@
 | %lld | %lld |
 | %lld개 | %lld |
 | %lld개 · %@ | %lld · %@ |
+| %lld개 · 거기까지만 셌습니다 | %lld · counted up to here only |
 | %lld개 · 안 받은 노트가 많아 내려받지 않음 | %lld · not downloading (too many notes not yet downloaded) |
 | %lld개를 찾을 수 없어 빼고 보냅니다. | one: %lld attachment couldn’t be found and will be left out. / other: %lld attachments couldn’t be found and will be left out. |
 | %lld자 | one: %lld character / other: %lld characters |
@@ -104,6 +105,7 @@
 | 그냥 옮기기 | Just Move |
 | 그래도 보내기 | Send Anyway |
 | 글머리표 | Bulleted List |
+| 금고 파일 | Files in folder |
 | 기록 | Notes |
 | 기본 iCloud 폴더로 돌아가기 | Back to Default iCloud Folder |
 | 기울임 | Italic |

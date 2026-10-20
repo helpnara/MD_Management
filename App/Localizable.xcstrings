@@ -257,6 +257,16 @@
         }
       }
     },
+    "%lld개 · 거기까지만 셌습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld · counted up to here only"
+          }
+        }
+      }
+    },
     "%lld개 · 안 받은 노트가 많아 내려받지 않음" : {
       "localizations" : {
         "en" : {
@@ -1053,6 +1063,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bulleted List"
+          }
+        }
+      }
+    },
+    "금고 파일" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files in folder"
           }
         }
       }
