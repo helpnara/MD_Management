@@ -173,6 +173,19 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.11 제출 순서 (2026-10-20 사용자 — *빌드해서 체크리스트 주고 심사 제출까지 같이 준비하자*)
+
+> 258 큰 폴더에서 파일을 끝까지 센다 · 259 오래 걸리는 일에 진행 표시 · **250 아이폰 대형 칸 둘 갈기** (아래 절 — 이번 판에서 한다). 그림 묶음 `slow-margin-1.1.11-store.zip` (빌드 113 때 대화에 보냄).
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.11`
+2. **빌드** 칸에서 확인이 끝난 빌드를 고른다 (`1.1.11 (114)` — 확인 중에 다시 올리면 그 번호)
+3. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 울타리 (`docs/store/1.1.11-새로운-기능.txt`)
+4. **아이폰 대형 칸 둘 갈기** — 바로 아래 절의 1 ~ 3 (Face ID 줄 · Dynamic Island 줄 · 다른 줄)
+5. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New* (§1-영어) · 아래 절의 4 (영어 줄들) → **저장**
+6. 설명 · 부제 · 키워드 · 프로모션 텍스트 · 아이패드 그림 · 중형 칸은 1.1.10 그대로
+7. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+8. 제출하면 세션에 알린다 — `main` 병합. 출시 뒤 에어의 앱 스토어에서 새 그림이면 **250 닫힘**
+
 ### ⚠️ 다음 판 제출 때 — 아이폰 대형 칸 둘 갈기 (250 다시 엶 · 2026-10-20 사용자)
 
 > 1.1.10 출시 뒤에도 **아이폰 17 에어 · 한국어** 앱 스토어에 9월의 **어두운 쓰기 화면**.
@@ -401,12 +414,11 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.10** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.8 의 글은 `docs/store/1.1.8-새로운-기능.txt` 끝.
+> **1.1.11** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.10 의 글은 `docs/store/1.1.10-새로운-기능.txt` 끝.
 
 ```
-• A new app icon.
-• Paste a place copied from a map app and it becomes one line: the place name as a link, then the address. The same happens when you send it from a map app’s share menu.
-• Faster in large folders. Opening a note and saving no longer read through the whole folder, and building the search index takes a few seconds even for a thousand notes.
+• Things that take a while, like deleting a folder, emptying Trash, or adding many photos, now show their progress at the bottom of the screen, so you can tell the app is working.
+• In folders with a great many files, fixing pasted links and finding links that don’t open now check every file.
 ```
 
 ---
@@ -633,15 +645,12 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.10** (2026-10-19 — 251 새 아이콘 · 252 지도 장소 · 253~257 속도). 글은 `docs/store/1.1.10-새로운-기능.txt`. 1.1.8 의 글은 `docs/store/1.1.8-새로운-기능.txt`.
-> 1.1.9 는 내지 않고 건너뛰었다 (빌드 108~111 의 것이 모두 1.1.10 에 들었다).
+> **1.1.11** (2026-10-20 — 258 큰 폴더에서 파일을 끝까지 센다 · 259 오래 걸리는 일에 진행 표시). 글은 `docs/store/1.1.11-새로운-기능.txt`. 1.1.10 의 글은 `docs/store/1.1.10-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
-> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6). 지도 앱 이름은 적지 않는다 (§6 — 남의 상표).
-> *천 개도 몇 초* 는 빌드 112 에서 사용자가 잰 값(노트 1,000개 처음 색인 4.26초)에 기댄다.
+> 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 앱 아이콘을 새로 바꿨습니다.
-• 지도 앱에서 복사한 장소를 붙여 넣으면 장소 이름 링크와 주소 한 줄이 됩니다. 지도 앱의 공유 메뉴로 느린 여백에 보내도 같습니다.
-• 노트가 많은 폴더에서 빨라졌습니다. 노트를 열거나 저장할 때 더는 폴더 전체를 읽지 않고, 검색 색인은 노트 천 개도 몇 초면 만듭니다.
+• 폴더 지우기, 휴지통 비우기, 사진 여러 장 넣기처럼 시간이 걸리는 일은 화면 아래에 진행 표시가 보입니다. 화면이 멈춘 것인지 헷갈리지 않습니다.
+• 파일이 아주 많은 폴더에서도 링크 고치기와 안 열리는 링크 찾기가 모든 파일을 봅니다.
 ```
 
