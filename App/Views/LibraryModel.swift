@@ -357,7 +357,9 @@ final class LibraryModel: ObservableObject {
     /// 금고 안 파일들의 경로 — 붙여넣을 때 쓴다. 노트를 열 때 뒤에서 읽어 둔다.
     ///
     /// **비어 있으면 아무것도 안 고친다.** 아직 못 읽었을 때 안전한 쪽이다.
-    private(set) var vaultPaths: [String] = []
+    @Published private(set) var vaultPaths: [String] = []
+    /// 금고를 끝까지 셌나 (258) — 진단에 보인다. 안전띠(`FolderStore.vaultFileLimit`)에 닿으면 거짓.
+    @Published private(set) var vaultPathsComplete = true
     /// 읽는 중인가 · 읽는 동안 또 부탁이 왔나. 겹치면 끝난 뒤 **한 번 더** 읽는다.
     private var vaultPathsReading = false
     private var vaultPathsStale = false
@@ -367,7 +369,7 @@ final class LibraryModel: ObservableObject {
     /// 예전에는 노트를 열 때 **60초에 한 번만** 읽었다. 방금 만든 노트 · 방금 넣은 사진의 링크를 곧바로
     /// 다른 폴더에 붙이면 목록에 아직 없어 못 고치고(못 찾으면 그대로 둔다), 다른 폴더에서는 깨진 링크가
     /// 됐다 — 일정 시간이 지나야 맞았다. 이제 목록 · 폴더를 다시 읽을 때와 첨부를 넣은 뒤에 부른다.
-    /// 금고를 한 번 훑는 일이라 가볍다 (파일 2천 개 한도). 읽는 중에 또 오면 끝난 뒤 한 번만 더.
+    /// 금고를 한 번 훑는 일이라 가볍다 (끝까지 센다 — 258). 읽는 중에 또 오면 끝난 뒤 한 번만 더.
     func refreshVaultPaths() {
         guard !vaultPathsReading else {
             vaultPathsStale = true
@@ -376,8 +378,10 @@ final class LibraryModel: ObservableObject {
         vaultPathsReading = true
         Task { [weak self] in
             guard let self, let store = self.store else { return }
-            let files = await store.linkableFiles()
-            self.vaultPaths = files.map(\.relativePath)
+            let scanned = await store.vaultFiles()
+            self.vaultPaths = scanned.files
+            self.vaultPathsComplete = scanned.complete
+            if !scanned.complete { self.log("금고 파일이 \(FolderStore.vaultFileLimit)개를 넘어 거기까지만 셌다") }
             self.vaultPathsReading = false
             if self.vaultPathsStale {
                 self.vaultPathsStale = false

@@ -1212,21 +1212,35 @@ actor FolderStore {
     /// **금고 안에서 이어 붙일 만한 파일들** (145, 사용자 제안 — *이미 있는 파일 연결하기*).
     ///
     /// 노트와 첨부를 함께 준다 — 첨부도 여러 노트에서 나눠 쓰고 싶어 나온 이야기다.
-    /// 숨김 폴더와 휴지통은 뺀다. 목록이 아주 커지지 않게 `limit` 에서 멈춘다.
+    /// 숨김 폴더와 휴지통은 뺀다. 사람이 고르는 목록이라 이름 차례로 준다.
     ///
     /// **사본을 만들지 않는다** (2026-09-18 사용자). 파일은 제자리에 두고 **링크만** 넣는다.
-    func linkableFiles(limit: Int = 2000) -> [LinkableFile] {
+    func linkableFiles() -> [LinkableFile] {
+        vaultFiles().files
+            .map { LinkableFile(relativePath: $0, name: $0.split(separator: "/").last.map(String.init) ?? $0) }
+            .sorted { $0.relativePath.localizedStandardCompare($1.relativePath) == .orderedAscending }
+    }
+
+    /// 금고 전체를 한 번에 세는 한도 — 남의 앱 자료(수십만 개)가 든 폴더에서 멈추지 않으려는 안전띠다.
+    /// 사람이 쓰는 금고는 여기 닿지 않는다. 닿으면 `complete` 가 거짓이다.
+    static let vaultFileLimit = 50_000
+
+    /// **금고 안의 모든 파일 경로** — 노트와 첨부 (258). 붙여넣은 링크 고치기(144) · 안 열리는 링크 찾기(146) ·
+    /// 붙여넣은 첨부의 이름 겹침 피하기(243) · 이미 있는 파일 연결(145)이 모두 이것을 본다.
+    ///
+    /// 예전에는 **2,000개에서 끊었고, 끊은 뒤에 정렬했다** — 파일이 2,000개를 넘는 금고에서는 어느 파일이 빠질지
+    /// 정해지지 않아, 있는 파일을 *없다* 고 보거나(안 열리는 링크) 못 찾아 링크를 못 고쳤다. 이제 끝까지 센다 —
+    /// 경로 글자만 모으므로 수만 개도 가볍다. 정렬은 사람이 보는 목록(`linkableFiles`)만 한다.
+    func vaultFiles() -> (files: [String], complete: Bool) {
         openScopeIfNeeded()
         guard let walker = FileManager.default.enumerator(
             at: root, includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]) else { return [] }
+            options: [.skipsHiddenFiles]) else { return ([], false) }
 
-        var found: [LinkableFile] = []
+        var found: [String] = []
         for case let url as URL in walker {
-            if found.count >= limit { break }
+            if found.count >= Self.vaultFileLimit { return (found, false) }
             let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            guard let relative = Paths.relative(of: url.path, under: root.path) else { continue }
-            let path = Paths.normalized(relative)
             if isDirectory {
                 // 휴지통과 숨김 폴더 속은 아예 들어가지 않는다.
                 if url.lastPathComponent == ".trash" || url.lastPathComponent.hasPrefix(".") {
@@ -1234,10 +1248,12 @@ actor FolderStore {
                 }
                 continue
             }
+            guard let relative = Paths.relative(of: url.path, under: root.path) else { continue }
+            let path = Paths.normalized(relative)
             guard !Paths.isHidden(path) else { continue }
-            found.append(LinkableFile(relativePath: path, name: url.lastPathComponent))
+            found.append(path)
         }
-        return found.sorted { $0.relativePath.localizedStandardCompare($1.relativePath) == .orderedAscending }
+        return (found, true)
     }
 
     /// 폴더 아래 모든 파일의 크기 합.
