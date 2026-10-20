@@ -152,3 +152,20 @@ struct FolderRename: Sendable {
     var unread = 0
 }
 
+
+/// **오래 걸리는 일의 진행** (259, 2026-10-20 사용자 — *지우거나 로딩하거나 등등 작업 시간이 오래 걸리는 경우 화면이 멈춰있는 것처럼 보인다*).
+/// 파일 담당(actor)이 일을 하며 몇 개 했는지 알리는 통로다. 모델이 받아 화면 아래 띠에 그린다 (`LibraryModel.working`).
+/// `total` 이 nil 이면 얼마나 남았는지 모른다 — 도는 표시만.
+struct WorkMeter: Sendable {
+    let report: @Sendable (_ done: Int, _ total: Int?) -> Void
+
+    func callAsFunction(_ done: Int, of total: Int? = nil) { report(done, total) }
+
+    /// 알릴 곳이 없을 때.
+    static let none = WorkMeter { _, _ in }
+
+    /// **너무 자주 알리지 않는다** — 천 개를 하나하나 알리면 화면을 그리는 데 더 든다. 처음 · 끝 · `every` 개마다.
+    func tick(_ done: Int, of total: Int?, every: Int = 20) {
+        if done == 0 || done % every == 0 || done == total { report(done, total) }
+    }
+}

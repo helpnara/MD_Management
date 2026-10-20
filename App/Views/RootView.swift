@@ -297,6 +297,45 @@ private struct FolderActionAlerts: ViewModifier {
     }
 }
 
+/// **오래 걸리는 일의 띠** (259, 2026-10-20 사용자 — *화면이 멈춰있는 것처럼 보인다 · 진행률을 표시해 진행 중임을 인지할 수 있게*).
+/// 몇 개 중 몇 개인지 알면 막대와 숫자, 모르면 도는 표시와 지금까지 한 수. 누를 것은 없다 — 끝나면 저절로 걷힌다.
+struct WorkBand: View {
+    let work: LibraryModel.Work
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Metrics.rowSpacing / 2) {
+            HStack(spacing: Metrics.rowSpacing) {
+                if work.total == nil { ProgressView() }
+                Text(work.title)
+                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 0)
+                if let total = work.total, total > 0 {
+                    Text(verbatim: "\(min(work.done, total)) / \(total)")
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.inkFaint)
+                } else if work.done > 0 {
+                    Text(String(localized: "\(work.done)개"))
+                        .monospacedDigit()
+                        .foregroundStyle(Palette.inkFaint)
+                }
+            }
+            if let total = work.total, total > 0 {
+                ProgressView(value: Double(min(work.done, total)), total: Double(total))
+            }
+        }
+        .font(.scaled(.footnote, weight: .semibold))
+        .foregroundStyle(Palette.ink)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, Metrics.gutter)
+        .padding(.vertical, Metrics.rowSpacing)
+        .background(Palette.paperRaised)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Palette.rule).frame(height: 0.5)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// 화면 아래 띠. 지금 무엇이 이상한지 **늘 보이게** 한다.
 ///
 /// - 둘러보기 중: 실제 자료와 섞이지 않게 (`LESSONS_LEARNED` §5)
@@ -307,7 +346,10 @@ struct StatusBanner: View {
     var errorsOnly = false
 
     var body: some View {
-        if let error = library.lastError {
+        // **오래 걸리는 일이 먼저다** (259) — 화면이 멈춘 것처럼 보이지 않게. 시트 안에서도(휴지통 비우기) 보인다.
+        if let work = library.work {
+            WorkBand(work: work)
+        } else if let error = library.lastError {
             // **실패는 보여야 한다.** 빌드 7 에서 이 자리를 없앴더니 빌드 8 의
             // 이름 바꾸기 · 지우기가 조용히 실패해도 아무도 몰랐다.
             Button {

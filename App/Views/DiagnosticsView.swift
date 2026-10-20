@@ -64,6 +64,11 @@ struct DiagnosticsView: View {
                     row(String(localized: "폴더 이름"), library.folderName)
                     row(String(localized: "노트"), String(localized: "\(library.notes.count)개"))
                     row(String(localized: "하위 폴더"), String(localized: "\(library.folders.count)개"))
+                    // 258 — 링크 고치기 · 안 열리는 링크 찾기가 보는 금고 파일 수 (노트 · 첨부). 예전에는 2,000개에서 끊었다.
+                    row(String(localized: "금고 파일"),
+                        library.vaultPathsComplete
+                            ? String(localized: "\(library.vaultPaths.count)개")
+                            : String(localized: "\(library.vaultPaths.count)개 · 거기까지만 셌습니다"))
                 }
 
 

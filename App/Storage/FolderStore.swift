@@ -641,9 +641,10 @@ actor FolderStore {
     /// 노트는 본문을 읽는다. **아직 안 내려온 노트는 `nil`** — 셈이 판정을 멈춘다(못 읽은 노트가
     /// 그 사진을 쓸 수 있다). 옛 iCloud 자리표시자(`.이름.icloud`)도 안 내려온 노트로 센다.
     /// 노트가 아닌 파일은 경로와 크기만.
-    func attachmentCensus() -> AttachmentCensus {
+    func attachmentCensus(meter: WorkMeter = .none) -> AttachmentCensus {
         openScopeIfNeeded()
         var census = AttachmentCensus()
+        var read = 0
         let keys: Set<URLResourceKey> = [
             .isDirectoryKey, .fileSizeKey, .isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey
         ]
@@ -672,6 +673,8 @@ actor FolderStore {
                 if Paths.isNoteFile(path) {
                     var text: String?
                     if !placeholder, Self.isDownloaded(values) { text = try? readText(at: path) }
+                    read += 1
+                    meter.tick(read, of: nil)
                     // `사전[키] = nil` 은 키를 지운다 — 못 읽은 노트를 **nil 로 남기려고** updateValue.
                     if path.hasPrefix(".trash/") {
                         census.trashed.updateValue(text, forKey: path)
@@ -793,26 +796,33 @@ actor FolderStore {
 
     /// 폴더 이름을 바꾸고 **그 폴더 안을 가리키던 링크를 따라 고친다** (179, 사용자 — 남은 할 일을
     /// 반영해 제출하자). 168 은 알리기만 해서, 이름을 바꾸면 다른 폴더 노트의 사진이 깨졌다.
-    func renameFolderFixingLinks(_ relativePath: String, to newName: String) throws -> FolderRename {
-        try relocateFixingLinks(relativePath) { try renameFolder(relativePath, to: newName) }
+    func renameFolderFixingLinks(_ relativePath: String, to newName: String,
+                                 meter: WorkMeter = .none) throws -> FolderRename {
+        try relocateFixingLinks(relativePath, meter: meter) { try renameFolder(relativePath, to: newName) }
     }
 
     /// 폴더를 다른 폴더 안으로 옮기고 링크를 고친다 (204). 안의 노트가 한 단계 깊어지거나 얕아지므로
     /// 바깥을 가리키던 링크도 새 자리에 맞춘다 — 셈은 이름 바꾸기와 같은 `MarkdownLinks.retargeted`.
-    func moveFolderFixingLinks(_ relativePath: String, into parent: String) throws -> FolderRename {
-        try relocateFixingLinks(relativePath) { try moveFolder(relativePath, into: parent) }
+    func moveFolderFixingLinks(_ relativePath: String, into parent: String,
+                               meter: WorkMeter = .none) throws -> FolderRename {
+        try relocateFixingLinks(relativePath, meter: meter) { try moveFolder(relativePath, into: parent) }
     }
 
     /// 옮기기 **전에** 폴더 전체를 읽는다 — 옛 자리로 링크를 풀어야 하기 때문이다. 고치는 셈은
     /// `MarkdownLinks.retargeted` 하나다. 안의 노트는 새 자리에 쓴다. 쓸 때 **읽은 글과 같을 때만**
     /// 쓴다(`expecting`) — 그 사이 다른 기기에서 고쳤으면 건드리지 않고 못 고친 수로 센다.
     /// 아직 안 내려온 노트는 읽을 수 없어 못 본 수로 센다.
-    private func relocateFixingLinks(_ relativePath: String, _ relocate: () throws -> String) throws -> FolderRename {
-        let census = attachmentCensus()
+    private func relocateFixingLinks(_ relativePath: String, meter: WorkMeter,
+                                     _ relocate: () throws -> String) throws -> FolderRename {
+        let census = attachmentCensus(meter: meter)
         let moved = try relocate()
         guard moved != relativePath else { return FolderRename(path: moved) }
         var result = FolderRename(path: moved)
+        var seen = 0
+        meter(0, of: census.notes.count)
         for (path, text) in census.notes {
+            seen += 1
+            meter.tick(seen, of: census.notes.count)
             guard let text else {
                 result.unread += 1
                 continue
@@ -836,11 +846,12 @@ actor FolderStore {
     /// 빈 폴더를 지운다. 그래서 휴지통에는 노트 하나하나가 폴더 이름과 함께 보이고,
     /// 되돌리면 폴더가 다시 생긴다. 숨김 파일은 옮기지 않는다 (폴더와 함께 사라진다).
     /// 옮긴 파일 수를 준다.
-    func trashFolder(_ relativePath: String) throws -> Int {
+    func trashFolder(_ relativePath: String, meter: WorkMeter = .none) throws -> Int {
         openScopeIfNeeded()
         guard !relativePath.isEmpty, !relativePath.hasPrefix(".") else { return 0 }
         let folderURL = root.appendingPathComponent(relativePath)
-        var moved = 0
+        // 먼저 옮길 파일을 다 모은다 — 몇 개 중 몇 개인지 알려야 한다 (259). 폴더 목록 읽기는 옮기기보다 훨씬 싸다.
+        var files: [(url: URL, folder: String, name: String)] = []
         var pending = [relativePath]
         while let folder = pending.popLast() {
             let url = root.appendingPathComponent(folder)
@@ -849,17 +860,22 @@ actor FolderStore {
             ) else { continue }
             for entry in entries {
                 let name = Paths.normalized(entry.lastPathComponent)
-                let path = folder + "/" + name
                 if (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
-                    pending.append(path)
+                    pending.append(folder + "/" + name)
                     continue
                 }
-                let trashFolder = ".trash/" + folder
-                try createFolder(trashFolder)
-                let target = uniqueRelativePath(name: name, in: trashFolder)
-                try move(from: entry, to: root.appendingPathComponent(target))
-                moved += 1
+                files.append((entry, folder, name))
             }
+        }
+        var moved = 0
+        meter(0, of: files.count)
+        for file in files {
+            let trashFolder = ".trash/" + file.folder
+            try createFolder(trashFolder)
+            let target = uniqueRelativePath(name: file.name, in: trashFolder)
+            try move(from: file.url, to: root.appendingPathComponent(target))
+            moved += 1
+            meter.tick(moved, of: files.count)
         }
         try remove(folderURL)
         return moved
@@ -938,10 +954,13 @@ actor FolderStore {
 
     /// **안 쓰는 첨부를 휴지통으로** (174). `.trash/<원래 경로>` 로 — 휴지통 화면에서 되돌릴 수 있다.
     /// 옮긴 개수를 준다. 하나가 실패해도 나머지는 옮긴다.
-    func trashAttachments(_ paths: [String]) -> Int {
+    func trashAttachments(_ paths: [String], meter: WorkMeter = .none) -> Int {
         openScopeIfNeeded()
         var moved = 0
+        var seen = 0
         for path in paths where AttachmentLedger.isAttachmentPath(path) {
+            seen += 1
+            meter.tick(seen, of: paths.count)
             let home = ".trash/" + Paths.directory(of: path)
             let name = path.split(separator: "/").last.map(String.init) ?? path
             do {
@@ -1212,21 +1231,35 @@ actor FolderStore {
     /// **금고 안에서 이어 붙일 만한 파일들** (145, 사용자 제안 — *이미 있는 파일 연결하기*).
     ///
     /// 노트와 첨부를 함께 준다 — 첨부도 여러 노트에서 나눠 쓰고 싶어 나온 이야기다.
-    /// 숨김 폴더와 휴지통은 뺀다. 목록이 아주 커지지 않게 `limit` 에서 멈춘다.
+    /// 숨김 폴더와 휴지통은 뺀다. 사람이 고르는 목록이라 이름 차례로 준다.
     ///
     /// **사본을 만들지 않는다** (2026-09-18 사용자). 파일은 제자리에 두고 **링크만** 넣는다.
-    func linkableFiles(limit: Int = 2000) -> [LinkableFile] {
+    func linkableFiles() -> [LinkableFile] {
+        vaultFiles().files
+            .map { LinkableFile(relativePath: $0, name: $0.split(separator: "/").last.map(String.init) ?? $0) }
+            .sorted { $0.relativePath.localizedStandardCompare($1.relativePath) == .orderedAscending }
+    }
+
+    /// 금고 전체를 한 번에 세는 한도 — 남의 앱 자료(수십만 개)가 든 폴더에서 멈추지 않으려는 안전띠다.
+    /// 사람이 쓰는 금고는 여기 닿지 않는다. 닿으면 `complete` 가 거짓이다.
+    static let vaultFileLimit = 50_000
+
+    /// **금고 안의 모든 파일 경로** — 노트와 첨부 (258). 붙여넣은 링크 고치기(144) · 안 열리는 링크 찾기(146) ·
+    /// 붙여넣은 첨부의 이름 겹침 피하기(243) · 이미 있는 파일 연결(145)이 모두 이것을 본다.
+    ///
+    /// 예전에는 **2,000개에서 끊었고, 끊은 뒤에 정렬했다** — 파일이 2,000개를 넘는 금고에서는 어느 파일이 빠질지
+    /// 정해지지 않아, 있는 파일을 *없다* 고 보거나(안 열리는 링크) 못 찾아 링크를 못 고쳤다. 이제 끝까지 센다 —
+    /// 경로 글자만 모으므로 수만 개도 가볍다. 정렬은 사람이 보는 목록(`linkableFiles`)만 한다.
+    func vaultFiles() -> (files: [String], complete: Bool) {
         openScopeIfNeeded()
         guard let walker = FileManager.default.enumerator(
             at: root, includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]) else { return [] }
+            options: [.skipsHiddenFiles]) else { return ([], false) }
 
-        var found: [LinkableFile] = []
+        var found: [String] = []
         for case let url as URL in walker {
-            if found.count >= limit { break }
+            if found.count >= Self.vaultFileLimit { return (found, false) }
             let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
-            guard let relative = Paths.relative(of: url.path, under: root.path) else { continue }
-            let path = Paths.normalized(relative)
             if isDirectory {
                 // 휴지통과 숨김 폴더 속은 아예 들어가지 않는다.
                 if url.lastPathComponent == ".trash" || url.lastPathComponent.hasPrefix(".") {
@@ -1234,10 +1267,12 @@ actor FolderStore {
                 }
                 continue
             }
+            guard let relative = Paths.relative(of: url.path, under: root.path) else { continue }
+            let path = Paths.normalized(relative)
             guard !Paths.isHidden(path) else { continue }
-            found.append(LinkableFile(relativePath: path, name: url.lastPathComponent))
+            found.append(path)
         }
-        return found.sorted { $0.relativePath.localizedStandardCompare($1.relativePath) == .orderedAscending }
+        return (found, true)
     }
 
     /// 폴더 아래 모든 파일의 크기 합.

@@ -257,6 +257,16 @@
         }
       }
     },
+    "%lld개 · 거기까지만 셌습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld · counted up to here only"
+          }
+        }
+      }
+    },
     "%lld개 · 안 받은 노트가 많아 내려받지 않음" : {
       "localizations" : {
         "en" : {
@@ -735,6 +745,16 @@
         }
       }
     },
+    "검색 색인을 만드는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Building the search index"
+          }
+        }
+      }
+    },
     "결과" : {
       "localizations" : {
         "en" : {
@@ -905,6 +925,16 @@
         }
       }
     },
+    "공유로 받은 것을 넣는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adding shared items"
+          }
+        }
+      }
+    },
     "공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다." : {
       "localizations" : {
         "en" : {
@@ -957,6 +987,16 @@
         }
       }
     },
+    "공유할 파일을 묶는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Packing files to share"
+          }
+        }
+      }
+    },
     "굵게" : {
       "localizations" : {
         "en" : {
@@ -973,6 +1013,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Scale Test"
+          }
+        }
+      }
+    },
+    "규모 시험 노트를 만드는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creating scale test notes"
           }
         }
       }
@@ -1017,6 +1067,16 @@
         }
       }
     },
+    "규모 시험 폴더를 휴지통으로 옮기는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving the scale test folder to Trash"
+          }
+        }
+      }
+    },
     "그 폴더를 열지 못했습니다: %@" : {
       "localizations" : {
         "en" : {
@@ -1053,6 +1113,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bulleted List"
+          }
+        }
+      }
+    },
+    "금고 파일" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files in folder"
           }
         }
       }
@@ -1231,6 +1301,16 @@
         }
       }
     },
+    "노트를 옮기는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving the note"
+          }
+        }
+      }
+    },
     "노트를 읽어 세는 중입니다" : {
       "localizations" : {
         "en" : {
@@ -1357,6 +1437,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restore"
+          }
+        }
+      }
+    },
+    "되돌리는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restoring"
           }
         }
       }
@@ -1839,6 +1929,16 @@
         }
       }
     },
+    "사진을 넣는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adding photos"
+          }
+        }
+      }
+    },
     "사진을 저장하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 사진은 %@ 옆 assets 폴더에 있습니다." : {
       "localizations" : {
         "en" : {
@@ -2181,6 +2281,16 @@
         }
       }
     },
+    "안 쓰는 첨부를 휴지통으로 옮기는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving unused attachments to Trash"
+          }
+        }
+      }
+    },
     "안 열리는 링크 %lld개" : {
       "localizations" : {
         "en" : {
@@ -2319,6 +2429,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete Permanently"
+          }
+        }
+      }
+    },
+    "영구 삭제하는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleting permanently"
           }
         }
       }
@@ -3271,6 +3391,16 @@
         }
       }
     },
+    "파일을 넣는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adding files"
+          }
+        }
+      }
+    },
     "파일을 바꾸는 설정" : {
       "localizations" : {
         "en" : {
@@ -3383,6 +3513,16 @@
         }
       }
     },
+    "폴더 이름을 바꾸고 링크를 고치는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renaming the folder and fixing links"
+          }
+        }
+      }
+    },
     "폴더 이름을 바꾸지 못했습니다: %@" : {
       "localizations" : {
         "en" : {
@@ -3423,12 +3563,32 @@
         }
       }
     },
+    "폴더를 옮기고 링크를 고치는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving the folder and fixing links"
+          }
+        }
+      }
+    },
     "폴더를 옮기지 못했습니다: %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't move the folder: %@"
+          }
+        }
+      }
+    },
+    "폴더를 읽는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading the folder"
           }
         }
       }
@@ -3449,6 +3609,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete Folder?"
+          }
+        }
+      }
+    },
+    "폴더를 휴지통으로 옮기는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving the folder to Trash"
           }
         }
       }
@@ -3529,6 +3699,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move to Trash"
+          }
+        }
+      }
+    },
+    "휴지통으로 옮기는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving to Trash"
+          }
+        }
+      }
+    },
+    "휴지통을 비우는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Emptying Trash"
+          }
+        }
+      }
+    },
+    "휴지통을 읽는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading Trash"
           }
         }
       }

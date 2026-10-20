@@ -30,6 +30,7 @@
 | %lld | %lld |
 | %lld개 | %lld |
 | %lld개 · %@ | %lld · %@ |
+| %lld개 · 거기까지만 셌습니다 | %lld · counted up to here only |
 | %lld개 · 안 받은 노트가 많아 내려받지 않음 | %lld · not downloading (too many notes not yet downloaded) |
 | %lld개를 찾을 수 없어 빼고 보냅니다. | one: %lld attachment couldn’t be found and will be left out. / other: %lld attachments couldn’t be found and will be left out. |
 | %lld자 | one: %lld character / other: %lld characters |
@@ -73,6 +74,7 @@
 | 가져올까요? | Import This File? |
 | 갈래 | Types |
 | 검색 색인 | Search Index |
+| 검색 색인을 만드는 중 | Building the search index |
 | 결과 | Result |
 | 겹친 번호를 지웠습니다 | Removed duplicate numbering |
 | 겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다. | This note is nested too deeply to format, so it’s shown as plain text. |
@@ -90,20 +92,25 @@
 | 공유로 받은 것 %lld개는 새 노트로, %lld개는 고른 노트 끝에 넣었습니다. | Added shared items: %lld as new notes, %lld to the end of the chosen note. |
 | 공유로 받은 것 %lld개를 %@ 노트 끝에 덧붙였습니다. | Added shared items to the end of %2$@ (%1$lld). |
 | 공유로 받은 것 %lld개를 고른 노트 끝에 덧붙였습니다. | Added shared items to the end of the chosen notes (%lld). |
+| 공유로 받은 것을 넣는 중 | Adding shared items |
 | 공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다. | Added shared items to the %2$@ folder as new notes (%1$lld). |
 | 공유로 받은 글 %lld개를 넣지 못했습니다. 다음에 앱을 열 때 다시 넣습니다. | one: Couldn't add %lld shared item. The app will try again next time it opens. / other: Couldn't add %lld shared items. The app will try again next time it opens. |
 | 공유할 때 링크된 노트도 넣기 | Include Linked Notes When Sharing |
 | 공유할 파일을 만들지 못했습니다: %@ | Couldn't create the file to share: %@ |
+| 공유할 파일을 묶는 중 | Packing files to share |
 | 굵게 | Bold |
 | 규모 시험 | Scale Test |
+| 규모 시험 노트를 만드는 중 | Creating scale test notes |
 | 규모 시험 자료를 만들지 못했습니다: %@ | Couldn't create the scale test data: %@ |
 | 규모 시험 폴더 지우기 | Delete Scale Test Folder |
 | 규모 시험 폴더를 지우지 못했습니다: %@ | Couldn't delete the scale test folder: %@ |
 | 규모 시험 폴더를 휴지통으로 옮겼습니다. 설정 → 휴지통에서 영구히 지울 수 있습니다. | Moved the scale test folder to the Trash. You can delete it permanently from Settings → Trash. |
+| 규모 시험 폴더를 휴지통으로 옮기는 중 | Moving the scale test folder to Trash |
 | 그 폴더를 열지 못했습니다: %@ | Couldn't open that folder: %@ |
 | 그냥 옮기기 | Just Move |
 | 그래도 보내기 | Send Anyway |
 | 글머리표 | Bulleted List |
+| 금고 파일 | Files in folder |
 | 기록 | Notes |
 | 기본 iCloud 폴더로 돌아가기 | Back to Default iCloud Folder |
 | 기울임 | Italic |
@@ -119,6 +126,7 @@
 | 노트를 고르세요 | Select a Note |
 | 노트를 만들지 못했습니다: %@ | Couldn't create the note: %@ |
 | 노트를 열 때 읽기 모드로 | Open Notes in Reading Mode |
+| 노트를 옮기는 중 | Moving the note |
 | 노트를 읽어 세는 중입니다 | Counting notes… |
 | 누르면 번호와 글머리표를 바꿉니다. 길게 누르면 모양을 고릅니다 | Tap to switch between numbered and bulleted. Touch and hold to choose a style. |
 | 누르면 이 알림을 닫습니다 | Dismisses this notice |
@@ -132,6 +140,7 @@
 | 덧붙일 노트를 찾지 못해 공유로 받은 글 %lld개를 %@ 폴더에 새 노트로 넣었습니다. | Couldn’t find the note to add to, so shared items went into the %2$@ folder as new notes (%1$lld). |
 | 도움 | Help |
 | 되돌리기 | Restore |
+| 되돌리는 중 | Restoring |
 | 되돌리지 못했습니다: %@ | Couldn't restore: %@ |
 | 둘러보기 자료입니다 · 실제 파일이 아닙니다 | Sample notes · Not your files |
 | 들여쓰기 | Increase Indent |
@@ -175,6 +184,7 @@
 | 비우기 | Empty |
 | 사진 %lld장을 넣지 못했습니다 | one: Couldn't add %lld photo / other: Couldn't add %lld photos |
 | 사진 · 파일 %lld개를 노트 옆 assets 폴더에 넣었습니다 | one: Saved %lld photo or file to the assets folder next to the note / other: Saved %lld photos and files to the assets folder next to the note |
+| 사진을 넣는 중 | Adding photos |
 | 사진을 저장하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 사진은 %@ 옆 assets 폴더에 있습니다. | You moved to another note while the photos were being saved, so they were not added to the text. The photos are in the assets folder next to %@. |
 | 사진첩에서 | Photo Library |
 | 살펴보기 | Review |
@@ -208,6 +218,7 @@
 | 아직 이 기기로 받지 않은 노트 %lld개는 제목으로만 찾았습니다. | %lld notes not yet downloaded to this device were matched by title only. |
 | 안 쓰는 첨부 | Unused Attachments |
 | 안 쓰는 첨부가 없습니다 | No Unused Attachments |
+| 안 쓰는 첨부를 휴지통으로 옮기는 중 | Moving unused attachments to Trash |
 | 안 열리는 링크 %lld개 | one: %lld broken link / other: %lld broken links |
 | 안 열리는 링크 찾기 | Find Broken Links |
 | 안 열리는 링크가 없습니다 | No Broken Links |
@@ -221,6 +232,7 @@
 | 없음 — LIKE 만 | None — LIKE only |
 | 없음(LIKE 만) | None (LIKE only) |
 | 영구 삭제 | Delete Permanently |
+| 영구 삭제하는 중 | Deleting permanently |
 | 영구 삭제하지 못했습니다: %@ | Couldn't delete permanently: %@ |
 | 예 | Yes |
 | 옮겨 넣을 폴더가 없습니다. 먼저 폴더 화면 위의 새 폴더 단추로 담을 폴더를 만드세요. | There's no folder to move it into. First create one with the New Folder button at the top of the folder list. |
@@ -311,6 +323,7 @@
 | 키보드 내리기 | Hide Keyboard |
 | 파일 앱에서 열기 | Open in Files |
 | 파일 이름 | File Name |
+| 파일을 넣는 중 | Adding files |
 | 파일을 바꾸는 설정 | Settings That Change Files |
 | 파일을 읽지 못했습니다: %@ | Couldn't read the file: %@ |
 | 판 | Version |
@@ -321,13 +334,17 @@
 | 폴더 밖을 가리킵니다 | Points outside the folder |
 | 폴더 이름 | Folder Name |
 | 폴더 이름 바꾸기 | Rename Folder |
+| 폴더 이름을 바꾸고 링크를 고치는 중 | Renaming the folder and fixing links |
 | 폴더 이름을 바꾸지 못했습니다: %@ | Couldn't rename the folder: %@ |
 | 폴더는 두 단계까지라 %@ 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | Folders can only go two levels deep, so it will be created in %@. If the name is taken, a number is added. |
 | 폴더를 고르지 못했습니다: %@ | Couldn't choose the folder: %@ |
 | 폴더를 만들지 못했습니다: %@ | Couldn't create the folder: %@ |
+| 폴더를 옮기고 링크를 고치는 중 | Moving the folder and fixing links |
 | 폴더를 옮기지 못했습니다: %@ | Couldn't move the folder: %@ |
+| 폴더를 읽는 중 | Reading the folder |
 | 폴더를 지우지 못했습니다: %@ | Couldn't delete the folder: %@ |
 | 폴더를 지울까요? | Delete Folder? |
+| 폴더를 휴지통으로 옮기는 중 | Moving the folder to Trash |
 | 표 넣기 | Insert Table |
 | 하위 폴더 | Subfolders |
 | 화면 아래 **빨간 띠**를 띄웁니다. 편집 도구 띠와 겹치지 않는지, 큰 글씨에서 잘리지 않는지 볼 때 씁니다. 띠를 누르면 사라집니다. | Shows a **red banner** at the bottom of the screen, to check that it doesn't overlap the formatting bar or get cut off with large text. Tap the banner to dismiss it. |
@@ -336,6 +353,9 @@
 | 확인 문구가 다릅니다. %@ 라고 그대로 입력해야 지웁니다. | That doesn't match. Type %@ exactly to delete. |
 | 휴지통 | Trash |
 | 휴지통으로 | Move to Trash |
+| 휴지통으로 옮기는 중 | Moving to Trash |
+| 휴지통을 비우는 중 | Emptying Trash |
+| 휴지통을 읽는 중 | Reading Trash |
 | 휴지통의 노트 %lld개와 첨부 %lld개를 완전히 지웁니다. 되돌릴 수 없습니다. 지우려면 %@ 라고 입력하세요. | Permanently deletes everything in the Trash (notes: %lld, attachments: %lld). This can't be undone. To delete, type %@. |
 | 휴지통이 비었습니다 | Trash Is Empty |
 
