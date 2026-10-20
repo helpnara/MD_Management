@@ -298,8 +298,11 @@ jobs:
               # **아이폰 6.5" 칸도 함께** (2026-10-16 사용자 — 앱 스토어 아이폰 스크린샷이 옛것). 1.1.4 때 콘솔이 6.1" 칸을 보여 줘
               # 거기만 갈았는데, 9월에 올린 6.5" 칸의 옛 석 장이 남아 큰 아이폰에는 그것이 보였다. 두 칸 모두 같은 다섯 장으로 간다.
               case "$name" in iphone-*)
-                mkdir -p "$OUT/$lang/6.5"
-                .ci-venv/bin/python Tools/store/frame.py "$f" iphone-6.5 "$(caption "$lang" "$n")" "$OUT/$lang/6.5/$name" ;;
+                mkdir -p "$OUT/$lang/6.5" "$OUT/$lang/6.9"
+                .ci-venv/bin/python Tools/store/frame.py "$f" iphone-6.5 "$(caption "$lang" "$n")" "$OUT/$lang/6.5/$name"
+                # **6.9" 칸도** (250 다시 엶 · 2026-10-20 사용자 — 아이폰 17 에어 앱 스토어에 9월의 어두운 쓰기 화면). 에어 · Pro Max 는
+                # 6.9" 칸의 그림을 받는다. 6.5" 그림을 늘린다 — 모양이 0.4% 다를 뿐이라 여백 없이 (`fit.py`).
+                .ci-venv/bin/python Tools/store/fit.py "$OUT/$lang/6.5/$name" iphone-6.9-portrait "$OUT/$lang/6.9/$name" ;;
               esac
             done
           done
@@ -330,6 +333,14 @@ jobs:
                   print(("OK  " if ok else "틀림") + f" {path} {im.size} {im.mode} (칸 (1242, 2688))")
               if len(large) < 4:
                   print(f"::error::{lang} 6.5 칸이 {len(large)}장뿐"); sys.exit(1)
+              huge = sorted(glob.glob(f"docs/store/screenshots/{lang}/6.9/*.png"))
+              for path in huge:
+                  im = Image.open(path)
+                  ok = im.size == (1320, 2868) and im.mode == "RGB"
+                  bad += not ok
+                  print(("OK  " if ok else "틀림") + f" {path} {im.size} {im.mode} (칸 (1320, 2868))")
+              if len(huge) != len(large):
+                  print(f"::error::{lang} 6.9 칸이 {len(huge)}장 — 6.5 칸({len(large)}장)과 같아야 한다"); sys.exit(1)
           if bad:
               print("::error::칸 크기와 다른 그림이 있다"); sys.exit(1)
           PY
