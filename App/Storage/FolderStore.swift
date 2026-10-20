@@ -641,9 +641,10 @@ actor FolderStore {
     /// 노트는 본문을 읽는다. **아직 안 내려온 노트는 `nil`** — 셈이 판정을 멈춘다(못 읽은 노트가
     /// 그 사진을 쓸 수 있다). 옛 iCloud 자리표시자(`.이름.icloud`)도 안 내려온 노트로 센다.
     /// 노트가 아닌 파일은 경로와 크기만.
-    func attachmentCensus() -> AttachmentCensus {
+    func attachmentCensus(meter: WorkMeter = .none) -> AttachmentCensus {
         openScopeIfNeeded()
         var census = AttachmentCensus()
+        var read = 0
         let keys: Set<URLResourceKey> = [
             .isDirectoryKey, .fileSizeKey, .isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey
         ]
@@ -672,6 +673,8 @@ actor FolderStore {
                 if Paths.isNoteFile(path) {
                     var text: String?
                     if !placeholder, Self.isDownloaded(values) { text = try? readText(at: path) }
+                    read += 1
+                    meter.tick(read, of: nil)
                     // `사전[키] = nil` 은 키를 지운다 — 못 읽은 노트를 **nil 로 남기려고** updateValue.
                     if path.hasPrefix(".trash/") {
                         census.trashed.updateValue(text, forKey: path)
@@ -793,26 +796,33 @@ actor FolderStore {
 
     /// 폴더 이름을 바꾸고 **그 폴더 안을 가리키던 링크를 따라 고친다** (179, 사용자 — 남은 할 일을
     /// 반영해 제출하자). 168 은 알리기만 해서, 이름을 바꾸면 다른 폴더 노트의 사진이 깨졌다.
-    func renameFolderFixingLinks(_ relativePath: String, to newName: String) throws -> FolderRename {
-        try relocateFixingLinks(relativePath) { try renameFolder(relativePath, to: newName) }
+    func renameFolderFixingLinks(_ relativePath: String, to newName: String,
+                                 meter: WorkMeter = .none) throws -> FolderRename {
+        try relocateFixingLinks(relativePath, meter: meter) { try renameFolder(relativePath, to: newName) }
     }
 
     /// 폴더를 다른 폴더 안으로 옮기고 링크를 고친다 (204). 안의 노트가 한 단계 깊어지거나 얕아지므로
     /// 바깥을 가리키던 링크도 새 자리에 맞춘다 — 셈은 이름 바꾸기와 같은 `MarkdownLinks.retargeted`.
-    func moveFolderFixingLinks(_ relativePath: String, into parent: String) throws -> FolderRename {
-        try relocateFixingLinks(relativePath) { try moveFolder(relativePath, into: parent) }
+    func moveFolderFixingLinks(_ relativePath: String, into parent: String,
+                               meter: WorkMeter = .none) throws -> FolderRename {
+        try relocateFixingLinks(relativePath, meter: meter) { try moveFolder(relativePath, into: parent) }
     }
 
     /// 옮기기 **전에** 폴더 전체를 읽는다 — 옛 자리로 링크를 풀어야 하기 때문이다. 고치는 셈은
     /// `MarkdownLinks.retargeted` 하나다. 안의 노트는 새 자리에 쓴다. 쓸 때 **읽은 글과 같을 때만**
     /// 쓴다(`expecting`) — 그 사이 다른 기기에서 고쳤으면 건드리지 않고 못 고친 수로 센다.
     /// 아직 안 내려온 노트는 읽을 수 없어 못 본 수로 센다.
-    private func relocateFixingLinks(_ relativePath: String, _ relocate: () throws -> String) throws -> FolderRename {
-        let census = attachmentCensus()
+    private func relocateFixingLinks(_ relativePath: String, meter: WorkMeter,
+                                     _ relocate: () throws -> String) throws -> FolderRename {
+        let census = attachmentCensus(meter: meter)
         let moved = try relocate()
         guard moved != relativePath else { return FolderRename(path: moved) }
         var result = FolderRename(path: moved)
+        var seen = 0
+        meter(0, of: census.notes.count)
         for (path, text) in census.notes {
+            seen += 1
+            meter.tick(seen, of: census.notes.count)
             guard let text else {
                 result.unread += 1
                 continue
@@ -836,11 +846,12 @@ actor FolderStore {
     /// 빈 폴더를 지운다. 그래서 휴지통에는 노트 하나하나가 폴더 이름과 함께 보이고,
     /// 되돌리면 폴더가 다시 생긴다. 숨김 파일은 옮기지 않는다 (폴더와 함께 사라진다).
     /// 옮긴 파일 수를 준다.
-    func trashFolder(_ relativePath: String) throws -> Int {
+    func trashFolder(_ relativePath: String, meter: WorkMeter = .none) throws -> Int {
         openScopeIfNeeded()
         guard !relativePath.isEmpty, !relativePath.hasPrefix(".") else { return 0 }
         let folderURL = root.appendingPathComponent(relativePath)
-        var moved = 0
+        // 먼저 옮길 파일을 다 모은다 — 몇 개 중 몇 개인지 알려야 한다 (259). 폴더 목록 읽기는 옮기기보다 훨씬 싸다.
+        var files: [(url: URL, folder: String, name: String)] = []
         var pending = [relativePath]
         while let folder = pending.popLast() {
             let url = root.appendingPathComponent(folder)
@@ -849,17 +860,22 @@ actor FolderStore {
             ) else { continue }
             for entry in entries {
                 let name = Paths.normalized(entry.lastPathComponent)
-                let path = folder + "/" + name
                 if (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
-                    pending.append(path)
+                    pending.append(folder + "/" + name)
                     continue
                 }
-                let trashFolder = ".trash/" + folder
-                try createFolder(trashFolder)
-                let target = uniqueRelativePath(name: name, in: trashFolder)
-                try move(from: entry, to: root.appendingPathComponent(target))
-                moved += 1
+                files.append((entry, folder, name))
             }
+        }
+        var moved = 0
+        meter(0, of: files.count)
+        for file in files {
+            let trashFolder = ".trash/" + file.folder
+            try createFolder(trashFolder)
+            let target = uniqueRelativePath(name: file.name, in: trashFolder)
+            try move(from: file.url, to: root.appendingPathComponent(target))
+            moved += 1
+            meter.tick(moved, of: files.count)
         }
         try remove(folderURL)
         return moved
@@ -938,10 +954,13 @@ actor FolderStore {
 
     /// **안 쓰는 첨부를 휴지통으로** (174). `.trash/<원래 경로>` 로 — 휴지통 화면에서 되돌릴 수 있다.
     /// 옮긴 개수를 준다. 하나가 실패해도 나머지는 옮긴다.
-    func trashAttachments(_ paths: [String]) -> Int {
+    func trashAttachments(_ paths: [String], meter: WorkMeter = .none) -> Int {
         openScopeIfNeeded()
         var moved = 0
+        var seen = 0
         for path in paths where AttachmentLedger.isAttachmentPath(path) {
+            seen += 1
+            meter.tick(seen, of: paths.count)
             let home = ".trash/" + Paths.directory(of: path)
             let name = path.split(separator: "/").last.map(String.init) ?? path
             do {

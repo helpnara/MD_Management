@@ -157,7 +157,8 @@ actor SearchIndex {
     /// 목록에 없는 것은 지운다. 읽기는 `reader` 가 한다 — 파일은 `FolderStore` 의 것이다.
     ///
     /// **취소를 본다** (254) — 부른 쪽이 접으면(`Task.isCancelled`) 그때까지 쓴 것을 남기고 물러난다. 다음 바퀴가 나머지를 한다.
-    func refresh(_ notes: [NoteSummary], reader: @Sendable (String) async throws -> String) async -> Int {
+    func refresh(_ notes: [NoteSummary], meter: WorkMeter = .none,
+                 reader: @Sendable (String) async throws -> String) async -> Int {
         let started = Date()
         do { try open() } catch { return 0 }
         guard db != nil else { return 0 }
@@ -186,11 +187,17 @@ actor SearchIndex {
             batch = []
             titleOnly = []
         }
-        for note in notes {
+        // 다시 읽을 것만 먼저 고른다 — 몇 개 중 몇 개인지 띠에 보인다 (259).
+        let stale = notes.filter { note in
+            guard let old = known[note.relativePath] else { return true }
+            return old.mtime != Int(note.modifiedAt.timeIntervalSince1970) || old.size != note.size
+        }
+        var seen = 0
+        for note in stale {
             if Task.isCancelled { break }
-            let mtime = Int(note.modifiedAt.timeIntervalSince1970)
+            seen += 1
+            meter.tick(seen, of: stale.count)
             let old = known[note.relativePath]
-            if let old, old.mtime == mtime, old.size == note.size { continue }
             // **본문을 못 읽는 노트도 제목으로는 찾히게** (245) — 예전에는 다 내려올 때까지 색인에 아예 없었다
             // (검색 · `[[` 목록 모두에서 빠졌다). 이미 줄이 있으면(옛 본문 · 제목만) 그대로 둔다 — 다 내려오면 바뀐다.
             if !note.isDownloaded {

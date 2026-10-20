@@ -8,6 +8,11 @@ private enum SaveReentry {
     static let fromWrite = TaskLocal<Bool>(wrappedValue: false)
 }
 
+/// 지금 `working` 안에서 도는가 (259) — 안에서 또 부르면 띠를 겹쳐 세우지 않는다 (바깥 띠가 이미 떠 있다).
+private enum WorkScope {
+    static let active = TaskLocal<Bool>(wrappedValue: false)
+}
+
 /// 화면이 보는 상태. 파일은 `FolderStore`(actor) 가 만지고, 여기로는
 /// **`Sendable` 값만** 건너온다 (설계서 §8).
 @MainActor
@@ -1011,9 +1016,11 @@ final class LibraryModel: ObservableObject {
         rootPath = choice.url.path
         selectedFolder = ""
         selectedNoteID = nil
-        await reloadPins()
-        await reloadFolders()
-        await reloadNotes()
+        await working(String(localized: "폴더를 읽는 중")) { _ in
+            await reloadPins()
+            await reloadFolders()
+            await reloadNotes()
+        }
 
         // 폴더가 서기 전에 `파일` 앱이 건넨 것이 있으면 이제 연다.
         if let pending = pendingOpen {
@@ -1138,12 +1145,15 @@ final class LibraryModel: ObservableObject {
             let folder = try await store.createSubfolder(named: Self.scaleFolder)
             // 이미 있는 노트 뒤에 이어 붙인다 — 300개 뒤에 1,000개를 만들면 1,300개.
             let existing = await store.noteCount(in: folder)
-            for number in (existing + 1)...(existing + count) {
-                let text = Self.scaleNote(number, compact: count > Self.scaleCount)
-                bytes += text.utf8.count
-                _ = try await store.createNote(named: "시험 \(number)", in: folder, text: text)
-                // 열 개마다 화면에 알린다 — 300번 다 알리면 그리는 데 더 든다.
-                if number % 10 == 0 { scaleProgress = number - existing }
+            try await working(String(localized: "규모 시험 노트를 만드는 중"), total: count) { meter in
+                for number in (existing + 1)...(existing + count) {
+                    let text = Self.scaleNote(number, compact: count > Self.scaleCount)
+                    bytes += text.utf8.count
+                    _ = try await store.createNote(named: "시험 \(number)", in: folder, text: text)
+                    // 열 개마다 화면에 알린다 — 300번 다 알리면 그리는 데 더 든다.
+                    if number % 10 == 0 { scaleProgress = number - existing }
+                    meter.tick(number - existing, of: count)
+                }
             }
             let seconds = Date().timeIntervalSince(started)
             log("규모 시험 \(count)개 만듦 — \(Self.readableBytes(bytes)) · "
@@ -1163,8 +1173,9 @@ final class LibraryModel: ObservableObject {
     /// 규모 시험 폴더를 **휴지통으로.** 영구 삭제는 설정 → 휴지통에서 (CLAUDE.md §1).
     func removeScaleTest() async {
         guard let store else { return }
+        await working(String(localized: "규모 시험 폴더를 휴지통으로 옮기는 중")) { meter in
         do {
-            let moved = try await store.trashFolder(Self.scaleFolder)
+            let moved = try await store.trashFolder(Self.scaleFolder, meter: meter)
             log("규모 시험 폴더를 휴지통으로 — 노트 \(moved)개")
             if selectedFolder == Self.scaleFolder { selectedFolder = "" }
             await reloadFolders()
@@ -1173,6 +1184,7 @@ final class LibraryModel: ObservableObject {
             lastError = String(localized: "규모 시험 폴더를 휴지통으로 옮겼습니다. 설정 → 휴지통에서 영구히 지울 수 있습니다.")
         } catch {
             lastError = String(localized: "규모 시험 폴더를 지우지 못했습니다: \(error.localizedDescription)")
+        }
         }
     }
 
@@ -1379,7 +1391,9 @@ final class LibraryModel: ObservableObject {
         await save()
         do {
             // **이 폴더를 가리키던 링크도 같이 고친다** (179). 확인창이 몇 개인지 먼저 알렸다(168).
-            let renamed = try await store.renameFolderFixingLinks(folder.relativePath, to: name)
+            let renamed = try await working(String(localized: "폴더 이름을 바꾸고 링크를 고치는 중")) { meter in
+                try await store.renameFolderFixingLinks(folder.relativePath, to: name, meter: meter)
+            }
             await followFolder(from: folder.relativePath, renamed, what: "폴더 이름", fixedSaying: String(localized: "새 이름에 맞게"))
         } catch {
             lastError = String(localized: "폴더 이름을 바꾸지 못했습니다: \(error.localizedDescription)")
@@ -1393,7 +1407,9 @@ final class LibraryModel: ObservableObject {
         guard FolderTree.parent(of: folder.relativePath) != parent else { return }
         await save()
         do {
-            let moved = try await store.moveFolderFixingLinks(folder.relativePath, into: parent)
+            let moved = try await working(String(localized: "폴더를 옮기고 링크를 고치는 중")) { meter in
+                try await store.moveFolderFixingLinks(folder.relativePath, into: parent, meter: meter)
+            }
             await followFolder(from: folder.relativePath, moved, what: "폴더 옮김", fixedSaying: String(localized: "새 자리에 맞게"))
         } catch {
             lastError = String(localized: "폴더를 옮기지 못했습니다: \(error.localizedDescription)")
@@ -1439,7 +1455,9 @@ final class LibraryModel: ObservableObject {
             // 보고 있던 폴더가 이 폴더거나 그 안이면 최상위로 (203).
             let wasViewing = FolderTree.isInside(selectedFolder, folder.relativePath)
             if wasViewing { selectedNoteID = nil }
-            _ = try await store.trashFolder(folder.relativePath)
+            _ = try await working(String(localized: "폴더를 휴지통으로 옮기는 중")) { meter in
+                try await store.trashFolder(folder.relativePath, meter: meter)
+            }
             pinned = await store.unpin(folder.relativePath)
             await reloadFolders()
             if wasViewing { selectedFolder = "" }
@@ -1527,8 +1545,10 @@ final class LibraryModel: ObservableObject {
         movingNote = nil
         await save()
         do {
-            let moved = try await store.moveNote(move.note.relativePath, to: move.folder,
-                                                 rebasesLinks: rebasesLinks)
+            let moved = try await working(String(localized: "노트를 옮기는 중")) { _ in
+                try await store.moveNote(move.note.relativePath, to: move.folder,
+                                         rebasesLinks: rebasesLinks)
+            }
             pinned = await store.followPins(from: move.note.relativePath, to: moved)
             log("옮김: \(move.note.relativePath) → \(moved)"
                 + (rebasesLinks && move.links > 0 ? String(localized: " (링크 \(move.links)개 고침)") : ""))
@@ -1579,7 +1599,10 @@ final class LibraryModel: ObservableObject {
         trashing = nil
         await save()
         do {
-            _ = try await store.trash(note.relativePath)
+            // 사진이 든 노트는 *이 노트만 쓰는 사진* 을 가리려고 폴더 전체를 읽는다 (172) — 큰 폴더에서는 몇 초.
+            _ = try await working(String(localized: "휴지통으로 옮기는 중")) { _ in
+                try await store.trash(note.relativePath)
+            }
             pinned = await store.unpin(note.relativePath)
             if selectedNoteID == note.id { selectedNoteID = nil }
             await reloadNotes()
@@ -1604,7 +1627,9 @@ final class LibraryModel: ObservableObject {
         let folder = Paths.directory(of: note.relativePath)
         var lines: [String] = []
         var failed = 0
-        for original in originals {
+        await working(String(localized: "사진을 넣는 중"), total: originals.count) { meter in
+        for (index, original) in originals.enumerated() {
+            meter.tick(index, of: originals.count, every: 1)
             // 디코딩 · 크기 줄이기 · 인코딩은 주 액터 밖에서.
             // (`guard` 조건 안에는 트레일링 클로저를 못 쓴다 — 빌드 11 첫 컴파일이 잡았다.)
             let converted = await Task.detached(priority: .userInitiated) {
@@ -1618,6 +1643,7 @@ final class LibraryModel: ObservableObject {
             } catch {
                 failed += 1
             }
+        }
         }
         // **그 사이 다른 노트로 넘어갔으면 넣지 않는다** (228, 2026-10-09 전수 조사). 사진을 줄이는 동안(여러 장이면 몇 초)
         // 노트를 바꾸면, 링크가 **지금 열린 노트**에 들어갔다 — 그것도 앞 노트 폴더 기준이라 깨진 링크로.
@@ -1649,7 +1675,9 @@ final class LibraryModel: ObservableObject {
         let folder = Paths.directory(of: note.relativePath)
         var lines: [String] = []
         var failed: [String] = []
-        for url in urls {
+        await working(String(localized: "파일을 넣는 중"), total: urls.count) { meter in
+        for (index, url) in urls.enumerated() {
+            meter.tick(index, of: urls.count, every: 1)
             let name = Paths.normalized(url.lastPathComponent)
             // **노트는 노트로** (111). 폴더 안의 것이면 그 자리로 링크하고, 밖의 것이면
             // 그 노트 옆에 들여온다. 어느 쪽이든 `assets/` 에는 안 들어간다.
@@ -1694,6 +1722,7 @@ final class LibraryModel: ObservableObject {
                 failed.append(name)
             }
         }
+        }
         // 그 사이 다른 노트로 넘어갔으면 넣지 않는다 (228 — 사진과 같다).
         guard draftPath == note.relativePath else {
             if !lines.isEmpty {
@@ -1720,8 +1749,9 @@ final class LibraryModel: ObservableObject {
         guard let store else { return }
         await save()
         do {
-            let package = try await store.prepareShare(of: note.relativePath,
-                                                       followLinkedNotes: sharesLinkedNotes)
+            let package = try await working(String(localized: "공유할 파일을 묶는 중")) { _ in
+                try await store.prepareShare(of: note.relativePath, followLinkedNotes: sharesLinkedNotes)
+            }
             if package.missing.isEmpty {
                 present(package)
             } else {
@@ -1795,8 +1825,10 @@ final class LibraryModel: ObservableObject {
 
     func reloadTrash() async {
         guard let store else { return }
-        trashed = await store.trashedNotes()
-        trashedFiles = await store.trashedAttachments()
+        await working(String(localized: "휴지통을 읽는 중")) { _ in
+            trashed = await store.trashedNotes()
+            trashedFiles = await store.trashedAttachments()
+        }
     }
 
     /// 휴지통의 첨부 하나를 원래 자리로 (173).
@@ -1938,7 +1970,9 @@ final class LibraryModel: ObservableObject {
     /// 안 쓰는 첨부를 **휴지통으로.** 확인은 화면이 받았다. 휴지통 화면에서 되돌릴 수 있다.
     func trashUnusedAttachments(_ files: [TrashedFile]) async {
         guard let store else { return }
-        let moved = await store.trashAttachments(files.map(\.relativePath))
+        let moved = await working(String(localized: "안 쓰는 첨부를 휴지통으로 옮기는 중"), total: files.count) { meter in
+            await store.trashAttachments(files.map(\.relativePath), meter: meter)
+        }
         log("안 쓰는 첨부 휴지통으로: \(moved)/\(files.count)")
         if moved < files.count {
             lastError = String(localized: "첨부 \(files.count - moved)개를 옮기지 못했습니다.")
@@ -1957,7 +1991,9 @@ final class LibraryModel: ObservableObject {
     func restore(_ note: NoteSummary) async {
         guard let store else { return }
         do {
-            let restored = try await store.restore(note.relativePath)
+            let restored = try await working(String(localized: "되돌리는 중")) { _ in
+                try await store.restore(note.relativePath)
+            }
             log("되돌림: \(restored)")
             await reloadTrash()
             await reloadFolders()
@@ -1980,9 +2016,12 @@ final class LibraryModel: ObservableObject {
             return
         }
         do {
+            // 휴지통 비우기는 iCloud 가 파일마다 지우는 것을 기다린다 — 수천 개면 몇십 초 (259). 몇 개인지는 셀 수 없어 도는 표시만.
             switch target {
-            case .all: try await store.emptyTrash()
-            case .one(let note): try await store.deleteTrashed(note.relativePath)
+            case .all:
+                try await working(String(localized: "휴지통을 비우는 중")) { _ in try await store.emptyTrash() }
+            case .one(let note):
+                try await working(String(localized: "영구 삭제하는 중")) { _ in try await store.deleteTrashed(note.relativePath) }
             }
             await reloadTrash()
             lastError = nil
@@ -2008,6 +2047,66 @@ final class LibraryModel: ObservableObject {
     /// 앞 작업을 접고 처음부터 다시 만든다. 도는 동안 단추를 막는다.
     @Published private(set) var isIndexing = false
     /// 마지막으로 목록을 읽는 데 걸린 시간 (S1) · 검색에 걸린 시간 (A5c). 진단에 보인다.
+    // MARK: - 오래 걸리는 일 (259)
+
+    /// **화면 아래 띠에 보이는 일** (259, 2026-10-20 사용자 — *지우거나 로딩하거나 등등 작업 시간이 오래 걸리는 경우 화면이 멈춰있는
+    /// 것처럼 보인다 · 진행률을 표시해 사용자가 진행 중임을 인지할 수 있게*). `total` 이 nil 이면 몇 개인지 모른다 — 도는 표시만.
+    struct Work: Equatable {
+        let title: String
+        var done: Int
+        var total: Int?
+    }
+    @Published private(set) var work: Work?
+    private struct WorkEntry {
+        let token: UUID
+        var work: Work
+        var shown: Bool
+    }
+    private var works: [WorkEntry] = []
+    /// 이보다 빨리 끝나면 띠를 띄우지 않는다 — 잠깐 번쩍이는 띠가 더 거슬린다.
+    private static let workDelay = Duration.milliseconds(400)
+
+    /// **오래 걸릴 수 있는 일을 띠에 보이며 한다.** 0.4초 안에 끝나면 아무것도 안 보인다. 일은 `meter` 로 몇 개 했는지 알린다.
+    /// 둘이 겹치면 나중에 시작한 것을 보인다. 안에서 또 부르면(폴더 지우기 → 목록 다시 읽기) 바깥 띠 하나로 간다.
+    func working<T>(_ title: String, total: Int? = nil,
+                    _ body: (WorkMeter) async throws -> T) async rethrows -> T {
+        if WorkScope.active.get() { return try await body(.none) }
+        let token = UUID()
+        works.append(WorkEntry(token: token, work: Work(title: title, done: 0, total: total), shown: false))
+        let reveal = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: Self.workDelay)
+            guard !Task.isCancelled else { return }
+            self?.revealWork(token)
+        }
+        defer {
+            reveal.cancel()
+            works.removeAll { $0.token == token }
+            showWork()
+        }
+        let meter = WorkMeter { done, total in
+            Task { @MainActor in self.advanceWork(token, done: done, total: total) }
+        }
+        return try await WorkScope.active.withValue(true) { try await body(meter) }
+    }
+
+    private func revealWork(_ token: UUID) {
+        guard let at = works.firstIndex(where: { $0.token == token }) else { return }
+        works[at].shown = true
+        showWork()
+    }
+
+    private func advanceWork(_ token: UUID, done: Int, total: Int?) {
+        guard let at = works.firstIndex(where: { $0.token == token }) else { return }
+        works[at].work.done = done
+        if let total { works[at].work.total = total }
+        if works[at].shown { showWork() }
+    }
+
+    private func showWork() {
+        let next = works.last(where: \.shown)?.work
+        if next != work { work = next }
+    }
+
     @Published private(set) var listSeconds: Double = 0
     @Published private(set) var searchSeconds: Double = 0
     /// **노트 하나를 여는 데 걸린 시간** (253 · 전수 조사) — 파일 읽기 · 읽기 화면 그리기 · 역링크 세기. 진단에 보인다.
@@ -2080,7 +2179,13 @@ final class LibraryModel: ObservableObject {
             let all = await store.allNotes()
             guard !Task.isCancelled else { return }
             self.noteRecentTargets(all)
-            let changed = await index.refresh(all) { path in try await store.readText(at: path) }
+            // **제 띠로** (259) — 처음 색인 · 다른 기기에서 많이 바뀌었을 때 몇 개 중 몇 개인지. 이 일은 부른 일(폴더 지우기 등)보다
+            // 오래 갈 수 있어 그 띠 안에 묻지 않는다 (`WorkScope` 를 끄고 따로 세운다). 빨리 끝나면(대개) 띠가 안 뜬다.
+            let changed = await WorkScope.active.withValue(false) {
+                await self.working(String(localized: "검색 색인을 만드는 중")) { meter in
+                    await index.refresh(all, meter: meter) { path in try await store.readText(at: path) }
+                }
+            }
             guard !Task.isCancelled else { return }
             self.indexStatus = await index.status
             if changed > 0 || self.previews.isEmpty {
@@ -2675,7 +2780,9 @@ final class LibraryModel: ObservableObject {
             .filter { FolderTree.depth(of: $0.relativePath) == 1 }
             .map { ($0.relativePath, noteCount(of: $0.relativePath)) })
         let folder = IncomingShare.inboxFolder(existing: existing, preferred: String(localized: "받은 글"))
-        for entry in entries {
+        await working(String(localized: "공유로 받은 것을 넣는 중"), total: entries.count) { meter in
+        for (index, entry) in entries.enumerated() {
+            meter.tick(index, of: entries.count, every: 1)
             do {
                 // **고른 노트에 덧붙인다** (241). 그 노트가 없으면(지웠거나 옮겼다) 아래로 내려가 새 노트로 넣는다 — 버리지 않는다.
                 if let target = entry.item.target {
@@ -2700,6 +2807,7 @@ final class LibraryModel: ObservableObject {
                 log("공유로 받은 글을 넣지 못함: \(error.localizedDescription)")
                 failed += 1
             }
+        }
         }
         await reloadFolders()
         await reloadNotes()
