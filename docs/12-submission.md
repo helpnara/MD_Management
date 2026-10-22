@@ -60,6 +60,7 @@ markdown,md,메모장,기록,일기,글쓰기,아이클라우드,icloud,에디�
 
 ### 설명
 
+> **1.1.12 에서 보강했다** (2026-10-22 — 찾기 문단에 최근 고친 노트(261) 한 줄 · 영어 설명도). 그 앞:
 > **1.1.10 에서 보강했다** (2026-10-19 — 1.1.6 의 제목 초성 찾기(246) · 1.1.10 의 지도 장소 붙여넣기(252) 한 줄씩). 그 앞:
 > **1.0.7 에서 보강했다** (2026-10-06 · 2026-10-03 사용자 — *누락된 추가 기능 설명은 다음 버전할때 포함시키자*): 1.0.6 의 새 기능 셋 —
 > 읽기 화면에서 체크상자 누르기(211) · 이 노트를 가리키는 노트(212) · 다른 앱의 공유 메뉴로 보내기(213). 글자 수는 `Tools/store/count.py` 로.
@@ -115,6 +116,7 @@ PDF 같은 문서도 붙일 수 있고, 눌러서 바로 봅니다.
 
 본문과 제목을 한 번에 찾습니다. 두 글자부터 됩니다.
 제목은 초성으로도 찾습니다. ㅎㅇㄹ 만 쳐도 회의록이 나옵니다.
+폴더 화면의 찾기 칸을 누르면 최근에 고친 노트 열 개가 먼저 보입니다.
 
 — 계정이 없습니다
 
@@ -172,6 +174,21 @@ https://helpnara.github.io/MD_Management/privacy/
 4. **영어 스크린샷.** 영어 칸에 안 올리면 **한국어 스크린샷이 그대로 보인다.** 영어 견본 노트 `docs/samples/en/` 으로 한국어 때와 같은 차례로 찍는다
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
+
+### 1.1.12 제출 순서 (2026-10-22 사용자 — *1.1.12 제출 준비하자*)
+
+> 260 폴더 화면 맨 위 찾기 칸 · 261 빈 칸이면 최근 고친 노트 10개. **아이패드 5번 그림(찾기)만 간다** — 1.1.11 까지의 그림은 찾기 칸이 가운데 칸에 있다.
+> 아이폰 그림은 그대로 — 아이폰 노트 목록의 찾기 칸은 그대로다 (안내 글만 바뀌었고 그림에는 찾는 말이 들어 있어 안 보인다).
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.12`
+2. **빌드** 칸에서 **115** 를 고른다 (`1.1.12 (115)`)
+3. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 울타리 (`docs/store/1.1.12-새로운-기능.txt`)
+4. 한국어 칸 **설명** — §1 *설명* 울타리 **전체**를 갈아 붙인다 (찾기 문단에 한 줄 더함: *폴더 화면의 찾기 칸을 누르면 …*)
+5. **아이패드 그림 5번 갈기** — 미리보기 및 스크린샷 → 아이패드 13인치 줄 → 다섯째 장(*두 글자부터 찾기*)을 지우고 새 `ipad-5-search.png` 를 같은 자리에 (그림 묶음 `slow-margin-1.1.12-ipad-search.zip` — 대화에 보낸다 · 원본 `docs/store/screenshots/{ko,en}/ipad-5-search.png`). 다른 넷은 그대로
+6. 오른쪽 위 언어 메뉴 → **English (U.S.)** → *What’s New* · *Description* (§1-영어 — Description 은 한 문장 더함) · 아이패드 5번 그림 (영어) → **저장**
+7. 부제 · 키워드 · 프로모션 텍스트 · 아이폰 그림 · 미리보기 영상은 1.1.11 그대로
+8. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+9. 제출하면 세션에 알린다 — `main` 병합
 
 ### 1.1.11 제출 순서 (2026-10-20 사용자 — *빌드해서 체크리스트 주고 심사 제출까지 같이 준비하자*)
 
@@ -391,6 +408,8 @@ Choose Slow Margin in another app’s share menu to send text, web links, or pho
 
 Search titles and text at once, starting from two characters.
 
+Tap the search field on the folders screen and your ten most recently edited notes show up first.
+
 — No account
 
 No sign-up. No server. No ads or tracking. Your writing lives only on your device and in your iCloud, and not even the developer can see it.
@@ -414,11 +433,12 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.11** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.10 의 글은 `docs/store/1.1.10-새로운-기능.txt` 끝.
+> **1.1.12** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.11 의 글은 `docs/store/1.1.11-새로운-기능.txt` 끝.
 
 ```
-• Things that take a while, like deleting a folder, emptying Trash, or adding many photos, now show their progress at the bottom of the screen, so you can tell the app is working.
-• In folders with a great many files, fixing pasted links and finding links that don’t open now check every file.
+• A search field now sits at the top of the folders screen. It searches every note, so there’s no need to pick a folder first.
+• Tap the search field to see your ten most recently edited notes, and open one with a tap.
+• On iPad, the search field and its results are in the folders column on the left.
 ```
 
 ---
@@ -648,12 +668,13 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.11** (2026-10-20 — 258 큰 폴더에서 파일을 끝까지 센다 · 259 오래 걸리는 일에 진행 표시). 글은 `docs/store/1.1.11-새로운-기능.txt`. 1.1.10 의 글은 `docs/store/1.1.10-새로운-기능.txt`.
+> **1.1.12** (2026-10-22 — 260 폴더 화면 맨 위 찾기 칸 · 261 빈 칸이면 최근 고친 노트 10개). 글은 `docs/store/1.1.12-새로운-기능.txt`. 1.1.11 의 글은 `docs/store/1.1.11-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 폴더 지우기, 휴지통 비우기, 사진 여러 장 넣기처럼 시간이 걸리는 일은 화면 아래에 진행 표시가 보입니다. 화면이 멈춘 것인지 헷갈리지 않습니다.
-• 파일이 아주 많은 폴더에서도 링크 고치기와 안 열리는 링크 찾기가 모든 파일을 봅니다.
+• 폴더 화면 맨 위에 찾기 칸이 생겼습니다. 폴더를 먼저 고르지 않아도 모든 노트에서 찾습니다.
+• 찾기 칸을 누르면 최근에 고친 노트 10개가 바로 보입니다. 눌러서 바로 엽니다.
+• 아이패드에서는 찾기 칸과 결과가 왼쪽 폴더 칸에 나옵니다.
 ```
 
