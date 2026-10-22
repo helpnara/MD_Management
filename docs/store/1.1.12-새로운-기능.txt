@@ -1,0 +1,9 @@
+• 폴더 화면 맨 위에 찾기 칸이 생겼습니다. 폴더를 먼저 고르지 않아도 모든 노트에서 찾습니다.
+• 찾기 칸을 누르면 최근에 고친 노트 10개가 바로 보입니다. 눌러서 바로 엽니다.
+• 아이패드에서는 찾기 칸과 결과가 왼쪽 폴더 칸에 나옵니다.
+
+— English (What’s New in This Version) —
+
+• A search field now sits at the top of the folders screen. It searches every note, so there’s no need to pick a folder first.
+• Tap the search field to see your ten most recently edited notes, and open one with a tap.
+• On iPad, the search field and its results are in the folders column on the left.

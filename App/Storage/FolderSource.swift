@@ -322,6 +322,12 @@ struct LaunchOptions: Sendable {
     /// **스토어 스크린샷** (219 · `store-shots.yml`). 기기 안 폴더(`Documents` — CI 가 견본 노트를 넣어 둔다)를
     /// **iCloud 폴더인 척** 연다 — 둘러보기 배너 없이, 제목은 실제 사용자가 보는 `Slow Margin` 으로. 시뮬레이터는 iCloud 에 로그인돼 있지 않다.
     var storeFolder = false
+    /// **폴더 화면에서 찾기 칸을 열고 시작한다** (260 · 261) — 아이폰도 폴더 화면으로. CI 가 빈 칸 아래 최근 고친 노트를,
+    /// `-search` 와 같이 주면 폴더 화면의 결과를 찍는다.
+    var folderSearch = false
+    /// 폴더 화면의 첫 결과를 **누른 것과 같은 길로** 연다 (260) — 아이폰은 폴더 화면에서 노트까지 두 칸을 한 번에 넘어간다.
+    /// 사람 손가락 대신 CI 가 그 길을 지나 보는 칸이다. `-folderSearch -search …` 와 같이 준다.
+    var openFirstHit = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -340,7 +346,9 @@ struct LaunchOptions: Sendable {
             searchTerm: arguments.firstIndex(of: "-search").flatMap { index in
                 index + 1 < arguments.count ? arguments[index + 1] : nil
             },
-            storeFolder: arguments.contains("-storeFolder")
+            storeFolder: arguments.contains("-storeFolder"),
+            folderSearch: arguments.contains("-folderSearch"),
+            openFirstHit: arguments.contains("-openFirstHit")
         )
     }
 }
