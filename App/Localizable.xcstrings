@@ -1653,6 +1653,16 @@
         }
       }
     },
+    "모든 노트에서 찾기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search All Notes"
+          }
+        }
+      }
+    },
     "모든 사진 · 파일을 어느 노트든 가리키고 있습니다." : {
       "localizations" : {
         "en" : {
@@ -2787,12 +2797,12 @@
         }
       }
     },
-    "제목 · 본문 · tag: · path:" : {
+    "제목과 본문을 찾습니다. tag:태그 · path:폴더 로 좁힐 수 있습니다." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Title, text, tag:, path:"
+            "value" : "Searches titles and text. Narrow it with tag:name or path:folder."
           }
         }
       }
@@ -3197,6 +3207,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Checklist"
+          }
+        }
+      }
+    },
+    "최근 고친 노트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Edited"
           }
         }
       }

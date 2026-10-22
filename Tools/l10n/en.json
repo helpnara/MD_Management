@@ -324,7 +324,6 @@
   "other": "%lld notes in total"
  },
  "접기": "Collapse",
- "제목 · 본문 · tag: · path:": "Title, text, tag:, path:",
  "제목과 본문을 찾습니다. tag:태그 · path:폴더 로 좁힐 수 있습니다.": "Searches titles and text. Narrow it with tag:name or path:folder.",
  "제목대로 이름을 바꾸지 못했습니다: %@": "Couldn't rename to match the title: %@",
  "제목만 색인": "Title-Only Index",

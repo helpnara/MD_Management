@@ -160,6 +160,7 @@
 | 만들기 | Create |
 | 맨 위에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | The folder will be created at the top level. If the name is taken, a number is added. |
 | 모두 휴지통으로 | Move All to Trash |
+| 모든 노트에서 찾기 | Search All Notes |
 | 모든 사진 · 파일을 어느 노트든 가리키고 있습니다. | Every photo and file is linked from at least one note. |
 | 목록 모양 | List Style |
 | 목록 읽기 | List Load Time |
@@ -265,7 +266,7 @@
 | 저장하지 못했습니다: %@ | Couldn't save: %@ |
 | 전체 노트 %lld개 | one: %lld note in total / other: %lld notes in total |
 | 접기 | Collapse |
-| 제목 · 본문 · tag: · path: | Title, text, tag:, path: |
+| 제목과 본문을 찾습니다. tag:태그 · path:폴더 로 좁힐 수 있습니다. | Searches titles and text. Narrow it with tag:name or path:folder. |
 | 제목대로 이름을 바꾸지 못했습니다: %@ | Couldn't rename to match the title: %@ |
 | 제목만 색인 | Title-Only Index |
 | 제목에서 찾음 | Found in title |
@@ -304,6 +305,7 @@
 | 첨부하지 못했습니다: %@ | Couldn't attach: %@ |
 | 첫 줄을 파일명으로 | First Line as File Name |
 | 체크상자 | Checklist |
+| 최근 고친 노트 | Recently Edited |
 | 최근 일 | Recent Events |
 | 최근 일 지우기 | Clear Recent Events |
 | 충돌 · 저장 실패 · 다른 기기의 변경이 여기 쌓입니다. 빨간 띠가 떴는데 이유를 모르겠으면 이것을 복사해 보내 주세요. **복사 단추는 접혀 있어도 갖고 있는 전부를 복사합니다.** | Conflicts, save failures and changes from other devices are logged here. If a red banner appeared and you're not sure why, copy this and send it to us. **The copy button copies everything, even when the list is collapsed.** |
