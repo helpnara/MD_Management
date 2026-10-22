@@ -2216,10 +2216,12 @@ final class LibraryModel: ObservableObject {
             notes[at] = NoteSummary(relativePath: old.relativePath, title: old.title, preview: line,
                                     modifiedAt: old.modifiedAt, size: old.size, isDownloaded: old.isDownloaded)
         }
-        // 방금 고친 노트가 가장 최근이다 — 공유 창의 *최근 고친 노트* 도 그 줄만 앞으로 (244 · 249).
+        // 방금 고친 노트가 가장 최근이다 — 공유 창 · 폴더 화면의 *최근 고친 노트* 도 그 줄만 앞으로 (244 · 249 · 261).
         if Paths.isNoteFile(path) {
-            recentTargetPaths.removeAll { $0 == path }
-            recentTargetPaths.insert(path, at: 0)
+            let title = recentNotes.first { $0.relativePath == path }?.title ?? summary.title
+            recentNotes.removeAll { $0.relativePath == path }
+            recentNotes.insert(NoteSummary(relativePath: path, title: title, preview: "", modifiedAt: summary.modifiedAt,
+                                           size: summary.size, isDownloaded: true), at: 0)
             if pinnedSet.contains(path) {
                 recentOrder.removeAll { $0 == path }
                 recentOrder.insert(path, at: 0)
@@ -2889,7 +2891,7 @@ final class LibraryModel: ObservableObject {
         let pinnedNotes = pinned.filter { Paths.isNoteFile($0) }.enumerated()
             .sorted { (order[$0.element] ?? Int.max, $0.offset) < (order[$1.element] ?? Int.max, $1.offset) }
             .map(\.element)
-        let recents = recentTargetPaths.filter { !pinnedNotes.contains($0) }.prefix(Self.recentTargetCount)
+        let recents = recentNotes.map(\.relativePath).filter { !pinnedNotes.contains($0) }.prefix(Self.recentTargetCount)
         var targets: [ShareInbox.Target] = []
         if !isSample {
             targets = pinnedNotes.map { ShareInbox.Target(path: $0, name: Paths.baseName($0)) }
@@ -2903,8 +2905,11 @@ final class LibraryModel: ObservableObject {
 
     /// 244 — 공유 창에 보일 최근 고친 노트 수.
     static let recentTargetCount = 5
-    /// 고친 시각 순 노트 경로 (앞 몇 개만) — 고정과 겹치는 것을 빼고도 다섯이 남게 넉넉히 둔다.
-    private var recentTargetPaths: [String] = []
+    /// 261 — 폴더 화면의 빈 찾기 칸 아래에 보일 최근 고친 노트 수 (2026-10-22 사용자 — *고친 순 10개*).
+    static let recentListCount = 10
+    /// **고친 시각 순 노트** (앞 몇 개만) — 공유 창(244)과 폴더 화면의 찾기 칸(261)이 **같은 이것**을 쓴다 (CLAUDE §1).
+    /// 공유 창이 고정과 겹치는 것을 빼고도 다섯이 남게, 폴더 화면이 열 개를 보이게 넉넉히 둔다.
+    @Published private(set) var recentNotes: [NoteSummary] = []
     /// 폴더 전체의 고정한 노트를 최근 고친 순으로 (249) — 공유 창의 고정한 노트 묶음도 목록과 같은 차례로.
     private var recentOrder: [String] = []
     private var publishedShareTargets: [ShareInbox.Target]?
@@ -2912,13 +2917,13 @@ final class LibraryModel: ObservableObject {
     /// 폴더 전체 목록(고친 시각 순 — `FolderStore.allNotes`)에서 최근 고친 노트를 받아 둔다 (244).
     private func noteRecentTargets(_ all: [NoteSummary]) {
         let sorted = all.sorted { $0.modifiedAt > $1.modifiedAt }
-            .map(\.relativePath)
-            .filter { Paths.isNoteFile($0) }
-        let paths = Array(sorted.prefix(Self.recentTargetCount + pinned.count))
+            .filter { Paths.isNoteFile($0.relativePath) }
+        let recents = Array(sorted.prefix(max(Self.recentListCount, Self.recentTargetCount + pinned.count)))
+            .map(\.forComparing)
         let pinnedSet = Set(pinned)
-        let pinnedOrder = sorted.filter { pinnedSet.contains($0) }
-        guard paths != recentTargetPaths || pinnedOrder != recentOrder else { return }
-        recentTargetPaths = paths
+        let pinnedOrder = sorted.map(\.relativePath).filter { pinnedSet.contains($0) }
+        guard recents != recentNotes || pinnedOrder != recentOrder else { return }
+        if recents != recentNotes { recentNotes = recents }
         recentOrder = pinnedOrder
         publishShareTargets()
     }

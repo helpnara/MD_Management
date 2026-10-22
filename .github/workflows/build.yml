@@ -406,6 +406,12 @@ jobs:
           shoot 12-settings-chosen.png -sampleFolder -settings -chosenFolder
           # **검색** — 2글자 `회의` 는 LIKE 폴백 길이다 (ADR-0003). 결과에 견본 노트가 보여야 한다.
           shoot 13-search.png -sampleFolder -search 회의
+          # **폴더 화면의 찾기 칸** (260 · 261). 빈 칸 아래 최근 고친 노트 · 폴더 화면의 결과 ·
+          # 결과를 누른 것과 같은 길로 연 노트 — 아이폰은 폴더 화면에서 노트까지 두 칸을 한 번에 넘어가야 한다.
+          # 16 이 노트가 아니라 결과 목록이면 그 길이 막힌 것이다 (빈 화면 심판으로는 못 갈린다 — 눈으로 본다).
+          shoot 14-folder-recent.png -sampleFolder -folderSearch
+          shoot 15-folder-search.png -sampleFolder -folderSearch -search 회의
+          shoot 16-folder-search-open.png -sampleFolder -folderSearch -search 회의 -openFirstHit
           # **새 노트** — 만들기 → 열기 흐름. 편집기에 `# 새 노트` 한 줄이 보여야 한다.
           shoot 10-new-note.png -sampleFolder -newNote
           # **첨부 시험** — 사진 셋(영문 · 한글+공백 · 퍼센트 인코딩)이 다
@@ -519,6 +525,8 @@ jobs:
             shoot ipad/02-reading.png -sampleFolder -readingMode
             shoot ipad/03-large-text.png -sampleFolder \
               -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+            # 260 — 아이패드의 찾기 칸 · 결과는 폴더 칸에. 가운데 칸은 폴더의 노트 그대로.
+            shoot ipad/04-search.png -sampleFolder -search 회의
             mkdir -p screenshots/en/ipad
             shoot en/ipad/01-split.png -sampleFolder "${EN[@]}"
             UDID="${{ steps.sim.outputs.udid }}"
