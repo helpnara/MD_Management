@@ -31,13 +31,13 @@
 | 화면 상단 제목 | **사용자 폴더 이름** (예: `내 기록`) | 앱 이름과 분리. 폴더 이름이 곧 제목 `[L§1]` |
 | iCloud 컨테이너 | `iCloud.com.helpnara.markdown` | `Files` 앱에 보이는 폴더 이름은 `NSUbiquitousContainerName` (이름 바뀌면 여기도) |
 | 지원 메일 | ✅ 정했다 (2026-09-13) · App Store Connect 에 넣었다 (2026-09-24) | **주소는 문서에 안 적는다** — 저장소가 public (08-feedback 4번). 처리방침 페이지의 문의 칸은 게시할 때 저장소 변수로 채운다 (171 · 2026-09-27) |
-| 개인정보 처리방침 URL | `helpnara.github.io/MD_Management/privacy/` | `site.yml` 이 `docs/privacy.md` 한 장만 낸다 `[L§7]` |
+| 개인정보 처리방침 URL | `helpnara.github.io/MD_Management/privacy/` | `site.yml` 이 처리방침 두 장(한국어 `docs/privacy.md` · 영어 `docs/privacy.en.md` → `…/en/privacy/`)만 낸다 `[L§7]` |
 
 ---
 
 ## 1. 1.0 의 뜻과 끝나는 조건
 
-→ [`docs/roadmap.md`](roadmap.md) §1 · §2 · §3. **안정화 기준 13줄과 가정 표 18줄이 그 문서에 있고, 그것이 이 프로젝트의 기억이다.**
+→ [`docs/roadmap.md`](roadmap.md) §1 · §2 · §3. **안정화 기준 13줄(S1~S13)과 가정 표(A1~A19)가 그 문서에 있고, 그것이 이 프로젝트의 기억이다.**
 
 ---
 
@@ -295,7 +295,7 @@ MD_Management/
 | `core-test.yml` | `Packages/Core/**` · `Tools/golden/**` 푸시 | ① ubuntu: 파이썬 골든 검증 ② `swift:6.1-noble` 컨테이너: `swift test` |
 | `build.yml` | `App/**` · `Packages/**` · `project.yml` 푸시 | macOS: XcodeGen → 빌드 → 시뮬레이터 스크린샷(iPhone · iPad · 다크 · 큰 글씨) → **아티팩트 먼저** → `screenshots/` 커밋 |
 | `testflight.yml` | 수동 — **"착수하자"** | 빌드 번호 = 실행 번호 · 서명 · 업로드 · 릴리스 노트(`\u` 이스케이프) |
-| `site.yml` | `docs/privacy.md` 변경 | GitHub Pages 에 방침 **한 장만** |
+| `site.yml` | `docs/privacy.md` · `docs/privacy.en.md` 변경 | GitHub Pages 에 방침 **두 장** (한국어 · 영어 — 219) |
 
 **시크릿 4개** (지난 앱과 같은 이름 — A9):
 `APPLE_TEAM_ID` · `APP_STORE_CONNECT_ISSUER_ID` · `APP_STORE_CONNECT_KEY_ID` ·
@@ -330,7 +330,7 @@ MD_Management/
   > 키워드 · 스크린샷 4장 · 첫 문장 · 후기 요청 시점)을 먼저 다 하고, 순위는 결과로 본다.
 - **키워드** (설계 때 초안 — **확정 값은 `docs/12-submission.md` §1** · 남의 상표는 뺐다 · `CLAUDE.md` §6)
 - **감성 한 줄(설명 첫 문장):** "파일은 당신의 것. 이 앱은 그저 보기 좋게, 찾기 쉽게 곁에 있습니다."
-- **스크린샷**: (설계 때 초안) → **확정: 아이폰 6.5" 칸 석 장 · 아이패드 13" 칸 넉 장** (`docs/11-store-screenshots.md` 확정 표, 2026-09-24).
+- **스크린샷**: (설계 때 초안) → 9월 확정은 아이폰 석 장 · 아이패드 넉 장이었다. **지금 올린 것: 한국어 · 영어 각 아이폰 다섯 장(6.1" · 6.5" · 6.9" 칸) · 아이패드 다섯 장** — CI(`store-shots.yml`)가 찍는다 (`docs/11-store-screenshots.md` 1.1.4 절 · 아이폰 대형 칸은 1.1.11 · 아이패드 5번은 1.1.12 에 다시 갈았다).
   > iPhone 칸이 요구하는 크기는 제출 시점에 App Store Connect 에서 확인한다 — 지난 앱은
   > 6.5"(1284×2778) 를 요구받았는데 워크플로는 6.9"(1320×2868) 로 찍고 있었다.
 - **후기 요청**: 검색 성공 뒤 화면을 나올 때 · 90일 1회 · 체험 중 제외.

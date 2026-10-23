@@ -1,6 +1,6 @@
 ---
 title: Privacy Policy
-updated: 2026-10-11
+updated: 2026-10-22
 ---
 
 # Privacy Policy
@@ -18,7 +18,7 @@ Slow Margin **does not collect any personal information.**
 - Your `.md` files and attachments are stored **only on your device and in your own iCloud Drive.**
   iCloud sync is provided by Apple, and the developer can’t see its contents.
 - The search index that makes searching fast stays **on your device only**, and you can delete it anytime
-  (Settings → Rebuild Index).
+  (Settings → Diagnostic Info → Rebuild Index).
 - Deleting the app also deletes its search index. **Your files stay where they are.**
 - When you send something to Slow Margin from another app’s share menu, it waits on your device until
   you open the app, then becomes a note in your folder.

@@ -499,6 +499,14 @@ private struct FolderSidebar: View {
             try? await Task.sleep(for: .milliseconds(800))
             searchPresented = true
         }
+        // CI — 최근 고친 노트 첫 줄을 손가락과 같은 길로 연다 (`-openFirstRecent` · 263 · 264). 찾기 칸이 열려 목록이 선 뒤에.
+        .task(id: searchPresented ? library.recentNotes.first?.relativePath : nil) {
+            guard library.launch.openFirstRecent, searchPresented, !openedFirstHit,
+                  let first = library.recentNotes.first else { return }
+            openedFirstHit = true
+            try? await Task.sleep(for: .milliseconds(800))
+            await openRecent(first.relativePath)
+        }
         // CI — 첫 결과를 손가락과 같은 길로 연다 (`-openFirstHit`). 아이폰은 두 칸을 넘어가는지가 볼 것이다.
         .task(id: library.searchResults.first?.relativePath) {
             guard library.launch.openFirstHit, !openedFirstHit, let first = library.searchResults.first else { return }
@@ -570,9 +578,7 @@ private struct FolderSidebar: View {
         Section {
             ForEach(library.recentNotes.prefix(LibraryModel.recentListCount)) { note in
                 Button {
-                    // 돌아오면 폴더가 보이게 — 찾을 말이 없었으니 찾기는 여기서 끝난 것이다.
-                    searchPresented = false
-                    Task { await openFromFolders(note.relativePath) }
+                    Task { await openRecent(note.relativePath) }
                 } label: {
                     RecentNoteRow(note: note)
                 }
@@ -592,15 +598,25 @@ private struct FolderSidebar: View {
         }
     }
 
+    /// 최근 고친 노트 한 줄을 눌렀을 때 — 돌아오면 폴더가 보이게 찾기를 닫는다 (찾을 말이 없었으니 찾기는 여기서 끝난 것이다).
+    private func openRecent(_ path: String) async {
+        await openFromFolders(path, endingSearch: true)
+    }
+
     /// **폴더 화면에서 노트를 연다** (260 · 261). 아이패드는 오른쪽 칸에 바로 열린다.
-    /// **아이폰은 두 칸을 넘어가야 한다** — 폴더 화면 → 노트 목록 → 노트. 폴더 줄을 누른 것과 같은 길(선택)로 노트 목록 칸을 먼저 세우고,
-    /// 넘기는 움직임이 끝난 뒤 노트 목록의 찾기 결과와 같은 길(`open`)로 연다. 폴더는 바꾸지 않는다 — 노트 목록의 찾기 결과와 같다.
-    private func openFromFolders(_ path: String) async {
-        if rootIsCompact {
-            selection = library.selectedFolder
-            try? await Task.sleep(for: .milliseconds(450))
+    /// **아이폰은 두 칸을 넘어가야 한다** — 폴더 화면 → 노트 목록 → 노트. **한 번에 넘긴다** (263 · 264, 2026-10-23 사용자 화면 녹화):
+    /// 기다리는 일(있는지 · 저장 · 요약)을 `prepareOpen` 이 먼저 끝내고, 노트 목록 칸(폴더 줄을 누른 것과 같은 선택)과 노트를 **같은 순간에** 고른다.
+    /// 예전에는 칸을 세우고 0.45초 기다린 뒤 열어 두 번 넘어갔다 — 폴더 목록이 비쳤고(263), 그 사이 노트의 본문 칸이 옛 모습에 멈췄다(264).
+    /// 폴더는 바꾸지 않는다 — 노트 목록의 찾기 결과와 같다. 찾기를 닫을 때(최근 고친 노트)는 **넘어간 뒤에** 닫는다 — 먼저 닫으면 폴더 목록이 비친다.
+    private func openFromFolders(_ path: String, endingSearch: Bool = false) async {
+        let commit = await library.prepareOpen(relativePath: path)
+        if let commit {
+            if rootIsCompact { selection = library.selectedFolder }
+            commit()
         }
-        await library.open(relativePath: path)
+        guard endingSearch else { return }
+        if commit != nil, rootIsCompact { try? await Task.sleep(for: .milliseconds(600)) }
+        searchPresented = false
     }
 
     private var folderSection: some View {

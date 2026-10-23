@@ -328,6 +328,10 @@ struct LaunchOptions: Sendable {
     /// 폴더 화면의 첫 결과를 **누른 것과 같은 길로** 연다 (260) — 아이폰은 폴더 화면에서 노트까지 두 칸을 한 번에 넘어간다.
     /// 사람 손가락 대신 CI 가 그 길을 지나 보는 칸이다. `-folderSearch -search …` 와 같이 준다.
     var openFirstHit = false
+    /// 폴더 화면 찾기 칸의 **최근 고친 노트 첫 줄**을 누른 것과 같은 길로 연다 (263 · 264) — 사람이 걸린 길은 이쪽이었다
+    /// (찾기 칸을 닫으며 넘어간다). `-folderSearch` 와 같이 준다. *읽기 모드로 열기* 설정은 실행 인자 `-mode.reading YES` 로 —
+    /// 실행 인자는 설정 파일에 남지 않는다 (빌드 116 첫 바퀴 — 앱 안에서 켰더니 남아서 뒤 장들이 다 읽기로 열렸다).
+    var openFirstRecent = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -348,7 +352,8 @@ struct LaunchOptions: Sendable {
             },
             storeFolder: arguments.contains("-storeFolder"),
             folderSearch: arguments.contains("-folderSearch"),
-            openFirstHit: arguments.contains("-openFirstHit")
+            openFirstHit: arguments.contains("-openFirstHit"),
+            openFirstRecent: arguments.contains("-openFirstRecent")
         )
     }
 }

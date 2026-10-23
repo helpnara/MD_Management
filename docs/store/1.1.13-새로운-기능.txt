@@ -1,0 +1,7 @@
+• 폴더 화면의 찾기 칸에서 노트를 열면 화면이 한 번에 넘어갑니다.
+• 노트를 열 때 읽기 모드로 설정을 켜 두었다면, 폴더 화면에서 연 노트도 읽기 화면으로 열리고 링크가 눌립니다.
+
+— English (What’s New in This Version) —
+
+• Opening a note from the search field on the folders screen now goes straight to the note.
+• If notes are set to open in Read mode, notes opened from the folders screen now open in Read mode too, and their links work.

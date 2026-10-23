@@ -1,9 +1,12 @@
 ---
 title: 심사 답변 — Guideline 2.1 Information Needed
-updated: 2026-09-27
+updated: 2026-10-22
 ---
 
 # 심사 답변 — 2.1 *Information Needed* (2026-09-27)
+
+> **2026-10-22 지금 앱에 맞췄다** — 찾기 칸 자리(260) · 아이폰 사진 넣기는 `…` 메뉴 · 영어 화면(219) · 공유 확장의 제목 가져오기 접속 하나(240).
+> 이 답장 본문은 App Review Information 의 **Notes 칸**에도 들어 있다 — **다음 판을 낼 때 Notes 칸에 아래 답장 본문을 다시 붙인다** (처리방침과 어긋나지 않게).
 
 ## 무엇이 왔나
 
@@ -19,8 +22,8 @@ limited App Review history*). **새 빌드는 필요 없다** — 빌드 56 그�
 | └ 유료 콘텐츠 | **없다** | 인앱 결제 없음 |
 | 2 목적 · 대상 · 푸는 문제 · 가치 | 답장 §2 | 스토어 설명과 같은 말 |
 | 3 쓰는 법 · 로그인 정보 · 견본 파일 | 로그인 없음. 첫 실행에 견본 노트 하나 | `FolderSource.seedIfNeeded` → `첫 노트.md` |
-| 4 외부 서비스 | **애플 iCloud Drive 뿐.** 서버 · 분석 · 광고 · AI · 결제 없음 | `App/` 에 `URLSession` · `URLRequest` **0건**. 외부 코드는 `swift-markdown`(애플 오픈소스, 기기 안에서 파싱) 하나 |
-| 5 지역 차이 | 없다. 화면은 한국어 | `CFBundleDevelopmentRegion: ko` |
+| 4 외부 서비스 | **애플 iCloud Drive 뿐.** 서버 · 분석 · 광고 · AI · 결제 없음 | `App/` 에 `URLSession` · `URLRequest` **0건** · 공유 확장 1곳 (240 — 받은 웹 주소의 제목 가져오기). 외부 코드는 `swift-markdown`(애플 오픈소스, 기기 안에서 파싱) 하나 |
+| 5 지역 차이 | 없다. 화면은 한국어 · 영어 (1.1 부터) | `CFBundleDevelopmentRegion: ko` |
 | 6 규제 산업 · 제3자 보호 자료 | 해당 없음 | — |
 
 애플은 이 내용을 **App Review Information 의 Notes 칸에도 넣으라**고 했다 — 다음 제출 때
@@ -59,20 +62,20 @@ No login or account is needed, so no credentials are required.
 On first launch the app creates its folder in iCloud Drive and adds one sample note. If iCloud Drive is turned off on the device, the app uses a folder on the device and the list starts empty. Tap the pencil button at the top right to create a note.
 - Editing: tap a note. The bar at the bottom of the editor has bold, italic, strikethrough, code, link, quote, table and indent.
 - Linking notes: type [[ followed by part of a note title, then pick a note from the list that appears.
-- Photos: the photo button at the top of the editor offers the photo library or the camera. The image is saved in an assets folder next to the note.
+- Photos: on iPhone, the … menu at the top of the editor, then Photo Library or Take Photo (on iPad, the photo button). The image is saved in an assets folder next to the note.
 - Reading mode: the book button at the top of the editor.
-- Search: the search field at the top of the note list searches titles and text.
+- Search: the "Search All Notes" field at the top of the folders screen (the left column on iPad) searches titles and text across all notes. Tap it with nothing typed to see the ten most recently edited notes.
 - Folders: create one with the folder button. Long-press a folder to rename or delete it. Deleted notes move to a trash folder and can be restored from Settings.
 - Settings (gear button): choose a different folder with the system document picker.
 No sample files are needed; the included sample note or any .md file is enough.
 
 4. External services
 - Apple iCloud Drive, through the system's iCloud document storage, to keep the user's files in sync between their own devices. It is managed by Apple and the developer has no access to it.
-- There are no developer-operated servers, no analytics, no advertising, no AI services, and no authentication or payment services. The app makes no network requests of its own.
+- There are no developer-operated servers, no analytics, no advertising, no AI services, and no authentication or payment services. The app makes no network requests of its own, except one: when a web address is shared to the app, the share extension fetches that page's title once. Nothing is sent or stored elsewhere.
 - The only third-party code is swift-markdown, Apple's open-source Markdown library, used on the device to parse text.
 
 5. Regional differences
-The app works the same in every region. The interface is in Korean. There are no region-specific features or content.
+The app works the same in every region. The interface is available in Korean and English. There are no region-specific features or content.
 
 6. Regulated industry and third-party material
 Not applicable. The app does not operate in a regulated industry and does not include protected third-party material. The notes are the user's own files.
