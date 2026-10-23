@@ -1561,7 +1561,8 @@ private struct NoteDetail: View {
     private func handle(_ action: NoteLinkAction) {
         switch action {
         case .note(let path):
-            Task { await library.open(relativePath: path) }
+            // 노트 안의 링크 — **이것만** 자취를 쌓아 위에 *왔던 노트로* 단추가 선다 (267).
+            Task { await library.open(relativePath: path, followingLink: true) }
         case .external(let url):
             openURL(url)
         case .attachment(let path):
