@@ -322,6 +322,9 @@ jobs:
           # 그래서 두 가지를 확인하고 아니면 다시 찍는다.
           shoot() {
             local file="$1"; shift
+            # **언어를 말하지 않은 장은 한국어로 띄운다** (262). 시뮬레이터는 영어로 떠서 한국어 장이 영어 화면이었다 —
+            # `13-search` (`회의`) 는 2026-10-10 뒤로 *결과 없음* 이었는데 칸 안에 글자가 있어 빈 화면 심판을 지났다.
+            case " $* " in *" -AppleLanguages "*) ;; *) set -- "$@" -AppleLanguages "(ko)" -AppleLocale ko_KR ;; esac
             local attempt pid size previous=0
             for attempt in $(seq 1 "${SHOOT_ATTEMPTS:-3}"); do
               xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
@@ -412,7 +415,10 @@ jobs:
           # 찾는 말은 `2026` — 시뮬레이터가 영어로 떠 견본이 영어일 때도(빌드 115 첫 바퀴 — `회의` 는 결과 없음) 한국어일 때도 걸린다.
           shoot 14-folder-recent.png -sampleFolder -folderSearch
           shoot 15-folder-search.png -sampleFolder -folderSearch -search 2026
-          shoot 16-folder-search-open.png -sampleFolder -folderSearch -search 2026 -openFirstHit
+          # **읽기 모드로 열기를 켠 채로** (264) — 켜 둔 기기에서 폴더 화면으로 연 노트가 단추는 *읽기* 인데 본문은 편집기에 멈췄다.
+          # 16 은 **읽기 화면**(아래 굵게 · 기울임 띠가 없다 · 위 단추는 연필)이어야 한다. 17 은 설정을 끈 채 — 쓰기 화면이어야 한다.
+          shoot 16-folder-search-open.png -sampleFolder -folderSearch -search 2026 -openFirstHit -opensInReadingMode
+          shoot 17-folder-search-open-write.png -sampleFolder -folderSearch -search 2026 -openFirstHit
           # **새 노트** — 만들기 → 열기 흐름. 편집기에 `# 새 노트` 한 줄이 보여야 한다.
           shoot 10-new-note.png -sampleFolder -newNote
           # **첨부 시험** — 사진 셋(영문 · 한글+공백 · 퍼센트 인코딩)이 다
@@ -490,7 +496,7 @@ jobs:
                 file="${pair%%:*}"; extra="${pair#*:}"
                 xcrun simctl terminate "$WIDE" "$BUNDLE_ID" >/dev/null 2>&1 || true
                 # shellcheck disable=SC2086
-                xcrun simctl launch "$WIDE" "$BUNDLE_ID" -sampleFolder $extra >/dev/null 2>&1 || true
+                xcrun simctl launch "$WIDE" "$BUNDLE_ID" -sampleFolder $extra -AppleLanguages "(ko)" -AppleLocale ko_KR >/dev/null 2>&1 || true
                 sleep 12
                 xcrun simctl io "$WIDE" screenshot "screenshots/$file" >/dev/null 2>&1 || true
                 if [ -f "screenshots/$file" ]; then

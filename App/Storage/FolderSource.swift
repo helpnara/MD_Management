@@ -328,6 +328,9 @@ struct LaunchOptions: Sendable {
     /// 폴더 화면의 첫 결과를 **누른 것과 같은 길로** 연다 (260) — 아이폰은 폴더 화면에서 노트까지 두 칸을 한 번에 넘어간다.
     /// 사람 손가락 대신 CI 가 그 길을 지나 보는 칸이다. `-folderSearch -search …` 와 같이 준다.
     var openFirstHit = false
+    /// **노트를 열 때 읽기 모드로** 설정을 켠 채 시작한다 (264) — CI 가 그 설정에서 폴더 화면으로 연 노트를 찍는다.
+    /// 설정 파일에는 쓰지 않는다 (뒤이어 찍는 장들이 물들지 않게 — `LibraryModel.init` 에서 바로 넣어 관찰자가 안 돈다).
+    var opensInReadingMode = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -348,7 +351,8 @@ struct LaunchOptions: Sendable {
             },
             storeFolder: arguments.contains("-storeFolder"),
             folderSearch: arguments.contains("-folderSearch"),
-            openFirstHit: arguments.contains("-openFirstHit")
+            openFirstHit: arguments.contains("-openFirstHit"),
+            opensInReadingMode: arguments.contains("-opensInReadingMode")
         )
     }
 }

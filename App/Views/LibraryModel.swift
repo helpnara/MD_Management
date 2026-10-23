@@ -908,6 +908,8 @@ final class LibraryModel: ObservableObject {
     init(launch: LaunchOptions = .fromProcess()) {
         self.launch = launch
         self.isReading = launch.readingMode
+        // 264 — CI. 초기화 안에서 넣으므로 `didSet` 이 안 돌아 설정 파일에 남지 않는다.
+        if launch.opensInReadingMode { self.opensInReadingMode = true }
         if launch.showDiagnostics {
             self.sheet = .diagnostics
         } else if launch.showSettings {
