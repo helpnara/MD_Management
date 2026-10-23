@@ -22,6 +22,8 @@ enum Palette {
     static let accent = Color(uiColor: .tintColor)
     /// 인용 세로선 · 구분선
     static let rule = Color(uiColor: .separator)
+    /// 입력 칸 바탕 — 폴더 화면의 찾기 칸 (265). 시스템 찾기 칸과 같은 채움 색 — 목록 바탕(밝은 화면의 옅은 회색) 위에서도 보인다.
+    static let fill = Color(uiColor: .tertiarySystemFill)
     /// `#태그` (T2). 편집기와 뷰어가 같은 색을 쓴다.
     static let tag = Color(uiColor: tagUIColor)
 
