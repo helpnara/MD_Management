@@ -288,6 +288,7 @@
 | 진단 정보 복사 | Copy Diagnostic Info |
 | 진단 화면에는 무엇이 어긋났는지가 있고, 복사해 보낼 수 있습니다. **시험 도구**를 켜면 그 아래에 첨부 · 큰 노트 · 규모 시험 단추가 나옵니다 — 누르면 **파일을 만드는** 단추라 평소에는 감춰 둡니다. | Diagnostics shows what went wrong, and you can copy it to send to us. Turning on **Test Tools** adds attachment, large-note and scale test buttons below — they **create files**, so they're hidden by default. |
 | 찾기 | Search |
+| 찾는 말 지우기 | Clear Search |
 | 찾는 파일이 없습니다 | No Matching Files |
 | 찾을 수 없는 첨부가 있습니다 | Some Attachments Are Missing |
 | 찾을 수 없습니다 | Not found |
