@@ -127,3 +127,47 @@ Thank you.
 
 - **이것은 결함이 아니라 첫 계정에 오는 절차다.** 앱 문제로 읽고 빌드를 고치러 가면 시간만 든다.
 - 애플이 준 질문 여섯은 **다음 제출에도 쓸 수 있는 틀**이다. 그래서 Notes 칸에 영구히 남긴다.
+
+## 메모(Notes) 칸 글 — 판을 낼 때 붙이는 것 (2026-10-23)
+
+> 위 답장 본문에서 **답장에만 맞는 말**(녹화를 붙였다 · 메모 칸에도 넣었다)을 뺀 것이다. 1번 절은 *녹화* 대신 *계정 · 콘텐츠*. 3,510자 / 4,000.
+
+```
+Hello App Review team,
+
+Thank you for reviewing our app. Below is how to use it and what it connects to.
+
+1. Accounts and content
+The app has no account registration, login or account deletion, no user-generated content shared with other users, and no paid content or in-app purchases.
+
+2. Purpose and target audience
+Slow Margin (느린 여백) is a Markdown note-taking app for iPhone and iPad. Notes are saved as plain Markdown (.md) files in the user's own iCloud Drive folder, or in a folder the user chooses, instead of an app-only database.
+Target audience: people who write notes, plans and journals and want to keep them as ordinary files they own, including people who already keep a folder of Markdown files.
+Problem it solves: in most note apps, notes stay locked inside the app. Here, deleting the app or switching to another app loses nothing. The same files open in the Files app, on a Mac, or in any Markdown editor.
+Value: comfortable writing on iPhone and iPad (only the line with the cursor shows raw Markdown, the rest is shown formatted), links between notes, photos stored next to the note, and full-text search.
+
+3. How to access the main features
+No login or account is needed, so no credentials are required.
+On first launch the app creates its folder in iCloud Drive and adds one sample note. If iCloud Drive is turned off on the device, the app uses a folder on the device and the list starts empty. Tap the pencil button at the top right to create a note.
+- Editing: tap a note. The bar at the bottom of the editor has bold, italic, strikethrough, code, link, quote, table and indent.
+- Linking notes: type [[ followed by part of a note title, then pick a note from the list that appears.
+- Photos: on iPhone, the … menu at the top of the editor, then Photo Library or Take Photo (on iPad, the photo button). The image is saved in an assets folder next to the note.
+- Reading mode: the book button at the top of the editor.
+- Search: the "Search All Notes" field at the top of the folders screen (the left column on iPad) searches titles and text across all notes. Tap it with nothing typed to see the ten most recently edited notes.
+- Folders: create one with the folder button. Long-press a folder to rename or delete it. Deleted notes move to a trash folder and can be restored from Settings.
+- Settings (gear button): choose a different folder with the system document picker.
+No sample files are needed; the included sample note or any .md file is enough.
+
+4. External services
+- Apple iCloud Drive, through the system's iCloud document storage, to keep the user's files in sync between their own devices. It is managed by Apple and the developer has no access to it.
+- There are no developer-operated servers, no analytics, no advertising, no AI services, and no authentication or payment services. The app makes no network requests of its own, except one: when a web address is shared to the app, the share extension fetches that page's title once. Nothing is sent or stored elsewhere.
+- The only third-party code is swift-markdown, Apple's open-source Markdown library, used on the device to parse text.
+
+5. Regional differences
+The app works the same in every region. The interface is available in Korean and English. There are no region-specific features or content.
+
+6. Regulated industry and third-party material
+Not applicable. The app does not operate in a regulated industry and does not include protected third-party material. The notes are the user's own files.
+
+Thank you.
+```
