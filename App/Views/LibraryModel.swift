@@ -755,7 +755,8 @@ final class LibraryModel: ObservableObject {
     }
     /// **노트를 열 때 읽기 모드로 시작할까** (124, 사용자 — *평소에는 읽기 모드로 보고
     /// 편집은 회의 뒤나 자료를 쓸 때만 쓴다*). **꺼짐이 기본** — 지금까지의 동작 그대로다.
-    @Published var opensInReadingMode: Bool = UserDefaults.standard.object(forKey: "mode.reading") as? Bool ?? false {
+    /// `bool(forKey:)` 로 읽는다 — 실행 인자 `-mode.reading YES` (CI · 264)도 켠 것으로 읽힌다. 없으면 `false` 로 예전과 같다.
+    @Published var opensInReadingMode: Bool = UserDefaults.standard.bool(forKey: "mode.reading") {
         didSet { UserDefaults.standard.set(opensInReadingMode, forKey: "mode.reading") }
     }
     /// 이번에 여는 노트의 모드는 **부른 쪽이 이미 정했다** (124). 새 노트는 쓰려고 만든
@@ -908,8 +909,6 @@ final class LibraryModel: ObservableObject {
     init(launch: LaunchOptions = .fromProcess()) {
         self.launch = launch
         self.isReading = launch.readingMode
-        // 264 — CI. 초기화 안에서 넣으므로 `didSet` 이 안 돌아 설정 파일에 남지 않는다.
-        if launch.opensInReadingMode { self.opensInReadingMode = true }
         if launch.showDiagnostics {
             self.sheet = .diagnostics
         } else if launch.showSettings {
@@ -3139,6 +3138,8 @@ final class LibraryModel: ObservableObject {
         defer { if openTiming.path == path { openTiming.render = Date().timeIntervalSince(started) } }
         let referenced = MarkdownHTML.referencedPaths(markdown: text, notePath: path)
         let existing = await store.existingPaths(among: referenced)
+        // **기다린 사이 다른 노트로 갔으면 버린다** (264 덤) — 앞 노트의 페이지가 늦게 와서 지금 노트의 읽기 화면을 덮을 수 있었다.
+        guard draftPath == nil || draftPath == path else { return }
         let rendered = MarkdownHTML.render(markdown: text, notePath: path, existing: existing,
                                            tooDeepNotice: String(localized: "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다."),
                                            codeLabels: CodeBoxLabels(code: String(localized: "코드"),
@@ -3188,28 +3189,49 @@ final class LibraryModel: ObservableObject {
     /// 상세 칸에만 띄우고, 왔던 자리를 **자취**에 쌓아 되돌아갈 수 있게 한다.
     /// 도착하면 **편집 모드**다 — 돌아올 때는 떠날 때의 모드를 되살린다.
     func open(relativePath: String) async {
-        guard let store else { return }
+        guard let commit = await prepareOpen(relativePath: relativePath) else { return }
+        commit()
+    }
+
+    /// **노트를 열 준비만 한다** (263 · 264) — 있는지 · 쓰던 글 저장 · 목록에 없으면 요약까지 **기다리는 일을 먼저** 다 끝내고,
+    /// 고르기는 돌려준 것을 부를 때 **한 번에** 한다. 아이폰 폴더 화면은 노트 목록 칸을 세우는 것과 이것을 같은 순간에 불러
+    /// 화면을 **한 번만** 넘긴다 — 예전에는 칸을 세우고 0.45초 기다린 뒤 열어 두 번 넘어갔고, 그 사이 본문 칸이 옛 모습에 멈췄다 (264).
+    /// 노트를 열 수 없으면(없음 · 이미 연 노트) `nil`.
+    func prepareOpen(relativePath: String) async -> (@MainActor @Sendable () -> Void)? {
+        guard let store else { return nil }
         guard await store.existingPaths(among: [relativePath]).contains(relativePath) else {
             log("링크가 가리키는 노트가 없음: \(relativePath)")
             lastError = String(localized: "링크가 가리키는 노트가 폴더에 없습니다: \(relativePath)")
-            return
+            return nil
         }
-        guard relativePath != selectedNoteID else { return }
+        guard relativePath != selectedNoteID else { return nil }
         await save()
-        var trail = linkTrail
-        trail.append(LinkStep(folder: selectedFolder, notePath: selectedNoteID,
-                              linked: linkedNote != nil, wasReading: isReading))
-        // 목록에 있으면 그 줄을 쓰고(선택 표시가 산다), 없으면 파일에서 요약을 만든다.
-        if let match = notes.first(where: { $0.relativePath == relativePath }) {
-            linkedNote = nil
-            selectedNoteID = match.id
-        } else {
-            linkedNote = await store.summary(of: relativePath)
-            selectedNoteID = relativePath
+        // 목록에 없으면 파일에서 요약을 만든다 — 기다리는 일이라 여기서 (고르는 순간에는 기다리지 않는다).
+        let summary = notes.contains(where: { $0.relativePath == relativePath }) ? nil : await store.summary(of: relativePath)
+        return { [weak self] in
+            guard let self else { return }
+            var trail = self.linkTrail
+            trail.append(LinkStep(folder: self.selectedFolder, notePath: self.selectedNoteID,
+                                  linked: self.linkedNote != nil, wasReading: self.isReading))
+            // 목록에 있으면 그 줄을 쓰고(선택 표시가 산다), 없으면 요약으로.
+            if let match = self.notes.first(where: { $0.relativePath == relativePath }) {
+                self.linkedNote = nil
+                self.selectedNoteID = match.id
+            } else {
+                self.linkedNote = summary
+                self.selectedNoteID = relativePath
+            }
+            self.linkTrail = trail   // `selectedNoteID` 의 `didSet` 이 접은 것을 되돌린다.
+            // **모드는 여기서 끝낸다** (264). 예전에는 쓰기로 내렸다가(`false`) 곧이어 읽기 내용을 여는 쪽이 *노트를 열 때 읽기 모드로* 를
+            // 보고 다시 올렸다 — 화면이 넘어가는 도중에 뒤집혀 본문 칸이 편집기에 멈췄다(단추는 읽기). 처음부터 설정대로 연다 —
+            // 여는 쪽은 켜는 쪽으로만 움직이므로 같은 값이 한 번 더 들어갈 뿐이다.
+            // 앞 노트의 읽기 페이지를 비운다 — 읽기로 열 때 새 페이지가 그려지기 전까지 **앞 노트가 비치지 않게.** 미뤄 둔 페이지 표시도
+            // 끈다 — 켜 둔 채 읽기로 올리면 `isReading` 의 `didSet` 이 **앞 노트**를 다시 그린다. 새 노트는 여는 쪽(`loadSelectedText`)이 그린다.
+            self.pageIsStale = false
+            self.pageHTML = ""
+            self.isReading = self.opensInReadingMode
+            self.log("링크를 따라 감: \(relativePath)")
         }
-        linkTrail = trail   // `selectedNoteID` 의 `didSet` 이 접은 것을 되돌린다.
-        isReading = false
-        log("링크를 따라 감: \(relativePath)")
     }
 
     /// **왔던 노트로 되돌아간다** (T7). 폴더 · 노트 · 모드를 떠날 때대로 되살린다.

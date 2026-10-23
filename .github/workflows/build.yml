@@ -416,9 +416,13 @@ jobs:
           shoot 14-folder-recent.png -sampleFolder -folderSearch
           shoot 15-folder-search.png -sampleFolder -folderSearch -search 2026
           # **읽기 모드로 열기를 켠 채로** (264) — 켜 둔 기기에서 폴더 화면으로 연 노트가 단추는 *읽기* 인데 본문은 편집기에 멈췄다.
-          # 16 은 **읽기 화면**(아래 굵게 · 기울임 띠가 없다 · 위 단추는 연필)이어야 한다. 17 은 설정을 끈 채 — 쓰기 화면이어야 한다.
-          shoot 16-folder-search-open.png -sampleFolder -folderSearch -search 2026 -openFirstHit -opensInReadingMode
+          # 16 · 18 은 **읽기 화면**(아래 굵게 · 기울임 띠가 없다 · 위 단추는 연필)이어야 한다. 17 은 설정을 끈 채 — 쓰기 화면이어야 한다.
+          # 18 은 사람이 걸린 길 — 빈 찾기 칸의 **최근 고친 노트**를 눌러 찾기를 닫으며 넘어간다.
+          # 설정은 **실행 인자로** 준다 (`-mode.reading YES`) — 설정 파일에 남지 않는다. 빌드 116 첫 바퀴는 앱 안에서 켰다가 남아
+          # 뒤의 17 · 다크 · 영어 장까지 읽기로 열렸다 (`en/02-note` = `05-reading` 과 같은 바이트).
+          shoot 16-folder-search-open.png -sampleFolder -folderSearch -search 2026 -openFirstHit -mode.reading YES
           shoot 17-folder-search-open-write.png -sampleFolder -folderSearch -search 2026 -openFirstHit
+          shoot 18-folder-recent-open.png -sampleFolder -folderSearch -openFirstRecent -mode.reading YES
           # **새 노트** — 만들기 → 열기 흐름. 편집기에 `# 새 노트` 한 줄이 보여야 한다.
           shoot 10-new-note.png -sampleFolder -newNote
           # **첨부 시험** — 사진 셋(영문 · 한글+공백 · 퍼센트 인코딩)이 다
