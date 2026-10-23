@@ -3188,8 +3188,12 @@ final class LibraryModel: ObservableObject {
     /// `assets/` 안의 `.md` 로 가면 목록이 `assets` 로 끌려갔다 (빌드 24 · 17번). 지금은
     /// 상세 칸에만 띄우고, 왔던 자리를 **자취**에 쌓아 되돌아갈 수 있게 한다.
     /// 도착하면 **편집 모드**다 — 돌아올 때는 떠날 때의 모드를 되살린다.
-    func open(relativePath: String) async {
-        guard let commit = await prepareOpen(relativePath: relativePath) else { return }
+    ///
+    /// **자취는 노트 안의 링크를 따라갈 때만 쌓는다** (267, 2026-10-23 사용자 — *검색 창에서 노트를 선택해서 들어가면 이전으로 가는 버튼이
+    /// 두개가 있는 것이 이상해 … 노트 내용에 있는 다른 노트로 갈때만 나오는 것이 맞아*). 찾기 결과 · 최근 고친 노트로 연 것은 링크를 따라온 것이
+    /// 아니다 — 자취를 비우고 연다. 뒤로는 화면의 뒤로 단추 하나뿐이다.
+    func open(relativePath: String, followingLink: Bool = false) async {
+        guard let commit = await prepareOpen(relativePath: relativePath, followingLink: followingLink) else { return }
         commit()
     }
 
@@ -3197,7 +3201,7 @@ final class LibraryModel: ObservableObject {
     /// 고르기는 돌려준 것을 부를 때 **한 번에** 한다. 아이폰 폴더 화면은 노트 목록 칸을 세우는 것과 이것을 같은 순간에 불러
     /// 화면을 **한 번만** 넘긴다 — 예전에는 칸을 세우고 0.45초 기다린 뒤 열어 두 번 넘어갔고, 그 사이 본문 칸이 옛 모습에 멈췄다 (264).
     /// 노트를 열 수 없으면(없음 · 이미 연 노트) `nil`.
-    func prepareOpen(relativePath: String) async -> (@MainActor @Sendable () -> Void)? {
+    func prepareOpen(relativePath: String, followingLink: Bool = false) async -> (@MainActor @Sendable () -> Void)? {
         guard let store else { return nil }
         guard await store.existingPaths(among: [relativePath]).contains(relativePath) else {
             log("링크가 가리키는 노트가 없음: \(relativePath)")
@@ -3210,9 +3214,13 @@ final class LibraryModel: ObservableObject {
         let summary = notes.contains(where: { $0.relativePath == relativePath }) ? nil : await store.summary(of: relativePath)
         return { [weak self] in
             guard let self else { return }
-            var trail = self.linkTrail
-            trail.append(LinkStep(folder: self.selectedFolder, notePath: self.selectedNoteID,
-                                  linked: self.linkedNote != nil, wasReading: self.isReading))
+            // 링크를 따라갈 때만 왔던 자리를 쌓는다 (267). 찾기로 연 것은 새 출발이다 — 앞의 자취도 지운다.
+            var trail: [LinkStep] = []
+            if followingLink {
+                trail = self.linkTrail
+                trail.append(LinkStep(folder: self.selectedFolder, notePath: self.selectedNoteID,
+                                      linked: self.linkedNote != nil, wasReading: self.isReading))
+            }
             // 목록에 있으면 그 줄을 쓰고(선택 표시가 산다), 없으면 요약으로.
             if let match = self.notes.first(where: { $0.relativePath == relativePath }) {
                 self.linkedNote = nil
@@ -3230,7 +3238,7 @@ final class LibraryModel: ObservableObject {
             self.pageIsStale = false
             self.pageHTML = ""
             self.isReading = self.opensInReadingMode
-            self.log("링크를 따라 감: \(relativePath)")
+            self.log(followingLink ? "링크를 따라 감: \(relativePath)" : "찾기로 엶: \(relativePath)")
         }
     }
 

@@ -464,6 +464,8 @@ private struct FolderSidebar: View {
     @State private var searchPresented = false
     /// `-openFirstHit` (CI) 가 한 번만 열게.
     @State private var openedFirstHit = false
+    /// 찾기 칸에 글쇠가 가 있나 (265 — 칸을 직접 그린다).
+    @FocusState private var searchFocused: Bool
 
     private var query: String { library.searchText.trimmingCharacters(in: .whitespaces) }
 
@@ -471,6 +473,23 @@ private struct FolderSidebar: View {
         List(selection: $selection) {
             // **찾기 칸이 폴더 화면 맨 위에** (260, 2026-10-22 사용자 — *노트 목록에만 있다보니 임의로 아무 폴더를 누른 후 검색*).
             // 찾기는 처음부터 모든 노트를 뒤졌는데 칸이 한 폴더의 목록 위에만 있어 그 폴더만 찾는 줄로 읽혔다.
+            //
+            // **칸은 직접 그린다** (265, 2026-10-23 사용자 화면 녹화 — *검색 창을 보면 뭔가 어색해*). 시스템 찾기 칸(`.searchable` ·
+            // `navigationBarDrawer(.always)`)은 노트 목록에서 돌아올 때 바탕 없이 글자만 먼저 나왔다가 회색 칸이 덧입혀지며 아래로 튀었고,
+            // 폴더로 들어갈 때는 칸 글자가 노트 목록 위에 흐리게 남았다 — 화면을 넘길 때 칸을 내비게이션 막대가 따로 움직인다.
+            // 화면의 일부로 그리면 화면과 **함께** 움직인다.
+            //
+            // **아이폰은 목록 위에 붙박이로** (266, 2026-10-23 사용자 — *폴더 목록에서의 검색 창과 노트 목록에서의 검색 창이 이질적*) —
+            // 노트 목록의 칸과 **같은 것**(`SearchField`)을 **같은 자리**(`safeAreaInset` — 막대 바로 아래 · 같은 여백)에. 목록을 밀어도 남는다.
+            // 아이패드 폴더 칸은 목록의 첫 줄로 둔다 — 떠 있는 옆 칸이라 붙박이 띠의 바탕이 칸의 바탕과 안 맞는다.
+            if !rootIsCompact {
+                Section {
+                    searchField
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+            }
             if !query.isEmpty {
                 SearchHitRows { path in await openFromFolders(path) }
             } else if searchPresented {
@@ -479,11 +498,17 @@ private struct FolderSidebar: View {
                 folderSection
             }
         }
-        .searchable(text: $library.searchText, isPresented: $searchPresented,
-                    placement: .navigationBarDrawer(displayMode: .always),
-                    prompt: "모든 노트에서 찾기")
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if rootIsCompact {
+                searchField.background(Palette.paperGrouped)
+            }
+        }
         .overlay {
             if !query.isEmpty { SearchUnavailable() }
+        }
+        // 칸을 누르면 찾기가 열린다 — 빈 칸이면 최근 고친 노트 (261).
+        .onChange(of: searchFocused) { _, focused in
+            if focused { searchPresented = true }
         }
         // ⌘F (230) — **아이패드는 여기** (260). 아이폰은 노트 목록의 칸이 받는다 (`NoteList`).
         .task(id: library.searchRequestedAt) {
@@ -491,6 +516,7 @@ private struct FolderSidebar: View {
             try? await Task.sleep(for: .milliseconds(350))
             guard !Task.isCancelled else { return }
             searchPresented = true
+            searchFocused = true
             library.searchRequestedAt = nil
         }
         // CI — 폴더 화면에서 찾기 칸을 연 모습 (`-folderSearch`). 앱이 자리를 잡은 뒤에.
@@ -498,6 +524,7 @@ private struct FolderSidebar: View {
             guard library.launch.folderSearch else { return }
             try? await Task.sleep(for: .milliseconds(800))
             searchPresented = true
+            searchFocused = true
         }
         // CI — 최근 고친 노트 첫 줄을 손가락과 같은 길로 연다 (`-openFirstRecent` · 263 · 264). 찾기 칸이 열려 목록이 선 뒤에.
         .task(id: searchPresented ? library.recentNotes.first?.relativePath : nil) {
@@ -571,6 +598,15 @@ private struct FolderSidebar: View {
         }
     }
 
+    /// **폴더 화면의 찾기 칸** (265 · 266) — 노트 목록의 칸과 같은 `SearchField`. *취소* 는 글을 비우고 닫는다 — 폴더 목록으로.
+    private var searchField: some View {
+        SearchField(focused: $searchFocused, showsCancel: searchPresented || !query.isEmpty) {
+            library.searchText = ""
+            searchFocused = false
+            searchPresented = false
+        }
+    }
+
     /// **찾기 칸이 비었을 때 — 최근 고친 노트** (261, 2026-10-22 사용자 — *고친 순 10개*). 모든 폴더에서 고친 시각 순.
     /// 공유 창의 최근 노트(244)와 **같은 값**(`recentNotes`)이다 — 이름 바꾸기 · 옮기기 · 휴지통을 저절로 따라간다.
     /// 가짜 *최근* 폴더 줄은 두지 않는다 — 새 노트 · 새 폴더 · 끌어다 놓기 · 노트 수가 고른 폴더를 실제 폴더로 믿는다.
@@ -611,6 +647,7 @@ private struct FolderSidebar: View {
     private func openFromFolders(_ path: String, endingSearch: Bool = false) async {
         let commit = await library.prepareOpen(relativePath: path)
         if let commit {
+            searchFocused = false   // 글쇠판을 내린다 — 시스템 칸은 넘어갈 때 저절로 내렸다 (265)
             if rootIsCompact { selection = library.selectedFolder }
             commit()
         }
@@ -760,7 +797,8 @@ private struct FolderSidebar: View {
 private struct NoteList: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.rootIsCompact) private var rootIsCompact
-    @State private var searchPresented = false
+    /// 찾기 칸에 글쇠가 가 있나 (266 — 폴더 화면과 같은 칸을 직접 그린다).
+    @FocusState private var searchFocused: Bool
 
     /// **이 목록이 찾기 결과를 보이나** (260). 아이폰만 — 아이패드는 찾기 칸이 폴더 칸에 있고 결과도 거기 나온다.
     /// 두 칸이 나란히 보이는데 같은 결과를 두 번 그리면 군더더기다.
@@ -797,19 +835,32 @@ private struct NoteList: View {
                     if !library.pinnedNotes.isEmpty { Text("노트") }
                 }
             } else {
-                SearchHitRows { path in await library.open(relativePath: path) }
+                SearchHitRows { path in
+                    searchFocused = false   // 글쇠판을 내린다 — 시스템 칸은 넘어갈 때 저절로 내렸다 (266)
+                    await library.open(relativePath: path)
+                }
             }
         }
         // 검색 (ADR-0003). 150ms 디바운스는 모델이 한다. `⌘F` 로 칸을 연다 (S9). **아이폰만** (260 — 아이패드는 폴더 칸).
         // 안내 글은 폴더 화면의 칸과 같다 — 어디서 찾든 모든 노트를 찾는다 (2026-10-22 사용자 (가)).
-        .modifier(NoteListSearch(enabled: rootIsCompact, presented: $searchPresented))
+        // **폴더 화면과 같은 칸 · 같은 자리** (266) — 예전 시스템 칸(`.searchable` · 당기면 나옴)은 폭 · 밝기 · 자리가 폴더 화면의 칸과 달랐다.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if rootIsCompact {
+                SearchField(focused: $searchFocused,
+                            showsCancel: searchFocused || !library.searchText.trimmingCharacters(in: .whitespaces).isEmpty) {
+                    library.searchText = ""
+                    searchFocused = false
+                }
+                .background(Palette.paper)
+            }
+        }
         // ⌘F 는 바깥에 있다 (230 — `RootView.openSearch`). 목록이 서면 부탁을 받아 칸을 연다 — 막 나타나는 중이면
         // 여는 말이 넘기는 움직임에 묻혀 잠깐 기다린다.
         .task(id: library.searchRequestedAt) {
             guard rootIsCompact, let at = library.searchRequestedAt, Date().timeIntervalSince(at) < 2 else { return }
             try? await Task.sleep(for: .milliseconds(350))
             guard !Task.isCancelled else { return }
-            searchPresented = true
+            searchFocused = true
             library.searchRequestedAt = nil
         }
         .toolbar {
@@ -1054,20 +1105,52 @@ private struct SearchUnavailable: View {
     }
 }
 
-/// **노트 목록의 찾기 칸 — 아이폰만** (260). 아이패드는 폴더 칸에 칸이 있다 — 나란히 선 두 칸에 같은 칸 둘은 군더더기다.
-private struct NoteListSearch: ViewModifier {
+/// **찾기 칸 하나** (265 · 266) — 폴더 화면 · 아이폰 노트 목록이 **같은 이것**을 같은 여백으로 그린다 (보여 주는 자리가 둘이면 갈린다 — CLAUDE §1).
+/// 시스템 찾기 칸(`.searchable`)은 내비게이션 막대가 따로 그려 화면을 넘길 때 따로 움직였고(265), 두 화면에서 모양이 달랐다(266).
+/// 돋보기 · 안내 글 · 글이 있으면 지우기 단추 · *취소*. 글은 두 칸이 **같은 값**(`searchText`)이다.
+private struct SearchField: View {
     @EnvironmentObject private var library: LibraryModel
-    let enabled: Bool
-    @Binding var presented: Bool
+    var focused: FocusState<Bool>.Binding
+    let showsCancel: Bool
+    let onCancel: () -> Void
 
-    func body(content: Content) -> some View {
-        if enabled {
-            content.searchable(text: $library.searchText, isPresented: $presented,
-                               placement: .navigationBarDrawer(displayMode: .automatic),
-                               prompt: "모든 노트에서 찾기")
-        } else {
-            content
+    var body: some View {
+        HStack(spacing: Metrics.rowSpacing) {
+            HStack(spacing: Metrics.rowSpacing) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(Palette.inkFaint)
+                    .accessibilityHidden(true)
+                // 안내 글은 옅은 먹 — 기본 자리표시 색(한 단 더 옅다)은 어두운 화면에서 흐려 보였다 (266).
+                TextField("모든 노트에서 찾기", text: $library.searchText,
+                          prompt: Text("모든 노트에서 찾기").foregroundStyle(Palette.inkFaint))
+                    .font(.scaled(.body))
+                    .focused(focused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                if !library.searchText.isEmpty {
+                    Button {
+                        library.searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(Palette.inkFaint)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel(String(localized: "찾는 말 지우기"))
+                }
+            }
+            .padding(.horizontal, Metrics.scaledLength(10))
+            .padding(.vertical, Metrics.scaledLength(8))
+            .background(Palette.fill, in: Capsule())
+            if showsCancel {
+                Button("취소", action: onCancel)
+                    .font(.scaled(.body))
+                    .buttonStyle(.borderless)
+            }
         }
+        .padding(.horizontal, Metrics.gutter)
+        .padding(.vertical, Metrics.rowSpacing)
+        .animation(.default, value: showsCancel)
     }
 }
 
@@ -1478,7 +1561,8 @@ private struct NoteDetail: View {
     private func handle(_ action: NoteLinkAction) {
         switch action {
         case .note(let path):
-            Task { await library.open(relativePath: path) }
+            // 노트 안의 링크 — **이것만** 자취를 쌓아 위에 *왔던 노트로* 단추가 선다 (267).
+            Task { await library.open(relativePath: path, followingLink: true) }
         case .external(let url):
             openURL(url)
         case .attachment(let path):
