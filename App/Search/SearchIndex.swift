@@ -2,6 +2,36 @@ import Foundation
 import SQLite3
 import Core
 
+/// 찾기 결과 — 한도(200)를 넘었는지도 함께 (272).
+struct SearchResults: Sendable {
+    var hits: [SearchHit]
+    var truncated: Bool
+}
+
+/// 색인에 든 노트의 도장 — 파일의 고친 시각(초) · 크기. 같으면 색인이 본 본문이 지금 파일과 같다 (268 · 269).
+struct IndexStamp: Sendable, Equatable {
+    let mtime: Int
+    let size: Int
+}
+
+/// **첨부 셈의 힌트** (268 · 269) — 파일 담당이 읽지 않아도 되는 노트를 가린다 (`FolderStore.attachmentCensus(hint:)`).
+struct CensusHint: Sendable {
+    /// 색인에 본문까지 든 노트의 도장.
+    let indexed: [String: IndexStamp]
+    /// 판정에 들 수 있는 노트 — 늘 읽는다.
+    let candidates: Set<String>
+    /// 이 폴더 안의 노트도 늘 읽는다 (폴더 옮기기 — 안의 노트는 바깥으로 가는 링크가 바뀐다).
+    let inside: String?
+
+    /// 이 노트를 읽지 않아도 되나 — 후보가 아니고 · 폴더 안이 아니고 · 색인의 도장이 파일과 같을 때만.
+    func canSkip(_ path: String, mtime: Int?, size: Int?) -> Bool {
+        guard !candidates.contains(path) else { return false }
+        if let inside, !inside.isEmpty, path.hasPrefix(inside + "/") { return false }
+        guard let stamp = indexed[path], let mtime, let size else { return false }
+        return stamp.mtime == mtime && stamp.size == size
+    }
+}
+
 /// 검색 결과 하나. 화면에는 `Sendable` 값만 건넨다.
 struct SearchHit: Identifiable, Hashable, Sendable {
     let relativePath: String
@@ -61,8 +91,12 @@ actor SearchIndex {
     /// 폴더마다 색인 하나. `Application Support/Index/<폴더 이름>-v<판>.sqlite`. **iCloud 로 안 간다.**
     init(for root: URL) {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let folder = support.appendingPathComponent("Index", isDirectory: true)
+        var folder = support.appendingPathComponent("Index", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        // **기기 백업에 넣지 않는다** (273) — 본문의 4배쯤 되는 캐시다 (노트 1만 개면 150MB). 백업에서 돌아오면 다시 만들면 된다.
+        var backup = URLResourceValues()
+        backup.isExcludedFromBackup = true
+        try? folder.setResourceValues(backup)
         let stem = Paths.safeFileName(root.path.replacingOccurrences(of: "/", with: "_"), fallback: "root")
         let name = String(stem.suffix(120))
         fileURL = folder.appendingPathComponent("\(name)-v\(Self.version).sqlite")
@@ -247,9 +281,75 @@ actor SearchIndex {
     func rename(from old: String, to new: String) {
         do { try open() } catch { return }
         transaction {
+            // **찾기 표는 rowid 로** (276) — `rel_path` 는 색인 없는 열이라 표 전체를 훑었다 (255 의 지우기와 같은 모양이 여기 남았다).
+            if let id = rowID(of: old) {
+                run("UPDATE note_fts SET rel_path = ? WHERE rowid = ?", [.text(new), .int(id)])
+            }
             run("UPDATE note SET rel_path = ? WHERE rel_path = ?", [new, old])
-            run("UPDATE note_fts SET rel_path = ? WHERE rel_path = ?", [new, old])
+            // 다른 노트가 가리키던 이 노트의 경로도 (역링크가 따라오게). 그 노트들의 파일은 고치지 않는다 — 제목을 따라 이름을 바꿀 때
+            // 링크를 고치지 않는 것과 같다. 경로 하나에 꼭 맞게 앞뒤 구분자까지.
+            let from = Self.linksSeparator + old + Self.linksSeparator
+            let to = Self.linksSeparator + new + Self.linksSeparator
+            run("UPDATE note SET links = replace(links, ?, ?) WHERE instr(links, ?) > 0", [from, to, from])
         }
+    }
+
+    /// **폴더 이름이 바뀌거나 옮겨졌다** (276) — 그 안 노트들의 줄을 새 경로로 옮긴다. 파일의 시각 · 크기는 그대로라 다음 새로 고침이
+    /// 본문을 **다시 읽지 않는다** (예전에는 폴더 안 노트를 모두 새 노트로 보고 다시 읽었다 — 3,000개면 10초 넘게).
+    /// 다른 노트의 `links` 에 적힌 이 폴더 경로도 바꾼다 — 폴더 안 노트끼리의 링크는 글이 그대로라 다시 읽지 않는다.
+    func renameFolder(from old: String, to new: String) {
+        guard !old.isEmpty, old != new else { return }
+        do { try open() } catch { return }
+        let oldPrefix = old + "/", newPrefix = new + "/"
+        // SQLite `substr` 는 **코드 포인트**로 센다 — Swift 의 `count`(글자 묶음)가 아니라 `unicodeScalars.count` 와 같다.
+        let length = Int64(oldPrefix.unicodeScalars.count)
+        transaction {
+            run("UPDATE note_fts SET rel_path = ? || substr(rel_path, ?) WHERE rowid IN (SELECT id FROM note WHERE substr(rel_path, 1, ?) = ?)",
+                [.text(newPrefix), .int(length + 1), .int(length), .text(oldPrefix)])
+            run("UPDATE note SET rel_path = ? || substr(rel_path, ?) WHERE substr(rel_path, 1, ?) = ?",
+                [.text(newPrefix), .int(length + 1), .int(length), .text(oldPrefix)])
+            let from = Self.linksSeparator + oldPrefix, to = Self.linksSeparator + newPrefix
+            run("UPDATE note SET links = replace(links, ?, ?) WHERE instr(links, ?) > 0", [from, to, from])
+        }
+    }
+
+    // MARK: - 첨부 셈의 힌트 (268 · 269)
+
+    /// **모든 노트 본문을 읽지 않아도 되게** (268 · 269, 2026-10-24 규모 점검 — 폴더 확인창 · 사진 든 노트 지우기가 금고의 모든 노트를 읽었다).
+    /// 색인에 본문까지 든 노트의 도장과, 판정에 **들 수 있는** 노트를 준다. 파일 담당은 도장이 같고 후보가 아닌 노트를 읽지 않는다 —
+    /// 그 노트의 본문은 색인이 이미 보았고 그 안에 찾는 이름 · 링크가 없다. 도장이 다르면(그 사이 고쳐짐 · 아직 색인 안 됨) 예전처럼 읽는다.
+    /// 후보: 이름(`names` — 첨부 파일 이름)이 본문에 든 노트 · `paths` 를 링크로 가리키는 노트 · `folder` 안을 가리키는 노트.
+    /// 이름은 첨부 셈(`AttachmentLedger.Usage`)과 같은 꼴로 견준다 — 작은 글자 · NFC · NFD · 퍼센트 꼴.
+    /// `readingInside` — 폴더를 옮길 때만: 그 안의 노트도 늘 읽는다 (바깥으로 가는 링크가 바뀐다). 세기만 할 때는 안 읽는다.
+    func censusHint(names: [String] = [], paths: [String] = [], linkingInto folder: String? = nil,
+                    readingInside: Bool = false) -> CensusHint? {
+        do { try open() } catch { return nil }
+        var indexed: [String: IndexStamp] = [:]
+        for row in query("SELECT rel_path, mtime, size FROM note WHERE mtime <> ?", [String(Self.titleOnlyStamp)]) {
+            guard let mtime = Int(row[1]), let size = Int(row[2]) else { continue }
+            indexed[row[0]] = IndexStamp(mtime: mtime, size: size)
+        }
+        var candidates: Set<String> = []
+        var needles: Set<String> = []
+        for name in names where !name.isEmpty {
+            let lowered = Paths.normalized(name).lowercased()
+            needles.insert(lowered)
+            needles.insert(lowered.decomposedStringWithCanonicalMapping)
+            let encoded = lowered.addingPercentEncoding(withAllowedCharacters: AttachmentLedger.quoteSafeCharacters) ?? lowered
+            needles.insert(encoded.lowercased())
+        }
+        for needle in needles where !needle.isEmpty {
+            for row in query("SELECT rel_path FROM note_fts WHERE instr(lower(body), ?) > 0", [needle]) { candidates.insert(row[0]) }
+        }
+        for path in paths where !path.isEmpty {
+            let needle = Self.linksSeparator + Paths.normalized(path) + Self.linksSeparator
+            for row in query("SELECT rel_path FROM note WHERE instr(links, ?) > 0", [needle]) { candidates.insert(row[0]) }
+        }
+        if let folder, !folder.isEmpty {
+            let needle = Self.linksSeparator + Paths.normalized(folder) + "/"
+            for row in query("SELECT rel_path FROM note WHERE instr(links, ?) > 0", [needle]) { candidates.insert(row[0]) }
+        }
+        return CensusHint(indexed: indexed, candidates: candidates, inside: readingInside ? folder : nil)
     }
 
     /// **이 노트를 가리키는 노트** (212 · 253). 색인할 때 적어 둔 `links` 에서 찾는다 — 예전에는 폴더의 모든 본문을 읽었다.
@@ -359,9 +459,12 @@ actor SearchIndex {
         }
     }
 
-    func search(_ raw: String) -> [SearchHit] {
-        do { try open() } catch { return [] }
-        var hits = textHits(raw)
+    /// 찾기 결과의 한도 (272). 넘으면 화면이 *여기까지만* 이라고 알린다 — 말없이 자르지 않는다.
+    static let resultLimit = 200
+
+    func search(_ raw: String) -> SearchResults {
+        do { try open() } catch { return SearchResults(hits: [], truncated: false) }
+        var (hits, truncated) = textHits(raw)
         // **제목 초성** (246) — 말이 한글 자음만이면 제목의 첫소리와도 견준다. 보통 검색에 **더한다**
         // (본문에 `ㅎㅎ` 를 쓴 노트도 그대로 찾힌다). 제목 수천 개도 한순간이라 표를 따로 두지 않는다.
         if let initials = HangulInitials.query(raw) {
@@ -372,16 +475,21 @@ actor SearchIndex {
                 hits.append(SearchHit(relativePath: row[0], title: row[1], line: row[2], byTitle: true))
             }
         }
-        return hits.sorted { a, b in
+        let sorted = hits.sorted { a, b in
             if a.byTitle != b.byTitle { return a.byTitle }
             return a.title.localizedStandardCompare(b.title) == .orderedAscending
         }
+        // 초성으로 더한 것까지 한도 안에서 — 제목이 맞은 것이 앞이라 잘려도 제목은 남는다.
+        if sorted.count > Self.resultLimit { truncated = true }
+        return SearchResults(hits: Array(sorted.prefix(Self.resultLimit)), truncated: truncated)
     }
 
     /// 보통 검색 — 3글자 이상은 `MATCH`, 짧은 말은 `LIKE`. 차례는 `search` 가 세운다.
-    private func textHits(_ raw: String) -> [SearchHit] {
+    /// **제목이 맞는 노트를 먼저 뽑는다** (272) — 예전에는 아무 차례로 200개를 받은 뒤에 제목을 앞에 세워, 흔한 말이면 제목이 맞는
+    /// 노트가 200개 밖으로 밀릴 수 있었다. 이제 제목에서 맞은 것을 먼저 받고, 남은 자리를 본문에서 맞은 것으로 채운다.
+    private func textHits(_ raw: String) -> (hits: [SearchHit], truncated: Bool) {
         let queryText = SearchQueryParser.parse(raw)
-        guard !queryText.isEmpty else { return [] }
+        guard !queryText.isEmpty else { return ([], false) }
 
         // trigram 이 없으면 전부 LIKE 로 (A4 후퇴).
         var q = queryText
@@ -409,22 +517,35 @@ actor SearchIndex {
             // `%prefix%` 에서 앞 `%` 만 뗀다 — 경로는 **앞부터** 맞아야 한다.
             binds.append(String(SearchQueryParser.likePattern(for: prefix).dropFirst()))
         }
-        guard !conditions.isEmpty else { return [] }
+        guard !conditions.isEmpty else { return ([], false) }
 
-        let sql = "SELECT rel_path, title, body FROM note_fts WHERE " + conditions.joined(separator: " AND ") + " LIMIT 200"
         let terms = (q.ftsTerms + q.likeTerms).map { $0.lowercased() }
+        let base = "SELECT rel_path, title, body FROM note_fts WHERE " + conditions.joined(separator: " AND ")
+        // 제목에 낱말이 다 든 것 먼저 — 같은 조건에 제목 조건을 더한다.
+        var rows: [[String]] = []
+        if !terms.isEmpty {
+            let titleConditions = terms.map { _ in "title LIKE ? ESCAPE '\\'" }.joined(separator: " AND ")
+            rows = query(base + " AND " + titleConditions + " LIMIT \(Self.resultLimit)",
+                         binds + terms.map { SearchQueryParser.likePattern(for: $0) })
+        }
+        // 나머지 — 한 줄 더 받아 넘치는지 안다.
+        let rest = query(base + " LIMIT \(Self.resultLimit + rows.count + 1)", binds)
         var hits: [SearchHit] = []
         var seen: Set<String> = []
-        for row in query(sql, binds) {
+        var truncated = false
+        for row in rows + rest {
             let path = row[0], title = row[1], body = row[2]
-            // 같은 경로가 두 번 오면 목록의 이름표(`id`)가 겹친다 — 화면이 어긋나거나 꺼진다 (184).
-            guard seen.insert(path).inserted else { continue }
+            // 같은 경로가 두 번 오면 목록의 이름표(`id`)가 겹친다 — 화면이 어긋나거나 꺼진다 (184). 제목에서 받은 것이 뒤에서 또 온다.
+            guard !seen.contains(path) else { continue }
+            // 한도가 찬 뒤에 **새** 노트가 또 오면 넘친 것이다.
+            guard hits.count < Self.resultLimit else { truncated = true; break }
+            seen.insert(path)
             let byTitle = terms.contains { title.lowercased().contains($0) }
             let line = Self.matchingLine(in: body, terms: terms, skipping: title)
                 ?? Self.firstBodyLine(of: FrontMatterParser.parse(body).body)
             hits.append(SearchHit(relativePath: path, title: title, line: line, byTitle: byTitle))
         }
-        return hits
+        return (hits, truncated)
     }
 
     // MARK: - 줄 고르기 (순수)

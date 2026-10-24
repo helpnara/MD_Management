@@ -165,6 +165,9 @@ public enum AttachmentLedger {
 
     /// 파이썬 `urllib.parse.quote` 가 그대로 두는 글자 — 영문 · 숫자 · `_.-~/`.
     /// `CharacterSet.alphanumerics` 는 한글도 글자로 쳐서 쓰지 않는다.
+    /// 앱의 첨부 셈 힌트(268 · 269 — `SearchIndex.censusHint`)가 같은 꼴로 견주게 연다. 셈은 여기 하나다 (CLAUDE §1).
+    public static var quoteSafeCharacters: CharacterSet { quoteSafe }
+
     static let quoteSafe = CharacterSet(
         charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-~/")
 

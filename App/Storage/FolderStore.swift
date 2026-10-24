@@ -597,13 +597,13 @@ actor FolderStore {
     /// 그래야 다른 폴더의 같은 이름 `A.md` 와 섞이지 않고, 되돌리면 원래 폴더로
     /// 돌아간다 (빌드 15 · 5번 — 예전에는 `A 2.md` 로 이름이 바뀌어 최상위로 갔다).
     /// DB 없이 파일 구조만으로 기억하므로 ADR-0001 을 지킨다.
-    func trash(_ relativePath: String) throws -> String {
+    func trash(_ relativePath: String, hint: CensusHint? = nil) throws -> String {
         openScopeIfNeeded()
         let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
         let folder = Paths.directory(of: relativePath)
         let trashFolder = folder.isEmpty ? ".trash" : ".trash/" + folder
         // 옮기기 전에 읽어야 한다 — 이 노트만 쓰는 첨부를 같이 보낸다 (60).
-        let attachments = exclusiveAttachments(of: relativePath)
+        let attachments = exclusiveAttachments(of: relativePath, hint: hint)
         try createFolder(trashFolder)
         let target = uniqueRelativePath(name: name, in: trashFolder)
         try move(from: root.appendingPathComponent(relativePath),
@@ -625,14 +625,22 @@ actor FolderStore {
     /// 따로 두는 약속이었는데, 옮기기(T1)와 붙여넣기(144)가 `../회의/assets/a.png` 같은 **폴더 밖
     /// 링크**를 만들면서 그 약속이 깨졌다. 다른 폴더 노트의 사진이 휴지통으로 가던 자리다.
     /// 셈은 `AttachmentLedger` 하나다 — 정리 화면(174) · 영구 삭제(173)와 같은 셈.
-    private func exclusiveAttachments(of notePath: String) -> [String] {
+    private func exclusiveAttachments(of notePath: String, hint: CensusHint?) -> [String] {
         // **이 노트가 첨부를 하나도 안 가리키면 폴더 전체를 읽지 않는다** (253). 셈(`trashing`)은 이 노트의 링크 가운데서만
         // 고르므로 비면 결과도 비어 있다 — 대부분의 노트가 여기서 끝난다. 첨부가 있는 노트만 예전처럼 전체를 본다 (잘못 치우면 사진이 깨진다).
         guard let text = try? readText(at: notePath),
               !AttachmentLedger.preciseReferences(of: notePath, text: text).isEmpty else { return [] }
-        let census = attachmentCensus()
+        let census = attachmentCensus(hint: hint)
         return AttachmentLedger.trashing(notePath, notes: census.notes,
                                          trashed: census.trashed, files: census.files)
+    }
+
+    /// 이 노트가 **링크로 가리키는 첨부** (노트로 가는 링크는 빼고) — 지우기 전에 모델이 셈 힌트를 받으려고 묻는다 (269).
+    /// 못 읽으면 빈 목록 — 그때는 힌트 없이 예전처럼 센다.
+    func attachmentReferences(of notePath: String) -> [String] {
+        openScopeIfNeeded()
+        guard let text = try? readText(at: notePath) else { return [] }
+        return AttachmentLedger.ordered(AttachmentLedger.preciseReferences(of: notePath, text: text))
     }
 
     /// **첨부 셈에 넘길 것** (172 · 173 · 174). 폴더 전체를 한 번 훑는다 — 휴지통은 넣고,
@@ -641,12 +649,17 @@ actor FolderStore {
     /// 노트는 본문을 읽는다. **아직 안 내려온 노트는 `nil`** — 셈이 판정을 멈춘다(못 읽은 노트가
     /// 그 사진을 쓸 수 있다). 옛 iCloud 자리표시자(`.이름.icloud`)도 안 내려온 노트로 센다.
     /// 노트가 아닌 파일은 경로와 크기만.
-    func attachmentCensus(meter: WorkMeter = .none) -> AttachmentCensus {
+    ///
+    /// **힌트가 있으면 읽지 않아도 되는 노트를 건너뛴다** (268 · 269 — `CensusHint`). 색인이 본문을 보았고(도장이 파일과 같다) 찾는 이름 ·
+    /// 링크가 그 본문에 없던 노트는 셈에서 빠져도 판정이 같다 — 셈은 *쓰는 노트* 만 찾기 때문이다. 휴지통 노트는 색인에 없어 늘 읽는다.
+    /// 예전에는 금고의 모든 노트를 읽었다 — 노트 1만 개면 20~40초 · 본문 전체를 메모리에 (2026-10-24 규모 점검).
+    func attachmentCensus(meter: WorkMeter = .none, hint: CensusHint? = nil) -> AttachmentCensus {
         openScopeIfNeeded()
         var census = AttachmentCensus()
         var read = 0
         let keys: Set<URLResourceKey> = [
-            .isDirectoryKey, .fileSizeKey, .isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey
+            .isDirectoryKey, .fileSizeKey, .isUbiquitousItemKey, .ubiquitousItemDownloadingStatusKey,
+            .contentModificationDateKey
         ]
         var pending = [""]
         while let folder = pending.popLast() {
@@ -671,6 +684,12 @@ actor FolderStore {
                 }
                 let path = folder.isEmpty ? name : folder + "/" + name
                 if Paths.isNoteFile(path) {
+                    // 268 · 269 — 색인이 이미 본 노트이고 찾는 것이 없으면 읽지 않는다 (자리표시 파일은 도장이 그 파일의 것이라 늘 셈대로).
+                    if let hint, !placeholder, !path.hasPrefix(".trash/"),
+                       hint.canSkip(path, mtime: values?.contentModificationDate.map { Int($0.timeIntervalSince1970) },
+                                    size: values?.fileSize) {
+                        continue
+                    }
                     var text: String?
                     if !placeholder, Self.isDownloaded(values) { text = try? readText(at: path) }
                     read += 1
@@ -797,24 +816,25 @@ actor FolderStore {
     /// 폴더 이름을 바꾸고 **그 폴더 안을 가리키던 링크를 따라 고친다** (179, 사용자 — 남은 할 일을
     /// 반영해 제출하자). 168 은 알리기만 해서, 이름을 바꾸면 다른 폴더 노트의 사진이 깨졌다.
     func renameFolderFixingLinks(_ relativePath: String, to newName: String,
-                                 meter: WorkMeter = .none) throws -> FolderRename {
-        try relocateFixingLinks(relativePath, meter: meter) { try renameFolder(relativePath, to: newName) }
+                                 meter: WorkMeter = .none, hint: CensusHint? = nil) throws -> FolderRename {
+        try relocateFixingLinks(relativePath, meter: meter, hint: hint) { try renameFolder(relativePath, to: newName) }
     }
 
     /// 폴더를 다른 폴더 안으로 옮기고 링크를 고친다 (204). 안의 노트가 한 단계 깊어지거나 얕아지므로
     /// 바깥을 가리키던 링크도 새 자리에 맞춘다 — 셈은 이름 바꾸기와 같은 `MarkdownLinks.retargeted`.
     func moveFolderFixingLinks(_ relativePath: String, into parent: String,
-                               meter: WorkMeter = .none) throws -> FolderRename {
-        try relocateFixingLinks(relativePath, meter: meter) { try moveFolder(relativePath, into: parent) }
+                               meter: WorkMeter = .none, hint: CensusHint? = nil) throws -> FolderRename {
+        try relocateFixingLinks(relativePath, meter: meter, hint: hint) { try moveFolder(relativePath, into: parent) }
     }
 
     /// 옮기기 **전에** 폴더 전체를 읽는다 — 옛 자리로 링크를 풀어야 하기 때문이다. 고치는 셈은
     /// `MarkdownLinks.retargeted` 하나다. 안의 노트는 새 자리에 쓴다. 쓸 때 **읽은 글과 같을 때만**
     /// 쓴다(`expecting`) — 그 사이 다른 기기에서 고쳤으면 건드리지 않고 못 고친 수로 센다.
     /// 아직 안 내려온 노트는 읽을 수 없어 못 본 수로 센다.
-    private func relocateFixingLinks(_ relativePath: String, meter: WorkMeter,
+    /// 힌트(268)가 있으면 **이 폴더를 가리키는 노트 · 폴더 안 노트**만 읽는다 — 고칠 링크는 그 둘에만 있다.
+    private func relocateFixingLinks(_ relativePath: String, meter: WorkMeter, hint: CensusHint?,
                                      _ relocate: () throws -> String) throws -> FolderRename {
-        let census = attachmentCensus(meter: meter)
+        let census = attachmentCensus(meter: meter, hint: hint)
         let moved = try relocate()
         guard moved != relativePath else { return FolderRename(path: moved) }
         var result = FolderRename(path: moved)
@@ -897,12 +917,12 @@ actor FolderStore {
     /// **이 노트만 쓰던 첨부도 같이 지운다** (173). 예전에는 노트만 지워 첨부가 `.trash/` 에
     /// 안 보이게 영원히 남았다. 휴지통의 다른 노트가 쓰거나, 살아 있는 노트가 원래 자리를
     /// 가리키는데 거기 파일이 없으면(그 휴지통 파일이 유일한 사본) 남긴다 — `AttachmentLedger.purging`.
-    func deleteTrashed(_ relativePath: String) throws {
+    func deleteTrashed(_ relativePath: String, hint: CensusHint? = nil) throws {
         guard relativePath.hasPrefix(".trash/") else { return }
         openScopeIfNeeded()
         // 첨부를 안 가리키는 노트는 폴더 전체를 읽지 않는다 (253 · `exclusiveAttachments` 와 같은 까닭).
         let references = (try? readText(at: relativePath)).map { AttachmentLedger.preciseReferences(of: relativePath, text: $0) } ?? []
-        let census = references.isEmpty ? AttachmentCensus() : attachmentCensus()
+        let census = references.isEmpty ? AttachmentCensus() : attachmentCensus(hint: hint)
         let attachments = references.isEmpty ? [] : AttachmentLedger.purging(relativePath, notes: census.notes,
                                                                              trashed: census.trashed, files: census.files)
         try remove(root.appendingPathComponent(relativePath))
@@ -977,8 +997,8 @@ actor FolderStore {
 
     /// **폴더 밖 노트가 이 폴더 안을 가리키는 링크 수** (168). 폴더 이름을 바꾸거나 지우면
     /// 그 링크가 깨진다 — 확인창이 먼저 알린다. 못 읽은 노트는 세지 못한다(`nil` 이 아니라 뺀 값).
-    func incomingLinkCount(toFolder folder: String) -> Int {
-        let census = attachmentCensus()
+    func incomingLinkCount(toFolder folder: String, hint: CensusHint? = nil) -> Int {
+        let census = attachmentCensus(hint: hint)
         return AttachmentLedger.incomingLinks(to: folder, notes: census.notes)
     }
 

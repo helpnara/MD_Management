@@ -1,0 +1,13 @@
+• 노트가 많아도 폴더 이름 바꾸기와 옮기기, 사진이 든 노트 지우기가 빨라졌습니다.
+• 폴더를 오갈 때 더 가볍게 움직입니다.
+• 찾기에서 제목이 맞는 노트가 먼저 나옵니다. 결과가 아주 많으면 몇 개까지 보여 주는지 알려 줍니다.
+• 지운 폴더의 노트가 찾기에 남던 문제를 고쳤습니다.
+• 검색 색인을 기기 백업에서 빼서 백업 크기가 줄어듭니다.
+
+— English (What’s New in This Version) —
+
+• Renaming or moving folders and deleting notes with photos are faster, even with many notes.
+• Switching between folders is lighter.
+• Search lists notes whose titles match first, and tells you when there are too many results to show.
+• Fixed notes from a deleted folder still showing up in search.
+• The search index is no longer included in device backups, so backups are smaller.
