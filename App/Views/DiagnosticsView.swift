@@ -86,6 +86,16 @@ struct DiagnosticsView: View {
                             ? String(localized: "\(library.indexStatus.titleOnlyCount)개 · 안 받은 노트가 많아 내려받지 않음")
                             : String(localized: "\(library.indexStatus.titleOnlyCount)개"))
 
+                    // 274 — 안 받은 노트가 있으면 사람이 고를 수 있게 (안 받은 노트가 500개를 넘으면 앱은 스스로 받지 않는다 — 245).
+                    if library.indexStatus.pendingDownloads > 0 {
+                        Button {
+                            Task { await library.downloadAll() }
+                        } label: {
+                            Label(String(localized: "아직 받지 않은 노트 \(library.indexStatus.pendingDownloads)개 모두 받기"),
+                                  systemImage: "icloud.and.arrow.down")
+                        }
+                    }
+
                     row(String(localized: "마지막 갱신"), String(format: String(localized: "%.2f초"), library.indexStatus.lastRefreshSeconds))
 
                     // 앱이 스스로 잰 값이다 — 사람이 초시계를 들 수는 없다 (S1 · A5c).
@@ -324,6 +334,12 @@ struct TestToolsView: View {
                                   systemImage: "square.stack.3d.up")
                         }
                     }
+                    // 274 실기기 확인 — 안 받은 노트를 만든다 (`파일` 앱의 *다운로드 제거* 와 같다). iCloud 에는 그대로 있다.
+                    Button {
+                        Task { await library.evictScaleTest() }
+                    } label: {
+                        Label("규모 시험 노트를 이 기기에서 내리기", systemImage: "icloud.and.arrow.up")
+                    }
                     Button(role: .destructive) {
                         Task { await library.removeScaleTest() }
                     } label: {
@@ -333,7 +349,7 @@ struct TestToolsView: View {
             } header: {
                 Text("규모 시험")
             } footer: {
-                Text("`규모 시험` 폴더에 노트를 만듭니다 (어느 것이든 합쳐 약 20MB — 1,000 · 3,000 개는 작은 노트). **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 이미 있으면 뒤에 이어 붙입니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `마지막 열기` · `마지막 검색` 을 보면 규모에서 어디가 느린지 잴 수 있습니다. 지우기는 휴지통으로 갑니다.")
+                Text("`규모 시험` 폴더에 노트를 만듭니다 (어느 것이든 합쳐 약 20MB — 1,000 · 3,000 개는 작은 노트). **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 이미 있으면 뒤에 이어 붙입니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `마지막 열기` · `마지막 검색` 을 보면 규모에서 어디가 느린지 잴 수 있습니다. **이 기기에서 내리기**는 노트를 iCloud 에만 남깁니다 — 새 기기처럼 안 받은 노트가 많을 때를 볼 수 있습니다 (다 올라간 뒤에만 내려집니다). 지우기는 휴지통으로 갑니다.")
             }
         }
         .navigationTitle("시험 도구")

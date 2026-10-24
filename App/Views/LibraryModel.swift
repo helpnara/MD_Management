@@ -2222,9 +2222,11 @@ final class LibraryModel: ObservableObject {
             self.noteRecentTargets(all)
             // **제 띠로** (259) — 처음 색인 · 다른 기기에서 많이 바뀌었을 때 몇 개 중 몇 개인지. 이 일은 부른 일(폴더 지우기 등)보다
             // 오래 갈 수 있어 그 띠 안에 묻지 않는다 (`WorkScope` 를 끄고 따로 세운다). 빨리 끝나면(대개) 띠가 안 뜬다.
+            let first = self.selectedFolder
             let changed = await WorkScope.active.withValue(false) {
                 await self.working(String(localized: "검색 색인을 만드는 중")) { meter in
-                    await index.refresh(all, meter: meter) { path in try await store.readText(at: path) }
+                    // 275 — 보는 폴더 · 최근 고친 노트부터.
+                    await index.refresh(all, first: first, meter: meter) { path in try await store.readText(at: path) }
                 }
             }
             guard !Task.isCancelled else { return }
@@ -3033,6 +3035,52 @@ final class LibraryModel: ObservableObject {
         }
         isLoading = false
         await loadSelectedText()
+    }
+
+    // MARK: - 아직 안 내려온 노트 (274)
+
+    /// **진단의 *모두 받기*** (274, 2026-10-24 규모 점검). 안 받은 노트가 500개를 넘으면 색인이 받기를 시키지 않는다(245 — 데이터 · 배터리,
+    /// 2026-10-13 사용자 결정). 새 기기 · 저장 공간 정리 뒤에는 모든 노트가 제목으로만 찾혔다 — 사람이 고를 수 있게 단추를 둔다.
+    /// 받기를 시킨 뒤 **다 올 때까지 아래 띠에 몇 개 중 몇 개**를 보여 준다. 1분 동안 하나도 안 오면 멈춘다 (iCloud 가 늦으면 다음에 이어진다).
+    func downloadAll() async {
+        guard let store else { return }
+        let pending = await store.allNotes().filter { !$0.isDownloaded }.map(\.relativePath)
+        guard !pending.isEmpty else { return }
+        let total = pending.count
+        log("모두 받기: \(total)개")
+        let left = await working(String(localized: "아직 받지 않은 노트를 받는 중"), total: total) { meter in
+            _ = await store.requestDownloads(pending)
+            var remaining = total
+            var lastProgress = Date()
+            while remaining > 0, !Task.isCancelled, Date().timeIntervalSince(lastProgress) < 60 {
+                try? await Task.sleep(for: .seconds(3))
+                let now = await store.allNotes().filter { !$0.isDownloaded }.count
+                if now < remaining { lastProgress = Date() }
+                remaining = now
+                meter(max(0, total - remaining), of: total)
+            }
+            return remaining
+        }
+        log(left == 0 ? "모두 받기 끝" : "모두 받기 — \(left)개는 아직 안 옴 (iCloud 가 이어서 받는다)")
+        scheduleIndexRefresh()
+        if left > 0 {
+            report(String(localized: "\(left)개는 아직 받는 중입니다. iCloud 가 이어서 받습니다."))
+        }
+    }
+
+    /// **시험 도구 — 규모 시험 노트를 이 기기에서 내린다** (274 실기기 확인). iCloud 에만 남긴다 — *모두 받기* · 제목만 찾기를 재현하려고.
+    func evictScaleTest() async {
+        guard let store else { return }
+        let result = await working(String(localized: "규모 시험 노트를 기기에서 내리는 중")) { meter in
+            await store.evictNotes(in: Self.scaleFolder, meter: meter)
+        }
+        log("규모 시험 기기에서 내림: \(result.evicted)개 · 못 내림 \(result.failed)개")
+        scheduleIndexRefresh()
+        if result.failed > 0 {
+            report(String(localized: "\(result.evicted)개를 내렸습니다. \(result.failed)개는 아직 iCloud 에 다 올라가지 않아 못 내렸습니다 — 조금 뒤 다시 누르세요."))
+        } else {
+            report(String(localized: "\(result.evicted)개를 이 기기에서 내렸습니다. iCloud 에는 그대로 있습니다."))
+        }
     }
 
     /// 폴더를 고르기만 할 때 전체 색인 · 금고 열거를 다시 돌리는 간격 (270).

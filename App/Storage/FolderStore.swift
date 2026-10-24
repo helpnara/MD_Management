@@ -635,6 +635,38 @@ actor FolderStore {
                                          trashed: census.trashed, files: census.files)
     }
 
+    // MARK: - 내려받기 (274)
+
+    /// **아직 안 내려온 노트를 받으라고 시킨다** (274 — 진단의 *모두 받기*). 시킨 수를 준다. 받는 것은 iCloud 가 뒤에서 한다 —
+    /// 다 왔는지는 모델이 목록(`allNotes` 의 `isDownloaded`)으로 본다.
+    func requestDownloads(_ paths: [String], meter: WorkMeter = .none) -> Int {
+        openScopeIfNeeded()
+        var asked = 0
+        for path in paths {
+            if (try? FileManager.default.startDownloadingUbiquitousItem(at: root.appendingPathComponent(path))) != nil { asked += 1 }
+            meter.tick(asked, of: paths.count)
+        }
+        return asked
+    }
+
+    /// **시험 도구 — 폴더 안 노트를 이 기기에서 내린다** (274 실기기 확인). iCloud 에만 남기고 기기의 사본을 지운다 — `파일` 앱의
+    /// *다운로드 제거* 와 같다. 아직 iCloud 에 다 올라가지 않은 파일은 내릴 수 없다(실패로 센다). 내린 수 · 못 내린 수를 준다.
+    func evictNotes(in folder: String, meter: WorkMeter = .none) -> (evicted: Int, failed: Int) {
+        openScopeIfNeeded()
+        let found = self.notes(in: folder, includingHidden: false)
+        var evicted = 0, failed = 0
+        for (offset, note) in found.enumerated() {
+            do {
+                try FileManager.default.evictUbiquitousItem(at: root.appendingPathComponent(note.relativePath))
+                evicted += 1
+            } catch {
+                failed += 1
+            }
+            meter.tick(offset + 1, of: found.count)
+        }
+        return (evicted, failed)
+    }
+
     /// 이 노트가 **링크로 가리키는 첨부** (노트로 가는 링크는 빼고) — 지우기 전에 모델이 셈 힌트를 받으려고 묻는다 (269).
     /// 못 읽으면 빈 목록 — 그때는 힌트 없이 예전처럼 센다.
     func attachmentReferences(of notePath: String) -> [String] {
