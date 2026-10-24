@@ -16,18 +16,35 @@ updated: 2026-10-12
 ## 0. 한 주의 차례
 
 > **D = 2026-11-02 (월)** (2026-10-12 사용자 — *출시 주 홍보 첫 단계부터 하자*). 1.1.4 는 이미 나왔고 1.1.5 는 심사 중이라 *판 출시 날* 이 아니라
-> **홍보 주**로 잡았다 — 애플이 권하는 추천 신청 시간(3주)을 지키고, 그 주에 인앱 이벤트 · 블로그 · 커뮤니티를 몰아 낸다. 그때 나와 있는 판을 알린다 (2026-10-22 — 1.1.11 출시 · 1.1.12 심사 중. 1.1.12 가 11-02 전에 나오면 그 판까지).
+> **홍보 주**로 잡았다 — 애플이 권하는 추천 신청 시간(3주)을 지키고, 그 주에 인앱 이벤트 · 블로그 · 커뮤니티를 몰아 낸다. 그때 나와 있는 판을 알린다 (2026-10-25 — **1.1.15 출시** · 폴더 화면 찾기 칸 · 최근 고친 노트 · 노트가 많아도 빠름까지 다 나와 있다).
 
 | 언제 | 할 일 | 어디 |
 |---|---|---|
 | ✅ 3주 전 — 10-12 | 애플 추천 신청 (§2) — **제출함** (2026-10-12 사용자) | App Store Connect → 앱 → 느린 여백 → 사이드바 Featuring → Nominations |
 | ✅ 2주 전 — 10-19 | 인앱 이벤트 **공개 시작** (§3) — **승인 2026-10-16** (제출 10-15 · 바로 가기 `slowmargin://event` · 그림 네 장) | App Store Connect → 인앱 이벤트 |
-| **1주 전 — 10-26 (다음)** | 캠페인 링크 만들기 (§1) · 글 초안 다듬기 (§4~§6) | 이 문서 |
+| **1주 전 — 10-26 (다음)** | 캠페인 링크 만들기 (§1) · 글 초안 다듬기 (§4~§6) — **아래 *10-26 할 일*** | 이 문서 |
 | **D — 11-02 (월)** | 인앱 이벤트 시작 · 프로모션 텍스트 갈기 · 블로그 글 (§4) | 네이버 블로그 |
 | D+1 | 국내 커뮤니티 두 곳 (§5) | 메이커 모임 · 개발자 소식 |
 | D+2 | 스레드 · 맥 · 아이폰 사용자 게시판 (§5) | |
 | D+3~4 | 해외 — Product Hunt 하루 · Reddit · Show HN (§6) | 영어판 |
 | D+7 | **결과 적기** — App Store Connect *앱 분석* 의 출처별 다운로드 (§1 의 `ct`) · 순위 · 평점 수 | 이 문서 맨 아래 |
+
+### 10-26 할 일 (2026-10-25 준비 — 사용자 — *10월 26일 할 일도 같이 준비하자*)
+
+| # | 누가 | 할 일 | 끝나면 |
+|---|---|---|---|
+| 1 | 사용자 | App Store Connect → **앱 분석** → 위 **캠페인 링크 만들기**(Campaign Generator)에서 **공급자 번호**(`pt=` 뒤 숫자)를 본다 → 대화에 알려 준다 (저장소에는 적지 않는다) | 세션이 `python3 Tools/promo/links.py <번호>` 로 꼬리표 11개의 링크를 만들어 글마다 넣는다 (§1) |
+| 2 | 사용자 | 블로그 **[사진 4]** 다시 찍기 — 지금 사진은 옛 찾기 칸(빌드 115 전)이다. **폴더 화면 맨 위 찾기 칸**에 `ㅎㅇㄹ` · 자판이 보이게 · 상태 막대 잘라 냄. [사진 1 ~ 3] 이 기기에 있는지도 본다 | §4 의 *사진 준비* 줄에 적는다 |
+| 3 | 사용자 | **추천 신청 설명 갈기** (고칠 수 있으면) — App Store Connect → Featuring → Nominations → 낸 신청 → 설명을 §2 의 **2026-10-25 판**으로. 안 고쳐지면 그대로 둔다 | §2 에 적는다 |
+| 4 | 사용자 | 국내 · 해외 게시판의 **자기 홍보 규칙** 확인 — 허용 게시판 · 말머리 · 횟수 (§5 · §6) | 안 되는 곳은 표에서 지운다 |
+| 5 | 세션 | 글 초안 마지막 손질 — 1.1.15 까지 반영 (§4 ~ §6) · D 날 **프로모션 텍스트** (아래) | ✅ 2026-10-25 |
+
+**D 날(11-02) 프로모션 텍스트** — 11-02 아침에 갈고 **12-01 에 되돌린다** (지금 것은 `docs/12-submission.md` §1 · §1-영어). 심사 없이 바뀐다.
+
+| 칸 | 글 (글자 수) |
+|---|---|
+| 한국어 (170) | `11월 한 달, 보던 링크를 한 노트에 모아 보세요. 공유 한 번이면 고른 노트 끝에 제목과 링크가 쌓이고, 그 노트는 그대로 내 아이클라우드의 마크다운 파일입니다.` (92) |
+| 영어 (170) | `This November, gather the links you find in one note. Share once and the title and link land at the end of a note you pick, still a plain Markdown file in your iCloud.` (167) |
 
 ## 1. 캠페인 링크 — 어느 글에서 왔는지 재기
 
@@ -38,6 +55,7 @@ https://apps.apple.com/app/id6811515067?pt=<공급자 번호>&ct=<꼬리표>&mt=
 ```
 
 - `<공급자 번호>` — App Store Connect → **앱 분석** → 위의 **캠페인 링크 만들기**(또는 *Campaign Generator*)에서 얻는다. 여기 적지 않는다 (사용자가 채운다).
+- **링크는 손으로 잇지 않는다** — `python3 Tools/promo/links.py <공급자 번호>` 가 아래 표의 꼬리표마다 링크를 찍는다 (2026-10-25).
 - `<꼬리표>` — 글마다 하나. 영문 · 숫자 · `-` 만:
 
 | 꼬리표 | 글 |
@@ -61,7 +79,17 @@ App Store Connect 의 **추천 신청**은 편집팀에 *이런 앱 · 이런 �
 | 나라 | 대한민국 · 미국 (+ 전 세계) |
 | 관련 인앱 이벤트 | §3 의 이벤트 (승인 2026-10-16) — 추천 신청에 잇는 칸이 보이면 잇는다 · 이었는지는 아직 기록 없음 |
 
-**설명 (영어 · 그대로 붙인다 · 892자 — 2026-10-12 다시 씀: 1.1.5 의 깔끔한 미리보기 · 사진 · 동영상 붙여넣기를 더함)**
+**설명 — 2026-10-25 판 (영어 · 921자 · 1.1.15 까지: 최근 고친 노트로 보내기 · 폴더 화면 찾기 칸 · 지도 장소 · 노트가 많아도 빠름)** — 10-26 할 일 3. 고칠 수 있으면 이것으로 간다.
+
+```
+Slow Margin is a Markdown notes app for iPhone and iPad, made by a solo developer in Korea around one promise: your writing stays as plain files. There is no app database and no account. Every note is a .md file in your own iCloud folder, visible in the Files app, readable in any editor, and still there if you delete the app.
+
+Recent updates make it a calm place to gather and find what you keep. Share a video or a web page from any app, pick a pinned or recently edited note, and its title and link are added as a new line at the end of that note. A search field at the top of the folders screen searches every note, and tapping it shows your ten most recently edited notes. Pasting a place copied from a map app turns it into one line with the place name and address, and the app stays quick even with thousands of notes.
+
+The app is fully localized in Korean and English, follows Dynamic Type, and collects no data.
+```
+
+**설명 (영어 · 그대로 붙인다 · 892자 — 2026-10-12 다시 씀: 1.1.5 의 깔끔한 미리보기 · 사진 · 동영상 붙여넣기를 더함) — 낸 것**
 
 ```
 Slow Margin is a Markdown notes app for iPhone and iPad, made by a solo developer in Korea around one promise: your writing stays as plain files. There is no app database and no account. Every note is a .md file in your own iCloud folder, visible in the Files app, readable in any editor, and still there if you delete the app.
@@ -172,7 +200,7 @@ The app is fully localized in Korean and English, follows Dynamic Type, and coll
 
 ▌ 최근 업데이트에 함께 들어간 것
 
-폴더 화면 맨 위에 모든 노트에서 찾기 칸이 생겼습니다. 폴더에 들어가지 않아도 모든 노트를 찾고, 빈 칸을 누르면 최근에 고친 노트 열 개가 먼저 보입니다. 지도 앱에서 복사한 장소를 붙이면 장소 이름 링크와 주소 한 줄이 됩니다. 노트가 많아도 빨라졌고, 오래 걸리는 일은 화면 아래 띠로 얼마나 남았는지 보여 줍니다. 앱 아이콘도 새로 그렸습니다.
+폴더 화면 맨 위에 모든 노트에서 찾기 칸이 생겼습니다. 폴더에 들어가지 않아도 모든 노트를 찾고, 빈 칸을 누르면 최근에 고친 노트 열 개가 먼저 보입니다. 지도 앱에서 복사한 장소를 붙이면 장소 이름 링크와 주소 한 줄이 됩니다. 노트가 수천 개여도 빠르게 움직이고, 오래 걸리는 일은 화면 아래 띠로 얼마나 남았는지 보여 줍니다. 앱 아이콘도 새로 그렸습니다.
 
 사진 · 동영상 · 글이 섞인 내용을 통째로 복사해 붙이면 사진과 동영상이 제자리에 들어가고, 노트 옆에 진짜 파일로 저장됩니다.
 
@@ -181,8 +209,8 @@ The app is fully localized in Korean and English, follows Dynamic Type, and coll
 앱 스토어: (캠페인 링크 — blog-links)
 ```
 
-> **2026-10-22 — 1.1.10 ~ 1.1.12 를 더했다** (폴더 화면 찾기 칸 · 최근 고친 노트 · 지도 장소 · 속도 · 진행 띠 · 새 아이콘). 폴더 화면 찾기 칸 · 최근 고친 노트 문장은
-> **1.1.12 가 11-02 전에 출시될 때만** 쓴다 — 아니면 그 문장을 지운다 (없는 기능을 팔지 않는다 · CLAUDE §6). [사진 4] 는 노트 목록의 검색 칸에서 찍었다 — 1.1.12 가 나오면 폴더 화면 찾기 칸에서 다시 찍을지 10-26 에 정한다.
+> **2026-10-22 — 1.1.10 ~ 1.1.12 를 더했다** (폴더 화면 찾기 칸 · 최근 고친 노트 · 지도 장소 · 속도 · 진행 띠 · 새 아이콘). **2026-10-25 — 1.1.15 까지 출시되어 모든 문장을 그대로 쓴다.**
+> [사진 4] 는 옛 찾기 칸(빌드 115 전)에서 찍었다 → **10-26 할 일 2 — 폴더 화면 맨 위 찾기 칸에서 다시 찍는다.**
 >
 > **[사진 4] 준비됨** (2026-10-14 사용자 — 시험 노트 `회의록` · `한여름 일기` · 검색 `ㅎㅇㄹ` · 자판이 보이게 · 상태 막대는 잘라 냄).
 > 사진은 사용자 기기에 있다 — 공개 저장소라 올리지 않는다. 블로그를 올린 뒤 시험 노트 둘은 지워도 된다.
