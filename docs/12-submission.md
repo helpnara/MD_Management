@@ -175,6 +175,16 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.15 제출 순서 — 빌드 122 (2026-10-24 — 빌드 122 *0-10번 확인 완료*)
+
+> 규모 묶음 268 ~ 273 · 276 (노트가 늘어도). 그림 · 설명 · 키워드 · 부제 · 프로모션 텍스트 · 메모(Notes)는 1.1.14 그대로.
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.15` → **빌드** 칸에서 **122** (`1.1.15 (122)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 다섯 줄 (`docs/store/1.1.15-새로운-기능.txt`)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — §1-영어 다섯 줄 → **저장**
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+5. 제출하면 세션에 알린다 — `main` 병합
+
 ### 1.1.14 제출 순서 — 빌드 121 (2026-10-23 사용자 — *1.1.14 때문에 버전 순서가 꼬여서 그러는데 1.1.14로 해서 버전을 다시 맞추자*)
 
 > 1.1.13 (빌드 116) 심사를 사용자가 거두었고, 그 뒤 빌드 117 · 118 이 판 1.1.14 로 올라가 판 순서가 꼬였다 → **1.1.13 은 내지 않고 건너뛴다** (1.1.9 와 같이). 263 · 264 · 265 · 266 · 267 을 모두 담아 **1.1.14 (빌드 121)** 로 낸다.
@@ -459,12 +469,14 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.14** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.12 의 글은 `docs/store/1.1.12-새로운-기능.txt` 끝.
+> **1.1.15** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.14 의 글은 `docs/store/1.1.14-새로운-기능.txt` 끝.
 
 ```
-• The search fields on the folders screen and the notes list now look the same, and the notes list always shows its search field.
-• Opening a note from the search field on the folders screen now goes straight to the note.
-• If notes are set to open in Read mode, notes opened from the folders screen now open in Read mode too, and their links work.
+• Renaming or moving folders and deleting notes with photos are faster, even with many notes.
+• Switching between folders is lighter.
+• Search lists notes whose titles match first, and tells you when there are too many results to show.
+• Fixed notes from a deleted folder still showing up in search.
+• The search index is no longer included in device backups, so backups are smaller.
 ```
 
 ---
@@ -702,13 +714,15 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.14** (2026-10-23 — 263 폴더 화면에서 한 번에 넘기기 · 264 읽기 모드로 열기를 켠 사람의 읽기 · 쓰기 · 265 · 266 찾기 칸 하나로 · 267 뒤로 단추 하나. **1.1.13 은 건너뛴다** — 빌드 116 으로 낸 심사를 거두었다). 글은 `docs/store/1.1.14-새로운-기능.txt`. 1.1.12 의 글은 `docs/store/1.1.12-새로운-기능.txt`.
+> **1.1.15** (2026-10-24 — 규모 묶음 268 ~ 273 · 276). 글은 `docs/store/1.1.15-새로운-기능.txt`. 1.1.14 의 글은 `docs/store/1.1.14-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 폴더 화면과 노트 목록의 찾기 칸을 같은 모양으로 맞췄습니다. 노트 목록에서도 찾기 칸이 늘 보입니다.
-• 폴더 화면의 찾기 칸에서 노트를 열면 화면이 한 번에 넘어갑니다.
-• 노트를 열 때 읽기 모드로 설정을 켜 두었다면, 폴더 화면에서 연 노트도 읽기 화면으로 열리고 링크가 눌립니다.
+• 노트가 많아도 폴더 이름 바꾸기와 옮기기, 사진이 든 노트 지우기가 빨라졌습니다.
+• 폴더를 오갈 때 더 가볍게 움직입니다.
+• 찾기에서 제목이 맞는 노트가 먼저 나옵니다. 결과가 아주 많으면 몇 개까지 보여 주는지 알려 줍니다.
+• 지운 폴더의 노트가 찾기에 남던 문제를 고쳤습니다.
+• 검색 색인을 기기 백업에서 빼서 백업 크기가 줄어듭니다.
 ```
 
