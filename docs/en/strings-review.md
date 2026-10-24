@@ -290,6 +290,7 @@
 | 찾기 | Search |
 | 찾는 말 지우기 | Clear Search |
 | 찾는 파일이 없습니다 | No Matching Files |
+| 찾은 노트가 많아 %lld개까지만 보여 줍니다. 낱말을 더 넣어 좁혀 보세요. | Showing the first %lld matches. Add more words to narrow it down. |
 | 찾을 수 없는 첨부가 있습니다 | Some Attachments Are Missing |
 | 찾을 수 없습니다 | Not found |
 | 첨부 | Attachment |
@@ -340,6 +341,7 @@
 | 폴더 이름을 바꾸고 링크를 고치는 중 | Renaming the folder and fixing links |
 | 폴더 이름을 바꾸지 못했습니다: %@ | Couldn't rename the folder: %@ |
 | 폴더는 두 단계까지라 %@ 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | Folders can only go two levels deep, so it will be created in %@. If the name is taken, a number is added. |
+| 폴더를 가리키는 링크를 세는 중 | Counting links to this folder |
 | 폴더를 고르지 못했습니다: %@ | Couldn't choose the folder: %@ |
 | 폴더를 만들지 못했습니다: %@ | Couldn't create the folder: %@ |
 | 폴더를 옮기고 링크를 고치는 중 | Moving the folder and fixing links |

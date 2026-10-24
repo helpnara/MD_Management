@@ -3037,6 +3037,16 @@
         }
       }
     },
+    "찾은 노트가 많아 %lld개까지만 보여 줍니다. 낱말을 더 넣어 좁혀 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing the first %lld matches. Add more words to narrow it down."
+          }
+        }
+      }
+    },
     "찾을 수 없는 첨부가 있습니다" : {
       "localizations" : {
         "en" : {
@@ -3569,6 +3579,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Folders can only go two levels deep, so it will be created in %@. If the name is taken, a number is added."
+          }
+        }
+      }
+    },
+    "폴더를 가리키는 링크를 세는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Counting links to this folder"
           }
         }
       }
