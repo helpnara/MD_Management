@@ -84,7 +84,8 @@ struct RootView: View {
         }
         .task(id: library.selectedFolder) {
             library.autoSelectsFirstNote = prefersPreselectedNote
-            await library.reloadNotes()
+            // 폴더를 고르기만 했다 — 금고 전체를 다시 훑지 않는다 (270).
+            await library.reloadNotes(switchingFolder: true)
         }
         .task(id: library.selectedNoteID) { await library.loadSelectedText() }
         // 앱이 다시 앞으로 나올 때 iCloud 를 한 번 더 찾아본다. 설치 직후
@@ -1084,6 +1085,12 @@ private struct SearchHitRows: View {
                 .padding(.vertical, 2)
             }
             .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }   // 121
+        }
+        // 272 — 한도를 넘어 잘랐다는 것을 알린다 (말없이 자르지 않는다). 제목이 맞은 노트는 앞에 있어 잘리지 않는다.
+        if library.searchTruncated {
+            Text("찾은 노트가 많아 \(library.searchResults.count)개까지만 보여 줍니다. 낱말을 더 넣어 좁혀 보세요.")
+                .font(.scaled(.footnote))
+                .foregroundStyle(Palette.inkFaint)
         }
         // 245 — 본문을 못 읽은 노트는 제목으로만 찾혔다는 것을 알린다 (없는 것을 *없다* 고 믿지 않게).
         if library.indexStatus.titleOnlyCount > 0 && !library.searchResults.isEmpty {

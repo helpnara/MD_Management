@@ -1011,6 +1011,7 @@ final class LibraryModel: ObservableObject {
         index = SearchIndex(for: choice.url)
         searchText = ""
         searchResults = []
+        searchTruncated = false
         indexStatus = IndexStatus()
         kind = choice.kind
         iCloudAvailable = choice.iCloudAvailable
@@ -1362,14 +1363,24 @@ final class LibraryModel: ObservableObject {
     /// 숫자가 바뀌면 사용자가 이미 읽은 뒤일 수 있다.
     @Published private(set) var folderLinkNotice = 0
 
+    /// **폴더를 가리키는 링크 수를 센다** (168 · 268). 색인의 `links` 로 후보를 가려 그 노트만 읽는다 — 예전에는 금고의 모든 노트 본문을 읽어
+    /// 노트가 많으면 확인창이 말없이 몇십 초 늦게 떴다 (2026-10-24 규모 점검). 오래 걸리면 아래 띠가 뜬다 (259).
+    private func incomingLinks(to folder: FolderSummary) async -> Int {
+        guard let store else { return 0 }
+        let hint = await index?.censusHint(linkingInto: folder.relativePath)
+        return await working(String(localized: "폴더를 가리키는 링크를 세는 중")) { _ in
+            await store.incomingLinkCount(toFolder: folder.relativePath, hint: hint)
+        }
+    }
+
     func beginRenameFolder(_ folder: FolderSummary) async {
-        folderLinkNotice = await store?.incomingLinkCount(toFolder: folder.relativePath) ?? 0
+        folderLinkNotice = await incomingLinks(to: folder)
         folderRenameText = folder.name
         renamingFolder = folder
     }
 
     func beginMoveFolder(_ folder: FolderSummary) async {
-        folderLinkNotice = await store?.incomingLinkCount(toFolder: folder.relativePath) ?? 0
+        folderLinkNotice = await incomingLinks(to: folder)
         movingFolder = folder
     }
 
@@ -1379,7 +1390,7 @@ final class LibraryModel: ObservableObject {
     }
 
     func beginTrashFolder(_ folder: FolderSummary) async {
-        folderLinkNotice = await store?.incomingLinkCount(toFolder: folder.relativePath) ?? 0
+        folderLinkNotice = await incomingLinks(to: folder)
         trashingFolder = folder
     }
 
@@ -1392,8 +1403,11 @@ final class LibraryModel: ObservableObject {
         await save()
         do {
             // **이 폴더를 가리키던 링크도 같이 고친다** (179). 확인창이 몇 개인지 먼저 알렸다(168).
+            // 268 — 이 폴더를 가리키는 노트 · 폴더 안 노트만 읽는다. 폴더 이름이 본문에 든 노트도 읽는다 — 링크를 고치는 셈(`retargeted`)은
+            // 코드 상자 안의 `](…)` 까지 보는데 색인의 링크 목록은 그것을 안 적는다. 이름이 든 노트를 넣으면 고치는 셈이 보는 것을 다 덮는다.
+            let hint = await index?.censusHint(names: [folder.name], linkingInto: folder.relativePath, readingInside: true)
             let renamed = try await working(String(localized: "폴더 이름을 바꾸고 링크를 고치는 중")) { meter in
-                try await store.renameFolderFixingLinks(folder.relativePath, to: name, meter: meter)
+                try await store.renameFolderFixingLinks(folder.relativePath, to: name, meter: meter, hint: hint)
             }
             await followFolder(from: folder.relativePath, renamed, what: "폴더 이름", fixedSaying: String(localized: "새 이름에 맞게"))
         } catch {
@@ -1408,8 +1422,9 @@ final class LibraryModel: ObservableObject {
         guard FolderTree.parent(of: folder.relativePath) != parent else { return }
         await save()
         do {
+            let hint = await index?.censusHint(names: [folder.name], linkingInto: folder.relativePath, readingInside: true)
             let moved = try await working(String(localized: "폴더를 옮기고 링크를 고치는 중")) { meter in
-                try await store.moveFolderFixingLinks(folder.relativePath, into: parent, meter: meter)
+                try await store.moveFolderFixingLinks(folder.relativePath, into: parent, meter: meter, hint: hint)
             }
             await followFolder(from: folder.relativePath, moved, what: "폴더 옮김", fixedSaying: String(localized: "새 자리에 맞게"))
         } catch {
@@ -1434,8 +1449,10 @@ final class LibraryModel: ObservableObject {
         await reloadFolders()
         if let following { selectedFolder = following }
         // 고친 노트가 지금 열려 있을 수 있다 — 목록과 글을 다시 읽는다.
+        // 노트의 경로가 바뀌었다 — 검색 색인도 새 경로로. **줄을 옮기기만 한다** (276) — 파일의 시각 · 크기는 그대로라
+        // 새로 고침이 폴더 안 노트를 다시 읽지 않는다 (예전에는 모두 새 노트로 보고 다시 읽었다). 링크를 고친 노트만 다시 읽힌다.
+        await index?.renameFolder(from: old, to: moved)
         if renamed.notes > 0 || following != nil { await reloadNotes() }
-        // 노트의 경로가 바뀌었다 — 검색 색인도 새 경로로.
         scheduleIndexRefresh()
         log("\(what): \(old) → \(moved) · 링크 \(renamed.fixed)개(노트 \(renamed.notes)) · 못 고침 \(renamed.failed) · 못 봄 \(renamed.unread)")
         var said: [String] = []
@@ -1462,6 +1479,9 @@ final class LibraryModel: ObservableObject {
             pinned = await store.unpin(folder.relativePath)
             await reloadFolders()
             if wasViewing { selectedFolder = "" }
+            // **색인에서도 뺀다** (271, 2026-10-24 규모 점검) — 보고 있지 않던 폴더를 지우면 목록을 다시 읽지 않아 색인이 돌지 않았다.
+            // 휴지통에 간 노트가 찾기 · 최근 고친 노트에 남고 누르면 *없음* 오류가 났다.
+            scheduleIndexRefresh()
             lastError = nil
         } catch {
             lastError = String(localized: "폴더를 지우지 못했습니다: \(error.localizedDescription)")
@@ -1521,7 +1541,9 @@ final class LibraryModel: ObservableObject {
     /// 폴더를 열 때 · 다른 기기의 변경을 따라갈 때 다시 읽는다.
     func reloadPins() async {
         guard let store else { return }
-        pinned = await store.readPins()
+        // **같으면 넣지 않는다** (270) — 15초 훑기가 부르는 길이다. 같은 값을 넣어도 `didSet` 이 목록을 다시 가르고 화면 전체를 다시 그렸다.
+        let read = await store.readPins()
+        if read != pinned { pinned = read }
     }
 
     /// **노트를 폴더로 옮긴다** (T1, 사용자 요청 — 아이패드는 끌어다 놓기, 아이폰은 줄 밀기).
@@ -1600,9 +1622,11 @@ final class LibraryModel: ObservableObject {
         trashing = nil
         await save()
         do {
-            // 사진이 든 노트는 *이 노트만 쓰는 사진* 을 가리려고 폴더 전체를 읽는다 (172) — 큰 폴더에서는 몇 초.
+            // 사진이 든 노트는 *이 노트만 쓰는 사진* 을 가려야 한다 (172). 예전에는 폴더 전체를 읽었다 — 이제 색인으로 그 사진 이름이
+            // 든 노트만 가려 읽는다 (269). 사진이 없는 노트는 셈 자체를 하지 않는다 (253).
+            let hint = await attachmentHint(for: note.relativePath)
             _ = try await working(String(localized: "휴지통으로 옮기는 중")) { _ in
-                try await store.trash(note.relativePath)
+                try await store.trash(note.relativePath, hint: hint)
             }
             pinned = await store.unpin(note.relativePath)
             if selectedNoteID == note.id { selectedNoteID = nil }
@@ -1611,6 +1635,17 @@ final class LibraryModel: ObservableObject {
         } catch {
             lastError = String(localized: "지우지 못했습니다: \(error.localizedDescription)")
         }
+    }
+
+    /// **이 노트의 첨부를 쓰는 노트만 가리는 힌트** (269). 첨부가 없으면 `nil` — 그때는 셈 자체를 하지 않는다 (253).
+    private func attachmentHint(for notePath: String) async -> CensusHint? {
+        guard let store, let index else { return nil }
+        let references = await store.attachmentReferences(of: notePath)
+        guard !references.isEmpty else { return nil }
+        let names = references.map { $0.split(separator: "/").last.map(String.init) ?? $0 }
+        // 휴지통 노트의 링크는 원래 자리를 가리킬 수 있다 — 원래 경로로도 찾는다.
+        let paths = references + references.map(AttachmentLedger.originalPath(of:))
+        return await index.censusHint(names: names, paths: paths)
     }
 
     // MARK: - 사진 넣기
@@ -2022,7 +2057,8 @@ final class LibraryModel: ObservableObject {
             case .all:
                 try await working(String(localized: "휴지통을 비우는 중")) { _ in try await store.emptyTrash() }
             case .one(let note):
-                try await working(String(localized: "영구 삭제하는 중")) { _ in try await store.deleteTrashed(note.relativePath) }
+                let hint = await attachmentHint(for: note.relativePath)
+                try await working(String(localized: "영구 삭제하는 중")) { _ in try await store.deleteTrashed(note.relativePath, hint: hint) }
             }
             await reloadTrash()
             lastError = nil
@@ -2042,6 +2078,8 @@ final class LibraryModel: ObservableObject {
         didSet { scheduleSearch() }
     }
     @Published private(set) var searchResults: [SearchHit] = []
+    /// 찾기 결과가 한도(200)를 넘어 잘렸나 (272) — 화면이 *여기까지만* 이라고 알린다.
+    @Published private(set) var searchTruncated = false
     @Published private(set) var isSearching = false
     @Published private(set) var indexStatus = IndexStatus()
     /// **색인이 도는 중인가** (T8). 표시가 없으면 사용자가 또 누르고, 누를 때마다
@@ -2146,20 +2184,22 @@ final class LibraryModel: ObservableObject {
     private func scheduleSearch() {
         searchTask?.cancel()
         let text = searchText.trimmingCharacters(in: .whitespaces)
-        guard !text.isEmpty else { searchResults = []; isSearching = false; return }
+        guard !text.isEmpty else { searchResults = []; searchTruncated = false; isSearching = false; return }
         isSearching = true
         searchTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled, let self, let index = self.index else { return }
             // **검색에 걸린 시간도 앱이 잰다** (A5c · S6 — 0.5초 안).
             let started = Date()
-            let hits = await index.search(text)
+            let found = await index.search(text)
+            let hits = found.hits
             guard !Task.isCancelled else { return }
             self.searchSeconds = Date().timeIntervalSince(started)
             if self.searchSeconds > 0.2 || self.indexStatus.noteCount >= 100 {
                 self.log("검색 \(text) — \(String(format: "%.2f", self.searchSeconds))초 · \(hits.count)건")
             }
             self.searchResults = hits
+            if self.searchTruncated != found.truncated { self.searchTruncated = found.truncated }
             self.isSearching = false
         }
     }
@@ -2956,7 +2996,10 @@ final class LibraryModel: ObservableObject {
         return formatter
     }()
 
-    func reloadNotes() async {
+    /// `switchingFolder` — 폴더를 **고르기만** 했다 (270). 파일은 그대로라 금고 전체 색인 · 금고 열거를 다시 돌릴 까닭이 없다.
+    /// 예전에는 폴더를 바꿀 때마다 둘 다 돌아(노트 1만 개면 1.5~3.5초) 그동안 노트 열기 · 저장이 줄을 섰다. 다른 기기에서 다른 폴더의
+    /// 노트를 고친 것은 이 길이 데려왔으므로, **1분이 지났으면** 그때는 돈다 (지켜보기는 보고 있는 폴더만 본다).
+    func reloadNotes(switchingFolder: Bool = false) async {
         guard let store else { return }
         isLoading = true
         // **목록에 걸린 시간을 앱이 잰다** (S1 — 300개를 3초 안에). 사람이 초시계를
@@ -2974,8 +3017,11 @@ final class LibraryModel: ObservableObject {
         let arrived = Set(loaded.filter(\.isDownloaded).map(\.relativePath))
         if !arrived.isDisjoint(with: downloading) { downloading.subtract(arrived) }
         syncCount(of: selectedFolder, to: loaded.count)
-        scheduleIndexRefresh()
-        refreshVaultPaths()   // 노트가 생기고 · 이름이 바뀌고 · 옮겨졌을 수 있다 (177)
+        if !switchingFolder || Date().timeIntervalSince(lastFullRefresh) > Self.switchRefreshInterval {
+            lastFullRefresh = Date()
+            scheduleIndexRefresh()
+            refreshVaultPaths()   // 노트가 생기고 · 이름이 바뀌고 · 옮겨졌을 수 있다 (177)
+        }
         // 링크를 따라온 노트는 목록에 없는 것이 맞다 — 지우지 않는다 (T7).
         // **쓰는 중에는 고른 노트를 내리지 않는다** (228) — 이름을 바꾸는 중이면 옛 이름이 잠깐 목록에 없다. 쓰기가 끝나면 쓰기가 새 이름으로 고른다.
         if let current = selectedNoteID, current != linkedNote?.relativePath, !isWriting,
@@ -2988,6 +3034,11 @@ final class LibraryModel: ObservableObject {
         isLoading = false
         await loadSelectedText()
     }
+
+    /// 폴더를 고르기만 할 때 전체 색인 · 금고 열거를 다시 돌리는 간격 (270).
+    private static let switchRefreshInterval: TimeInterval = 60
+    /// 마지막으로 전체 색인 · 금고 열거를 부른 때.
+    private var lastFullRefresh = Date.distantPast
 
     func loadSelectedText() async {
         // 노트를 떠난다 — 제목 줄에 커서가 있었어도 여기서 확정한다 (89). **같은 노트를 다시 읽을 때는 아니다** (216) —
