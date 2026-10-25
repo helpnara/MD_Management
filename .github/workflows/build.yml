@@ -18,6 +18,7 @@ on:
       - "Tools/site/**"
       - "Tools/golden/**"
       - "Tools/probe/**"
+      - "Tools/promo/**"
       - ".github/workflows/probe.yml"
       - ".github/workflows/store-preview.yml"
       - ".github/workflows/store-shots.yml"

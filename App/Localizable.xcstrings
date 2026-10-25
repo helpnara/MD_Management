@@ -277,6 +277,36 @@
         }
       }
     },
+    "%lld개는 아직 받는 중입니다. iCloud 가 이어서 받습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld are still downloading. iCloud will keep going."
+          }
+        }
+      }
+    },
+    "%lld개를 내렸습니다. %lld개는 아직 iCloud 에 다 올라가지 않아 못 내렸습니다 — 조금 뒤 다시 누르세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removed %1$lld. %2$lld haven’t finished uploading to iCloud yet, so they stayed. Try again in a moment."
+          }
+        }
+      }
+    },
+    "%lld개를 이 기기에서 내렸습니다. iCloud 에는 그대로 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removed %lld from this device. They’re still in iCloud."
+          }
+        }
+      }
+    },
     "%lld개를 찾을 수 없어 빼고 보냅니다." : {
       "localizations" : {
         "en" : {
@@ -471,12 +501,12 @@
         }
       }
     },
-    "`규모 시험` 폴더에 노트를 만듭니다 (어느 것이든 합쳐 약 20MB — 1,000 · 3,000 개는 작은 노트). **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 이미 있으면 뒤에 이어 붙입니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `마지막 열기` · `마지막 검색` 을 보면 규모에서 어디가 느린지 잴 수 있습니다. 지우기는 휴지통으로 갑니다." : {
+    "`규모 시험` 폴더에 노트를 만듭니다 (어느 것이든 합쳐 약 20MB — 1,000 · 3,000 개는 작은 노트). **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 이미 있으면 뒤에 이어 붙입니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `마지막 열기` · `마지막 검색` 을 보면 규모에서 어디가 느린지 잴 수 있습니다. **이 기기에서 내리기**는 노트를 iCloud 에만 남깁니다 — 새 기기처럼 안 받은 노트가 많을 때를 볼 수 있습니다 (다 올라간 뒤에만 내려집니다). 지우기는 휴지통으로 갑니다." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Creates notes in a `Scale Test` folder (about 20MB in total either way — the 1,000 and 3,000 options use small notes). **iCloud uploads all of it** — it costs data and time. If the folder already exists, new notes are appended. Afterwards, `List read`, `Last refresh`, `Last open` and `Last search` above show where the app slows down at scale. Deleting moves it to the trash."
+            "value" : "Creates notes in a `Scale Test` folder (about 20MB in total either way — the 1,000 and 3,000 options use small notes). **iCloud uploads all of it** — it costs data and time. If the folder already exists, new notes are appended. Afterwards, `List read`, `Last refresh`, `Last open` and `Last search` above show where the app slows down at scale. **Remove from This Device** keeps the notes only in iCloud, so you can see what happens when many notes aren’t downloaded yet (only notes that have finished uploading can be removed). Deleting moves it to the trash."
           }
         }
       }
@@ -1017,12 +1047,32 @@
         }
       }
     },
+    "규모 시험 노트를 기기에서 내리는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removing scale test notes from this device"
+          }
+        }
+      }
+    },
     "규모 시험 노트를 만드는 중" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Creating scale test notes"
+          }
+        }
+      }
+    },
+    "규모 시험 노트를 이 기기에서 내리기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Scale Test Notes from This Device"
           }
         }
       }
@@ -2229,6 +2279,16 @@
         }
       }
     },
+    "아직 받지 않은 노트 %lld개 모두 받기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download All %lld Notes Not on This Device"
+          }
+        }
+      }
+    },
     "아직 받지 않은 노트 %lld개는 확인하지 못했습니다" : {
       "localizations" : {
         "en" : {
@@ -2247,6 +2307,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "아직 받지 않은 노트를 받는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading notes not yet on this device"
           }
         }
       }

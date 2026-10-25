@@ -54,6 +54,8 @@ struct IndexStatus: Sendable {
     var titleOnlyCount = 0
     /// 안 받은 노트가 `SearchIndex.downloadLimit` 를 넘어 **내려받기를 시키지 않은** 때 (245).
     var downloadsWithheld = false
+    /// 아직 이 기기로 안 내려온 노트 수 (274) — 진단의 *모두 받기* 가 본다.
+    var pendingDownloads = 0
 }
 
 /// **SQLite FTS5 색인 — 캐시다** (ADR-0003). 언제 지워도 되고, 판이 다르면 통째로 다시 만든다.
@@ -191,7 +193,9 @@ actor SearchIndex {
     /// 목록에 없는 것은 지운다. 읽기는 `reader` 가 한다 — 파일은 `FolderStore` 의 것이다.
     ///
     /// **취소를 본다** (254) — 부른 쪽이 접으면(`Task.isCancelled`) 그때까지 쓴 것을 남기고 물러난다. 다음 바퀴가 나머지를 한다.
-    func refresh(_ notes: [NoteSummary], meter: WorkMeter = .none,
+    /// `first` — 이 폴더의 노트를 먼저 읽는다 (275). 나머지는 **최근 고친 것부터** — 처음 색인 · 색인 다시 만들기가 노트 1만 개면 1분 남짓이라,
+    /// 그동안에도 지금 보는 폴더 · 요즘 쓴 노트는 먼저 찾힌다. 50개마다 디스크에 쓰므로 도는 중에도 찾기에 나온다.
+    func refresh(_ notes: [NoteSummary], first: String? = nil, meter: WorkMeter = .none,
                  reader: @Sendable (String) async throws -> String) async -> Int {
         let started = Date()
         do { try open() } catch { return 0 }
@@ -207,6 +211,7 @@ actor SearchIndex {
         let pending = notes.reduce(0) { $0 + ($1.isDownloaded ? 0 : 1) }
         let fetchBodies = pending <= Self.downloadLimit
         status.downloadsWithheld = !fetchBodies
+        status.pendingDownloads = pending
 
         // 본문은 묶음 밖에서 읽는다 (`await` — actor 가 다른 일을 받을 수 있다). 쓰기만 묶는다.
         var batch: [(NoteSummary, String)] = []
@@ -225,6 +230,13 @@ actor SearchIndex {
         let stale = notes.filter { note in
             guard let old = known[note.relativePath] else { return true }
             return old.mtime != Int(note.modifiedAt.timeIntervalSince1970) || old.size != note.size
+        }.sorted { a, b in
+            // 275 — 보는 폴더 먼저, 그다음 최근 고친 것부터.
+            if let first {
+                let inA = Paths.directory(of: a.relativePath) == first, inB = Paths.directory(of: b.relativePath) == first
+                if inA != inB { return inA }
+            }
+            return a.modifiedAt > b.modifiedAt
         }
         var seen = 0
         for note in stale {
@@ -235,7 +247,9 @@ actor SearchIndex {
             // **본문을 못 읽는 노트도 제목으로는 찾히게** (245) — 예전에는 다 내려올 때까지 색인에 아예 없었다
             // (검색 · `[[` 목록 모두에서 빠졌다). 이미 줄이 있으면(옛 본문 · 제목만) 그대로 둔다 — 다 내려오면 바뀐다.
             if !note.isDownloaded {
-                if old == nil { titleOnly.append(note) }
+                // **옛 본문을 버린다** (274) — 예전에 본문까지 넣었던 노트가 기기에서 내려진 뒤 다른 기기에서 고쳐지면(도장이 다르다),
+                // 색인이 **옛 본문 · 옛 링크**를 그대로 들고 있었다 — 지운 낱말로 찾히고 역링크가 어긋났다. 제목만 남긴다 — 내려오면 본문이 다시 든다.
+                if old == nil || old?.mtime != Self.titleOnlyStamp { titleOnly.append(note) }
                 // 받기는 한 번만 시킨다 (254). 시키는 길이 `reader` 라 한 번 불러 본다.
                 if fetchBodies, !downloadRequested.contains(note.relativePath) {
                     downloadRequested.insert(note.relativePath)

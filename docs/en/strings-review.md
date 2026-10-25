@@ -32,6 +32,9 @@
 | %lld개 · %@ | %lld · %@ |
 | %lld개 · 거기까지만 셌습니다 | %lld · counted up to here only |
 | %lld개 · 안 받은 노트가 많아 내려받지 않음 | %lld · not downloading (too many notes not yet downloaded) |
+| %lld개는 아직 받는 중입니다. iCloud 가 이어서 받습니다. | %lld are still downloading. iCloud will keep going. |
+| %lld개를 내렸습니다. %lld개는 아직 iCloud 에 다 올라가지 않아 못 내렸습니다 — 조금 뒤 다시 누르세요. | Removed %1$lld. %2$lld haven’t finished uploading to iCloud yet, so they stayed. Try again in a moment. |
+| %lld개를 이 기기에서 내렸습니다. iCloud 에는 그대로 있습니다. | Removed %lld from this device. They’re still in iCloud. |
 | %lld개를 찾을 수 없어 빼고 보냅니다. | one: %lld attachment couldn’t be found and will be left out. / other: %lld attachments couldn’t be found and will be left out. |
 | %lld자 | one: %lld character / other: %lld characters |
 | %lld째 줄 | Line %lld |
@@ -49,7 +52,7 @@
 | [마크다운 갈래]↵ | [Markdown]↵ |
 | [첨부]↵ | [Attachments]↵ |
 | [평문]↵ | [Plain text]↵ |
-| `규모 시험` 폴더에 노트를 만듭니다 (어느 것이든 합쳐 약 20MB — 1,000 · 3,000 개는 작은 노트). **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 이미 있으면 뒤에 이어 붙입니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `마지막 열기` · `마지막 검색` 을 보면 규모에서 어디가 느린지 잴 수 있습니다. 지우기는 휴지통으로 갑니다. | Creates notes in a `Scale Test` folder (about 20MB in total either way — the 1,000 and 3,000 options use small notes). **iCloud uploads all of it** — it costs data and time. If the folder already exists, new notes are appended. Afterwards, `List read`, `Last refresh`, `Last open` and `Last search` above show where the app slows down at scale. Deleting moves it to the trash. |
+| `규모 시험` 폴더에 노트를 만듭니다 (어느 것이든 합쳐 약 20MB — 1,000 · 3,000 개는 작은 노트). **iCloud 가 그만큼을 올립니다** — 데이터와 시간이 듭니다. 이미 있으면 뒤에 이어 붙입니다. 만든 뒤 위의 `목록 읽기` · `마지막 갱신` · `마지막 열기` · `마지막 검색` 을 보면 규모에서 어디가 느린지 잴 수 있습니다. **이 기기에서 내리기**는 노트를 iCloud 에만 남깁니다 — 새 기기처럼 안 받은 노트가 많을 때를 볼 수 있습니다 (다 올라간 뒤에만 내려집니다). 지우기는 휴지통으로 갑니다. | Creates notes in a `Scale Test` folder (about 20MB in total either way — the 1,000 and 3,000 options use small notes). **iCloud uploads all of it** — it costs data and time. If the folder already exists, new notes are appended. Afterwards, `List read`, `Last refresh`, `Last open` and `Last search` above show where the app slows down at scale. **Remove from This Device** keeps the notes only in iCloud, so you can see what happens when many notes aren’t downloaded yet (only notes that have finished uploading can be removed). Deleting moves it to the trash. |
 | `규모 시험` 폴더에 약 20MB 를 만듭니다. iCloud 가 그만큼을 올립니다 — 데이터와 시간이 듭니다. 지울 때는 휴지통으로 갑니다. | Creates about 20 MB in a folder named `규모 시험`. iCloud will upload all of it, which uses data and takes time. Deleting moves it to the Trash. |
 | `첨부 시험.md` 와 `assets` 의 사진 둘을 만들고 **읽기 모드로 엽니다.** 사진 셋이 다 보이면 첨부가 제대로 도는 것입니다. 만든 파일은 언제든 지우셔도 됩니다. | Creates `첨부 시험.md` and two photos in `assets`, then **opens it in reading mode.** If all three photos show, attachments work. You can delete the files any time. |
 | `큰 노트 시험.md` 를 300줄 · 20KB 안팎으로 만들고 **편집기로 엽니다.** 커서를 위아래로 훑어 지연이나 튐이 없으면 통과입니다. 만든 파일은 언제든 지우셔도 됩니다. | Creates `큰 노트 시험.md` with about 300 lines (20 KB) and **opens it in the editor.** Move the cursor up and down — if nothing lags or jumps, it passes. You can delete the file any time. |
@@ -100,7 +103,9 @@
 | 공유할 파일을 묶는 중 | Packing files to share |
 | 굵게 | Bold |
 | 규모 시험 | Scale Test |
+| 규모 시험 노트를 기기에서 내리는 중 | Removing scale test notes from this device |
 | 규모 시험 노트를 만드는 중 | Creating scale test notes |
+| 규모 시험 노트를 이 기기에서 내리기 | Remove Scale Test Notes from This Device |
 | 규모 시험 자료를 만들지 못했습니다: %@ | Couldn't create the scale test data: %@ |
 | 규모 시험 폴더 지우기 | Delete Scale Test Folder |
 | 규모 시험 폴더를 지우지 못했습니다: %@ | Couldn't delete the scale test folder: %@ |
@@ -214,7 +219,9 @@
 | 쓰는 곳 | Storage |
 | 쓰는 중 | Saving… |
 | 아니오 | No |
+| 아직 받지 않은 노트 %lld개 모두 받기 | Download All %lld Notes Not on This Device |
 | 아직 받지 않은 노트 %lld개는 확인하지 못했습니다 | one: Couldn't check %lld note that hasn't been downloaded yet / other: Couldn't check %lld notes that haven't been downloaded yet |
+| 아직 받지 않은 노트를 받는 중 | Downloading notes not yet on this device |
 | 아직 안 받음 | Not downloaded |
 | 아직 이 기기로 받지 않은 노트 %lld개는 제목으로만 찾았습니다. | %lld notes not yet downloaded to this device were matched by title only. |
 | 안 쓰는 첨부 | Unused Attachments |

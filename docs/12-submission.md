@@ -12,12 +12,12 @@ updated: 2026-10-22
 
 ---
 
-## 0. 지금 상태 (2026-10-24 — **1.1.14 (빌드 121) 배포 · 1.1.15 (빌드 122) 심사 중** · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.15)
+## 0. 지금 상태 (2026-10-25 — **1.1.16 (빌드 123) 심사 중** · 1.1.15 (빌드 122) 배포 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.16)
 
 | | |
 |---|---|
 | 번들 ID | `com.helpnara.markdown` |
-| 출시된 판 | **1.1.14** (빌드 121 · 2026-10-24 배포) — 한국어 · 영어. 심사 중 1.1.15 (빌드 122 · 2026-10-24 제출). 1.1.13 은 거두고 건너뜀 |
+| 출시된 판 | **1.1.15** (빌드 122 · 2026-10-25 배포) — 한국어 · 영어. 그 앞 1.1.14 (빌드 121). 1.1.13 은 거두고 건너뜀 |
 | 빌드 번호 | **CI 실행 번호와 같다** (`testflight.yml` 이 `github.run_number` 를 넣는다) — 심사에 낼 빌드를 확인 목록 0번의 판으로 고른다 |
 | 처리방침 · 지원 | 한국어 `/privacy/` · 영어 `/en/privacy/` (열리는 것 확인 — 2026-09-24 · 2026-10-07) |
 | 스크린샷 | 두 언어 같은 짜임 — 아이폰 6.1" · 6.5" · 6.9" 다섯 장씩 · 아이패드 13" 세로 다섯 장 (글귀 · CI 촬영 · `docs/store/screenshots/{ko,en}/`). 아이패드 5번(찾기)은 1.1.12 에서 갈았다 · 아이폰 미리보기 영상 두 언어 |
@@ -174,6 +174,17 @@ https://helpnara.github.io/MD_Management/privacy/
 4. **영어 스크린샷.** 영어 칸에 안 올리면 **한국어 스크린샷이 그대로 보인다.** 영어 견본 노트 `docs/samples/en/` 으로 한국어 때와 같은 차례로 찍는다
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
+
+### 1.1.16 제출 순서 — 빌드 123 (2026-10-25 사용자 — *빌드123 확인 완료* · *1.1.16 제출 준비하자*)
+
+> 규모 묶음 둘째 274 · 275 (안 받은 노트 모두 받기 · 옛 본문 버리기 · 보는 폴더와 최근 것부터 색인). 그림 · 설명 · 키워드 · 부제 · 프로모션 텍스트 · 메모(Notes)는 1.1.15 그대로.
+> 프로모션 텍스트는 11-02 에 홍보 주 글로 갈고 12-01 에 되돌린다 (`docs/promo/launch-kit.md` §0) — 이번 제출과 따로다 (심사 없이 바뀐다).
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.16` → **빌드** 칸에서 **123** (`1.1.16 (123)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 세 줄 (`docs/store/1.1.16-새로운-기능.txt`)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — §1-영어 세 줄 → **저장**
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+5. 제출하면 세션에 알린다 — `main` 병합
 
 ### 1.1.15 제출 순서 — 빌드 122 (2026-10-24 — 빌드 122 *0-10번 확인 완료*)
 
@@ -469,14 +480,12 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.15** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.14 의 글은 `docs/store/1.1.14-새로운-기능.txt` 끝.
+> **1.1.16** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.15 의 글은 `docs/store/1.1.15-새로운-기능.txt` 끝.
 
 ```
-• Renaming or moving folders and deleting notes with photos are faster, even with many notes.
-• Switching between folders is lighter.
-• Search lists notes whose titles match first, and tells you when there are too many results to show.
-• Fixed notes from a deleted folder still showing up in search.
-• The search index is no longer included in device backups, so backups are smaller.
+• If many notes aren’t on this device yet, you can download them all at once in Settings › Diagnostic Info.
+• When the search index is built or rebuilt, the folder you’re viewing and your recently edited notes become searchable first.
+• Fixed notes edited on another device being found by their old content before they finished downloading to this device.
 ```
 
 ---
@@ -594,6 +603,8 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-10-25 | ✅ **1.1.16 (빌드 123) 제출** (사용자 — *1.1.16 심사 제출 완료*). 규모 묶음 둘째 274 · 275 — 새로운 기능 세 줄 · 자동 출시 · `main` 병합 |
+| 2026-10-25 | ✅ **1.1.15 (빌드 122) 승인 · 배포** (사용자 — *1.1.15 승인 배포 완료*). 규모 묶음 268 ~ 273 · 276 |
 | 2026-10-24 | ✅ **1.1.15 (빌드 122) 제출** (사용자 — *1.1.15 심사 제출 완료*). 규모 묶음 268 ~ 273 · 276 — 새로운 기능 다섯 줄 · 자동 출시 · `main` 병합 |
 | 2026-10-24 | ✅ **앱 스토어 아이패드 5번 그림(찾기)이 새 모습** — 찾기 칸 · 결과가 왼쪽 폴더 칸 (사용자 확인 · 1.1.12 에서 간 그림) |
 | 2026-10-24 | ✅ **1.1.14 (빌드 121) 승인 · 배포** (사용자 — *1.1.14 심사 승인 및 배포 완료*). 263 ~ 267 · 1.1.13 은 건너뛰었다 |
@@ -715,15 +726,13 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.15** (2026-10-24 — 규모 묶음 268 ~ 273 · 276). 글은 `docs/store/1.1.15-새로운-기능.txt`. 1.1.14 의 글은 `docs/store/1.1.14-새로운-기능.txt`.
+> **1.1.16** (2026-10-25 — 규모 묶음 둘째 274 · 275). 글은 `docs/store/1.1.16-새로운-기능.txt`. 1.1.15 의 글은 `docs/store/1.1.15-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 노트가 많아도 폴더 이름 바꾸기와 옮기기, 사진이 든 노트 지우기가 빨라졌습니다.
-• 폴더를 오갈 때 더 가볍게 움직입니다.
-• 찾기에서 제목이 맞는 노트가 먼저 나옵니다. 결과가 아주 많으면 몇 개까지 보여 주는지 알려 줍니다.
-• 지운 폴더의 노트가 찾기에 남던 문제를 고쳤습니다.
-• 검색 색인을 기기 백업에서 빼서 백업 크기가 줄어듭니다.
+• 아직 이 기기로 받지 않은 노트가 많을 때, 설정 → 진단 정보에서 한 번에 받을 수 있습니다.
+• 검색 색인을 처음 만들거나 다시 만들 때, 보고 있는 폴더와 최근에 고친 노트부터 찾을 수 있습니다.
+• 다른 기기에서 고친 노트가 아직 이 기기로 내려오지 않았을 때, 고치기 전 내용으로 찾히던 문제를 고쳤습니다.
 ```
 
