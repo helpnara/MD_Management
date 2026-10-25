@@ -2,6 +2,8 @@
 
 ## November — gather your links in one note (`slow-margin-links-en.mp4` · 2026-10-25)
 
+> ✅ **유튜브에 올림 — 2026-10-25** (사용자 — *유튜브 업로드 완료.*).
+
 > 2026-10-25 사용자 — *영어판 쇼츠도 만들어줘.* 한국어 `slow-margin-links.mp4` 와 같은 장면 (`links-promo-en.html`). 화면 문구는 앱의 실제 영어 문구
 > (`ShareExtension/Localizable.xcstrings` · `Tools/l10n/en.json` — Send to Slow Margin · Save to · Pinned Notes · Recently Edited · Added shared items to the end of … · Search All Notes).
 > 제목 66자 / 100 · 설명 701자 / 5000 · 고정 댓글 689자 / 10,000 (파이썬으로 셈). 고정 댓글의 단추 이름은 앱의 영어 이름 (Pin · Save to).
