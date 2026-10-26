@@ -1310,8 +1310,18 @@ struct MarkdownEditor: UIViewRepresentable {
             var at = paragraph.location
             while at > 0, lines.count < 200 {
                 let above = text.paragraphRange(for: NSRange(location: at - 1, length: 0))
+                guard above.location < at else { break }
                 let string = line(text, above)
-                if string.trimmingCharacters(in: .whitespaces).isEmpty || above.location >= at { break }
+                if string.trimmingCharacters(in: .whitespaces).isEmpty {
+                    // **빈 줄 너머가 목록 항목이나 들여쓴 줄이면 같은 목록 안** — 거기까지 모은다 (282, 2026-10-26 코드 재점검).
+                    // 예전에는 빈 줄에서 끊어 `1. 가 · 빈 줄 · ␣␣␣설명 · 2. 나` 의 `2. 나` 를 (열린 목록을 못 본 채) 이어지는 글로 봤다 —
+                    // 화면(`MarkdownStyler` 는 전체 문맥)은 항목으로 칠하는데 엔터만 번호를 안 이었다. 빈 줄 너머가 보통 글이면 목록이 닫힌 것이라 거기서 끊는다.
+                    guard let beyond = nonBlankLine(text, above: above.location),
+                          isItemLine(text, beyond) || leadingWidth(line(text, beyond)) > 0 else { break }
+                    lines.insert("", at: 0)
+                    at = above.location
+                    continue
+                }
                 lines.insert(string, at: 0)
                 at = above.location
             }
