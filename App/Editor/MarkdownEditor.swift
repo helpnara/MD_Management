@@ -863,7 +863,8 @@ struct MarkdownEditor: UIViewRepresentable {
                 && below < after.length ? below : view.selectedRange.location
             // 번호를 넘길 때는 **고른 첫 줄부터**만 (284) — 빈 줄을 건너 묶음이 위 목록까지 이어지면(281) 그 목록의 첫 항목이 바뀐다.
             let firstStart = region.location + restyled[..<first].reduce(0) { $0 + ($1 as NSString).length + 1 }
-            renumberList(around: anchor, in: view, start: lostNumber, from: lostNumber != nil ? firstStart : nil)
+            renumberList(around: anchor, in: view, start: lostNumber, from: lostNumber != nil ? firstStart : nil,
+                         seedMayContinue: lostNumber != nil)
             keepCaretVisible(view)
             reportActiveFormats(view)
             onEdit(view.text)
@@ -1174,7 +1175,7 @@ struct MarkdownEditor: UIViewRepresentable {
                 let caretLine = text.paragraphRange(for: NSRange(location: min(anchor, text.length - 1), length: 0))
                 if !Self.isItemLine(text, caretLine), let below = Self.nonBlankLine(text, below: NSMaxRange(caretLine)) {
                     anchor = below.location
-                    if let number, listRun(in: text, around: below.location) != nil,
+                    if let number, listRun(in: text, around: below.location, seedMayContinue: true) != nil,
                        Self.leadingWidth(Self.line(text, below)) <= here {
                         // **아래 목록이 위 목록과 한 묶음인가** (284, 빌드 126 사용자 — 위에 `- 사과` 가 있는 노트에서 첫 항목을 떼도
                         // 아래가 1 부터가 안 됐다). 빈 줄을 건너 위로 올라가 만나는 첫 줄이 **번호 항목**이면 한 묶음 — 번호가 저절로
@@ -1184,7 +1185,7 @@ struct MarkdownEditor: UIViewRepresentable {
                     }
                 }
             }
-            renumberList(around: anchor, in: textView, start: start, from: from)
+            renumberList(around: anchor, in: textView, start: start, from: from, seedMayContinue: start != nil)
         }
 
         /// **번호 목록을 1 · 2 · 3 으로 맞춘다** (104, 사용자 요청).
@@ -1194,10 +1195,14 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 앞의 자리가 밀리지 않게 한다.
         /// `from` — 묶음을 **이 자리부터**만 맞춘다 (284). 빈 줄을 건너 묶음이 위 목록까지 이어져도(281) `start` 는 이 줄에 걸려야 한다 —
         /// 글머리표 · 글줄로 끊긴 뒤 새로 시작하는 목록에 뗀 번호를 넘길 때. 없으면 묶음 전체.
-        private func renumberList(around location: Int, in textView: UITextView, start: Int? = nil, from: Int? = nil) {
+        /// `seedMayContinue` — 씨앗 줄이 **글에 이어지는 줄로 보여도** 목록으로 받는다 (284, 빌드 130 15번). `1. 가` 를 보통 글로 풀면 표준은 바로 밑의
+        /// `2. 나` 를 문단 `가` 에 이어지는 글로 읽는다(1 로 시작하는 목록만 문단을 끊는다) — 그래서 묶음을 못 잡고 번호를 못 넘겼다.
+        /// 번호를 1 로 고쳐야 비로소 목록이 되니, 번호를 넘길 때만은 그 줄을 씨앗으로 받는다.
+        private func renumberList(around location: Int, in textView: UITextView, start: Int? = nil, from: Int? = nil,
+                                  seedMayContinue: Bool = false) {
             guard !isRenumbering, !isComposing, textView.markedTextRange == nil else { return }
             let text = textView.textStorage.string as NSString
-            guard text.length > 0, var run = listRun(in: text, around: location) else { return }
+            guard text.length > 0, var run = listRun(in: text, around: location, seedMayContinue: seedMayContinue) else { return }
             if let from, from > run.location, from < NSMaxRange(run) {
                 run = NSRange(location: from, length: NSMaxRange(run) - from)
             }
@@ -1242,11 +1247,11 @@ struct MarkdownEditor: UIViewRepresentable {
 
         /// 커서가 있는 줄을 둘러싼 **목록 한 덩이**. 목록 줄이 아니면 `nil`.
         /// 항목 사이의 빈 줄 하나는 목록을 끊지 않는다 — 그렇게 쓰는 사람이 많다.
-        private func listRun(in text: NSString, around location: Int) -> NSRange? {
+        private func listRun(in text: NSString, around location: Int, seedMayContinue: Bool = false) -> NSRange? {
             let seed = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
             // **글에 이어지는 줄은 목록이 아니다** (198, 빌드 70 · 2번) — `가나다` 밑의 `2. 나` 를 목록에 넣으면 빈 줄 아래
             // 새로 친 `1. 가` 가 그 뒤를 이어 `3.` 이 됐다. 읽기 화면은 `2. 나` 를 글로, `1. 가` 를 새 목록의 첫 항목으로 그린다.
-            guard Self.isItemLine(text, seed), !Self.continuesText(text, seed) else { return nil }
+            guard Self.isItemLine(text, seed), seedMayContinue || !Self.continuesText(text, seed) else { return nil }
             var start = seed.location
             var end = NSMaxRange(seed)
             while start > 0 {
