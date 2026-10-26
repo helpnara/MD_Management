@@ -175,6 +175,16 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.17 제출 순서 — 빌드 124 (2026-10-26 사용자 — *0-10번 확인 완료.*)
+
+> 278 목록 줄 맨 앞에서 엔터. 그림 · 설명 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로. 프로모션 텍스트는 11-02 에 홍보 주 글로 간다 (심사와 따로).
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.17` → **빌드** 칸에서 **124** (`1.1.17 (124)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 한 줄 (`docs/store/1.1.17-새로운-기능.txt`)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — §1-영어 한 줄 → **저장**
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+5. 제출하면 세션에 알린다 — `main` 병합
+
 ### 1.1.16 제출 순서 — 빌드 123 (2026-10-25 사용자 — *빌드123 확인 완료* · *1.1.16 제출 준비하자*)
 
 > 규모 묶음 둘째 274 · 275 (안 받은 노트 모두 받기 · 옛 본문 버리기 · 보는 폴더와 최근 것부터 색인). 그림 · 설명 · 키워드 · 부제 · 프로모션 텍스트 · 메모(Notes)는 1.1.15 그대로.
@@ -480,12 +490,10 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.16** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.15 의 글은 `docs/store/1.1.15-새로운-기능.txt` 끝.
+> **1.1.17** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.16 의 글은 `docs/store/1.1.16-새로운-기능.txt` 끝.
 
 ```
-• If many notes aren’t on this device yet, you can download them all at once in Settings › Diagnostic Info.
-• When the search index is built or rebuilt, the folder you’re viewing and your recently edited notes become searchable first.
-• Fixed notes edited on another device being found by their old content before they finished downloading to this device.
+• Pressing Return at the very start of a list line now moves the line down with its number intact, instead of doubling the number or bullet.
 ```
 
 ---
@@ -727,13 +735,11 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.16** (2026-10-25 — 규모 묶음 둘째 274 · 275). 글은 `docs/store/1.1.16-새로운-기능.txt`. 1.1.15 의 글은 `docs/store/1.1.15-새로운-기능.txt`.
+> **1.1.17** (2026-10-26 — 278 목록 줄 맨 앞에서 엔터). 글은 `docs/store/1.1.17-새로운-기능.txt`. 1.1.16 의 글은 `docs/store/1.1.16-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 아직 이 기기로 받지 않은 노트가 많을 때, 설정 → 진단 정보에서 한 번에 받을 수 있습니다.
-• 검색 색인을 처음 만들거나 다시 만들 때, 보고 있는 폴더와 최근에 고친 노트부터 찾을 수 있습니다.
-• 다른 기기에서 고친 노트가 아직 이 기기로 내려오지 않았을 때, 고치기 전 내용으로 찾히던 문제를 고쳤습니다.
+• 목록 줄 맨 앞에서 줄을 바꾸면 그 줄이 번호 그대로 아래로 내려갑니다. 번호나 점이 겹쳐 붙던 문제를 고쳤습니다.
 ```
 
