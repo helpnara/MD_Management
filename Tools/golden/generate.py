@@ -46,6 +46,7 @@ REBASE_CASES = ROOT / "Tools" / "golden" / "rebase-cases.json"
 PIN_CASES = ROOT / "Tools" / "golden" / "pin-cases.json"
 FORMAT_CASES = ROOT / "Tools" / "golden" / "format-cases.json"
 ENTER_CASES = ROOT / "Tools" / "golden" / "enter-cases.json"
+BACKSPACE_CASES = ROOT / "Tools" / "golden" / "backspace-cases.json"
 LINK_TRIGGER_CASES = ROOT / "Tools" / "golden" / "link-trigger-cases.json"
 OUTLINE_CASES = ROOT / "Tools" / "golden" / "outline-cases.json"
 PASTE_CASES = ROOT / "Tools" / "golden" / "paste-cases.json"
@@ -645,7 +646,11 @@ def context_roles(lines: list[str], editor: bool = True) -> list[str]:
                     continue
                 if kind == "plain":
                     continue
-                if kind in ("weakItem", "indented"):
+                # 282 — 열린 목록 항목 **안의 문단** 밑에 그 항목 글 칸보다 덜 들여쓴 항목 줄이 오면 **같은 목록의 다음 항목**이다
+                # (cmark: `1. 가 · 빈 줄 · ␣␣␣설명 · 2. 나` 는 둘째 항목). 예전에는 글 밑의 `2.` 처럼 이어지는 글로 봐서
+                # 엔터가 번호를 잇지 않고 번호 맞추기도 건너뛰었다. 항목 안에서 같은 깊이로 오는 `2.` 는 여전히 이어지는 글이다.
+                sibling = kind == "weakItem" and open_list is not None and width < open_list
+                if kind in ("weakItem", "indented") and not sibling:
                     roles[i] = "continuation"
                     continue
                 paragraph = None
@@ -1374,8 +1379,11 @@ def marker_prefix(line: str):
     return line[:end]
 
 
-def return_pressed(line: str, shallower: str | None = None):
+def return_pressed(line: str, shallower: str | None = None, caret: int | None = None):
     """엔터를 쳤을 때 (앱의 `ListEditing.returnPressed`).
+
+    `caret` — 줄 안 커서 자리(UTF-16). **커서가 줄의 어디에 있는지 본다** (278). 마커가 시작하기 전(줄 맨 앞 ·
+    들여쓰기 빈칸)이면 None — 보통 줄바꿈. 마커 안이면 글 바로 앞에 넣는다(`insertAt`). 그 밖은 예전 그대로.
 
     빈 항목이면 **얕은 위 줄의 칸까지** 나온다. 예전에는 무조건 빈칸 둘을 뺐는데,
     단계의 너비는 부모의 마커에 따라 둘 · 셋 · 넷으로 달라서 어느 단계에도 없는 칸에
@@ -1385,12 +1393,37 @@ def return_pressed(line: str, shallower: str | None = None):
     if prefix is None:
         return None
     if line[len(prefix):] != "":
-        return {"kind": "insert", "text": "\n" + next_marker(prefix)}
+        text = "\n" + next_marker(prefix)
+        if caret is not None:
+            lead = u16len(line[: len(line) - len(line.lstrip(" \t"))])
+            if caret <= lead:
+                return None
+            if caret < u16len(prefix):
+                return {"kind": "insertAt", "at": u16len(prefix), "text": text}
+        return {"kind": "insert", "text": text}
+    return unlist(line, shallower)
+
+
+def unlist(line: str, shallower: str | None = None):
+    """마커를 뗀다 (앱의 `ListEditing.unlist`) — 겹친 항목이면 얕은 위 줄의 칸까지 나오고, 더 나올 데가 없으면 보통 글이 된다.
+    빈 항목에서 엔터(141)와 글 맨 앞에서 지우기(280)가 같은 셈을 쓴다."""
+    prefix = marker_prefix(line)
+    if prefix is None:
+        return None
     marker = prefix.lstrip(" \t")
     here = leading_width(line)
     target = leading_width(shallower) if shallower else 0
     replacement = " " * target + marker if here > target else ""
     return {"kind": "replacePrefix", "length": u16len(prefix), "text": replacement}
+
+
+def backspace_pressed(line: str, caret: int, shallower: str | None = None):
+    """**글 맨 앞(마커 바로 뒤)에서 지우기** (280, 앱의 `ListEditing.backspacePressed`) — 글자 대신 마커를 뗀다 (아이폰 메모처럼).
+    다른 자리면 None — 보통 지우기. 예전에는 마커 뒤 빈칸만 지워져 `2.나` 가 남았고, 표준은 그 줄을 윗글에 이어지는 글로 읽었다."""
+    prefix = marker_prefix(line)
+    if prefix is None or caret != u16len(prefix):
+        return None
+    return unlist(line, shallower)
 
 
 def next_marker(prefix: str) -> str:
@@ -1401,6 +1434,29 @@ def next_marker(prefix: str) -> str:
     return out + rest[len(digits):].replace("[x]", "[ ]").replace("[X]", "[ ]")
 
 
+def build_backspace_cases() -> list[dict]:
+    """글 맨 앞에서 지우기 (280). 엔터 정답표와 같은 꼴 — 나온 결과가 여전히 제대로 된 목록인지 심판 둘에게 묻는다."""
+    spec = json.loads(BACKSPACE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        above = case.get("above", [])
+        line = case["line"]
+        shallower = case.get("shallower")
+        action = backspace_pressed(line, case["caret"], shallower)
+        if action and action["text"]:
+            block = "\n".join(above + [action["text"] + "글"]) + "\n"
+            if nesting_count(block) < nesting_count("\n".join(above) + "\n"):
+                raise SystemExit(f"::error::[{case['name']}] 마커를 떼고 나니 목록이 무너졌다:\n{block}")
+        if action and not action["text"]:
+            # 뗀 줄은 **마커가 없어야** 한다 — 글 앞의 빈칸까지 떼므로 줄 맨 앞부터 글이다.
+            rest = line[len(marker_prefix(line)):]
+            if marker_prefix(rest) is not None:
+                raise SystemExit(f"::error::[{case['name']}] 떼고도 마커가 남는다: {rest!r}")
+        out.append({"name": case["name"], "above": above, "line": line,
+                    "shallower": shallower, "caret": case["caret"], "action": action})
+    return out
+
+
 def build_enter_cases() -> list[dict]:
     spec = json.loads(ENTER_CASES.read_text(encoding="utf-8"))
     out = []
@@ -1408,14 +1464,33 @@ def build_enter_cases() -> list[dict]:
         above = case.get("above", [])
         line = case["line"]
         shallower = case.get("shallower")
-        action = return_pressed(line, shallower)
+        caret = case.get("caret")
+        action = return_pressed(line, shallower, caret)
+        # 278 — **엔터를 친 뒤의 줄들에 마커가 겹치거나 쪼개지지 않았나.** 커서 자리에서 실제로 쳐 본다.
+        if caret is not None:
+            units = to_units(line)
+            if action is None:
+                after = ["", line] if marker_prefix(line) is not None else None
+            elif action["kind"] == "insertAt":
+                at = action["at"]
+                after = from_units(units[:at] + to_units(action["text"]) + units[at:]).split("\n")
+            elif action["kind"] == "insert":
+                after = from_units(units[:caret] + to_units(action["text"]) + units[caret:]).split("\n")
+            else:
+                after = None
+            for piece in after or []:
+                head = marker_prefix(piece)
+                if head is not None and marker_prefix(piece[len(head):]) is not None:
+                    raise SystemExit(f"::error::[{case['name']}] 엔터 뒤 마커가 겹쳤다: {piece!r}")
+                if head is None and piece.strip():
+                    raise SystemExit(f"::error::[{case['name']}] 엔터 뒤 마커가 쪼개졌다: {piece!r}")
         # **나온 결과가 여전히 제대로 된 목록인가** — 심판 둘에게 묻는다.
         if action and action["kind"] == "replacePrefix" and action["text"]:
             block = "\n".join(above + [action["text"] + "글"]) + "\n"
             if nesting_count(block) < nesting_count("\n".join(above) + "\n"):
                 raise SystemExit(f"::error::[{case['name']}] 나오고 나니 목록이 무너졌다:\n{block}")
         out.append({"name": case["name"], "above": above, "line": line,
-                    "shallower": shallower, "action": action})
+                    "shallower": shallower, "caret": caret, "action": action})
     return out
 
 
@@ -1586,6 +1661,10 @@ def renumber_block(block: str, start: int | None = None) -> list[dict]:
     nxt: dict[int, int] = {}
     offset = 0
     pending_start = start
+    # 279 — **번호의 자릿수가 바뀌면 딸린 줄을 함께 옮긴다.** `9.` 가 `10.` 이 되면 글 칸이 셋에서 넷으로 밀리는데, 그 아래
+    # 세 칸 들여쓴 자식은 표준이 더는 자식으로 읽지 않는다 (cmark: `10. 아홉 · ␣␣␣1. 자식 · 11. 열` 은 평평한 10 · 11 · 12).
+    # (부모 깊이, 글 칸, 차이) — 글 칸 이상 들여쓴 줄을 차이만큼 옮기고, 부모 깊이 이하의 줄이 오면 끝난다. 겹칠 수 있다.
+    shifts: list[tuple[int, int, int]] = []
 
     for line in block.split("\n"):
         length = len(line.encode("utf-16-le")) // 2
@@ -1596,7 +1675,18 @@ def renumber_block(block: str, start: int | None = None) -> list[dict]:
             continue
 
         indent = line[:len(line) - len(line.lstrip(" \t"))]
-        depth = sum(4 if ch == "\t" else 1 for ch in indent)
+        raw = sum(4 if ch == "\t" else 1 for ch in indent)
+        depth = raw
+        keep = 0
+        for parent, column, delta in shifts:
+            if depth <= parent:
+                break
+            keep += 1
+            if depth >= column:
+                depth += delta
+        del shifts[keep:]
+        if depth != raw:
+            fixes.append({"start": here, "length": len(indent), "number": " " * depth})
         rest = line[len(indent):]
 
         if rest[:2] in ("- ", "* ", "+ "):
@@ -1629,6 +1719,11 @@ def renumber_block(block: str, start: int | None = None) -> list[dict]:
                 "length": len(digits),
                 "number": str(wanted),
             })
+            grow = len(str(wanted)) - len(digits)
+            if grow:
+                spaces = len(after[1:]) - len(after[1:].lstrip(" "))
+                column = depth + len(digits) + 1 + (1 if spaces > 4 else spaces)
+                shifts.append((depth, column, grow))
         nxt[depth] = wanted + 1
     return fixes
 
@@ -1662,6 +1757,16 @@ def build_renumber_cases() -> list[dict]:
             firsts = [ordered_number(l) for l in text.split("\n") if ordered_number(l) is not None]
             if not firsts or firsts[0] != start:
                 raise SystemExit(f"::error::[{case['name']}] {start} 로 시작하지 않는다:\n{text}")
+        if case.get("shape"):
+            # 279 — **번호를 맞춰도 목록의 모양은 그대로여야 한다.** 자릿수가 바뀌어 자식이 튀어나오면 cmark 가 겹침을 다르게 읽는다.
+            # 번호(`start="n"` · 항목 글)를 지운 뼈대만 견준다.
+            text = case["text"]
+            for fix in reversed(fixes):
+                units = to_units(text)
+                text = from_units(units[:fix["start"]]) + fix["number"] + from_units(units[fix["start"] + fix["length"]:])
+            skeleton = lambda html: re.sub(r"<li>[^<]*", "<li>", re.sub(r' start="\d+"', "", html))
+            if skeleton(cmark_html(case["text"])) != skeleton(cmark_html(text)):
+                raise SystemExit(f"::error::[{case['name']}] 번호를 맞췄더니 목록 모양이 달라졌다:\n{text}\n{cmark_html(text)}")
         out.append({"name": case["name"], "text": case["text"], "start": start, "fixes": fixes})
     return out
 
@@ -2723,6 +2828,7 @@ def build() -> dict:
         "depthCases": build_depth_cases(),
         "outlineCases": build_outline_cases(),
         "enterCases": build_enter_cases(),
+        "backspaceCases": build_backspace_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
         "pasteCases": build_paste_cases(),
         "brokenCases": build_broken_cases(),
@@ -4291,7 +4397,7 @@ def tally(loaded: dict) -> str:
     때마다 한쪽만 고쳐져 셈이 빠졌다."""
     parts = [
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
-        ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("번호", "renumberCases"),
+        ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("지우기", "backspaceCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"), ("평가 부탁", "reviewCases"), ("보이는 줄", "previewCases"),

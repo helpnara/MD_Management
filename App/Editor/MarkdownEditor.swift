@@ -861,7 +861,10 @@ struct MarkdownEditor: UIViewRepresentable {
                 .reduce(0) { $0 + ($1 as NSString).length + 1 }
             let anchor = after.length > 0 && !Self.isItemLine(after, after.paragraphRange(for: NSRange(location: here, length: 0)))
                 && below < after.length ? below : view.selectedRange.location
-            renumberList(around: anchor, in: view, start: lostNumber)
+            // 번호를 넘길 때는 **고른 첫 줄부터**만 (284) — 빈 줄을 건너 묶음이 위 목록까지 이어지면(281) 그 목록의 첫 항목이 바뀐다.
+            let firstStart = region.location + restyled[..<first].reduce(0) { $0 + ($1 as NSString).length + 1 }
+            renumberList(around: anchor, in: view, start: lostNumber, from: lostNumber != nil ? firstStart : nil,
+                         seedMayContinue: lostNumber != nil)
             keepCaretVisible(view)
             reportActiveFormats(view)
             onEdit(view.text)
@@ -1010,20 +1013,23 @@ struct MarkdownEditor: UIViewRepresentable {
             pendingFollow = body.location
         }
 
-        /// 이 줄이 **목록의 첫 항목**인가 — 위로 (빈 줄 하나를 건너) 항목 줄이 없다.
+        /// 이 줄이 **번호 목록의 첫 항목**인가 — 위로 (빈 줄을 건너) **번호 항목**이 없다 (281 — 빈 줄은 몇 줄이든).
+        /// 글머리표 · 글줄은 번호를 끊으므로 그 밑의 `1.` 은 첫 항목이다 (284, 빌드 129 15번 — 위에 `- 사과` 가 있어 첫 항목으로 안 봐서
+        /// 첫 항목을 글머리표로 바꿔도 아래가 1 부터가 안 됐다). 글에 이어지는 줄(198)은 항목으로 치지 않는다 — `listRun` 과 같은 판정.
+        /// 첫 항목을 지울 때 번호 적어 두기(192) · 첫 번호를 손으로 고칠 때(195) · 목록 모양 바꾸기 · 마커를 뗀 뒤 번호 넘기기가 다 이 잣대를 쓴다.
         private static func isFirstItem(_ text: NSString, _ paragraph: NSRange) -> Bool {
-            guard paragraph.location > 0 else { return true }
-            let previous = text.paragraphRange(for: NSRange(location: paragraph.location - 1, length: 0))
-            // 글에 이어지는 줄(198)은 항목으로 치지 않는다 — `listRun` 과 같은 판정.
-            if isItemLine(text, previous) { return continuesText(text, previous) }
-            guard isBlankLine(text, previous), previous.location > 0 else { return true }
-            let above = text.paragraphRange(for: NSRange(location: previous.location - 1, length: 0))
-            return !isItemLine(text, above) || continuesText(text, above)
+            guard paragraph.location > 0, let above = nonBlankLine(text, above: paragraph.location) else { return true }
+            guard isItemLine(text, above), !continuesText(text, above) else { return true }
+            return LineStyler.style(paragraph: line(text, above)).block != .orderedItem
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
             isComposing = textView.markedTextRange != nil
+            // **글 밖의 자리는 손대지 않는다** (285). 빌드 128 의 충돌 원인은 이것이 아니었다(`continueList` 가 글을 바꾼 뒤
+            // 옛 범위로 읽은 것) — 그래도 들어오는 값을 믿지 않는 울타리로 둔다. 보통 글 상자처럼 시스템에 맡긴다.
+            let length = (textView.textStorage.string as NSString).length
+            guard range.location >= 0, range.length >= 0, NSMaxRange(range) <= length else { return true }
             if !isRenumbering {
                 noteListEdit(in: textView, range: range, replacement: text)
                 noteStartEdit(in: textView, range: range, replacement: text)
@@ -1043,6 +1049,10 @@ struct MarkdownEditor: UIViewRepresentable {
             if text == "\n", !isComposing, continueList(in: textView, at: range) {
                 return false
             }
+            // **글 맨 앞에서 지우기 — 마커를 뗀다** (280). 한 글자 지우기만 (고른 글을 지우는 것은 그대로).
+            if text.isEmpty, range.length == 1, !isComposing, !isRenumbering, unlistOnBackspace(in: textView, at: range) {
+                return false
+            }
             // 빈칸은 **키보드가 넣는다** (217) — 가로채면 마침표 단축키 · 영어 자동 수정이 깨진다. 아래 `되돌리기` 메모.
             return true
         }
@@ -1060,7 +1070,9 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 쓰므로 되돌리기에도 한 번의 편집으로 남는다.
         private func continueList(in textView: UITextView, at range: NSRange) -> Bool {
             let text = textView.textStorage.string as NSString
+            guard range.location <= text.length else { return false }
             let paragraph = text.paragraphRange(for: NSRange(location: range.location, length: 0))
+            guard NSMaxRange(paragraph) <= text.length else { return false }     // 285 — 글 밖이면 보통 줄바꿈
             var line = paragraph
             if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
             // **글에 이어지는 줄은 목록이 아니다** (198, 빌드 69 · 11번) — `가나다` 밑의 `2. 나` 에서 엔터를 쳐도 `3. ` 을
@@ -1071,7 +1083,10 @@ struct MarkdownEditor: UIViewRepresentable {
             // 부모의 마커에 따라 다르므로 빈칸 둘로는 어느 단계에도 못 선다.
             let here = Self.leadingWidth(text.substring(with: line))
             let shallower = Self.line(text, above: paragraph.location, shallowerThan: here)
-            guard let action = ListEditing.returnPressed(in: text.substring(with: line),
+            // **커서가 줄의 어디에 있는지 넘긴다** (278) — 마커 앞이면 `nil` 이 와서 보통 줄바꿈(줄이 통째로 내려간다),
+            // 마커 안이면 글 바로 앞에 넣으라는 `insertAt` 이 온다.
+            let caret = range.location - line.location
+            guard let action = ListEditing.returnPressed(in: text.substring(with: line), caret: caret,
                                                          outdentingTo: shallower) else {
                 return false
             }
@@ -1080,11 +1095,29 @@ struct MarkdownEditor: UIViewRepresentable {
                 guard let target = textRange(textView, range) else { return false }
                 textView.replace(target, withText: marker)
                 textView.selectedRange = NSRange(location: range.location + (marker as NSString).length, length: 0)
+            case .insertAt(let offset, let marker):
+                // 고른 글이 있으면 그 글을 바꾸는 것이 먼저다 — 시스템에 맡긴다.
+                guard range.length == 0,
+                      let target = textRange(textView, NSRange(location: line.location + offset, length: 0)) else { return false }
+                textView.replace(target, withText: marker)
+                textView.selectedRange = NSRange(location: line.location + offset + (marker as NSString).length, length: 0)
             case .replacePrefix(let length, let replacement):
                 let prefix = NSRange(location: line.location, length: min(length, line.length))
+                // **글을 바꾸기 전에 읽는다** (285, 빌드 126 · 128 아이패드 충돌). `text` 는 저장소의 **살아 있는** 문자열이라
+                // `replace` 뒤에는 옛 범위가 글 밖일 수 있다 — 문서 끝의 빈 항목에서 엔터를 치면 마커를 뗀 만큼 글이 줄어
+                // `substring` 이 `NSRangeException` 으로 죽었다. 바꾼 뒤에 필요한 값은 다시 받는다 (`renumberAfterUnlist`).
+                let number = ListEditing.orderedNumber(text.substring(with: line))
                 guard let target = textRange(textView, prefix) else { return false }
                 textView.replace(target, withText: replacement)
                 textView.selectedRange = NSRange(location: line.location + (replacement as NSString).length, length: 0)
+                if replacement.isEmpty {
+                    // 마커를 뗐다 — 뗀 줄은 목록이 아니므로 아래 줄에서 맞춘다 (283). 첫 항목이었으면 아래가 1 부터 (192).
+                    renumberAfterUnlist(in: textView, lineWidth: here, number: number)
+                    lostStart = nil
+                    keepCaretVisible(textView)
+                    onEdit(textView.text)
+                    return true
+                }
             }
             // 가운데에 끼워 넣었으면 아래 번호들이 어긋난다 — 여기서 맞춘다 (104).
             renumberList(around: textView.selectedRange.location, in: textView)
@@ -1093,15 +1126,86 @@ struct MarkdownEditor: UIViewRepresentable {
             return true
         }
 
+        /// **글 맨 앞에서 지우기 — 마커를 뗀다** (280, 2026-10-26 번호 점검). 아이폰 메모처럼: 항목 글의 첫 글자 앞에서 지우기를
+        /// 누르면 글자 대신 번호 · 글머리표가 없어지고, 겹친 항목이면 한 단계 나온다 (빈 항목에서 엔터와 같은 셈 — `ListEditing.unlist`).
+        /// 예전에는 마커 뒤 빈칸만 지워져 `2.나` 가 남았다 — 표준은 그 줄을 윗글에 이어지는 글로 읽어 읽기 화면에 `1. 가 2.나` 로 붙었다.
+        ///
+        /// 맨 바깥 항목을 뗐으면 **아래 항목은 그 번호부터** (192 와 같은 셈 — 첫 항목이면 1, 가운데면 그 번호. 뗀 줄은 윗항목에
+        /// 이어지는 글이라 읽기 화면은 번호를 이어 센다). 아래 줄이 더 깊으면(뗀 항목의 자식) 번호를 넘기지 않는다 — 그 목록의 첫 항목이 된다.
+        private func unlistOnBackspace(in textView: UITextView, at range: NSRange) -> Bool {
+            let text = textView.textStorage.string as NSString
+            guard range.location < text.length else { return false }
+            let paragraph = text.paragraphRange(for: NSRange(location: range.location, length: 0))
+            guard NSMaxRange(paragraph) <= text.length else { return false }     // 285
+            var line = paragraph
+            if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
+            if Self.continuesText(text, paragraph) { return false }
+            let string = text.substring(with: line)
+            let here = Self.leadingWidth(string)
+            let shallower = Self.line(text, above: paragraph.location, shallowerThan: here)
+            // 지우기는 커서 바로 앞 한 글자 — 커서는 `range` 의 끝이다.
+            guard case .replacePrefix(let length, let replacement)? =
+                    ListEditing.backspacePressed(in: string, caret: NSMaxRange(range) - line.location, outdentingTo: shallower),
+                  let target = textRange(textView, NSRange(location: line.location, length: min(length, line.length))) else { return false }
+            let number = replacement.isEmpty ? ListEditing.orderedNumber(string) : nil
+            textView.replace(target, withText: replacement)
+            textView.selectedRange = NSRange(location: line.location + (replacement as NSString).length, length: 0)
+
+            renumberAfterUnlist(in: textView, lineWidth: here, number: number)
+            lostStart = nil
+            keepCaretVisible(textView)
+            onEdit(textView.text)
+            return true
+        }
+
+        /// **마커를 뗀 뒤 번호 맞추기** (280 · 283) — 지우기와 빈 항목에서 엔터가 같이 쓴다. 뗀 줄은 더는 목록이 아니므로
+        /// **아래의 빈 줄 아닌 첫 줄**에서 목록을 찾는다 (커서 줄에서 찾으면 아무것도 안 맞춘다 — 가운데 빈 항목에서 엔터로 나오면 아래 번호가 남았다).
+        ///
+        /// `number` — 뗀 항목이 맨 바깥 번호 항목이었으면 그 번호. **아래 목록이 따로 시작할 때만** 그 번호부터 (192 와 같은 셈 —
+        /// 첫 항목이면 1 · 가운데 글줄이 남았으면 그 번호). 뗀 줄이 **빈 줄**이면 아래 목록은 위 목록과 한 묶음이라(281) 번호가 저절로
+        /// 이어진다 — 그때 번호를 넘기면 **위 목록의 첫 항목이 그 번호로 바뀐다** (283, 빌드 125 사용자 녹화 — 마지막 빈 항목 `9. ` 을
+        /// 지웠더니 몇 줄 아래 `- 사과` 를 기준으로 잡은 묶음이 위까지 이어져 `1. 가` 가 `9. 가` 로). 묶음이 아래 줄에서 시작할 때만 넘긴다.
+        /// 아래 줄이 더 깊으면(뗀 항목의 자식) 넘기지 않는다 — 그 목록의 첫 항목이 된다.
+        private func renumberAfterUnlist(in textView: UITextView, lineWidth here: Int, number: Int?) {
+            let text = textView.textStorage.string as NSString
+            var anchor = textView.selectedRange.location
+            var start: Int?
+            var from: Int?
+            if text.length > 0 {
+                let caretLine = text.paragraphRange(for: NSRange(location: min(anchor, text.length - 1), length: 0))
+                if !Self.isItemLine(text, caretLine), let below = Self.nonBlankLine(text, below: NSMaxRange(caretLine)) {
+                    anchor = below.location
+                    if let number, listRun(in: text, around: below.location, seedMayContinue: true) != nil,
+                       Self.leadingWidth(Self.line(text, below)) <= here {
+                        // **아래 목록이 위 목록과 한 묶음인가** (284, 빌드 126 사용자 — 위에 `- 사과` 가 있는 노트에서 첫 항목을 떼도
+                        // 아래가 1 부터가 안 됐다). 빈 줄을 건너 위로 올라가 만나는 첫 줄이 **번호 항목**이면 한 묶음 — 번호가 저절로
+                        // 이어진다(283). 글머리표거나 묶음의 시작이면 **따로 시작하는 목록** — 그 줄부터 뗀 번호로 (`from`).
+                        // 같은 잣대 하나 — `isFirstItem` (284). 아래 줄이 번호 목록의 첫 항목이면 따로 시작하는 목록이다.
+                        if Self.isFirstItem(text, below) { start = number; from = below.location }
+                    }
+                }
+            }
+            renumberList(around: anchor, in: textView, start: start, from: from, seedMayContinue: start != nil)
+        }
+
         /// **번호 목록을 1 · 2 · 3 으로 맞춘다** (104, 사용자 요청).
         ///
         /// 규칙은 Core 의 `ListEditing.renumber` 가 정하고 여기서는 **숫자만** 바꿔 넣는다.
         /// 줄 전체를 갈아 끼우지 않으므로 커서와 되돌리기가 덜 흔들린다. 뒤에서부터 넣어
         /// 앞의 자리가 밀리지 않게 한다.
-        private func renumberList(around location: Int, in textView: UITextView, start: Int? = nil) {
+        /// `from` — 묶음을 **이 자리부터**만 맞춘다 (284). 빈 줄을 건너 묶음이 위 목록까지 이어져도(281) `start` 는 이 줄에 걸려야 한다 —
+        /// 글머리표 · 글줄로 끊긴 뒤 새로 시작하는 목록에 뗀 번호를 넘길 때. 없으면 묶음 전체.
+        /// `seedMayContinue` — 씨앗 줄이 **글에 이어지는 줄로 보여도** 목록으로 받는다 (284, 빌드 130 15번). `1. 가` 를 보통 글로 풀면 표준은 바로 밑의
+        /// `2. 나` 를 문단 `가` 에 이어지는 글로 읽는다(1 로 시작하는 목록만 문단을 끊는다) — 그래서 묶음을 못 잡고 번호를 못 넘겼다.
+        /// 번호를 1 로 고쳐야 비로소 목록이 되니, 번호를 넘길 때만은 그 줄을 씨앗으로 받는다.
+        private func renumberList(around location: Int, in textView: UITextView, start: Int? = nil, from: Int? = nil,
+                                  seedMayContinue: Bool = false) {
             guard !isRenumbering, !isComposing, textView.markedTextRange == nil else { return }
             let text = textView.textStorage.string as NSString
-            guard text.length > 0, let run = listRun(in: text, around: location) else { return }
+            guard text.length > 0, var run = listRun(in: text, around: location, seedMayContinue: seedMayContinue) else { return }
+            if let from, from > run.location, from < NSMaxRange(run) {
+                run = NSRange(location: from, length: NSMaxRange(run) - from)
+            }
             let fixes = ListEditing.renumber(text.substring(with: run), start: start)
             guard !fixes.isEmpty else { return }
 
@@ -1143,11 +1247,11 @@ struct MarkdownEditor: UIViewRepresentable {
 
         /// 커서가 있는 줄을 둘러싼 **목록 한 덩이**. 목록 줄이 아니면 `nil`.
         /// 항목 사이의 빈 줄 하나는 목록을 끊지 않는다 — 그렇게 쓰는 사람이 많다.
-        private func listRun(in text: NSString, around location: Int) -> NSRange? {
+        private func listRun(in text: NSString, around location: Int, seedMayContinue: Bool = false) -> NSRange? {
             let seed = text.paragraphRange(for: NSRange(location: min(location, text.length - 1), length: 0))
             // **글에 이어지는 줄은 목록이 아니다** (198, 빌드 70 · 2번) — `가나다` 밑의 `2. 나` 를 목록에 넣으면 빈 줄 아래
             // 새로 친 `1. 가` 가 그 뒤를 이어 `3.` 이 됐다. 읽기 화면은 `2. 나` 를 글로, `1. 가` 를 새 목록의 첫 항목으로 그린다.
-            guard Self.isItemLine(text, seed), !Self.continuesText(text, seed) else { return nil }
+            guard Self.isItemLine(text, seed), seedMayContinue || !Self.continuesText(text, seed) else { return nil }
             var start = seed.location
             var end = NSMaxRange(seed)
             while start > 0 {
@@ -1157,10 +1261,10 @@ struct MarkdownEditor: UIViewRepresentable {
                     start = previous.location
                     continue
                 }
-                // 빈 줄 하나는 건너뛴다 — 그 위가 항목일 때만.
-                guard Self.isBlankLine(text, previous), previous.location > 0 else { break }
-                let above = text.paragraphRange(for: NSRange(location: previous.location - 1, length: 0))
-                guard Self.isItemLine(text, above), !Self.continuesText(text, above) else { break }
+                // 빈 줄은 **몇 줄이든** 건너뛴다 — 그 위가 항목일 때만 (281 — 표준은 빈 줄 수로 목록을 끊지 않는다.
+                // 예전에는 한 줄만 건너 두 줄 비운 목록이 둘로 갈려 아래 번호가 안 따라왔다).
+                guard Self.isBlankLine(text, previous), let above = Self.nonBlankLine(text, above: previous.location),
+                      Self.isItemLine(text, above), !Self.continuesText(text, above) else { break }
                 start = above.location
             }
             while end < text.length {
@@ -1169,12 +1273,34 @@ struct MarkdownEditor: UIViewRepresentable {
                     end = NSMaxRange(next)
                     continue
                 }
-                guard Self.isBlankLine(text, next), NSMaxRange(next) < text.length else { break }
-                let below = text.paragraphRange(for: NSRange(location: NSMaxRange(next), length: 0))
-                guard Self.isItemLine(text, below) else { break }
+                guard Self.isBlankLine(text, next), let below = Self.nonBlankLine(text, below: NSMaxRange(next)),
+                      Self.isItemLine(text, below) else { break }
                 end = NSMaxRange(below)
             }
             return NSRange(location: start, length: end - start)
+        }
+
+        /// `location` 위로 올라가며 만나는 **빈 줄이 아닌 첫 문단**의 범위 (281). 없으면 `nil`.
+        private static func nonBlankLine(_ text: NSString, above location: Int) -> NSRange? {
+            var at = location
+            while at > 0 {
+                let paragraph = text.paragraphRange(for: NSRange(location: at - 1, length: 0))
+                if !isBlankLine(text, paragraph) { return paragraph }
+                at = paragraph.location
+            }
+            return nil
+        }
+
+        /// `location` 아래로 내려가며 만나는 **빈 줄이 아닌 첫 문단**의 범위 (281). 없으면 `nil`.
+        private static func nonBlankLine(_ text: NSString, below location: Int) -> NSRange? {
+            var at = location
+            while at < text.length {
+                let paragraph = text.paragraphRange(for: NSRange(location: at, length: 0))
+                if !isBlankLine(text, paragraph) { return paragraph }
+                guard NSMaxRange(paragraph) > at else { return nil }
+                at = NSMaxRange(paragraph)
+            }
+            return nil
         }
 
         /// 이 줄이 **앞 글에 이어지는 줄**인가 (198) — 위로 빈 줄까지 모아 `BlockContext.roles` 에 묻는다.
@@ -1184,8 +1310,18 @@ struct MarkdownEditor: UIViewRepresentable {
             var at = paragraph.location
             while at > 0, lines.count < 200 {
                 let above = text.paragraphRange(for: NSRange(location: at - 1, length: 0))
+                guard above.location < at else { break }
                 let string = line(text, above)
-                if string.trimmingCharacters(in: .whitespaces).isEmpty || above.location >= at { break }
+                if string.trimmingCharacters(in: .whitespaces).isEmpty {
+                    // **빈 줄 너머가 목록 항목이나 들여쓴 줄이면 같은 목록 안** — 거기까지 모은다 (282, 2026-10-26 코드 재점검).
+                    // 예전에는 빈 줄에서 끊어 `1. 가 · 빈 줄 · ␣␣␣설명 · 2. 나` 의 `2. 나` 를 (열린 목록을 못 본 채) 이어지는 글로 봤다 —
+                    // 화면(`MarkdownStyler` 는 전체 문맥)은 항목으로 칠하는데 엔터만 번호를 안 이었다. 빈 줄 너머가 보통 글이면 목록이 닫힌 것이라 거기서 끊는다.
+                    guard let beyond = nonBlankLine(text, above: above.location),
+                          isItemLine(text, beyond) || leadingWidth(line(text, beyond)) > 0 else { break }
+                    lines.insert("", at: 0)
+                    at = above.location
+                    continue
+                }
                 lines.insert(string, at: 0)
                 at = above.location
             }
@@ -1340,7 +1476,14 @@ struct MarkdownEditor: UIViewRepresentable {
             let content = text.substring(with: line)
             if content.hasPrefix("\t") { return }
             let leading = content.prefix { $0 == " " }.count
-            let want = ListEditing.step.count
+            // **위가 목록 항목이면 그 항목의 글 칸까지** (282, 빌드 132 확인 — 빈칸 둘로는 `1. ` 항목(글 칸 셋) 안에 못 들어가
+            // 문단이 목록 밖으로 떨어지고, 그 밑의 `2.` 는 글을 끊지 못해 이어지는 글이 됐다). 빈 줄을 건너 만나는 첫 줄이 항목이면
+            // 그 글 칸(`- ` 둘 · `1. ` 셋 · `10. ` 넷 · 겹친 항목은 더), 아니면 예전처럼 빈칸 둘 (넷이면 코드 상자 — 그래서 둘에서 멈춘다).
+            var want = ListEditing.step.count
+            if let parent = Self.line(text, above: line.location) {
+                let style = LineStyler.style(paragraph: parent)
+                if style.block == .listItem || style.block == .orderedItem { want = style.contentStart }
+            }
             guard leading < want, let target = textRange(textView, NSRange(location: line.location, length: 0)) else { return }
             let pad = String(repeating: " ", count: want - leading)
             textView.replace(target, withText: pad)

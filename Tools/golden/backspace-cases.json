@@ -1,0 +1,148 @@
+{
+  "_note": "글 맨 앞(마커 바로 뒤)에서 지우기 (280). caret 은 줄 안 커서 자리(UTF-16) — 지우기는 그 앞 한 글자를 지우려는 것이다. 마커 바로 뒤면 글자 대신 마커를 뗀다 (겹친 항목은 한 단계 나온다). above · shallower 는 엔터 정답표와 같다.",
+  "cases": [
+    {
+      "name": "최상위 번호 — 마커를 뗀다 (사용자 사례 자리)",
+      "line": "1. 가",
+      "caret": 3,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "최상위 글머리",
+      "line": "- 사과",
+      "caret": 2,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "체크 칸",
+      "line": "- [ ] 할 일",
+      "caret": 6,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "체크한 칸",
+      "line": "- [x] 한 일",
+      "caret": 6,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "빈 항목 끝",
+      "line": "- ",
+      "caret": 2,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "빈 번호 항목 끝",
+      "line": "1. ",
+      "caret": 3,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "두 자리 번호",
+      "line": "10. 열",
+      "caret": 4,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "괄호 번호",
+      "line": "3) 다",
+      "caret": 3,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "마커 뒤 빈칸 둘",
+      "line": "1.  가",
+      "caret": 4,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "둘째 단계 — 첫째 단계로 나온다",
+      "line": "  - 나",
+      "caret": 4,
+      "above": [
+        "- 가"
+      ],
+      "shallower": "- 가"
+    },
+    {
+      "name": "번호 둘째 단계 — 마커는 그대로 첫째로",
+      "line": "   2. 둘",
+      "caret": 6,
+      "above": [
+        "1. 가",
+        "   1. 하나"
+      ],
+      "shallower": "1. 가"
+    },
+    {
+      "name": "셋째 단계 — 둘째로",
+      "line": "    - 셋",
+      "caret": 6,
+      "above": [
+        "- 가",
+        "  - 나"
+      ],
+      "shallower": "  - 나"
+    },
+    {
+      "name": "마커 안 — 보통 지우기",
+      "line": "1. 가",
+      "caret": 2,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "마커 안 체크 칸 — 보통 지우기",
+      "line": "- [ ] 할 일",
+      "caret": 4,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "글 가운데 — 보통 지우기",
+      "line": "1. 가나",
+      "caret": 4,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "글 끝 — 보통 지우기",
+      "line": "1. 가",
+      "caret": 4,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "줄 맨 앞 — 보통 지우기 (윗줄과 합친다)",
+      "line": "1. 가",
+      "caret": 0,
+      "above": [],
+      "shallower": null
+    },
+    {
+      "name": "들여쓴 항목 줄 맨 앞 — 보통 지우기",
+      "line": "  - 나",
+      "caret": 0,
+      "above": [
+        "- 가"
+      ],
+      "shallower": null
+    },
+    {
+      "name": "목록이 아닌 줄",
+      "line": "그냥 글",
+      "caret": 2,
+      "above": [],
+      "shallower": null
+    }
+  ]
+}

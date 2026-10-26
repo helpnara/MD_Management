@@ -4,6 +4,8 @@
 
 - `slow-margin-promo.mp4` — **세로 1080 × 1920 · 30fps · 49초 · 소리 없음** (릴스 · 쇼츠 · 블로그 본문)
 - `slow-margin-promo-en.mp4` — 같은 장면의 **영어판** (`promo-en.html` · 영어 자판 · 받은 글 폴더는 `Inbox` · 알림은 앱의 실제 영어 문구)
+- `slow-margin-links.mp4` — **11월 쇼츠 · 보던 링크를 한 노트에** (2026-10-25) · 세로 1080 × 1920 · 30fps · **34초** · 소리 없음. 장면 원본 `links-promo.html` (아래 *링크 모으기 장면*) · 제목 · 설명은 `youtube-shorts.md` 맨 위
+- `slow-margin-links-en.mp4` — 같은 장면의 **영어판** (`links-promo-en.html` · 앱의 실제 영어 문구 · 2026-10-25) · 제목 · 설명 · 고정 댓글은 `youtube-shorts-en.md` 맨 위
 - **출시 주 홍보 묶음** — `launch-kit.md` (애플 추천 신청 · 인앱 이벤트 · 캠페인 링크 · 블로그 · 커뮤니티 · 해외 글 초안, 2026-10-11)
 - 쇼츠 제목 · 설명 — `youtube-shorts.md` (한국어) · `youtube-shorts-en.md` (영어)
 - `promo.html` — 장면 원본. `render(t)` 가 t초의 화면을 그린다 (CSS 애니메이션을 쓰지 않아 프레임마다 똑같이 찍힌다)
@@ -38,3 +40,17 @@ PROMO_PAGE=promo-en.html …                                                    
 ```
 
 `icon.png` 는 `App/Assets.xcassets/AppIcon.appiconset/icon-1024.png` 를 복사해 둔다.
+
+## 링크 모으기 장면 (`links-promo.html` · 2026-10-25 — 11월 홍보 주)
+
+| 초 | 장면 | 근거 (코드에서 읽었다) |
+|---|---|---|
+| 0 | *보던 링크, 어디에 두세요?* — 첫 화면이 썸네일 후보라 0초부터 글이 보인다 | |
+| 3.4 | 공유 한 번 — 시스템 공유 메뉴 → **느린 여백에 보내기** (취소 · 보내기 · 글 · 주소 · **넣을 곳** 메뉴: 새 노트 / 고정한 노트 / 최근 고친 노트) → 아래 안내가 *앱을 열면 고른 노트의 맨 끝에 한 줄로 덧붙입니다.* 로 바뀜 | `ShareExtension/ShareViewController.swift` |
+| 11.6 | 보는 대로 — 영상 · 지도 장소 카드가 노트로 (1 → 3) | 244 · 252 |
+| 15.4 | 앱을 열면 — 알림 *공유로 받은 것 3개를 읽을거리 노트 끝에 덧붙였습니다.* · 읽기 화면 끝에 세 줄 | `LibraryModel` 의 `notify` · 241 |
+| 21.0 | 다시 찾기 — 폴더 화면 찾기 칸 → **최근 고친 노트** (제목 · 날짜 시각 · 폴더) · 아래 안내 그대로 | `RootView.recentSection` · 260 |
+| 25.6 | 그 노트는 파일 — `- [제목](주소)` · 지도 장소는 `- [이름](<주소>) : 길 주소` | `Tools/golden` 의 `share_entry` · `map_line` 으로 셈 |
+| 30.0 | 끝 — *11월, 보던 링크를 한 노트에 모아 보세요* · 앱스토어에서 ‘느린 여백’ | |
+
+다시 만들기는 위와 같다 — `PROMO_PAGE=links-promo.html`.

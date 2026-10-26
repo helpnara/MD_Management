@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gather Links Short</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B; --marker:#B9B2A7;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45;
+  --screen:#FFFFFF; --grouped:#F2F2F7; --rule:#E4DED3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+.cap{position:absolute;left:80px;right:80px;top:170px;text-align:center}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:74px;line-height:1.28;letter-spacing:-1px}
+.cap p{margin-top:26px;font-size:38px;line-height:1.5;color:var(--faint);font-weight:500}
+.kicker{display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--leaf);margin-bottom:22px}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:640px;width:740px;height:1190px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.22), 0 6px 18px rgba(0,0,0,.12)}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--screen);overflow:hidden}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:9}
+.body{position:absolute;top:230px;left:52px;right:52px;font-size:38px;line-height:1.62}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(10,122,255,.18);border:4px solid rgba(10,122,255,.45);pointer-events:none;z-index:8}
+.toast{position:absolute;left:30px;right:30px;top:96px;border-radius:30px;background:#2A2724;color:#fff;padding:24px 30px;font-size:30px;line-height:1.45;z-index:7}
+svg.ic{width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* 첫 장면 — 흩어진 링크 */
+.hook{position:absolute;left:0;right:0;top:560px;text-align:center}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:104px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:40px;font-size:44px;color:#4A4640;font-weight:500}
+.hook p b{color:var(--leaf);font-weight:700}
+.chipl{position:absolute;height:84px;padding:0 34px;border-radius:42px;background:#fff;box-shadow:0 14px 34px rgba(80,60,30,.14);
+  display:flex;align-items:center;gap:16px;font-size:32px;color:#55514B;white-space:nowrap}
+.chipl i{width:30px;height:30px;border-radius:8px;background:#E7E1D6;flex:none}
+
+/* 웹 페이지 · 시스템 공유 메뉴 */
+.web i{display:block;height:26px;border-radius:13px;background:#ECE8E1;margin:22px 0}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:560px;background:#F4F3F0;border-radius:56px 56px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.12);padding:40px 44px}
+.sheet .grab{width:90px;height:10px;border-radius:5px;background:#D3D0CA;margin:0 auto 34px}
+.sheet .row{display:flex;gap:34px;margin-top:20px}
+.app{width:132px;text-align:center;font-size:26px;color:#55514B}
+.app .sq{width:132px;height:132px;border-radius:32px;background:#E2DED6;margin-bottom:14px}
+.app img{width:132px;height:132px;border-radius:32px;display:block;margin-bottom:14px}
+
+/* 느린 여백에 보내기 (ShareViewController 의 Form) */
+.form{position:absolute;left:0;right:0;top:80px;bottom:0;background:var(--grouped);border-radius:44px 44px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.14);padding:0 34px}
+.fbar{height:120px;display:flex;align-items:center;justify-content:space-between;font-size:32px}
+.fbar .t{font-weight:700;font-size:32px;color:var(--ink)}
+.fbar .c{color:var(--accent)}
+.fbar .s{color:var(--accent);font-weight:700}
+.fh{font-size:26px;color:#8A8A8E;margin:22px 26px 12px}
+.fbox{background:#fff;border-radius:26px;padding:0 28px}
+.fbox.editor{height:150px}
+.faddr{padding:24px 0}
+.faddr b{display:block;font-size:34px;font-weight:500}
+.faddr small{display:block;font-size:26px;color:#8A8A8E;margin-top:6px}
+.fpick{height:100px;display:flex;align-items:center;justify-content:space-between;font-size:34px}
+.fpick .v{color:#8A8A8E;display:flex;align-items:center;gap:10px}
+.fpick .v svg{width:26px;height:34px;stroke:#8A8A8E;stroke-width:3.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.fnote{font-size:26px;color:#8A8A8E;margin:18px 26px;line-height:1.5}
+.menu{position:absolute;right:56px;width:440px;background:rgba(255,255,255,.97);border-radius:30px;box-shadow:0 24px 70px rgba(0,0,0,.22);padding:10px 0;z-index:6}
+.menu .mi{height:78px;display:flex;align-items:center;padding:0 30px 0 70px;font-size:32px;position:relative}
+.menu .mi.ck:before{content:'✓';position:absolute;left:26px;font-weight:700}
+.menu .mh{font-size:24px;color:#8A8A8E;padding:16px 30px 6px;border-top:1px solid #ECECEC}
+
+/* 몇 번 더 — 카드가 노트로 */
+.notebox{position:absolute;left:340px;top:1230px;width:400px;height:480px;border-radius:44px;background:#fff;
+  box-shadow:0 40px 80px rgba(80,60,30,.20);padding:46px 44px}
+.notebox .nt{font-size:52px;font-weight:900}
+.notebox .ln{height:22px;border-radius:11px;background:#EEE8DE;margin-top:26px}
+.notebox .badge{position:absolute;right:-28px;top:-28px;min-width:104px;height:104px;border-radius:52px;background:var(--leaf);color:#fff;
+  font-size:50px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 26px rgba(80,120,40,.35)}
+.card{position:absolute;left:250px;width:580px;height:150px;border-radius:30px;background:#fff;box-shadow:0 20px 50px rgba(80,60,30,.16);
+  display:flex;align-items:center;gap:28px;padding:0 30px}
+.card .th{width:96px;height:96px;border-radius:20px;background:#ECE6DA;flex:none;display:flex;align-items:center;justify-content:center}
+.card .th svg{width:44px;height:44px;fill:#B9AE9C}
+.card b{font-size:34px;font-weight:700;display:block}
+.card small{font-size:26px;color:var(--faint)}
+
+/* 읽기 화면 */
+.rd h1{font-size:60px;font-weight:900;line-height:1.3;margin-bottom:14px}
+.rd p{color:#3a3733}
+.rd ul{list-style:none;margin-top:22px}
+.rd li{position:relative;padding:12px 16px 12px 46px;border-radius:16px;line-height:1.4}
+.rd li:before{content:'';position:absolute;left:14px;top:34px;width:12px;height:12px;border-radius:6px;background:#3a3733}
+.link{color:var(--accent);text-decoration:underline;text-underline-offset:6px;text-decoration-thickness:2px}
+.nav{position:absolute;top:100px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 40px;gap:20px}
+.nav .back{width:70px;height:70px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;justify-content:center}
+.nav .title{font-size:36px;font-weight:500;flex:1}
+.nav .pill{height:70px;padding:0 26px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;gap:28px;color:var(--accent);font-size:34px;font-weight:700}
+
+/* 폴더 화면 찾기 칸 */
+.fold{position:absolute;inset:0;background:var(--grouped)}
+.fold .big{position:absolute;top:150px;left:48px;font-size:62px;font-weight:900}
+.sfield{position:absolute;top:262px;left:40px;right:40px;height:84px;border-radius:42px;background:#E4E4EA;display:flex;align-items:center;padding:0 28px;gap:16px;font-size:34px;color:#8A8A8E}
+.sfield svg{width:36px;height:36px;stroke:#8A8A8E;stroke-width:4;fill:none}
+.sfield .cx{margin-left:auto;color:var(--accent);font-size:32px}
+.glist{position:absolute;top:380px;left:40px;right:40px}
+.glist .gh{font-size:26px;color:#8A8A8E;margin:0 26px 12px}
+.glist .gb{background:#fff;border-radius:26px;padding:0 28px}
+.grow{padding:22px 0;border-bottom:1px solid #EDEDF0;font-size:34px}
+.grow:last-child{border-bottom:none}
+.grow b{display:block;font-weight:500}
+.grow small{display:block;font-size:24px;color:#8A8A8E;margin-top:4px}
+.frow2{height:96px;display:flex;align-items:center;gap:22px;border-bottom:1px solid #EDEDF0;font-size:34px}
+.frow2:last-child{border-bottom:none}
+.frow2 .fi{width:46px;height:36px;border-radius:7px;background:#7FB6E8;flex:none}
+.frow2 .n{margin-left:auto;color:#8A8A8E;font-size:30px}
+.gfoot{font-size:24px;color:#8A8A8E;margin:14px 26px;line-height:1.5}
+
+/* 파일 */
+.filecard{position:absolute;left:90px;right:90px;top:720px;border-radius:40px;background:#2A2724;color:#F4EFE6;padding:46px 50px;
+  box-shadow:0 40px 80px rgba(0,0,0,.25);font-family:'Noto Sans Mono','Noto Sans KR',monospace;font-size:31px;line-height:1.75}
+.filecard .fn{font-family:'Noto Sans KR';font-size:28px;color:#BFB6A8;margin-bottom:18px;letter-spacing:1px}
+.filecard .m{color:#9C9285}
+.filecard .u{color:#FFD27A}
+.filecard .ln2{white-space:pre}
+.facts{position:absolute;left:0;right:0;top:1440px;text-align:center}
+.facts span{display:inline-block;margin:10px 10px;padding:22px 40px;border-radius:50px;background:#fff;box-shadow:0 10px 30px rgba(80,60,30,.12);font-size:38px;font-weight:700}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:400px;text-align:center}
+.hero img{width:380px;height:380px;border-radius:88px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:130px;margin-top:64px;letter-spacing:2px}
+.hero .en{font-size:34px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:46px;margin-top:60px;font-weight:500;color:#4A4640;line-height:1.5}
+.hero .cta{display:inline-block;margin-top:70px;padding:30px 60px;border-radius:60px;background:var(--ink);color:#fff;font-size:40px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 1 · 질문 -->
+  <section class="scene" id="s1">
+    <div class="chipl" id="c11" style="left:90px;top:250px"><i></i>Ten Autumn Walks</div>
+    <div class="chipl" id="c12" style="left:520px;top:400px"><i></i>How to Read Slowly · video</div>
+    <div class="chipl" id="c13" style="left:150px;top:1290px"><i></i>Tidy Handwritten Notes</div>
+    <div class="chipl" id="c14" style="left:560px;top:1440px"><i></i>Weekend Bakery Map</div>
+    <div class="chipl" id="c15" style="left:240px;top:1590px"><i></i>Choosing Winter Tea</div>
+    <div class="hook">
+      <h1 id="h11">Where do your<br>saved links go?</h1>
+      <p id="h12">This <b>November</b>, gather them in one note</p>
+    </div>
+  </section>
+
+  <!-- 2 · 공유 한 번 -->
+  <section class="scene" id="s2">
+    <div class="cap"><div class="kicker">SHARE ONCE</div><h2>Added as one line<br>at the end of a note</h2><p>Pick a pinned or recently edited note</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div id="web2" class="body web" style="top:150px">
+        <div style="font-size:50px;font-weight:900;line-height:1.3;margin-bottom:20px">Ten Autumn Walks</div>
+        <i style="width:92%"></i><i style="width:80%"></i><i style="width:88%"></i><i style="width:60%"></i>
+        <div style="height:300px;border-radius:26px;background:#EDE7DA;margin:34px 0"></div>
+        <i style="width:85%"></i><i style="width:70%"></i>
+      </div>
+      <div class="sheet" id="sh2">
+        <div class="grab"></div>
+        <div style="font-size:30px;font-weight:700;color:#55514B">Ten Autumn Walks</div>
+        <div class="row">
+          <div class="app"><div class="sq"></div>&nbsp;</div>
+          <div class="app"><div class="sq"></div>&nbsp;</div>
+          <div class="app" id="our2" style="font-size:22px;white-space:nowrap"><img src="icon.png" alt="">Slow Margin</div>
+          <div class="app"><div class="sq"></div>&nbsp;</div>
+        </div>
+        <div style="margin-top:34px;border-radius:26px;background:#fff;padding:0 30px">
+          <div style="height:84px;border-bottom:1px solid #EEE;display:flex;align-items:center"><i style="display:block;width:46%;height:22px;border-radius:11px;background:#E7E3DC"></i></div>
+          <div style="height:84px;display:flex;align-items:center"><i style="display:block;width:34%;height:22px;border-radius:11px;background:#E7E3DC"></i></div>
+        </div>
+      </div>
+      <div class="form" id="fm2">
+        <div class="fbar"><span class="c">Cancel</span><span class="t">Send to Slow Margin</span><span class="s" id="send2">Send</span></div>
+        <div class="fh">TEXT</div>
+        <div class="fbox editor"></div>
+        <div class="fh">LINK</div>
+        <div class="fbox faddr"><b>Ten Autumn Walks</b><small>https://example.com/autumn-walks</small></div>
+        <div class="fbox" style="margin-top:44px"><div class="fpick" id="pick2"><span>Save to</span><span class="v"><span id="val2">New Note</span><svg viewBox="0 0 26 34"><path d="M6 12 L13 5 L20 12 M6 22 L13 29 L20 22"/></svg></span></div></div>
+        <div class="fnote" id="note2">When you open the app, it's added as a new note in the Inbox folder.</div>
+      </div>
+      <div class="menu" id="menu2">
+        <div class="mi ck">New Note</div>
+        <div class="mh">Pinned Notes</div>
+        <div class="mi" id="mi2">Reading List</div>
+        <div class="mh">Recently Edited</div>
+        <div class="mi">November Plans</div>
+        <div class="mi">Walk Journal</div>
+      </div>
+      <div class="tap" id="tap2" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 3 · 보는 대로 -->
+  <section class="scene" id="s3">
+    <div class="cap"><div class="kicker">AS YOU GO</div><h2>Like something?<br>Send it right away</h2><p>Web pages, videos, map places — one line each</p></div>
+    <div class="card" id="k31" style="top:760px"><div class="th"><svg viewBox="0 0 44 44"><rect x="6" y="8" width="32" height="28" rx="5"/></svg></div><div><b>How to Read Slowly</b><small>Video</small></div></div>
+    <div class="card" id="k32" style="top:760px"><div class="th"><svg viewBox="0 0 44 44"><path d="M22 4 C14 4 9 10 9 17 C9 27 22 40 22 40 C22 40 35 27 35 17 C35 10 30 4 22 4 Z"/></svg></div><div><b>Weekend Bakery</b><small>Map place</small></div></div>
+    <div class="notebox" id="nb3"><div class="nt">Reading List</div><div class="ln" style="width:90%"></div><div class="ln" style="width:72%"></div><div class="ln" style="width:84%"></div><div class="ln" style="width:60%" id="nl31"></div><div class="ln" style="width:78%" id="nl32"></div><div class="badge" id="bd3">1</div></div>
+  </section>
+
+  <!-- 4 · 앱을 열면 -->
+  <section class="scene" id="s4">
+    <div class="cap"><div class="kicker">OPEN THE APP</div><h2>Waiting at the end<br>of your note</h2><p>Each title becomes a link, one per line</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title"></div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M26 7 L33 14 L15 32 L7 33 L8 25 Z"/></svg></div></div>
+      <div class="body rd" style="top:240px">
+        <h1>Reading List</h1>
+        <p>Things to read slowly.</p>
+        <ul>
+          <li><span class="link">A Bookshop on a Rainy Day</span></li>
+          <li><span class="link">A Fountain Pen That Lasts</span></li>
+          <li id="n41"><span class="link">Ten Autumn Walks</span></li>
+          <li id="n42"><span class="link">How to Read Slowly</span></li>
+          <li id="n43"><span class="link">Weekend Bakery</span> : 3 Elm St</li>
+        </ul>
+      </div>
+      <div class="toast" id="toast4" style="opacity:0">Added shared items to the end of Reading List (3).</div>
+    </div></div>
+  </section>
+
+  <!-- 5 · 다시 찾기 -->
+  <section class="scene" id="s5">
+    <div class="cap"><div class="kicker">FIND IT AGAIN</div><h2>Tap search to see<br>recent notes first</h2><p>Up to ten, right at the top of Folders</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="fold">
+        <div class="big">Folders</div>
+        <div class="sfield"><svg viewBox="0 0 40 40"><circle cx="17" cy="17" r="10"/><path d="M25 25 L33 33"/></svg><span>Search All Notes</span><span class="cx" id="cx5" style="opacity:0">Cancel</span></div>
+        <div class="glist" id="fl5">
+          <div class="gb">
+            <div class="frow2"><div class="fi"></div>Inbox<span class="n">12</span></div>
+            <div class="frow2"><div class="fi"></div>Journal<span class="n">48</span></div>
+            <div class="frow2"><div class="fi"></div>Walks<span class="n">9</span></div>
+            <div class="frow2"><div class="fi"></div>Books<span class="n">21</span></div>
+          </div>
+        </div>
+        <div class="glist" id="rl5" style="opacity:0">
+          <div class="gh">RECENTLY EDITED</div>
+          <div class="gb">
+            <div class="grow" id="r51"><b>Reading List</b><small>Nov 2, 2026 at 9:14 PM</small></div>
+            <div class="grow"><b>November Plans</b><small>Nov 2, 2026 at 8:30 AM</small></div>
+            <div class="grow"><b>Walk Journal</b><small>Nov 1, 2026 at 6:05 PM</small><small>Walks</small></div>
+          </div>
+          <div class="gfoot">Searches titles and text. Narrow it with tag:name or path:folder.</div>
+        </div>
+      </div>
+      <div class="tap" id="tap5" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 6 · 파일 -->
+  <section class="scene" id="s6">
+    <div class="cap"><div class="kicker">THAT NOTE IS</div><h2>A plain Markdown file<br>in your iCloud</h2><p>Still there if you delete the app or open it elsewhere</p></div>
+    <div class="filecard" id="fc6">
+      <div class="fn">iCloud Drive › Slow Margin › Reading List.md</div>
+      <div class="ln2"><span class="m"># </span>Reading List</div>
+      <div class="ln2"> </div>
+      <div class="ln2">Things to read slowly.</div>
+      <div class="ln2"> </div>
+      <div class="ln2" id="f61"><span class="m">- [</span>A Bookshop on a Rainy Day<span class="m">](</span><span class="u">https://…</span><span class="m">)</span></div>
+      <div class="ln2" id="f62"><span class="m">- [</span>A Fountain Pen That Lasts<span class="m">](</span><span class="u">https://…</span><span class="m">)</span></div>
+      <div class="ln2" id="f63"><span class="m">- [</span>Ten Autumn Walks<span class="m">](</span><span class="u">https://…</span><span class="m">)</span></div>
+      <div class="ln2" id="f64"><span class="m">- [</span>How to Read Slowly<span class="m">](</span><span class="u">https://…</span><span class="m">)</span></div>
+      <div class="ln2" id="f65"><span class="m">- [</span>Weekend Bakery<span class="m">](&lt;</span><span class="u">https://…</span><span class="m">&gt;)</span> : 3 Elm St</div>
+    </div>
+    <div class="facts" id="ft6"><span>No account</span><span>No ads</span><span>No tracking</span></div>
+  </section>
+
+  <!-- 7 · 끝 -->
+  <section class="scene" id="s7">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>Slow Margin</h1>
+      <div class="en">IPHONE · IPAD</div>
+      <div class="tl" id="tl7">This November, gather<br>your links in one note</div>
+      <div class="cta" id="cta7">Search ‘Slow Margin’ on the App Store</div>
+    </div>
+  </section>
+
+  <div id="leafline"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+
+// 장면 [시작, 끝]
+const SC = { s1:[0,3.4], s2:[3.4,11.6], s3:[11.6,15.4], s4:[15.4,21.0], s5:[21.0,25.6], s6:[25.6,30.0], s7:[30.0,34.0] };
+const DURATION = 34.0;
+
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+function capIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .cap'); if(!el) return;
+  const p=out(seg(t,a,a+0.8));
+  el.style.transform=`translateY(${(1-p)*40}px)`; el.style.opacity=p;
+}
+function riseIn(el,t,a,dur=0.7,dist=60){ const p=out(seg(t,a,a+dur)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dist}px)`; }
+function tapAt(tapEl, target, t, at){
+  const r=target.getBoundingClientRect(), sr=tapEl.parentElement.getBoundingClientRect();
+  const p=seg(t,at-0.3,at+0.4);
+  tapEl.style.left=(r.left-sr.left+r.width/2-60)+'px'; tapEl.style.top=(r.top-sr.top+r.height/2-60)+'px';
+  tapEl.style.opacity=p>0&&p<1?Math.sin(p*Math.PI):0; tapEl.style.transform=`scale(${0.6+p*0.6})`;
+}
+function glowRow(el,t,a,b){ el.style.background = t>a && t<b ? `rgba(111,165,58,${0.16*(1-seg(t,b-1.0,b))})` : 'none'; }
+
+// ── 1 · 질문 ──
+function renderS1(t){
+  ['c11','c12','c13','c14','c15'].forEach((id,i)=>{
+    const el=$(id); const p=out(seg(t,0.05+i*0.12,0.65+i*0.12));
+    const drift=Math.sin(t*0.9+i*1.7)*10;
+    el.style.opacity=p; el.style.transform=`translateY(${(1-p)*50+drift}px) rotate(${(i%2?1:-1)*(2+i)}deg)`;
+  });
+  // 첫 화면이 곧 썸네일 후보 — 질문은 0초부터 보인다.
+  const hp=out(seg(t,0,1.2)); $('h11').style.transform=`scale(${1.04-0.04*hp})`; $('h11').style.opacity=1;
+  riseIn($('h12'),t,0.8,0.8,30);
+}
+
+// ── 2 · 공유 한 번 ──
+function renderS2(t){
+  const s=SC.s2[0];
+  const up=s+0.8, tapApp=s+1.8, swap=s+2.1, tapPick=s+3.3, tapItem=s+4.5, tapSend=s+6.2;
+  // 시스템 공유 메뉴
+  const shUp = out(seg(t,up,up+0.5)) * (1-ease(seg(t,swap,swap+0.35)));
+  $('sh2').style.transform=`translateY(${(1-shUp)*600}px)`;
+  // 느린 여백에 보내기 — 올라왔다가 보내기 뒤에 내려간다
+  const fUp = out(seg(t,swap+0.1,swap+0.6)) * (1-ease(seg(t,tapSend+0.25,tapSend+0.7)));
+  $('fm2').style.transform=`translateY(${(1-fUp)*1100}px)`;
+  // 넣을 곳 메뉴
+  const mOn = t>=tapPick+0.1 && t<tapItem+0.15;
+  const mp = mOn ? out(seg(t,tapPick+0.1,tapPick+0.35)) : 0;
+  const menu=$('menu2'); const pk=$('pick2').getBoundingClientRect(), sr=menu.parentElement.getBoundingClientRect();
+  menu.style.top=(pk.top-sr.top-430)+'px';
+  menu.style.opacity=mp*fUp; menu.style.transform=`scale(${0.92+0.08*mp})`; menu.style.transformOrigin='100% 100%';
+  const picked = t>=tapItem+0.15;
+  $('val2').textContent = picked ? 'Reading List' : 'New Note';
+  $('val2').style.color = picked ? 'var(--ink)' : '';
+  $('note2').textContent = picked ? 'When you open the app, it’s added as a new line at the end of the chosen note.' : 'When you open the app, it\'s added as a new note in the Inbox folder.';
+  $('note2').style.color = picked && t<tapItem+1.6 ? 'var(--leaf)' : '';
+  // 누르는 자리
+  const tap=$('tap2');
+  if(t<swap) tapAt(tap,$('our2'),t,tapApp);
+  else if(t<tapPick+0.5) tapAt(tap,$('val2'),t,tapPick);
+  else if(t<tapItem+0.5) tapAt(tap,$('mi2'),t,tapItem);
+  else tapAt(tap,$('send2'),t,tapSend);
+}
+
+// ── 3 · 보는 대로 ──
+function renderS3(t){
+  const s=SC.s3[0];
+  riseIn($('nb3'),t,s+0.2,0.7,80);
+  const drops=[[$('k31'),s+0.9],[$('k32'),s+2.0]];
+  drops.forEach(([el,a],i)=>{
+    const pin=out(seg(t,a,a+0.35)); const fall=ease(seg(t,a+0.6,a+1.05));
+    el.style.opacity = pin*(1-seg(t,a+0.85,a+1.05));
+    el.style.transform = `translateY(${(1-pin)*-40 + fall*560}px) scale(${1-0.55*fall})`;
+  });
+  const n = 1 + (t>=s+1.95?1:0) + (t>=s+3.05?1:0);
+  $('bd3').textContent=n;
+  const bump = Math.max(Math.sin(seg(t,s+1.95,s+2.25)*Math.PI), Math.sin(seg(t,s+3.05,s+3.35)*Math.PI));
+  $('bd3').style.transform=`scale(${1+0.18*bump})`;
+  $('nl31').style.opacity = t>=s+1.95?1:0; $('nl32').style.opacity = t>=s+3.05?1:0;
+}
+
+// ── 4 · 앱을 열면 ──
+function renderS4(t){
+  const s=SC.s4[0];
+  const ts=$('toast4'); const tp=out(seg(t,s+0.7,s+1.1))*(1-seg(t,s+4.4,s+4.8));
+  ts.style.opacity=tp; ts.style.transform=`translateY(${(1-tp)*-30}px)`;
+  ['n41','n42','n43'].forEach((id,i)=>{
+    const el=$(id); const a=s+1.2+i*0.35; const p=out(seg(t,a,a+0.5));
+    el.style.opacity=p; el.style.transform=`translateX(${(1-p)*-100}px)`;
+    glowRow(el,t,a,s+4.6);
+  });
+}
+
+// ── 5 · 다시 찾기 ──
+function renderS5(t){
+  const s=SC.s5[0]; const tapField=s+1.3;
+  tapAt($('tap5'),document.querySelector('#s5 .sfield'),t,tapField);
+  const p=out(seg(t,tapField+0.15,tapField+0.5));
+  $('fl5').style.opacity=1-p; $('rl5').style.opacity=p; $('rl5').style.transform=`translateY(${(1-p)*30}px)`;
+  $('cx5').style.opacity=p;
+  glowRow($('r51'),t,tapField+0.4,s+4.2);
+}
+
+// ── 6 · 파일 ──
+function renderS6(t){
+  const s=SC.s6[0];
+  riseIn($('fc6'),t,s+0.2,0.7,80);
+  ['f63','f64','f65'].forEach((id,i)=>{ const el=$(id); el.style.background = t>s+1.0+i*0.25 && t<s+3.4 ? `rgba(255,210,122,${0.16*(1-seg(t,s+2.6,s+3.4))})` : 'none'; });
+  riseIn($('ft6'),t,s+1.8,0.7,40);
+}
+
+function renderS7(t){
+  const s=SC.s7[0];
+  const h=document.querySelector('#s7 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  riseIn($('tl7'),t,s+0.6,0.7,30); riseIn($('cta7'),t,s+1.2,0.7,30);
+}
+function renderPhone(sid,t){ const ph=document.querySelector('#'+sid+' .phone'); if(ph) riseIn(ph,t,SC[sid][0]+0.15,0.8,90); }
+
+const R = {s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6,s7:renderS7};
+
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001){ capIn(k,t,a+0.05); renderPhone(k,t); R[k](t); }
+  });
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
