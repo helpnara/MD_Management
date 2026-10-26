@@ -45,17 +45,7 @@ public enum ListEditing {
         let prefix = String(decoding: utf16[0..<style.contentStart], as: UTF16.self)
         let isEmpty = style.contentStart >= utf16.count
 
-        if isEmpty {
-            // 겹친 항목이면 **얕은 위 줄의 칸까지** 나오고, 더 나올 데가 없으면 마커를 지운다.
-            let marker = prefix.drop { $0 == " " || $0 == "\t" }
-            let here = leadingWidth(paragraph)
-            let target = shallower.map(leadingWidth) ?? 0
-            if here > target {
-                return .replacePrefix(length: style.contentStart,
-                                      with: String(repeating: " ", count: target) + String(marker))
-            }
-            return .replacePrefix(length: style.contentStart, with: "")
-        }
+        if isEmpty { return unlist(paragraph, outdentingTo: shallower) }
         let next = "\n" + nextMarker(from: prefix)
         if let caret {
             let lead = utf16.prefix { $0 == 0x20 || $0 == 0x09 }.count
@@ -63,6 +53,33 @@ public enum ListEditing {
             if caret < style.contentStart { return .insertAt(offset: style.contentStart, next) }
         }
         return .insert(next)
+    }
+
+    /// **마커를 뗀다** — 겹친 항목이면 **얕은 위 줄의 칸까지** 나오고, 더 나올 데가 없으면 마커를 지워 보통 글이 된다.
+    /// 빈 항목에서 엔터(141)와 글 맨 앞에서 지우기(280)가 같은 셈을 쓴다. 목록이 아니면 `nil`.
+    public static func unlist(_ paragraph: String, outdentingTo shallower: String? = nil) -> Action? {
+        let style = LineStyler.style(paragraph: paragraph)
+        guard style.block == .listItem || style.block == .orderedItem else { return nil }
+        let utf16 = Array(paragraph.utf16)
+        let prefix = String(decoding: utf16[0..<style.contentStart], as: UTF16.self)
+        let marker = prefix.drop { $0 == " " || $0 == "\t" }
+        let here = leadingWidth(paragraph)
+        let target = shallower.map(leadingWidth) ?? 0
+        if here > target {
+            return .replacePrefix(length: style.contentStart,
+                                  with: String(repeating: " ", count: target) + String(marker))
+        }
+        return .replacePrefix(length: style.contentStart, with: "")
+    }
+
+    /// **글 맨 앞(마커 바로 뒤)에서 지우기** (280, 2026-10-26 번호 점검) — 글자 대신 **마커를 뗀다** (아이폰 메모처럼).
+    /// `caret` 은 문단 안 커서 자리(UTF-16) — 지우기는 그 앞 한 글자를 지우려는 것이다. 마커 바로 뒤가 아니면 `nil` — 보통 지우기.
+    /// 예전에는 마커 뒤 빈칸만 지워져 `2.나` 가 남았고, 표준은 그 줄을 윗글에 이어지는 글로 읽어 읽기 화면에 `1. 가 2.나` 로 붙었다.
+    public static func backspacePressed(in paragraph: String, caret: Int,
+                                        outdentingTo shallower: String? = nil) -> Action? {
+        let style = LineStyler.style(paragraph: paragraph)
+        guard style.block == .listItem || style.block == .orderedItem, caret == style.contentStart else { return nil }
+        return unlist(paragraph, outdentingTo: shallower)
     }
 
     // MARK: - 탭 · 시프트 탭 (빌드 29 · 1번)
@@ -346,6 +363,7 @@ public enum ListEditing {
 
     /// 고칠 자리 하나 — **블록 안에서의 UTF-16 오프셋**과 그 자리에 넣을 숫자.
     /// 줄 전체를 갈아 끼우지 않고 **숫자만** 바꾼다. 커서와 되돌리기가 덜 흔들린다.
+    /// 279 — 번호의 자릿수가 바뀌어 딸린 줄을 옮길 때는 `number` 에 **앞 빈칸**이 든다 (줄 앞 빈칸 전체를 갈아 끼운다).
     public struct Renumber: Equatable, Sendable {
         public let start: Int
         public let length: Int
@@ -378,6 +396,10 @@ public enum ListEditing {
         var next: [Int: Int] = [:]
         var offset = 0
         var pendingStart = start
+        /// 279 — **번호의 자릿수가 바뀌면 딸린 줄을 함께 옮긴다.** `9.` 가 `10.` 이 되면 글 칸이 셋에서 넷으로 밀리는데, 그 아래
+        /// 세 칸 들여쓴 자식은 표준이 더는 자식으로 읽지 않는다 (cmark: `10. 아홉 · ␣␣␣1. 자식 · 11. 열` 은 평평한 10 · 11 · 12).
+        /// (부모 깊이, 글 칸, 차이) — 글 칸 이상 들여쓴 줄을 차이만큼 옮기고, 부모 깊이 이하의 줄이 오면 끝난다. 겹칠 수 있다.
+        var shifts: [(parent: Int, column: Int, delta: Int)] = []
 
         for line in block.components(separatedBy: "\n") {
             let length = line.utf16.count
@@ -386,7 +408,19 @@ public enum ListEditing {
             if line.trimmingCharacters(in: .whitespaces).isEmpty { continue }
 
             let indent = line.prefix { $0 == " " || $0 == "\t" }
-            let depth = indent.reduce(0) { $0 + ($1 == "\t" ? 4 : 1) }
+            let raw = indent.reduce(0) { $0 + ($1 == "\t" ? 4 : 1) }
+            var depth = raw
+            var keep = 0
+            for shift in shifts {
+                if depth <= shift.parent { break }
+                keep += 1
+                if depth >= shift.column { depth += shift.delta }
+            }
+            shifts.removeLast(shifts.count - keep)
+            if depth != raw {
+                fixes.append(Renumber(start: offset, length: indent.utf16.count,
+                                      number: String(repeating: " ", count: depth)))
+            }
             let rest = line.dropFirst(indent.count)
 
             // 글머리표 — 이 단계의 번호 목록을 끊는다.
@@ -417,6 +451,12 @@ public enum ListEditing {
             if wanted != read {
                 fixes.append(Renumber(start: offset + indent.utf16.count,
                                       length: digits.utf16.count, number: String(wanted)))
+                let grow = String(wanted).utf16.count - digits.utf16.count
+                if grow != 0 {
+                    let spaces = after.dropFirst().prefix { $0 == " " }.count
+                    let column = depth + digits.count + 1 + (spaces > 4 ? 1 : spaces)
+                    shifts.append((parent: depth, column: column, delta: grow))
+                }
             }
             next[depth] = wanted + 1
         }

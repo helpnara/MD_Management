@@ -87,10 +87,14 @@ public enum BlockContext {
                     paragraph = nil
                     continue
                 }
+                // 282 — 열린 목록 항목 **안의 문단** 밑에 그 항목 글 칸보다 덜 들여쓴 항목 줄이 오면 **같은 목록의 다음 항목**이다
+                // (cmark: `1. 가 · 빈 줄 · ␣␣␣설명 · 2. 나` 는 둘째 항목). 예전에는 글 밑의 `2.` 처럼 이어지는 글로 봐서
+                // 엔터가 번호를 잇지 않고 번호 맞추기도 건너뛰었다. 항목 안에서 같은 깊이로 오는 `2.` 는 여전히 이어지는 글이다.
+                let sibling = kind == .weakItem && list.map { width < $0 } == true
                 switch kind {
                 case .plain:
                     continue
-                case .weakItem, .indented:
+                case .weakItem where !sibling, .indented:
                     roles[index] = .continuation
                     continue
                 default:

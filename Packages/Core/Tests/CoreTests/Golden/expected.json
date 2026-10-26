@@ -421,6 +421,218 @@
       "unused": []
     }
   ],
+  "backspaceCases": [
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 3,
+        "text": ""
+      },
+      "caret": 3,
+      "line": "1. 가",
+      "name": "최상위 번호 — 마커를 뗀다 (사용자 사례 자리)",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 2,
+        "text": ""
+      },
+      "caret": 2,
+      "line": "- 사과",
+      "name": "최상위 글머리",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 6,
+        "text": ""
+      },
+      "caret": 6,
+      "line": "- [ ] 할 일",
+      "name": "체크 칸",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 6,
+        "text": ""
+      },
+      "caret": 6,
+      "line": "- [x] 한 일",
+      "name": "체크한 칸",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 2,
+        "text": ""
+      },
+      "caret": 2,
+      "line": "- ",
+      "name": "빈 항목 끝",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 3,
+        "text": ""
+      },
+      "caret": 3,
+      "line": "1. ",
+      "name": "빈 번호 항목 끝",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 4,
+        "text": ""
+      },
+      "caret": 4,
+      "line": "10. 열",
+      "name": "두 자리 번호",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 3,
+        "text": ""
+      },
+      "caret": 3,
+      "line": "3) 다",
+      "name": "괄호 번호",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 4,
+        "text": ""
+      },
+      "caret": 4,
+      "line": "1.  가",
+      "name": "마커 뒤 빈칸 둘",
+      "shallower": null
+    },
+    {
+      "above": [
+        "- 가"
+      ],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 4,
+        "text": "- "
+      },
+      "caret": 4,
+      "line": "  - 나",
+      "name": "둘째 단계 — 첫째 단계로 나온다",
+      "shallower": "- 가"
+    },
+    {
+      "above": [
+        "1. 가",
+        "   1. 하나"
+      ],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 6,
+        "text": "2. "
+      },
+      "caret": 6,
+      "line": "   2. 둘",
+      "name": "번호 둘째 단계 — 마커는 그대로 첫째로",
+      "shallower": "1. 가"
+    },
+    {
+      "above": [
+        "- 가",
+        "  - 나"
+      ],
+      "action": {
+        "kind": "replacePrefix",
+        "length": 6,
+        "text": "  - "
+      },
+      "caret": 6,
+      "line": "    - 셋",
+      "name": "셋째 단계 — 둘째로",
+      "shallower": "  - 나"
+    },
+    {
+      "above": [],
+      "action": null,
+      "caret": 2,
+      "line": "1. 가",
+      "name": "마커 안 — 보통 지우기",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": null,
+      "caret": 4,
+      "line": "- [ ] 할 일",
+      "name": "마커 안 체크 칸 — 보통 지우기",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": null,
+      "caret": 4,
+      "line": "1. 가나",
+      "name": "글 가운데 — 보통 지우기",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": null,
+      "caret": 4,
+      "line": "1. 가",
+      "name": "글 끝 — 보통 지우기",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": null,
+      "caret": 0,
+      "line": "1. 가",
+      "name": "줄 맨 앞 — 보통 지우기 (윗줄과 합친다)",
+      "shallower": null
+    },
+    {
+      "above": [
+        "- 가"
+      ],
+      "action": null,
+      "caret": 0,
+      "line": "  - 나",
+      "name": "들여쓴 항목 줄 맨 앞 — 보통 지우기",
+      "shallower": null
+    },
+    {
+      "above": [],
+      "action": null,
+      "caret": 2,
+      "line": "그냥 글",
+      "name": "목록이 아닌 줄",
+      "shallower": null
+    }
+  ],
   "brokenCases": [
     {
       "broken": [
@@ -2294,6 +2506,87 @@
       ],
       "tentative": [
         false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "1. 가",
+        "",
+        "   설명",
+        "2. 나"
+      ],
+      "name": "282 — 항목 안 문단 밑의 덜 들여쓴 번호는 다음 항목",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "normal"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "1. 가",
+        "",
+        "   설명",
+        "   2. 나"
+      ],
+      "name": "282 — 항목 안 문단 밑의 같은 칸 번호는 이어지는 글",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "continuation"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "1. 가",
+        "",
+        "설명",
+        "2. 나"
+      ],
+      "name": "282 — 항목 밖 문단 밑의 번호는 이어지는 글 (198 그대로)",
+      "roles": [
+        "normal",
+        "normal",
+        "normal",
+        "continuation"
+      ],
+      "tentative": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "lines": [
+        "가나다",
+        "2. 나",
+        "3. 다"
+      ],
+      "name": "282 — 글 바로 밑의 번호는 이어지는 글 (198 그대로)",
+      "roles": [
+        "normal",
+        "continuation",
+        "continuation"
+      ],
+      "tentative": [
         false,
         false,
         false
@@ -10885,6 +11178,387 @@
       "name": "첫항목을목록해제-아래번호는그번호로",
       "start": 1,
       "text": "2. 나\n3. 다"
+    },
+    {
+      "fixes": [
+        {
+          "length": 1,
+          "number": "2",
+          "start": 5
+        },
+        {
+          "length": 1,
+          "number": "3",
+          "start": 12
+        },
+        {
+          "length": 1,
+          "number": "4",
+          "start": 19
+        },
+        {
+          "length": 1,
+          "number": "5",
+          "start": 26
+        },
+        {
+          "length": 1,
+          "number": "6",
+          "start": 33
+        },
+        {
+          "length": 1,
+          "number": "7",
+          "start": 40
+        },
+        {
+          "length": 1,
+          "number": "8",
+          "start": 47
+        },
+        {
+          "length": 1,
+          "number": "9",
+          "start": 54
+        },
+        {
+          "length": 1,
+          "number": "10",
+          "start": 61
+        },
+        {
+          "length": 3,
+          "number": "    ",
+          "start": 67
+        },
+        {
+          "length": 3,
+          "number": "    ",
+          "start": 76
+        },
+        {
+          "length": 2,
+          "number": "11",
+          "start": 85
+        }
+      ],
+      "name": "279-자릿수가-늘면-자식도-한-칸",
+      "start": null,
+      "text": "1. 새\n1. 항목1\n2. 항목2\n3. 항목3\n4. 항목4\n5. 항목5\n6. 항목6\n7. 항목7\n8. 항목8\n9. 아홉\n   1. 자식\n   2. 자식\n10. 열\n    - 손자"
+    },
+    {
+      "fixes": [
+        {
+          "length": 1,
+          "number": "1",
+          "start": 0
+        },
+        {
+          "length": 1,
+          "number": "2",
+          "start": 5
+        },
+        {
+          "length": 1,
+          "number": "3",
+          "start": 10
+        },
+        {
+          "length": 1,
+          "number": "4",
+          "start": 15
+        },
+        {
+          "length": 1,
+          "number": "5",
+          "start": 21
+        },
+        {
+          "length": 1,
+          "number": "6",
+          "start": 27
+        },
+        {
+          "length": 1,
+          "number": "7",
+          "start": 33
+        },
+        {
+          "length": 1,
+          "number": "8",
+          "start": 39
+        },
+        {
+          "length": 2,
+          "number": "9",
+          "start": 45
+        },
+        {
+          "length": 4,
+          "number": "   ",
+          "start": 51
+        },
+        {
+          "length": 2,
+          "number": "10",
+          "start": 61
+        }
+      ],
+      "name": "279-자릿수가-줄면-자식도-한-칸-덜",
+      "start": 1,
+      "text": "2. 둘\n3. 셋\n4. 넷\n5. 다섯\n6. 여섯\n7. 일곱\n8. 여덟\n9. 아홉\n10. 열\n    1. 자식\n11. 열하나"
+    },
+    {
+      "fixes": [
+        {
+          "length": 2,
+          "number": "99",
+          "start": 6
+        },
+        {
+          "length": 2,
+          "number": "100",
+          "start": 12
+        },
+        {
+          "length": 4,
+          "number": "     ",
+          "start": 18
+        },
+        {
+          "length": 7,
+          "number": "        ",
+          "start": 28
+        },
+        {
+          "length": 3,
+          "number": "101",
+          "start": 40
+        }
+      ],
+      "name": "279-손자까지-함께",
+      "start": null,
+      "text": "98. 새\n98. 가\n99. 나\n    1. 자식\n       - 손자\n100. 다"
+    },
+    {
+      "fixes": [
+        {
+          "length": 1,
+          "number": "2",
+          "start": 5
+        },
+        {
+          "length": 1,
+          "number": "3",
+          "start": 12
+        },
+        {
+          "length": 1,
+          "number": "4",
+          "start": 19
+        },
+        {
+          "length": 1,
+          "number": "5",
+          "start": 26
+        },
+        {
+          "length": 1,
+          "number": "6",
+          "start": 33
+        },
+        {
+          "length": 1,
+          "number": "7",
+          "start": 40
+        },
+        {
+          "length": 1,
+          "number": "8",
+          "start": 47
+        },
+        {
+          "length": 1,
+          "number": "9",
+          "start": 54
+        },
+        {
+          "length": 1,
+          "number": "10",
+          "start": 61
+        },
+        {
+          "length": 2,
+          "number": "11",
+          "start": 75
+        }
+      ],
+      "name": "279-덜-들여쓴-줄은-그대로",
+      "start": null,
+      "text": "1. 새\n1. 항목1\n2. 항목2\n3. 항목3\n4. 항목4\n5. 항목5\n6. 항목6\n7. 항목7\n8. 항목8\n9. 아홉\n  - 두 칸\n10. 열"
+    },
+    {
+      "fixes": [
+        {
+          "length": 1,
+          "number": "2",
+          "start": 5
+        },
+        {
+          "length": 1,
+          "number": "3",
+          "start": 12
+        },
+        {
+          "length": 1,
+          "number": "4",
+          "start": 19
+        },
+        {
+          "length": 1,
+          "number": "5",
+          "start": 26
+        },
+        {
+          "length": 1,
+          "number": "6",
+          "start": 33
+        },
+        {
+          "length": 1,
+          "number": "7",
+          "start": 40
+        },
+        {
+          "length": 1,
+          "number": "8",
+          "start": 47
+        },
+        {
+          "length": 1,
+          "number": "9",
+          "start": 54
+        },
+        {
+          "length": 1,
+          "number": "10",
+          "start": 61
+        },
+        {
+          "length": 3,
+          "number": "    ",
+          "start": 68
+        },
+        {
+          "length": 2,
+          "number": "11",
+          "start": 77
+        }
+      ],
+      "name": "279-빈-줄을-건너서도",
+      "start": null,
+      "text": "1. 새\n1. 항목1\n2. 항목2\n3. 항목3\n4. 항목4\n5. 항목5\n6. 항목6\n7. 항목7\n8. 항목8\n9. 아홉\n\n   1. 자식\n10. 열"
+    },
+    {
+      "fixes": [
+        {
+          "length": 1,
+          "number": "10",
+          "start": 80
+        },
+        {
+          "length": 6,
+          "number": "       ",
+          "start": 86
+        },
+        {
+          "length": 2,
+          "number": "11",
+          "start": 100
+        }
+      ],
+      "name": "279-겹친-항목이-자릿수를-넘으면",
+      "start": null,
+      "text": "1. 가\n   1. a\n   2. b\n   3. c\n   4. d\n   5. e\n   6. f\n   7. g\n   8. h\n   9. i\n   9. i2\n      - 손자\n   10. j\n2. 나"
+    },
+    {
+      "fixes": [
+        {
+          "length": 1,
+          "number": "2",
+          "start": 5
+        },
+        {
+          "length": 1,
+          "number": "3",
+          "start": 12
+        },
+        {
+          "length": 1,
+          "number": "4",
+          "start": 19
+        },
+        {
+          "length": 1,
+          "number": "5",
+          "start": 26
+        },
+        {
+          "length": 1,
+          "number": "6",
+          "start": 33
+        },
+        {
+          "length": 1,
+          "number": "7",
+          "start": 40
+        },
+        {
+          "length": 1,
+          "number": "8",
+          "start": 47
+        },
+        {
+          "length": 1,
+          "number": "9",
+          "start": 54
+        },
+        {
+          "length": 1,
+          "number": "10",
+          "start": 61
+        },
+        {
+          "length": 2,
+          "number": "11",
+          "start": 67
+        },
+        {
+          "length": 2,
+          "number": "12",
+          "start": 82
+        }
+      ],
+      "name": "279-자릿수가-그대로면-안-건드린다",
+      "start": null,
+      "text": "1. 새\n1. 항목1\n2. 항목2\n3. 항목3\n4. 항목4\n5. 항목5\n6. 항목6\n7. 항목7\n8. 항목8\n9. 아홉\n10. 열\n    - 손자\n11. 열하나"
+    },
+    {
+      "fixes": [
+        {
+          "length": 2,
+          "number": "9",
+          "start": 6
+        },
+        {
+          "length": 2,
+          "number": "10",
+          "start": 13
+        }
+      ],
+      "name": "279-앞에-0-바뀐-자릿수대로",
+      "start": null,
+      "text": "08. 새\n08. 여덟\n09. 아홉\n    - 자식"
     }
   ],
   "restyleCases": [
