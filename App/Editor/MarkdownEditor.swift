@@ -1097,6 +1097,14 @@ struct MarkdownEditor: UIViewRepresentable {
                 guard let target = textRange(textView, prefix) else { return false }
                 textView.replace(target, withText: replacement)
                 textView.selectedRange = NSRange(location: line.location + (replacement as NSString).length, length: 0)
+                if replacement.isEmpty {
+                    // 마커를 뗐다 — 뗀 줄은 목록이 아니므로 아래 줄에서 맞춘다 (283). 첫 항목이었으면 아래가 1 부터 (192).
+                    renumberAfterUnlist(in: textView, lineWidth: here, number: ListEditing.orderedNumber(text.substring(with: line)))
+                    lostStart = nil
+                    keepCaretVisible(textView)
+                    onEdit(textView.text)
+                    return true
+                }
             }
             // 가운데에 끼워 넣었으면 아래 번호들이 어긋난다 — 여기서 맞춘다 (104).
             renumberList(around: textView.selectedRange.location, in: textView)
@@ -1129,21 +1137,36 @@ struct MarkdownEditor: UIViewRepresentable {
             textView.replace(target, withText: replacement)
             textView.selectedRange = NSRange(location: line.location + (replacement as NSString).length, length: 0)
 
-            let after = textView.textStorage.string as NSString
-            var anchor = textView.selectedRange.location
-            var start: Int?
-            if after.length > 0 {
-                let caretLine = after.paragraphRange(for: NSRange(location: min(anchor, after.length - 1), length: 0))
-                if !Self.isItemLine(after, caretLine), let below = Self.nonBlankLine(after, below: NSMaxRange(caretLine)) {
-                    anchor = below.location
-                    if let number, Self.isItemLine(after, below), Self.leadingWidth(Self.line(after, below)) <= here { start = number }
-                }
-            }
-            renumberList(around: anchor, in: textView, start: start)
+            renumberAfterUnlist(in: textView, lineWidth: here, number: number)
             lostStart = nil
             keepCaretVisible(textView)
             onEdit(textView.text)
             return true
+        }
+
+        /// **마커를 뗀 뒤 번호 맞추기** (280 · 283) — 지우기와 빈 항목에서 엔터가 같이 쓴다. 뗀 줄은 더는 목록이 아니므로
+        /// **아래의 빈 줄 아닌 첫 줄**에서 목록을 찾는다 (커서 줄에서 찾으면 아무것도 안 맞춘다 — 가운데 빈 항목에서 엔터로 나오면 아래 번호가 남았다).
+        ///
+        /// `number` — 뗀 항목이 맨 바깥 번호 항목이었으면 그 번호. **아래 목록이 따로 시작할 때만** 그 번호부터 (192 와 같은 셈 —
+        /// 첫 항목이면 1 · 가운데 글줄이 남았으면 그 번호). 뗀 줄이 **빈 줄**이면 아래 목록은 위 목록과 한 묶음이라(281) 번호가 저절로
+        /// 이어진다 — 그때 번호를 넘기면 **위 목록의 첫 항목이 그 번호로 바뀐다** (283, 빌드 125 사용자 녹화 — 마지막 빈 항목 `9. ` 을
+        /// 지웠더니 몇 줄 아래 `- 사과` 를 기준으로 잡은 묶음이 위까지 이어져 `1. 가` 가 `9. 가` 로). 묶음이 아래 줄에서 시작할 때만 넘긴다.
+        /// 아래 줄이 더 깊으면(뗀 항목의 자식) 넘기지 않는다 — 그 목록의 첫 항목이 된다.
+        private func renumberAfterUnlist(in textView: UITextView, lineWidth here: Int, number: Int?) {
+            let text = textView.textStorage.string as NSString
+            var anchor = textView.selectedRange.location
+            var start: Int?
+            if text.length > 0 {
+                let caretLine = text.paragraphRange(for: NSRange(location: min(anchor, text.length - 1), length: 0))
+                if !Self.isItemLine(text, caretLine), let below = Self.nonBlankLine(text, below: NSMaxRange(caretLine)) {
+                    anchor = below.location
+                    if let number, let run = listRun(in: text, around: below.location), run.location == below.location,
+                       Self.leadingWidth(Self.line(text, below)) <= here {
+                        start = number
+                    }
+                }
+            }
+            renumberList(around: anchor, in: textView, start: start)
         }
 
         /// **번호 목록을 1 · 2 · 3 으로 맞춘다** (104, 사용자 요청).
