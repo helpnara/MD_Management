@@ -1025,10 +1025,8 @@ struct MarkdownEditor: UIViewRepresentable {
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
             isComposing = textView.markedTextRange != nil
-            // **글 밖의 자리는 손대지 않는다** (285, 빌드 126 아이패드 충돌 — 외장 키보드 키 반복 · 자동 수정 뒤 줄바꿈).
-            // UIKit 이 글 길이 밖의 `range` 를 넘길 때가 있다. 그 자리로 문단을 재면 배포 빌드의 `paragraphRange` 는 검사 없이
-            // 글 밖 범위를 돌려주고(CF 의 범위 검사는 디버그에서만) 그다음 `substring` 이 `NSRangeException` 으로 죽었다.
-            // 보통 글 상자처럼 시스템에 맡긴다 — 목록 잇기 · 마커 떼기 · 번호 적어 두기 모두 건너뛴다.
+            // **글 밖의 자리는 손대지 않는다** (285). 빌드 128 의 충돌 원인은 이것이 아니었다(`continueList` 가 글을 바꾼 뒤
+            // 옛 범위로 읽은 것) — 그래도 들어오는 값을 믿지 않는 울타리로 둔다. 보통 글 상자처럼 시스템에 맡긴다.
             let length = (textView.textStorage.string as NSString).length
             guard range.location >= 0, range.length >= 0, NSMaxRange(range) <= length else { return true }
             if !isRenumbering {
@@ -1104,12 +1102,16 @@ struct MarkdownEditor: UIViewRepresentable {
                 textView.selectedRange = NSRange(location: line.location + offset + (marker as NSString).length, length: 0)
             case .replacePrefix(let length, let replacement):
                 let prefix = NSRange(location: line.location, length: min(length, line.length))
+                // **글을 바꾸기 전에 읽는다** (285, 빌드 126 · 128 아이패드 충돌). `text` 는 저장소의 **살아 있는** 문자열이라
+                // `replace` 뒤에는 옛 범위가 글 밖일 수 있다 — 문서 끝의 빈 항목에서 엔터를 치면 마커를 뗀 만큼 글이 줄어
+                // `substring` 이 `NSRangeException` 으로 죽었다. 바꾼 뒤에 필요한 값은 다시 받는다 (`renumberAfterUnlist`).
+                let number = ListEditing.orderedNumber(text.substring(with: line))
                 guard let target = textRange(textView, prefix) else { return false }
                 textView.replace(target, withText: replacement)
                 textView.selectedRange = NSRange(location: line.location + (replacement as NSString).length, length: 0)
                 if replacement.isEmpty {
                     // 마커를 뗐다 — 뗀 줄은 목록이 아니므로 아래 줄에서 맞춘다 (283). 첫 항목이었으면 아래가 1 부터 (192).
-                    renumberAfterUnlist(in: textView, lineWidth: here, number: ListEditing.orderedNumber(text.substring(with: line)))
+                    renumberAfterUnlist(in: textView, lineWidth: here, number: number)
                     lostStart = nil
                     keepCaretVisible(textView)
                     onEdit(textView.text)
