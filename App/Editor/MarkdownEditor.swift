@@ -1071,7 +1071,10 @@ struct MarkdownEditor: UIViewRepresentable {
             // 부모의 마커에 따라 다르므로 빈칸 둘로는 어느 단계에도 못 선다.
             let here = Self.leadingWidth(text.substring(with: line))
             let shallower = Self.line(text, above: paragraph.location, shallowerThan: here)
-            guard let action = ListEditing.returnPressed(in: text.substring(with: line),
+            // **커서가 줄의 어디에 있는지 넘긴다** (278) — 마커 앞이면 `nil` 이 와서 보통 줄바꿈(줄이 통째로 내려간다),
+            // 마커 안이면 글 바로 앞에 넣으라는 `insertAt` 이 온다.
+            let caret = range.location - line.location
+            guard let action = ListEditing.returnPressed(in: text.substring(with: line), caret: caret,
                                                          outdentingTo: shallower) else {
                 return false
             }
@@ -1080,6 +1083,12 @@ struct MarkdownEditor: UIViewRepresentable {
                 guard let target = textRange(textView, range) else { return false }
                 textView.replace(target, withText: marker)
                 textView.selectedRange = NSRange(location: range.location + (marker as NSString).length, length: 0)
+            case .insertAt(let offset, let marker):
+                // 고른 글이 있으면 그 글을 바꾸는 것이 먼저다 — 시스템에 맡긴다.
+                guard range.length == 0,
+                      let target = textRange(textView, NSRange(location: line.location + offset, length: 0)) else { return false }
+                textView.replace(target, withText: marker)
+                textView.selectedRange = NSRange(location: line.location + offset + (marker as NSString).length, length: 0)
             case .replacePrefix(let length, let replacement):
                 let prefix = NSRange(location: line.location, length: min(length, line.length))
                 guard let target = textRange(textView, prefix) else { return false }

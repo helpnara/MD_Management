@@ -1374,8 +1374,11 @@ def marker_prefix(line: str):
     return line[:end]
 
 
-def return_pressed(line: str, shallower: str | None = None):
+def return_pressed(line: str, shallower: str | None = None, caret: int | None = None):
     """엔터를 쳤을 때 (앱의 `ListEditing.returnPressed`).
+
+    `caret` — 줄 안 커서 자리(UTF-16). **커서가 줄의 어디에 있는지 본다** (278). 마커가 시작하기 전(줄 맨 앞 ·
+    들여쓰기 빈칸)이면 None — 보통 줄바꿈. 마커 안이면 글 바로 앞에 넣는다(`insertAt`). 그 밖은 예전 그대로.
 
     빈 항목이면 **얕은 위 줄의 칸까지** 나온다. 예전에는 무조건 빈칸 둘을 뺐는데,
     단계의 너비는 부모의 마커에 따라 둘 · 셋 · 넷으로 달라서 어느 단계에도 없는 칸에
@@ -1385,7 +1388,14 @@ def return_pressed(line: str, shallower: str | None = None):
     if prefix is None:
         return None
     if line[len(prefix):] != "":
-        return {"kind": "insert", "text": "\n" + next_marker(prefix)}
+        text = "\n" + next_marker(prefix)
+        if caret is not None:
+            lead = u16len(line[: len(line) - len(line.lstrip(" \t"))])
+            if caret <= lead:
+                return None
+            if caret < u16len(prefix):
+                return {"kind": "insertAt", "at": u16len(prefix), "text": text}
+        return {"kind": "insert", "text": text}
     marker = prefix.lstrip(" \t")
     here = leading_width(line)
     target = leading_width(shallower) if shallower else 0
@@ -1408,14 +1418,33 @@ def build_enter_cases() -> list[dict]:
         above = case.get("above", [])
         line = case["line"]
         shallower = case.get("shallower")
-        action = return_pressed(line, shallower)
+        caret = case.get("caret")
+        action = return_pressed(line, shallower, caret)
+        # 278 — **엔터를 친 뒤의 줄들에 마커가 겹치거나 쪼개지지 않았나.** 커서 자리에서 실제로 쳐 본다.
+        if caret is not None:
+            units = to_units(line)
+            if action is None:
+                after = ["", line] if marker_prefix(line) is not None else None
+            elif action["kind"] == "insertAt":
+                at = action["at"]
+                after = from_units(units[:at] + to_units(action["text"]) + units[at:]).split("\n")
+            elif action["kind"] == "insert":
+                after = from_units(units[:caret] + to_units(action["text"]) + units[caret:]).split("\n")
+            else:
+                after = None
+            for piece in after or []:
+                head = marker_prefix(piece)
+                if head is not None and marker_prefix(piece[len(head):]) is not None:
+                    raise SystemExit(f"::error::[{case['name']}] 엔터 뒤 마커가 겹쳤다: {piece!r}")
+                if head is None and piece.strip():
+                    raise SystemExit(f"::error::[{case['name']}] 엔터 뒤 마커가 쪼개졌다: {piece!r}")
         # **나온 결과가 여전히 제대로 된 목록인가** — 심판 둘에게 묻는다.
         if action and action["kind"] == "replacePrefix" and action["text"]:
             block = "\n".join(above + [action["text"] + "글"]) + "\n"
             if nesting_count(block) < nesting_count("\n".join(above) + "\n"):
                 raise SystemExit(f"::error::[{case['name']}] 나오고 나니 목록이 무너졌다:\n{block}")
         out.append({"name": case["name"], "above": above, "line": line,
-                    "shallower": shallower, "action": action})
+                    "shallower": shallower, "caret": caret, "action": action})
     return out
 
 

@@ -17,12 +17,15 @@ final class EnterGoldenTests: XCTestCase {
             let kind: String
             let text: String
             let length: Int?
+            let at: Int?
         }
         struct Case: Decodable {
             let name: String
             let above: [String]
             let line: String
             let shallower: String?
+            /// 278 — 줄 안 커서 자리(UTF-16). 없으면 커서를 모르는 예전 셈.
+            let caret: Int?
             let action: Action?
         }
         let enterCases: [Case]
@@ -36,8 +39,8 @@ final class EnterGoldenTests: XCTestCase {
 
     func testMatchesGolden() throws {
         for item in try Self.load().enterCases {
-            let made = ListEditing.returnPressed(in: item.line, outdentingTo: item.shallower)
-            let where_ = "[\(item.name)] \(item.line)"
+            let made = ListEditing.returnPressed(in: item.line, caret: item.caret, outdentingTo: item.shallower)
+            let where_ = "[\(item.name)] \(item.line) · 커서 \(item.caret.map(String.init) ?? "모름")"
             guard let golden = item.action else {
                 XCTAssertNil(made, "목록이 아닌데 무언가 했다 — \(where_)")
                 continue
@@ -45,6 +48,8 @@ final class EnterGoldenTests: XCTestCase {
             switch golden.kind {
             case "insert":
                 XCTAssertEqual(made, .insert(golden.text), "이어 줄 글 — \(where_)")
+            case "insertAt":
+                XCTAssertEqual(made, .insertAt(offset: golden.at ?? -1, golden.text), "글 앞에 넣을 것 — \(where_)")
             case "replacePrefix":
                 XCTAssertEqual(made, .replacePrefix(length: golden.length ?? 0, with: golden.text),
                                "앞머리를 바꿀 것 — \(where_)")

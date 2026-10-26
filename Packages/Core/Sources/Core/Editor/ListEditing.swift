@@ -12,6 +12,8 @@ public enum ListEditing {
     public enum Action: Equatable, Sendable {
         /// 커서 자리에 이 문자열을 넣는다 (`"\n- "` 같은 것).
         case insert(String)
+        /// 문단의 `offset`(UTF-16) 자리에 이 문자열을 넣는다. 커서는 넣은 글 끝으로 (278 — 커서가 마커 안에 있을 때 글 앞으로).
+        case insertAt(offset: Int, String)
         /// 문단 앞머리 `length` 만큼을 `with` 로 바꾼다. 커서는 그 끝으로.
         case replacePrefix(length: Int, with: String)
     }
@@ -25,7 +27,16 @@ public enum ListEditing {
     /// **둘**을 뺐다. 단계의 너비는 부모의 마커에 따라 둘 · 셋 · 넷으로 다르므로, 둘만
     /// 빼면 **어느 단계에도 없는 칸**에 서게 된다 — 사용자가 본 *커서가 엉뚱한 자리에
     /// 있다가 글자를 치면 도로 가는* 일이다 (빌드 43). 이제 `outdent` 와 같은 셈을 쓴다.
+    ///
+    /// - `caret`: 문단 안 커서 자리(UTF-16). **커서가 줄의 어디에 있는지 본다** (278, 2026-10-26 사용자 —
+    ///   *“1.” 앞에서 엔터를 누르면 “2. 1.” 처럼 붙는다*). 예전에는 줄만 보고 언제나 커서 자리에 다음 마커를 넣어,
+    ///   커서가 마커 앞이면 마커가 겹치고(`2. 1. 가` · `- - 사과`) 마커 안이면 쪼개졌다(`1` · `2. . 가`).
+    ///   - 마커가 **시작하기 전**(줄 맨 앞 · 들여쓰기 빈칸) → `nil` — **보통 줄바꿈**. 줄이 통째로 내려가고 위에 빈 줄이 생긴다.
+    ///   - 마커 **안**(`1` 과 `.` 사이 · `[ ]` 안) → **글 바로 앞**에서 친 것으로 본다 (`insertAt`).
+    ///   - 그 밖(글 앞 · 가운데 · 끝)은 예전 그대로. 빈 항목은 커서가 어디든 예전 그대로 나온다.
+    ///   `nil` 이면 커서를 모르는 것으로 보고 예전 그대로 한다.
     public static func returnPressed(in paragraph: String,
+                                     caret: Int? = nil,
                                      outdentingTo shallower: String? = nil) -> Action? {
         let style = LineStyler.style(paragraph: paragraph)
         guard style.block == .listItem || style.block == .orderedItem else { return nil }
@@ -45,7 +56,13 @@ public enum ListEditing {
             }
             return .replacePrefix(length: style.contentStart, with: "")
         }
-        return .insert("\n" + nextMarker(from: prefix))
+        let next = "\n" + nextMarker(from: prefix)
+        if let caret {
+            let lead = utf16.prefix { $0 == 0x20 || $0 == 0x09 }.count
+            if caret <= lead { return nil }
+            if caret < style.contentStart { return .insertAt(offset: style.contentStart, next) }
+        }
+        return .insert(next)
     }
 
     // MARK: - 탭 · 시프트 탭 (빌드 29 · 1번)
