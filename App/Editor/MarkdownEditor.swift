@@ -1476,7 +1476,14 @@ struct MarkdownEditor: UIViewRepresentable {
             let content = text.substring(with: line)
             if content.hasPrefix("\t") { return }
             let leading = content.prefix { $0 == " " }.count
-            let want = ListEditing.step.count
+            // **위가 목록 항목이면 그 항목의 글 칸까지** (282, 빌드 132 확인 — 빈칸 둘로는 `1. ` 항목(글 칸 셋) 안에 못 들어가
+            // 문단이 목록 밖으로 떨어지고, 그 밑의 `2.` 는 글을 끊지 못해 이어지는 글이 됐다). 빈 줄을 건너 만나는 첫 줄이 항목이면
+            // 그 글 칸(`- ` 둘 · `1. ` 셋 · `10. ` 넷 · 겹친 항목은 더), 아니면 예전처럼 빈칸 둘 (넷이면 코드 상자 — 그래서 둘에서 멈춘다).
+            var want = ListEditing.step.count
+            if let parent = Self.line(text, above: line.location) {
+                let style = LineStyler.style(paragraph: parent)
+                if style.block == .listItem || style.block == .orderedItem { want = style.contentStart }
+            }
             guard leading < want, let target = textRange(textView, NSRange(location: line.location, length: 0)) else { return }
             let pad = String(repeating: " ", count: want - leading)
             textView.replace(target, withText: pad)
