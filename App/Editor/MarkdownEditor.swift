@@ -1025,6 +1025,12 @@ struct MarkdownEditor: UIViewRepresentable {
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
             isComposing = textView.markedTextRange != nil
+            // **글 밖의 자리는 손대지 않는다** (285, 빌드 126 아이패드 충돌 — 외장 키보드 키 반복 · 자동 수정 뒤 줄바꿈).
+            // UIKit 이 글 길이 밖의 `range` 를 넘길 때가 있다. 그 자리로 문단을 재면 배포 빌드의 `paragraphRange` 는 검사 없이
+            // 글 밖 범위를 돌려주고(CF 의 범위 검사는 디버그에서만) 그다음 `substring` 이 `NSRangeException` 으로 죽었다.
+            // 보통 글 상자처럼 시스템에 맡긴다 — 목록 잇기 · 마커 떼기 · 번호 적어 두기 모두 건너뛴다.
+            let length = (textView.textStorage.string as NSString).length
+            guard range.location >= 0, range.length >= 0, NSMaxRange(range) <= length else { return true }
             if !isRenumbering {
                 noteListEdit(in: textView, range: range, replacement: text)
                 noteStartEdit(in: textView, range: range, replacement: text)
@@ -1065,7 +1071,9 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 쓰므로 되돌리기에도 한 번의 편집으로 남는다.
         private func continueList(in textView: UITextView, at range: NSRange) -> Bool {
             let text = textView.textStorage.string as NSString
+            guard range.location <= text.length else { return false }
             let paragraph = text.paragraphRange(for: NSRange(location: range.location, length: 0))
+            guard NSMaxRange(paragraph) <= text.length else { return false }     // 285 — 글 밖이면 보통 줄바꿈
             var line = paragraph
             if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
             // **글에 이어지는 줄은 목록이 아니다** (198, 빌드 69 · 11번) — `가나다` 밑의 `2. 나` 에서 엔터를 쳐도 `3. ` 을
@@ -1125,6 +1133,7 @@ struct MarkdownEditor: UIViewRepresentable {
             let text = textView.textStorage.string as NSString
             guard range.location < text.length else { return false }
             let paragraph = text.paragraphRange(for: NSRange(location: range.location, length: 0))
+            guard NSMaxRange(paragraph) <= text.length else { return false }     // 285
             var line = paragraph
             if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
             if Self.continuesText(text, paragraph) { return false }
