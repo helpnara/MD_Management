@@ -861,7 +861,9 @@ struct MarkdownEditor: UIViewRepresentable {
                 .reduce(0) { $0 + ($1 as NSString).length + 1 }
             let anchor = after.length > 0 && !Self.isItemLine(after, after.paragraphRange(for: NSRange(location: here, length: 0)))
                 && below < after.length ? below : view.selectedRange.location
-            renumberList(around: anchor, in: view, start: lostNumber)
+            // 번호를 넘길 때는 **고른 첫 줄부터**만 (284) — 빈 줄을 건너 묶음이 위 목록까지 이어지면(281) 그 목록의 첫 항목이 바뀐다.
+            let firstStart = region.location + restyled[..<first].reduce(0) { $0 + ($1 as NSString).length + 1 }
+            renumberList(around: anchor, in: view, start: lostNumber, from: lostNumber != nil ? firstStart : nil)
             keepCaretVisible(view)
             reportActiveFormats(view)
             onEdit(view.text)
@@ -1156,17 +1158,23 @@ struct MarkdownEditor: UIViewRepresentable {
             let text = textView.textStorage.string as NSString
             var anchor = textView.selectedRange.location
             var start: Int?
+            var from: Int?
             if text.length > 0 {
                 let caretLine = text.paragraphRange(for: NSRange(location: min(anchor, text.length - 1), length: 0))
                 if !Self.isItemLine(text, caretLine), let below = Self.nonBlankLine(text, below: NSMaxRange(caretLine)) {
                     anchor = below.location
-                    if let number, let run = listRun(in: text, around: below.location), run.location == below.location,
+                    if let number, let run = listRun(in: text, around: below.location),
                        Self.leadingWidth(Self.line(text, below)) <= here {
-                        start = number
+                        // **아래 목록이 위 목록과 한 묶음인가** (284, 빌드 126 사용자 — 위에 `- 사과` 가 있는 노트에서 첫 항목을 떼도
+                        // 아래가 1 부터가 안 됐다). 빈 줄을 건너 위로 올라가 만나는 첫 줄이 **번호 항목**이면 한 묶음 — 번호가 저절로
+                        // 이어진다(283). 글머리표거나 묶음의 시작이면 **따로 시작하는 목록** — 그 줄부터 뗀 번호로 (`from`).
+                        let previous = below.location > run.location ? Self.nonBlankLine(text, above: below.location) : nil
+                        let joined = previous.map { LineStyler.style(paragraph: Self.line(text, $0)).block == .orderedItem } ?? false
+                        if !joined { start = number; from = below.location }
                     }
                 }
             }
-            renumberList(around: anchor, in: textView, start: start)
+            renumberList(around: anchor, in: textView, start: start, from: from)
         }
 
         /// **번호 목록을 1 · 2 · 3 으로 맞춘다** (104, 사용자 요청).
@@ -1174,10 +1182,15 @@ struct MarkdownEditor: UIViewRepresentable {
         /// 규칙은 Core 의 `ListEditing.renumber` 가 정하고 여기서는 **숫자만** 바꿔 넣는다.
         /// 줄 전체를 갈아 끼우지 않으므로 커서와 되돌리기가 덜 흔들린다. 뒤에서부터 넣어
         /// 앞의 자리가 밀리지 않게 한다.
-        private func renumberList(around location: Int, in textView: UITextView, start: Int? = nil) {
+        /// `from` — 묶음을 **이 자리부터**만 맞춘다 (284). 빈 줄을 건너 묶음이 위 목록까지 이어져도(281) `start` 는 이 줄에 걸려야 한다 —
+        /// 글머리표 · 글줄로 끊긴 뒤 새로 시작하는 목록에 뗀 번호를 넘길 때. 없으면 묶음 전체.
+        private func renumberList(around location: Int, in textView: UITextView, start: Int? = nil, from: Int? = nil) {
             guard !isRenumbering, !isComposing, textView.markedTextRange == nil else { return }
             let text = textView.textStorage.string as NSString
-            guard text.length > 0, let run = listRun(in: text, around: location) else { return }
+            guard text.length > 0, var run = listRun(in: text, around: location) else { return }
+            if let from, from > run.location, from < NSMaxRange(run) {
+                run = NSRange(location: from, length: NSMaxRange(run) - from)
+            }
             let fixes = ListEditing.renumber(text.substring(with: run), start: start)
             guard !fixes.isEmpty else { return }
 
