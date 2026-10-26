@@ -1,5 +1,0 @@
-• 목록 줄 맨 앞에서 줄을 바꾸면 그 줄이 번호 그대로 아래로 내려갑니다. 번호나 점이 겹쳐 붙던 문제를 고쳤습니다.
-
-— English (What’s New in This Version) —
-
-• Pressing Return at the very start of a list line now moves the line down with its number intact, instead of doubling the number or bullet.
