@@ -1012,14 +1012,14 @@ struct MarkdownEditor: UIViewRepresentable {
             pendingFollow = body.location
         }
 
-        /// 이 줄이 **목록의 첫 항목**인가 — 위로 (빈 줄을 건너) 항목 줄이 없다. `listRun` 과 같은 판정 (281 — 빈 줄은 몇 줄이든).
+        /// 이 줄이 **번호 목록의 첫 항목**인가 — 위로 (빈 줄을 건너) **번호 항목**이 없다 (281 — 빈 줄은 몇 줄이든).
+        /// 글머리표 · 글줄은 번호를 끊으므로 그 밑의 `1.` 은 첫 항목이다 (284, 빌드 129 15번 — 위에 `- 사과` 가 있어 첫 항목으로 안 봐서
+        /// 첫 항목을 글머리표로 바꿔도 아래가 1 부터가 안 됐다). 글에 이어지는 줄(198)은 항목으로 치지 않는다 — `listRun` 과 같은 판정.
+        /// 첫 항목을 지울 때 번호 적어 두기(192) · 첫 번호를 손으로 고칠 때(195) · 목록 모양 바꾸기 · 마커를 뗀 뒤 번호 넘기기가 다 이 잣대를 쓴다.
         private static func isFirstItem(_ text: NSString, _ paragraph: NSRange) -> Bool {
-            guard paragraph.location > 0 else { return true }
-            let previous = text.paragraphRange(for: NSRange(location: paragraph.location - 1, length: 0))
-            // 글에 이어지는 줄(198)은 항목으로 치지 않는다 — `listRun` 과 같은 판정.
-            if isItemLine(text, previous) { return continuesText(text, previous) }
-            guard isBlankLine(text, previous), let above = nonBlankLine(text, above: previous.location) else { return true }
-            return !isItemLine(text, above) || continuesText(text, above)
+            guard paragraph.location > 0, let above = nonBlankLine(text, above: paragraph.location) else { return true }
+            guard isItemLine(text, above), !continuesText(text, above) else { return true }
+            return LineStyler.style(paragraph: line(text, above)).block != .orderedItem
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
@@ -1174,14 +1174,13 @@ struct MarkdownEditor: UIViewRepresentable {
                 let caretLine = text.paragraphRange(for: NSRange(location: min(anchor, text.length - 1), length: 0))
                 if !Self.isItemLine(text, caretLine), let below = Self.nonBlankLine(text, below: NSMaxRange(caretLine)) {
                     anchor = below.location
-                    if let number, let run = listRun(in: text, around: below.location),
+                    if let number, listRun(in: text, around: below.location) != nil,
                        Self.leadingWidth(Self.line(text, below)) <= here {
                         // **아래 목록이 위 목록과 한 묶음인가** (284, 빌드 126 사용자 — 위에 `- 사과` 가 있는 노트에서 첫 항목을 떼도
                         // 아래가 1 부터가 안 됐다). 빈 줄을 건너 위로 올라가 만나는 첫 줄이 **번호 항목**이면 한 묶음 — 번호가 저절로
                         // 이어진다(283). 글머리표거나 묶음의 시작이면 **따로 시작하는 목록** — 그 줄부터 뗀 번호로 (`from`).
-                        let previous = below.location > run.location ? Self.nonBlankLine(text, above: below.location) : nil
-                        let joined = previous.map { LineStyler.style(paragraph: Self.line(text, $0)).block == .orderedItem } ?? false
-                        if !joined { start = number; from = below.location }
+                        // 같은 잣대 하나 — `isFirstItem` (284). 아래 줄이 번호 목록의 첫 항목이면 따로 시작하는 목록이다.
+                        if Self.isFirstItem(text, below) { start = number; from = below.location }
                     }
                 }
             }
