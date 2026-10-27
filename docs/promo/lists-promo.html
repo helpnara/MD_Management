@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>목록 쓰기 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B; --marker:#B9B2A7;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45;
+  --screen:#FFFFFF; --grouped:#F2F2F7; --rule:#E4DED3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+.cap{position:absolute;left:80px;right:80px;top:170px;text-align:center}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:74px;line-height:1.28;letter-spacing:-1px}
+.cap p{margin-top:26px;font-size:38px;line-height:1.5;color:var(--faint);font-weight:500}
+.kicker{display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--leaf);margin-bottom:22px}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:640px;width:740px;height:1190px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.22), 0 6px 18px rgba(0,0,0,.12)}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--screen);overflow:hidden}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:9}
+.nav{position:absolute;top:100px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 40px;gap:20px}
+.nav .back{width:70px;height:70px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;justify-content:center}
+.nav .title{font-size:36px;font-weight:500;flex:1}
+.nav .pill{height:70px;padding:0 26px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;gap:28px;color:var(--accent);font-size:34px;font-weight:700}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(10,122,255,.18);border:4px solid rgba(10,122,255,.45);pointer-events:none;z-index:8}
+svg.ic{width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* 편집기 */
+.edwrap{position:absolute;top:220px;left:0;right:0;bottom:510px;overflow:hidden}
+.body{position:absolute;top:10px;left:52px;right:52px;font-size:38px;line-height:1.62}
+.line{min-height:62px;white-space:pre;padding:0 10px;margin:0 -10px}
+.line.h1{min-height:84px;font-size:62px;font-weight:900;line-height:1.35;letter-spacing:-.5px}
+.mk{color:var(--marker)}
+.mkx{color:var(--accent);font-weight:700}
+.mkh{color:var(--marker);display:inline-block;overflow:hidden;vertical-align:bottom;max-width:0;opacity:0}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--accent);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+.toolbar{position:absolute;left:0;right:0;bottom:400px;height:110px;background:#F6F5F2;border-top:1px solid #E6E3DD;
+  display:flex;align-items:flex-start;justify-content:space-around;padding:22px 30px 0;color:var(--accent);font-size:38px}
+.toolbar span{width:64px;height:64px;display:flex;align-items:center;justify-content:center;border-radius:14px}
+.tb-b{font-weight:900}.tb-i{font-style:italic;font-family:'Noto Serif KR',serif}.tb-s{text-decoration:line-through}
+.tb-c{font-family:'Noto Sans Mono',monospace;font-size:30px;font-weight:600}
+.kb{position:absolute;left:0;right:0;bottom:0;height:400px;background:#D5D3CE;padding:18px 10px 0}
+.kb .r{display:flex;justify-content:center;gap:10px;margin-bottom:12px}
+.kb .k{width:62px;height:76px;border-radius:12px;background:#fff;box-shadow:0 2px 0 #A9A6A0;display:flex;align-items:center;justify-content:center;font-size:34px;color:#222}
+.kb .k.w{width:96px;background:#B9B6B0;font-size:28px}
+.kb .k.sp{width:330px;font-size:28px;color:#555}
+.kb .k.rt{width:150px;background:#B9B6B0;font-size:28px}
+
+/* 첫 장면 — 어긋난 번호 */
+.hook{position:absolute;left:0;right:0;top:560px;text-align:center}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:104px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:40px;font-size:44px;color:#4A4640;font-weight:500}
+.hook p b{color:var(--leaf);font-weight:700}
+.chipl{position:absolute;height:84px;padding:0 34px;border-radius:42px;background:#fff;box-shadow:0 14px 34px rgba(80,60,30,.14);
+  display:flex;align-items:center;gap:14px;font-size:32px;color:#55514B;white-space:nowrap}
+.chipl b{color:#C9553D;font-weight:700}
+
+/* 읽기 화면 */
+.rd{position:absolute;top:230px;left:52px;right:52px;font-size:38px;line-height:1.62}
+.rd h1{font-size:60px;font-weight:900;line-height:1.3;margin-bottom:14px}
+.rd ol{padding-left:62px;margin:10px 0 30px}
+.rd li{padding:4px 0}
+.task{display:flex;align-items:center;gap:22px;height:76px}
+.box{width:44px;height:44px;border-radius:12px;border:3px solid #C7C2BA;display:flex;align-items:center;justify-content:center;flex:none}
+.box.on{background:var(--accent);border-color:var(--accent)}
+.box svg{width:30px;height:30px;stroke:#fff;stroke-width:5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* 파일 */
+.filecard{position:absolute;left:90px;right:90px;top:700px;border-radius:40px;background:#2A2724;color:#F4EFE6;padding:46px 50px;
+  box-shadow:0 40px 80px rgba(0,0,0,.25);font-family:'Noto Sans Mono','Noto Sans KR',monospace;font-size:31px;line-height:1.75}
+.filecard .fn{font-family:'Noto Sans KR';font-size:28px;color:#BFB6A8;margin-bottom:18px;letter-spacing:1px}
+.filecard .m{color:#9C9285}
+.filecard .x{color:#FFD27A}
+.filecard .ln2{white-space:pre;border-radius:10px;padding:0 10px;margin:0 -10px}
+.facts{position:absolute;left:0;right:0;top:1500px;text-align:center}
+.facts span{display:inline-block;margin:10px 10px;padding:22px 40px;border-radius:50px;background:#fff;box-shadow:0 10px 30px rgba(80,60,30,.12);font-size:38px;font-weight:700}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:400px;text-align:center}
+.hero img{width:380px;height:380px;border-radius:88px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:130px;margin-top:64px;letter-spacing:2px}
+.hero .en{font-size:34px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:46px;margin-top:60px;font-weight:500;color:#4A4640;line-height:1.5}
+.hero .cta{display:inline-block;margin-top:70px;padding:30px 60px;border-radius:60px;background:var(--ink);color:#fff;font-size:40px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 1 · 질문 -->
+  <section class="scene" id="s1">
+    <div class="chipl" id="c11" style="left:110px;top:250px"><b>1.</b> 물 끓이기</div>
+    <div class="chipl" id="c12" style="left:540px;top:400px"><b>3.</b> 찻잎 넣기</div>
+    <div class="chipl" id="c13" style="left:150px;top:1290px"><b>3.</b> 3분 기다리기</div>
+    <div class="chipl" id="c14" style="left:600px;top:1440px"><b>2.</b> 물 식히기</div>
+    <div class="chipl" id="c15" style="left:260px;top:1590px"><b>5.</b> 잔에 따르기</div>
+    <div class="hook">
+      <h1 id="h11">목록 번호,<br>아직 손으로 고치세요?</h1>
+      <p id="h12"><b>느린 여백</b>은 알아서 맞춥니다</p>
+    </div>
+  </section>
+
+  <!-- 2 · 줄을 바꾸면 -->
+  <section class="scene" id="s2">
+    <div class="cap"><div class="kicker">줄을 바꾸면</div><h2>다음 번호가<br>저절로 붙습니다</h2><p>1. 만 쓰고 줄 바꿈을 누르세요</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">차 우리기</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="edwrap"><div class="body" id="ed2"></div></div>
+      <div class="toolbar">
+        <span class="tb-b">B</span><span class="tb-i">I</span><span class="tb-s">S</span><span class="tb-c">&lt;/&gt;</span>
+        <span><svg class="ic" viewBox="0 0 40 40"><path d="M17 23 L23 17 M15 19 L11 23 A5 5 0 0 0 18 30 L22 26 M25 21 L29 17 A5 5 0 0 0 22 10 L18 14"/></svg></span>
+        <span><svg class="ic" viewBox="0 0 40 40"><path d="M8 11 L32 11 M8 20 L32 20 M8 29 L32 29 M8 11 L8 29"/></svg></span>
+        <span><svg class="ic" viewBox="0 0 40 40"><rect x="7" y="9" width="26" height="22" rx="3"/><path d="M7 16 L33 16 M7 23 L33 23 M16 9 L16 31"/></svg></span>
+      </div>
+      <div class="kb"><div class="r"><div class="k">ㅂ</div><div class="k">ㅈ</div><div class="k">ㄷ</div><div class="k">ㄱ</div><div class="k">ㅅ</div><div class="k">ㅛ</div><div class="k">ㅕ</div><div class="k">ㅑ</div><div class="k">ㅐ</div><div class="k">ㅔ</div></div><div class="r"><div class="k">ㅁ</div><div class="k">ㄴ</div><div class="k">ㅇ</div><div class="k">ㄹ</div><div class="k">ㅎ</div><div class="k">ㅗ</div><div class="k">ㅓ</div><div class="k">ㅏ</div><div class="k">ㅣ</div></div><div class="r"><div class="k w">⇧</div><div class="k">ㅋ</div><div class="k">ㅌ</div><div class="k">ㅊ</div><div class="k">ㅍ</div><div class="k">ㅠ</div><div class="k">ㅜ</div><div class="k">ㅡ</div><div class="k w">⌫</div></div><div class="r"><div class="k w">123</div><div class="k w">가</div><div class="k sp">스페이스</div><div class="k rt" id="rt2">줄 바꿈</div></div></div>
+      <div class="tap" id="tap2" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 3 · 사이에 끼우면 -->
+  <section class="scene" id="s3">
+    <div class="cap"><div class="kicker">사이에 끼우면</div><h2>아래 번호가<br>따라 내려갑니다</h2><p>지우고 다시 매길 일이 없습니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">차 우리기</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="edwrap"><div class="body" id="ed3"></div></div>
+      <div class="toolbar">
+        <span class="tb-b">B</span><span class="tb-i">I</span><span class="tb-s">S</span><span class="tb-c">&lt;/&gt;</span>
+        <span><svg class="ic" viewBox="0 0 40 40"><path d="M17 23 L23 17 M15 19 L11 23 A5 5 0 0 0 18 30 L22 26 M25 21 L29 17 A5 5 0 0 0 22 10 L18 14"/></svg></span>
+        <span><svg class="ic" viewBox="0 0 40 40"><path d="M8 11 L32 11 M8 20 L32 20 M8 29 L32 29 M8 11 L8 29"/></svg></span>
+        <span><svg class="ic" viewBox="0 0 40 40"><rect x="7" y="9" width="26" height="22" rx="3"/><path d="M7 16 L33 16 M7 23 L33 23 M16 9 L16 31"/></svg></span>
+      </div>
+      <div class="kb"><div class="r"><div class="k">ㅂ</div><div class="k">ㅈ</div><div class="k">ㄷ</div><div class="k">ㄱ</div><div class="k">ㅅ</div><div class="k">ㅛ</div><div class="k">ㅕ</div><div class="k">ㅑ</div><div class="k">ㅐ</div><div class="k">ㅔ</div></div><div class="r"><div class="k">ㅁ</div><div class="k">ㄴ</div><div class="k">ㅇ</div><div class="k">ㄹ</div><div class="k">ㅎ</div><div class="k">ㅗ</div><div class="k">ㅓ</div><div class="k">ㅏ</div><div class="k">ㅣ</div></div><div class="r"><div class="k w">⇧</div><div class="k">ㅋ</div><div class="k">ㅌ</div><div class="k">ㅊ</div><div class="k">ㅍ</div><div class="k">ㅠ</div><div class="k">ㅜ</div><div class="k">ㅡ</div><div class="k w">⌫</div></div><div class="r"><div class="k w">123</div><div class="k w">가</div><div class="k sp">스페이스</div><div class="k rt" id="rt3">줄 바꿈</div></div></div>
+      <div class="tap" id="tap3" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 다 썼으면 -->
+  <section class="scene" id="s4">
+    <div class="cap"><div class="kicker">다 썼으면</div><h2>빈 번호에서 한 번 더,<br>목록이 끝납니다</h2><p>할 일 상자도 같은 식으로 이어집니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">차 우리기</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="edwrap"><div class="body" id="ed4"></div></div>
+      <div class="toolbar">
+        <span class="tb-b">B</span><span class="tb-i">I</span><span class="tb-s">S</span><span class="tb-c">&lt;/&gt;</span>
+        <span><svg class="ic" viewBox="0 0 40 40"><path d="M17 23 L23 17 M15 19 L11 23 A5 5 0 0 0 18 30 L22 26 M25 21 L29 17 A5 5 0 0 0 22 10 L18 14"/></svg></span>
+        <span><svg class="ic" viewBox="0 0 40 40"><path d="M8 11 L32 11 M8 20 L32 20 M8 29 L32 29 M8 11 L8 29"/></svg></span>
+        <span><svg class="ic" viewBox="0 0 40 40"><rect x="7" y="9" width="26" height="22" rx="3"/><path d="M7 16 L33 16 M7 23 L33 23 M16 9 L16 31"/></svg></span>
+      </div>
+      <div class="kb"><div class="r"><div class="k">ㅂ</div><div class="k">ㅈ</div><div class="k">ㄷ</div><div class="k">ㄱ</div><div class="k">ㅅ</div><div class="k">ㅛ</div><div class="k">ㅕ</div><div class="k">ㅑ</div><div class="k">ㅐ</div><div class="k">ㅔ</div></div><div class="r"><div class="k">ㅁ</div><div class="k">ㄴ</div><div class="k">ㅇ</div><div class="k">ㄹ</div><div class="k">ㅎ</div><div class="k">ㅗ</div><div class="k">ㅓ</div><div class="k">ㅏ</div><div class="k">ㅣ</div></div><div class="r"><div class="k w">⇧</div><div class="k">ㅋ</div><div class="k">ㅌ</div><div class="k">ㅊ</div><div class="k">ㅍ</div><div class="k">ㅠ</div><div class="k">ㅜ</div><div class="k">ㅡ</div><div class="k w">⌫</div></div><div class="r"><div class="k w">123</div><div class="k w">가</div><div class="k sp">스페이스</div><div class="k rt" id="rt4">줄 바꿈</div></div></div>
+    </div></div>
+  </section>
+
+  <!-- 5 · 읽을 때는 -->
+  <section class="scene" id="s5">
+    <div class="cap"><div class="kicker">읽을 때는</div><h2>번호는 가지런히,<br>상자는 눌러서</h2><p>누르면 노트 파일에 그대로 저장됩니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title"></div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M26 7 L33 14 L15 32 L7 33 L8 25 Z"/></svg></div></div>
+      <div class="rd">
+        <h1>차 우리기</h1>
+        <ol>
+          <li>물 끓이기</li>
+          <li>물 식히기</li>
+          <li>찻잎 넣기</li>
+          <li>3분 기다리기</li>
+          <li>잔에 따르기</li>
+        </ol>
+        <div class="task"><div class="box" id="tb5"><svg viewBox="0 0 30 30" id="tb5c" style="opacity:0"><path d="M6 15 L12 21 L24 8"/></svg></div>찻잎 사기</div>
+        <div class="task"><div class="box"></div>주전자 닦기</div>
+      </div>
+      <div class="tap" id="tap5" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 6 · 파일 -->
+  <section class="scene" id="s6">
+    <div class="cap"><div class="kicker">그 노트는</div><h2>내 아이클라우드의<br>마크다운 파일 그대로</h2><p>번호도 상자도 글자로 남습니다</p></div>
+    <div class="filecard" id="fc6">
+      <div class="fn">iCloud Drive › Slow Margin › 차 우리기.md</div>
+      <div class="ln2"><span class="m"># </span>차 우리기</div>
+      <div class="ln2"> </div>
+      <div class="ln2" id="f61"><span class="m">1. </span>물 끓이기</div>
+      <div class="ln2" id="f62"><span class="m">2. </span>물 식히기</div>
+      <div class="ln2" id="f63"><span class="m">3. </span>찻잎 넣기</div>
+      <div class="ln2" id="f64"><span class="m">4. </span>3분 기다리기</div>
+      <div class="ln2" id="f65"><span class="m">5. </span>잔에 따르기</div>
+      <div class="ln2"> </div>
+      <div class="ln2" id="f66"><span class="m">- [</span><span class="x">x</span><span class="m">] </span>찻잎 사기</div>
+      <div class="ln2"><span class="m">- [ ] </span>주전자 닦기</div>
+    </div>
+    <div class="facts" id="ft6"><span>계정 없음</span><span>광고 없음</span><span>추적 없음</span></div>
+  </section>
+
+  <!-- 7 · 끝 -->
+  <section class="scene" id="s7">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="en">SLOW MARGIN</div>
+      <div class="tl" id="tl7">번호 걱정 없이<br>목록을 쓰세요</div>
+      <div class="cta" id="cta7">앱스토어에서 ‘느린 여백’</div>
+    </div>
+  </section>
+
+  <div id="leafline"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const CARET = (t)=>`<span class="caret" style="opacity:${blink(t)}"></span>`;
+
+// 장면 [시작, 끝]
+const SC = { s1:[0,3.4], s2:[3.4,10.4], s3:[10.4,16.0], s4:[16.0,22.0], s5:[22.0,26.4], s6:[26.4,30.4], s7:[30.4,34.0] };
+const DURATION = 34.0;
+
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+function capIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .cap'); if(!el) return;
+  const p=out(seg(t,a,a+0.8));
+  el.style.transform=`translateY(${(1-p)*40}px)`; el.style.opacity=p;
+}
+function riseIn(el,t,a,dur=0.7,dist=60){ const p=out(seg(t,a,a+dur)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dist}px)`; }
+function tapXY(tapEl, x, y, t, at){
+  const sr=tapEl.parentElement.getBoundingClientRect();
+  const p=seg(t,at-0.3,at+0.4);
+  tapEl.style.left=(x-sr.left-60)+'px'; tapEl.style.top=(y-sr.top-60)+'px';
+  tapEl.style.opacity=p>0&&p<1?Math.sin(p*Math.PI):0; tapEl.style.transform=`scale(${0.6+p*0.6})`;
+}
+function tapAt(tapEl, target, t, at){ const r=target.getBoundingClientRect(); tapXY(tapEl, r.left+r.width/2, r.top+r.height/2, t, at); }
+
+// ── 편집기 줄 모형 ──
+// 앱의 규칙 (MarkdownStyler · 163): 커서 줄의 마커는 회색, 커서 없는 줄의 목록 마커(`1. ` `- ` `[ ]`)는 본문 색,
+// `[x]` 만 강조색. `# ` 같은 숨길 수 있는 마커는 커서가 떠나면 접힌다.
+function edLine(text, hasCaret, first){
+  if(first){ return `<span class="mkh"># </span><span>${esc(text.slice(2))}</span>`; }
+  const m = text.match(/^(\s*)(\d+\.\s|- \[[ xX]\]\s|[-*+]\s)?([\s\S]*)$/);
+  const lead=m[1], mk=m[2]||'', rest=m[3];
+  let html = esc(lead);
+  if(mk){
+    if(/^- \[/.test(mk)){
+      const checked=/x/i.test(mk);
+      html += `<span class="${hasCaret?'mk':''}">- </span><span class="${hasCaret?'mk':(checked?'mkx':'')}">${esc(mk.slice(2))}</span>`;
+    } else html += `<span class="${hasCaret?'mk':''}">${esc(mk)}</span>`;
+  }
+  html += `<span>${esc(rest)}</span>`;
+  return html;
+}
+// steps: {at, kind:'set', lines, caret, glow:[i…], until} · {at, kind:'type', text, cps} · key:true 면 줄 바꿈 키가 눌린다
+function play(steps, t, init){
+  const st={lines:[...init.lines], caret:init.caret, flash:0, glow:{}};
+  for(const s of steps){
+    if(t<s.at) break;
+    if(s.kind==='set'){ st.lines=[...s.lines]; st.caret=s.caret; if(s.glow) s.glow.forEach(i=>st.glow[i]=[s.at,s.until]); }
+    if(s.kind==='type'){ st.lines[st.caret]=st.lines[st.caret]+typed(s.text,t,s.at,s.cps||9); }
+  }
+  for(const s of steps){ if(s.key) st.flash=Math.max(st.flash, Math.sin(seg(t,s.at-0.16,s.at+0.16)*Math.PI)); }
+  return st;
+}
+const VIS = 1190-32-220-510; // edwrap 높이
+function renderEditor(ed, st, t){
+  let html='', y=0, caretY=0;
+  st.lines.forEach((ln,i)=>{
+    const first=i===0, hasCaret=i===st.caret; const h=first?84:62;
+    if(hasCaret) caretY=y+h;
+    const g=st.glow[i]; const bg = g && t<g[1] ? `background:rgba(111,165,58,${0.18*(1-seg(t,g[1]-1.0,g[1]))})` : '';
+    html += `<div class="line${first?' h1':''}" style="${bg}">${edLine(ln,hasCaret,first)}${hasCaret?CARET(t):''}</div>`;
+    y+=h;
+  });
+  ed.innerHTML=html;
+  const over=Math.max(0,caretY+10-VIS); ed.style.transform=`translateY(${-over}px)`;
+}
+function flashKey(el, f){
+  el.style.background = f>0.05 ? `rgb(${Math.round(185-80*f)},${Math.round(182-30*f)},${Math.round(176+40*f)})` : '';
+  el.style.transform = `translateY(${f*4}px)`;
+}
+
+// ── 1 · 질문 ──
+function renderS1(t){
+  ['c11','c12','c13','c14','c15'].forEach((id,i)=>{
+    const el=$(id); const p=out(seg(t,0.05+i*0.12,0.65+i*0.12));
+    const drift=Math.sin(t*0.9+i*1.7)*10;
+    el.style.opacity=p; el.style.transform=`translateY(${(1-p)*50+drift}px) rotate(${(i%2?1:-1)*(2+i)}deg)`;
+  });
+  const hp=out(seg(t,0,1.2)); $('h11').style.transform=`scale(${1.04-0.04*hp})`; $('h11').style.opacity=1;
+  riseIn($('h12'),t,0.8,0.8,30);
+}
+
+// ── 2 · 줄을 바꾸면 ──
+const T2 = '# 차 우리기';
+function renderS2(t){
+  const s=SC.s2[0];
+  const steps=[
+    {at:s+0.9, kind:'type', text:'1. 물 끓이기'},
+    {at:s+2.3, kind:'set', lines:[T2,'1. 물 끓이기','2. '], caret:2, key:true},
+    {at:s+2.7, kind:'type', text:'찻잎 넣기'},
+    {at:s+3.7, kind:'set', lines:[T2,'1. 물 끓이기','2. 찻잎 넣기','3. '], caret:3, key:true},
+    {at:s+4.1, kind:'type', text:'3분 기다리기'},
+    {at:s+5.3, kind:'set', lines:[T2,'1. 물 끓이기','2. 찻잎 넣기','3. 3분 기다리기','4. '], caret:4, key:true},
+    {at:s+5.7, kind:'type', text:'잔에 따르기'},
+  ];
+  const st=play(steps,t,{lines:[T2,''],caret:1});
+  renderEditor($('ed2'),st,t); flashKey($('rt2'),st.flash);
+}
+
+// ── 3 · 사이에 끼우면 ──
+function renderS3(t){
+  const s=SC.s3[0]; const tapLine=s+1.0, enter=s+2.0;
+  const L=[T2,'1. 물 끓이기','2. 찻잎 넣기','3. 3분 기다리기','4. 잔에 따르기'];
+  const steps=[
+    {at:tapLine+0.15, kind:'set', lines:L, caret:1},
+    {at:enter, kind:'set', lines:[T2,'1. 물 끓이기','2. ','3. 찻잎 넣기','4. 3분 기다리기','5. 잔에 따르기'], caret:2, key:true, glow:[3,4,5], until:enter+2.8},
+    {at:enter+0.5, kind:'type', text:'물 식히기'},
+  ];
+  const st=play(steps,t,{lines:L,caret:4});
+  const ed=$('ed3'); renderEditor(ed,st,t); flashKey($('rt3'),st.flash);
+  // 1번 줄 끝을 누른다
+  const line1=ed.children[1]; const sp=line1.querySelector('span:last-of-type'); const r=sp.getBoundingClientRect();
+  tapXY($('tap3'), r.right+10, r.top+r.height/2, t, tapLine);
+}
+
+// ── 4 · 다 썼으면 ──
+function renderS4(t){
+  const s=SC.s4[0];
+  const L=[T2,'1. 물 끓이기','2. 물 식히기','3. 찻잎 넣기','4. 3분 기다리기','5. 잔에 따르기'];
+  const steps=[
+    {at:s+0.9, kind:'set', lines:[...L,'6. '], caret:6, key:true},
+    {at:s+1.9, kind:'set', lines:[...L,''], caret:6, key:true},
+    {at:s+2.4, kind:'set', lines:[...L,'',''], caret:7, key:true},
+    {at:s+2.7, kind:'type', text:'- [ ] 찻잎 사기'},
+    {at:s+4.4, kind:'set', lines:[...L,'','- [ ] 찻잎 사기','- [ ] '], caret:8, key:true},
+    {at:s+4.8, kind:'type', text:'주전자 닦기'},
+  ];
+  const st=play(steps,t,{lines:L,caret:5});
+  renderEditor($('ed4'),st,t); flashKey($('rt4'),st.flash);
+}
+
+// ── 5 · 읽을 때는 ──
+function renderS5(t){
+  const s=SC.s5[0]; const at=s+1.9, on=t>=at+0.15;
+  tapAt($('tap5'), $('tb5'), t, at);
+  $('tb5').classList.toggle('on',on); $('tb5c').style.opacity=on?1:0;
+}
+
+// ── 6 · 파일 ──
+function renderS6(t){
+  const s=SC.s6[0];
+  riseIn($('fc6'),t,s+0.2,0.7,80);
+  ['f61','f62','f63','f64','f65'].forEach((id,i)=>{ const el=$(id); el.style.background = t>s+1.0+i*0.15 && t<s+3.4 ? `rgba(255,210,122,${0.16*(1-seg(t,s+2.6,s+3.4))})` : 'none'; });
+  $('f66').style.background = t>s+1.9 && t<s+3.4 ? `rgba(255,210,122,${0.16*(1-seg(t,s+2.6,s+3.4))})` : 'none';
+  riseIn($('ft6'),t,s+1.8,0.7,40);
+}
+
+function renderS7(t){
+  const s=SC.s7[0];
+  const h=document.querySelector('#s7 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  riseIn($('tl7'),t,s+0.6,0.7,30); riseIn($('cta7'),t,s+1.2,0.7,30);
+}
+function renderPhone(sid,t){ const ph=document.querySelector('#'+sid+' .phone'); if(ph) riseIn(ph,t,SC[sid][0]+0.15,0.8,90); }
+
+const R = {s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6,s7:renderS7};
+
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001){ capIn(k,t,a+0.05); renderPhone(k,t); R[k](t); }
+  });
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
