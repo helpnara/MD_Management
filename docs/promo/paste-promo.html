@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>붙여넣기 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B; --marker:#B9B2A7;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45;
+  --screen:#FFFFFF; --grouped:#F2F2F7; --rule:#E4DED3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+.cap{position:absolute;left:80px;right:80px;top:170px;text-align:center}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:74px;line-height:1.28;letter-spacing:-1px}
+.cap p{margin-top:26px;font-size:38px;line-height:1.5;color:var(--faint);font-weight:500}
+.kicker{display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--leaf);margin-bottom:22px}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:680px;width:740px;height:1190px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.22), 0 6px 18px rgba(0,0,0,.12)}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--screen);overflow:hidden}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:9}
+.nav{position:absolute;top:100px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 40px;gap:20px}
+.nav .back{width:70px;height:70px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;justify-content:center}
+.nav .title{font-size:36px;font-weight:500;flex:1}
+.nav .pill{height:70px;padding:0 26px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;gap:28px;color:var(--accent);font-size:34px;font-weight:700}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(10,122,255,.18);border:4px solid rgba(10,122,255,.45);pointer-events:none;z-index:8}
+svg.ic{width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* 편집기 */
+.body{position:absolute;top:230px;left:52px;right:52px;font-size:38px;line-height:1.62}
+.line{min-height:62px;white-space:pre-wrap;word-break:break-all;position:relative}
+.line.h1{min-height:84px;font-size:62px;font-weight:900;line-height:1.35;letter-spacing:-.5px}
+.line.mono{font-family:'Noto Sans Mono','Noto Sans KR',monospace;font-size:32px}
+.mk{color:var(--marker)}
+.lk{color:var(--accent);text-decoration:underline;text-underline-offset:6px;text-decoration-thickness:2px}
+.sel{background:rgba(10,122,255,.22);border-radius:4px}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--accent);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+.bubble{position:absolute;left:0;top:-78px;background:#1C1B1A;color:#fff;border-radius:18px;padding:12px 28px;font-size:30px;font-weight:500;white-space:nowrap;z-index:7;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.bubble:after{content:'';position:absolute;left:40px;bottom:-12px;border:12px solid transparent;border-top-color:#1C1B1A;border-bottom:0}
+.photo{width:100%;height:280px;border-radius:26px;background:linear-gradient(160deg,#DCE7CF,#F1E6CF);margin-top:16px;display:flex;align-items:center;justify-content:center}
+.photo svg{width:140px;height:140px;fill:none;stroke:#8DAA62;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+
+/* 복사한 것 — 폰 위에 떠서 내려온다 */
+.clip{position:absolute;left:50%;top:540px;transform:translateX(-50%);min-width:520px;max-width:900px;border-radius:34px;background:#fff;box-shadow:0 24px 60px rgba(80,60,30,.2);padding:26px 40px;display:flex;align-items:center;gap:24px;font-size:32px;color:#4A4640;z-index:5;white-space:nowrap}
+.clip .tag{font-size:24px;color:var(--leaf);font-weight:700;letter-spacing:2px;flex:none}
+.clip .u{color:var(--accent);font-family:'Noto Sans Mono',monospace;font-size:28px}
+.clip .mini{display:grid;grid-template-columns:repeat(2,110px);gap:6px}
+.clip .mini i{display:block;height:30px;background:#ECE6DA;border-radius:6px}
+.clip .mini i.h{background:#DCD3C2}
+.clip .pin{width:46px;height:46px;fill:none;stroke:#C9553D;stroke-width:4;flex:none}
+.clip .ph{width:70px;height:70px;border-radius:14px;background:linear-gradient(160deg,#DCE7CF,#F1E6CF);flex:none}
+
+/* 첫 장면 */
+.hook{position:absolute;left:0;right:0;top:560px;text-align:center}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:104px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:40px;font-size:44px;color:#4A4640;font-weight:500}
+.hook p b{color:var(--leaf);font-weight:700}
+.chipl{position:absolute;height:84px;padding:0 34px;border-radius:42px;background:#fff;box-shadow:0 14px 34px rgba(80,60,30,.14);
+  display:flex;align-items:center;gap:16px;font-size:32px;color:#55514B;white-space:nowrap}
+.chipl i{width:30px;height:30px;border-radius:8px;background:#E7E1D6;flex:none}
+
+/* 읽기 화면 */
+.rd{position:absolute;top:230px;left:52px;right:52px;font-size:38px;line-height:1.62}
+.rd h1{font-size:60px;font-weight:900;line-height:1.3;margin-bottom:14px}
+.rd p{color:#3a3733}
+.rd table{border-collapse:collapse;margin-top:20px;font-size:34px}
+.rd th,.rd td{border:2px solid var(--rule);padding:10px 28px;text-align:left}
+.rd th{font-weight:700;background:#F6F2EA}
+
+/* 파일 조각 */
+.fchip{position:absolute;right:40px;bottom:60px;background:#2A2724;color:#F4EFE6;border-radius:22px;padding:18px 28px;font-family:'Noto Sans Mono',monospace;font-size:26px;z-index:6;box-shadow:0 16px 40px rgba(0,0,0,.25)}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:400px;text-align:center}
+.hero img{width:380px;height:380px;border-radius:88px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:130px;margin-top:64px;letter-spacing:2px}
+.hero .en{font-size:34px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:46px;margin-top:60px;font-weight:500;color:#4A4640;line-height:1.5}
+.hero .cta{display:inline-block;margin-top:70px;padding:30px 60px;border-radius:60px;background:var(--ink);color:#fff;font-size:40px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 1 · 질문 -->
+  <section class="scene" id="s1">
+    <div class="chipl" id="c11" style="left:110px;top:250px"><i></i>웹 주소</div>
+    <div class="chipl" id="c12" style="left:600px;top:400px"><i></i>복사한 표</div>
+    <div class="chipl" id="c13" style="left:150px;top:1290px"><i></i>지도 장소</div>
+    <div class="chipl" id="c14" style="left:620px;top:1440px"><i></i>사진</div>
+    <div class="chipl" id="c15" style="left:300px;top:1590px"><i></i>번호 목록</div>
+    <div class="hook">
+      <h1 id="h11">복사해서<br>붙이기만 하세요</h1>
+      <p id="h12"><b>느린 여백</b>이 알아서 맞춥니다</p>
+    </div>
+  </section>
+
+  <!-- 2 · 웹 주소 -->
+  <section class="scene" id="s2">
+    <div class="cap"><div class="kicker">웹 주소</div><h2>고른 글 위에 붙이면<br>그 글이 링크가 됩니다</h2><p>글을 안 고르면 주소가 그대로 링크로</p></div>
+    <div class="clip" id="cl2"><span class="tag">복사함</span><span class="u">https://example.com/walks</span></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">주말 계획</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="body" id="ed2"></div>
+      <div class="tap" id="tap2" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 3 · 표 -->
+  <section class="scene" id="s3">
+    <div class="cap"><div class="kicker">복사한 표</div><h2>표를 붙이면<br>마크다운 표가 됩니다</h2><p>읽기 화면에서는 표 그대로</p></div>
+    <div class="clip" id="cl3"><span class="tag">복사함</span><span class="mini"><i class="h"></i><i class="h"></i><i></i><i></i><i></i><i></i></span><span>웹 페이지의 표</span></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">주말 계획</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="body" id="ed3"></div>
+      <div class="screen" id="rd3" style="position:absolute;inset:0;opacity:0">
+        <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title"></div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M26 7 L33 14 L15 32 L7 33 L8 25 Z"/></svg></div></div>
+        <div class="rd">
+          <h1>주말 계획</h1>
+          <p>장 볼 것</p>
+          <table><tr><th>품목</th><th>수량</th></tr><tr><td>찻잎</td><td>1</td></tr><tr><td>레몬</td><td>3</td></tr><tr><td>꿀</td><td>1</td></tr></table>
+        </div>
+      </div>
+      <div class="tap" id="tap3" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 지도 장소 -->
+  <section class="scene" id="s4">
+    <div class="cap"><div class="kicker">지도 장소</div><h2>장소를 붙이면<br>이름 링크와 주소 한 줄</h2><p>이름을 누르면 지도가 열립니다</p></div>
+    <div class="clip" id="cl4"><span class="tag">복사함</span><svg class="pin" viewBox="0 0 44 44"><path d="M22 4 C14 4 9 10 9 17 C9 27 22 40 22 40 C22 40 35 27 35 17 C35 10 30 4 22 4 Z"/><circle cx="22" cy="17" r="4"/></svg><span>주말 빵집 · 서울 어느 골목 12</span></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">주말 계획</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="body" id="ed4"></div>
+      <div class="tap" id="tap4" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 5 · 사진 -->
+  <section class="scene" id="s5">
+    <div class="cap"><div class="kicker">사진 · 동영상</div><h2>제자리에 들어가고<br>옆 폴더에 파일로</h2><p>노트에는 그 파일을 가리키는 한 줄</p></div>
+    <div class="clip" id="cl5"><span class="tag">복사함</span><span class="ph"></span><span>사진 1장</span></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">주말 계획</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="body" id="ed5"></div>
+      <div class="fchip" id="fc5" style="opacity:0">assets › 2026-11-02.jpg</div>
+      <div class="tap" id="tap5" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 6 · 번호 목록 -->
+  <section class="scene" id="s6">
+    <div class="cap"><div class="kicker">번호 목록</div><h2>번호를 쳐 둔 줄에 붙여도<br>겹치지 않습니다</h2><p>1. 1. 이 되지 않습니다</p></div>
+    <div class="clip" id="cl6"><span class="tag">복사함</span><span>1. 물 끓이기 · 2. 찻잎 넣기 · 3. 3분 기다리기</span></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">차 우리기</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="body" id="ed6"></div>
+      <div class="tap" id="tap6" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 7 · 끝 -->
+  <section class="scene" id="s7">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="en">SLOW MARGIN</div>
+      <div class="tl" id="tl7">복사해서<br>붙이기만 하세요</div>
+      <div class="cta" id="cta7">앱스토어에서 ‘느린 여백’</div>
+    </div>
+  </section>
+
+  <div id="leafline"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const CARET = (t)=>`<span class="caret" style="opacity:${blink(t)}"></span>`;
+const M = s => `<span class="mk">${esc(s)}</span>`;
+
+// 장면 [시작, 끝]
+const SC = { s1:[0,3.4], s2:[3.4,9.4], s3:[9.4,14.8], s4:[14.8,20.0], s5:[20.0,25.0], s6:[25.0,30.4], s7:[30.4,34.0] };
+const DURATION = 34.0;
+
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+function capIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .cap'); if(!el) return;
+  const p=out(seg(t,a,a+0.8));
+  el.style.transform=`translateY(${(1-p)*40}px)`; el.style.opacity=p;
+}
+function riseIn(el,t,a,dur=0.7,dist=60){ const p=out(seg(t,a,a+dur)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dist}px)`; }
+function tapXY(tapEl, x, y, t, at){
+  const sr=tapEl.parentElement.getBoundingClientRect();
+  const p=seg(t,at-0.3,at+0.4);
+  tapEl.style.left=(x-sr.left-60)+'px'; tapEl.style.top=(y-sr.top-60)+'px';
+  tapEl.style.opacity=p>0&&p<1?Math.sin(p*Math.PI):0; tapEl.style.transform=`scale(${0.6+p*0.6})`;
+}
+function tapAt(tapEl, target, t, at){ if(!target) return; const r=target.getBoundingClientRect(); tapXY(tapEl, r.left+r.width/2, r.top+r.height/2, t, at); }
+// 복사한 것 카드 — 떠 있다가 붙이는 순간 폰 안으로 빨려 들어간다
+function clipMotion(el,t,s,pasteAt){
+  const p=out(seg(t,s+0.3,s+0.9)); const g=ease(seg(t,pasteAt,pasteAt+0.4));
+  el.style.opacity=p*(1-g); el.style.transform=`translateX(-50%) translateY(${(1-p)*-40 + g*260}px) scale(${1-0.3*g})`;
+}
+const BUBBLE = (t,at)=>{ const p=out(seg(t,at-0.9,at-0.6))*(1-seg(t,at+0.15,at+0.3)); return p>0?`<span class="bubble" style="opacity:${p};transform:scale(${0.9+0.1*p})">붙여넣기</span>`:''; };
+function bubbleTap(tapEl, ed, t, at){ const b=ed.querySelector('.bubble'); if(b && t>at-0.5 && t<at+0.3) tapAt(tapEl,b,t,at); else tapEl.style.opacity=0; }
+
+// ── 1 · 질문 ──
+function renderS1(t){
+  ['c11','c12','c13','c14','c15'].forEach((id,i)=>{
+    const el=$(id); const p=out(seg(t,0.05+i*0.12,0.65+i*0.12));
+    const drift=Math.sin(t*0.9+i*1.7)*10;
+    el.style.opacity=p; el.style.transform=`translateY(${(1-p)*50+drift}px) rotate(${(i%2?1:-1)*(2+i)}deg)`;
+  });
+  const hp=out(seg(t,0,1.2)); $('h11').style.transform=`scale(${1.04-0.04*hp})`; $('h11').style.opacity=1;
+  riseIn($('h12'),t,0.8,0.8,30);
+}
+
+// ── 2 · 웹 주소 — 고른 글 위에 붙이면 [글](주소) (paste_web_link · 선택이 있으면 그 글이 이름) ──
+function renderS2(t){
+  const s=SC.s2[0], selAt=s+1.3, pasteAt=s+2.9, leave=s+4.6;
+  clipMotion($('cl2'),t,s,pasteAt);
+  const url='https://example.com/walks';
+  let l2;
+  if(t<pasteAt){
+    const sel = t>=selAt ? `<span class="sel">가을 산책길</span>` : '가을 산책길';
+    l2 = `토요일에 ${sel} 걷기${t<selAt?CARET(t):''}${BUBBLE(t,pasteAt)}`;
+  } else if(t<leave){
+    l2 = `토요일에 ${M('[')}<span class="lk">가을 산책길</span>${M('](')}${M(url)}${M(')')}${CARET(t)} 걷기`;
+  } else {
+    l2 = `토요일에 <span class="lk">가을 산책길</span> 걷기`;
+  }
+  const l3 = t>=leave ? `<div class="line">${CARET(t)}</div>` : '';
+  $('ed2').innerHTML = `<div class="line h1">주말 계획</div><div class="line">${l2}</div>${l3}`;
+  bubbleTap($('tap2'),$('ed2'),t,pasteAt);
+}
+
+// ── 3 · 표 — HTML 표를 마크다운 표로 (159) · 읽기 화면에서는 표 ──
+function renderS3(t){
+  const s=SC.s3[0], pasteAt=s+2.2, readAt=s+3.9;
+  clipMotion($('cl3'),t,s,pasteAt);
+  const rows=[['품목','수량'],['---','---'],['찻잎','1'],['레몬','3'],['꿀','1']];
+  let html=`<div class="line h1">주말 계획</div><div class="line">장 볼 것</div>`;
+  if(t<pasteAt){ html+=`<div class="line">${CARET(t)}${BUBBLE(t,pasteAt)}</div>`; }
+  else {
+    rows.forEach((r,i)=>{ const last=i===rows.length-1; html+=`<div class="line mono">${M('| ')}${esc(r[0])}${M(' | ')}${esc(r[1])}${M(' |')}${last?CARET(t):''}</div>`; });
+  }
+  $('ed3').innerHTML=html;
+  bubbleTap($('tap3'),$('ed3'),t,pasteAt);
+  const p=out(seg(t,readAt,readAt+0.4)); $('rd3').style.opacity=p;
+  // 읽기 단추를 누른다
+  if(t>readAt-0.5 && t<readAt+0.3) tapAt($('tap3'),document.querySelector('#s3 .nav .pill'),t,readAt);
+}
+
+// ── 4 · 지도 장소 — [이름](<주소>) : 길 주소 (252 · map_line) ──
+function renderS4(t){
+  const s=SC.s4[0], pasteAt=s+2.2, leave=s+3.8;
+  clipMotion($('cl4'),t,s,pasteAt);
+  let l3;
+  if(t<pasteAt) l3=`${CARET(t)}${BUBBLE(t,pasteAt)}`;
+  else if(t<leave) l3=`${M('[')}<span class="lk">주말 빵집</span>${M('](<')}${M('https://maps…/place')}${M('>)')} : 서울 어느 골목 12${CARET(t)}`;
+  else l3=`<span class="lk">주말 빵집</span> : 서울 어느 골목 12`;
+  const l4 = t>=leave ? `<div class="line">${CARET(t)}</div>` : '';
+  $('ed4').innerHTML=`<div class="line h1">주말 계획</div><div class="line">들를 곳</div><div class="line">${l3}</div>${l4}`;
+  bubbleTap($('tap4'),$('ed4'),t,pasteAt);
+}
+
+// ── 5 · 사진 — assets/날짜.jpg · 노트에는 ![](…) 한 줄 (ImageImport.stem · writeAsset) ──
+function renderS5(t){
+  const s=SC.s5[0], pasteAt=s+2.0, leave=s+3.4;
+  clipMotion($('cl5'),t,s,pasteAt);
+  let l3='';
+  if(t<pasteAt) l3=`<div class="line">${CARET(t)}${BUBBLE(t,pasteAt)}</div>`;
+  else {
+    const raw = t<leave ? `<div class="line">${M('![](')}${M('assets/2026-11-02.jpg')}${M(')')}${CARET(t)}</div>` : '';
+    const p=out(seg(t,pasteAt,pasteAt+0.5));
+    l3 = raw + `<div class="photo" style="opacity:${p};transform:scale(${0.8+0.2*p})"><svg viewBox="0 0 100 100"><path d="M50 88 C50 60 30 50 14 50 C14 76 32 88 50 88 Z M50 88 C50 54 66 40 86 40 C86 70 70 88 50 88 Z M50 88 L50 20"/></svg></div>` + (t>=leave?`<div class="line">${CARET(t)}</div>`:'');
+  }
+  $('ed5').innerHTML=`<div class="line h1">주말 계획</div><div class="line">산책에서 본 것</div>${l3}`;
+  bubbleTap($('tap5'),$('ed5'),t,pasteAt);
+  const fp=out(seg(t,pasteAt+0.6,pasteAt+1.1)); const fc=$('fc5'); fc.style.opacity=fp; fc.style.transform=`translateY(${(1-fp)*40}px)`;
+}
+
+// ── 6 · 번호 목록 — `1. ` 만 쳐 둔 줄에 붙이면 첫 마커를 떼고 붙인다 (paste_numbering) ──
+function renderS6(t){
+  const s=SC.s6[0], pasteAt=s+2.2;
+  clipMotion($('cl6'),t,s,pasteAt);
+  let html=`<div class="line h1">차 우리기</div>`;
+  if(t<pasteAt) html+=`<div class="line">${M('1. ')}${CARET(t)}${BUBBLE(t,pasteAt)}</div>`;
+  else {
+    const items=['물 끓이기','찻잎 넣기','3분 기다리기'];
+    items.forEach((x,i)=>{ const last=i===items.length-1; html+=`<div class="line">${last?M((i+1)+'. '):(i+1)+'. '}${esc(x)}${last?CARET(t):''}</div>`; });
+  }
+  $('ed6').innerHTML=html;
+  bubbleTap($('tap6'),$('ed6'),t,pasteAt);
+}
+
+function renderS7(t){
+  const s=SC.s7[0];
+  const h=document.querySelector('#s7 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  riseIn($('tl7'),t,s+0.6,0.7,30); riseIn($('cta7'),t,s+1.2,0.7,30);
+}
+function renderPhone(sid,t){ const ph=document.querySelector('#'+sid+' .phone'); if(ph) riseIn(ph,t,SC[sid][0]+0.15,0.8,90); }
+
+const R = {s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6,s7:renderS7};
+
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001){ capIn(k,t,a+0.05); renderPhone(k,t); R[k](t); }
+  });
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
