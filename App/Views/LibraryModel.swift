@@ -849,6 +849,8 @@ final class LibraryModel: ObservableObject {
         case brokenLinks
         /// **코드 상자 크게 보기** (237). 줄을 접지 않고 가로 · 세로로 민다.
         case code(index: Int, block: CodeBlockText)
+        /// **어디서나 찾기** (286). 노트를 연 채 · 폴더 칸을 접은 채 · ⌘F 로 칸이 안 보일 때.
+        case search
 
         var id: String {
             switch self {
@@ -859,6 +861,7 @@ final class LibraryModel: ObservableObject {
             case .share(let url): return "share-\(url.path)"
             case .linkFile: return "linkFile"
             case .brokenLinks: return "brokenLinks"
+            case .search: return "search"
             case .code(let index, _): return "code-\(index)"
             }
         }

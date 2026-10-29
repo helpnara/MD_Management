@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>파일로 남는다 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B; --marker:#B9B2A7;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45;
+  --screen:#FFFFFF; --grouped:#F2F2F7; --rule:#E4DED3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+.cap{position:absolute;left:80px;right:80px;top:170px;text-align:center}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:74px;line-height:1.28;letter-spacing:-1px}
+.cap p{margin-top:26px;font-size:38px;line-height:1.5;color:var(--faint);font-weight:500}
+.kicker{display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--leaf);margin-bottom:22px}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:640px;width:740px;height:1190px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.22), 0 6px 18px rgba(0,0,0,.12)}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--screen);overflow:hidden}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:9}
+.nav{position:absolute;top:100px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 40px;gap:20px}
+.nav .back{width:70px;height:70px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;justify-content:center}
+.nav .title{font-size:36px;font-weight:500;flex:1}
+.nav .pill{height:70px;padding:0 26px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;gap:28px;color:var(--accent);font-size:34px;font-weight:700}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(10,122,255,.18);border:4px solid rgba(10,122,255,.45);pointer-events:none;z-index:8}
+svg.ic{width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* 편집기 */
+.body{position:absolute;top:230px;left:52px;right:52px;font-size:38px;line-height:1.62}
+.line{min-height:62px;white-space:pre}
+.line.h1{min-height:84px;font-size:62px;font-weight:900;line-height:1.35;letter-spacing:-.5px}
+.mk{color:var(--marker)}
+.mkh{color:var(--marker);display:inline-block;overflow:hidden;vertical-align:bottom;white-space:pre}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--accent);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+.photo{width:100%;height:300px;border-radius:26px;background:linear-gradient(160deg,#DCE7CF,#F1E6CF);margin-top:20px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.photo svg{width:150px;height:150px;fill:none;stroke:#8DAA62;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+
+/* 첫 장면 */
+.hook{position:absolute;left:0;right:0;top:560px;text-align:center}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:104px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:40px;font-size:44px;color:#4A4640;font-weight:500}
+.hook p b{color:var(--leaf);font-weight:700}
+.chipl{position:absolute;height:84px;padding:0 34px;border-radius:42px;background:#fff;box-shadow:0 14px 34px rgba(80,60,30,.14);
+  display:flex;align-items:center;gap:16px;font-size:32px;color:#55514B;white-space:nowrap}
+.chipl i{width:30px;height:30px;border-radius:8px;background:#E7E1D6;flex:none}
+
+/* 파일 앱 느낌의 카드 */
+.fcard{position:absolute;left:300px;top:1280px;width:600px;border-radius:40px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.22);padding:34px 36px 20px;z-index:3}
+.fcard .path{font-size:26px;color:#8A8A8E;margin-bottom:18px;letter-spacing:.5px}
+.frow{height:88px;display:flex;align-items:center;gap:22px;border-bottom:1px solid #EDEDF0;font-size:32px;padding:0 10px;border-radius:14px}
+.frow:last-child{border-bottom:none}
+.frow .fi{width:50px;height:38px;border-radius:7px;background:#7FB6E8;flex:none}
+.frow .fd{width:38px;height:48px;border-radius:5px;background:#fff;border:3px solid #C9C4BB;flex:none;position:relative}
+.frow .fd:after{content:'';position:absolute;left:6px;right:6px;top:12px;height:3px;background:#C9C4BB;box-shadow:0 10px 0 #C9C4BB,0 20px 0 #C9C4BB}
+.frow .fp{width:48px;height:48px;border-radius:8px;background:linear-gradient(160deg,#DCE7CF,#F1E6CF);flex:none}
+.frow .sub{padding-left:60px}
+.frow small{margin-left:auto;color:#8A8A8E;font-size:24px}
+
+/* 파일 앱 전체 화면 */
+.files{position:absolute;inset:0;background:var(--grouped)}
+.files .hd{position:absolute;top:100px;left:40px;right:40px;display:flex;align-items:center;gap:14px;font-size:32px;color:var(--accent)}
+.files .big{position:absolute;top:160px;left:48px;font-size:58px;font-weight:900}
+.files .lst{position:absolute;top:260px;left:40px;right:40px;background:#fff;border-radius:26px;padding:0 20px}
+
+/* 홈 화면 */
+.home{position:absolute;inset:0;background:linear-gradient(180deg,#DCE3EE,#E9E2D6)}
+.home .grid{position:absolute;top:140px;left:52px;right:52px;display:grid;grid-template-columns:repeat(4,1fr);row-gap:34px;justify-items:center}
+.home .ap{width:132px;text-align:center;font-size:24px;color:#2A2724;position:relative}
+.home .ap .sq{width:132px;height:132px;border-radius:32px;background:#F4F1EA;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.home .ap img{width:132px;height:132px;border-radius:32px;display:block;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.home .ap .x{position:absolute;left:-14px;top:-14px;width:46px;height:46px;border-radius:23px;background:#8E8E93;color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;opacity:0}
+.home .dock{position:absolute;left:30px;right:30px;bottom:30px;height:170px;border-radius:50px;background:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:space-around;padding:0 20px}
+.home .dock .sq{width:120px;height:120px;border-radius:30px;background:#F4F1EA;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+
+/* 앱 스토어 */
+.store{position:absolute;inset:0;background:#fff}
+.store .top{position:absolute;top:150px;left:48px;right:48px;display:flex;gap:30px;align-items:flex-start}
+.store img{width:190px;height:190px;border-radius:44px;box-shadow:0 10px 30px rgba(0,0,0,.14)}
+.store .nm{font-size:40px;font-weight:700;margin-top:10px}
+.store .sb{font-size:28px;color:#8A8A8E;margin-top:6px;line-height:1.4}
+.store .get{display:inline-flex;align-items:center;justify-content:center;min-width:140px;height:62px;border-radius:31px;background:var(--accent);color:#fff;font-size:30px;font-weight:700;margin-top:22px;padding:0 30px}
+.store .shots{position:absolute;top:420px;left:48px;right:0;display:flex;gap:24px}
+.store .shots i{display:block;width:300px;height:520px;border-radius:30px;background:#F1EDE4;flex:none}
+
+/* 폴더 화면 */
+.fold{position:absolute;inset:0;background:var(--grouped)}
+.fold .big{position:absolute;top:150px;left:48px;font-size:62px;font-weight:900}
+.sfield{position:absolute;top:262px;left:40px;right:40px;height:84px;border-radius:42px;background:#E4E4EA;display:flex;align-items:center;padding:0 28px;gap:16px;font-size:34px;color:#8A8A8E}
+.sfield svg{width:36px;height:36px;stroke:#8A8A8E;stroke-width:4;fill:none}
+.glist{position:absolute;top:380px;left:40px;right:40px}
+.glist .gb{background:#fff;border-radius:26px;padding:0 28px}
+.frow2{height:96px;display:flex;align-items:center;gap:22px;border-bottom:1px solid #EDEDF0;font-size:34px}
+.frow2:last-child{border-bottom:none}
+.frow2 .fi{width:46px;height:36px;border-radius:7px;background:#7FB6E8;flex:none}
+.frow2 .fd{width:34px;height:44px;border-radius:5px;background:#fff;border:3px solid #C9C4BB;flex:none}
+.frow2 .n{margin-left:auto;color:#8A8A8E;font-size:30px}
+
+/* 파일 */
+.filecard{position:absolute;left:90px;right:90px;top:720px;border-radius:40px;background:#2A2724;color:#F4EFE6;padding:46px 50px;
+  box-shadow:0 40px 80px rgba(0,0,0,.25);font-family:'Noto Sans Mono','Noto Sans KR',monospace;font-size:31px;line-height:1.75}
+.filecard .fn{font-family:'Noto Sans KR';font-size:28px;color:#BFB6A8;margin-bottom:18px;letter-spacing:1px}
+.filecard .m{color:#9C9285}
+.filecard .u{color:#FFD27A}
+.filecard .ln2{white-space:pre}
+.facts{position:absolute;left:0;right:0;top:1440px;text-align:center}
+.facts span{display:inline-block;margin:10px 10px;padding:22px 40px;border-radius:50px;background:#fff;box-shadow:0 10px 30px rgba(80,60,30,.12);font-size:38px;font-weight:700}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:400px;text-align:center}
+.hero img{width:380px;height:380px;border-radius:88px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:130px;margin-top:64px;letter-spacing:2px}
+.hero .en{font-size:34px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:46px;margin-top:60px;font-weight:500;color:#4A4640;line-height:1.5}
+.hero .cta{display:inline-block;margin-top:70px;padding:30px 60px;border-radius:60px;background:var(--ink);color:#fff;font-size:40px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 1 · 질문 -->
+  <section class="scene" id="s1">
+    <div class="chipl" id="c11" style="left:100px;top:250px"><i></i>일기 3년치</div>
+    <div class="chipl" id="c12" style="left:560px;top:400px"><i></i>회의 메모</div>
+    <div class="chipl" id="c13" style="left:160px;top:1290px"><i></i>읽은 책 기록</div>
+    <div class="chipl" id="c14" style="left:600px;top:1440px"><i></i>여행 계획</div>
+    <div class="chipl" id="c15" style="left:300px;top:1590px"><i></i>집밥 레시피</div>
+    <div class="hook">
+      <h1 id="h11">노트 앱을 바꾸면,<br>글은 어디로 가나요?</h1>
+      <p id="h12"><b>느린 여백</b>은 파일에 둡니다</p>
+    </div>
+  </section>
+
+  <!-- 2 · 쓰는 즉시 -->
+  <section class="scene" id="s2">
+    <div class="cap"><div class="kicker">쓰는 즉시</div><h2>내 아이클라우드에<br>마크다운 파일로</h2><p>앱 안이 아니라 폴더 안에 남습니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">10월 메모</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="body" id="ed2"></div>
+    </div></div>
+    <div class="fcard" id="fc2">
+      <div class="path">iCloud Drive › Slow Margin</div>
+      <div class="frow"><div class="fi"></div>assets</div>
+      <div class="frow" id="r21"><div class="fd"></div>10월 메모.md<small>오후 9:14</small></div>
+      <div class="frow"><div class="fd"></div>산책 일지.md<small>어제</small></div>
+      <div class="frow"><div class="fd"></div>읽을거리.md<small>지난주</small></div>
+    </div>
+  </section>
+
+  <!-- 3 · 사진을 붙이면 -->
+  <section class="scene" id="s3">
+    <div class="cap"><div class="kicker">사진을 붙이면</div><h2>노트 옆 assets 폴더에<br>진짜 파일로</h2><p>노트에는 그 파일을 가리키는 한 줄</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title">10월 메모</div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M6 10 C14 6 18 8 20 12 C22 8 26 6 34 10 L34 32 C26 28 22 30 20 33 C18 30 14 28 6 32 Z M20 12 L20 33"/></svg></div></div>
+      <div class="body">
+        <div class="line h1"><span>10월 메모</span></div>
+        <div class="line">오늘은 천천히 걸었다.</div>
+        <div class="line" id="ln3"></div>
+        <div class="photo" id="ph3"><svg viewBox="0 0 100 100"><path d="M50 88 C50 60 30 50 14 50 C14 76 32 88 50 88 Z M50 88 C50 54 66 40 86 40 C86 70 70 88 50 88 Z M50 88 L50 20"/></svg></div>
+      </div>
+    </div></div>
+    <div class="fcard" id="fc3">
+      <div class="path">iCloud Drive › Slow Margin</div>
+      <div class="frow"><div class="fi"></div>assets</div>
+      <div class="frow" id="r31"><div class="fp"></div><span>2026-11-02.jpg</span><small>방금</small></div>
+      <div class="frow"><div class="fd"></div>10월 메모.md<small>방금</small></div>
+      <div class="frow"><div class="fd"></div>산책 일지.md<small>어제</small></div>
+    </div>
+  </section>
+
+  <!-- 4 · 앱을 지워도 -->
+  <section class="scene" id="s4">
+    <div class="cap"><div class="kicker">앱을 지워도</div><h2>파일은 그 자리에<br>그대로 있습니다</h2><p>파일 앱에서 바로 열립니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="home" id="home4">
+        <div class="grid" id="grid4">
+          <div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div>
+          <div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap" id="our4"><div class="x" id="x4">✕</div><img src="icon.png" alt="">느린 여백</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div>
+          <div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div>
+          <div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div><div class="ap"><div class="x">✕</div><div class="sq"></div>&nbsp;</div>
+        </div>
+        <div class="dock"><div class="sq"></div><div class="sq"></div><div class="sq"></div><div class="sq"></div></div>
+      </div>
+      <div class="files" id="files4">
+        <div class="hd"><svg class="ic" viewBox="0 0 40 40" style="width:30px;height:30px"><path d="M24 8 L12 20 L24 32"/></svg>iCloud Drive</div>
+        <div class="big">Slow Margin</div>
+        <div class="lst">
+          <div class="frow"><div class="fi"></div>assets<small>1개 항목</small></div>
+          <div class="frow" id="r41"><div class="fd"></div>10월 메모.md<small>오후 9:16</small></div>
+          <div class="frow"><div class="fd"></div>산책 일지.md<small>어제</small></div>
+          <div class="frow"><div class="fd"></div>읽을거리.md<small>지난주</small></div>
+          <div class="frow"><div class="fd"></div>11월 계획.md<small>지난주</small></div>
+        </div>
+      </div>
+      <div class="tap" id="tap4" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 5 · 다시 받으면 -->
+  <section class="scene" id="s5">
+    <div class="cap"><div class="kicker">다시 받으면</div><h2>그 폴더를 그대로<br>다시 읽습니다</h2><p>회원가입도, 옮기기도 없이</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="store" id="store5">
+        <div class="top"><img src="icon.png" alt=""><div><div class="nm">느린 여백</div><div class="sb">글이 파일로 남는<br>마크다운 기록</div><div class="get" id="get5">받기</div></div></div>
+        <div class="shots"><i></i><i></i><i></i></div>
+      </div>
+      <div class="fold" id="fold5">
+        <div class="big">폴더</div>
+        <div class="sfield"><svg viewBox="0 0 40 40"><circle cx="17" cy="17" r="10"/><path d="M25 25 L33 33"/></svg><span>모든 노트에서 찾기</span></div>
+        <div class="glist">
+          <div class="gb">
+            <div class="frow2"><div class="fi"></div>받은 글<span class="n">12</span></div>
+            <div class="frow2"><div class="fi"></div>일기<span class="n">48</span></div>
+            <div class="frow2"><div class="fi"></div>산책<span class="n">9</span></div>
+            <div class="frow2"><div class="fi"></div>읽을 책<span class="n">21</span></div>
+          </div>
+          <div class="gb" style="margin-top:30px">
+            <div class="frow2" id="n51"><div class="fd"></div>10월 메모</div>
+            <div class="frow2"><div class="fd"></div>산책 일지</div>
+            <div class="frow2"><div class="fd"></div>읽을거리</div>
+            <div class="frow2"><div class="fd"></div>11월 계획</div>
+          </div>
+        </div>
+      </div>
+      <div class="tap" id="tap5" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 6 · 다른 앱에서도 -->
+  <section class="scene" id="s6">
+    <div class="cap"><div class="kicker">다른 앱에서도</div><h2>표준 마크다운이라<br>어디서나 열립니다</h2><p>그대로 읽고, 그대로 고칩니다</p></div>
+    <div class="filecard" id="fc6">
+      <div class="fn">iCloud Drive › Slow Margin › 10월 메모.md</div>
+      <div class="ln2"><span class="m"># </span>10월 메모</div>
+      <div class="ln2"> </div>
+      <div class="ln2">오늘은 천천히 걸었다.</div>
+      <div class="ln2"> </div>
+      <div class="ln2"><span class="m">![](</span><span class="u">assets/2026-11-02.jpg</span><span class="m">)</span></div>
+      <div class="ln2"> </div>
+      <div class="ln2"><span class="m">- </span>저녁에는 <span class="m">[</span>산책 일지<span class="m">](&lt;</span><span class="u">산책 일지.md</span><span class="m">&gt;)</span> 이어 쓰기</div>
+      <div class="ln2"><span class="m">- [ ] </span>찻잎 사기</div>
+    </div>
+    <div class="facts" id="ft6"><span>계정 없음</span><span>서버 없음</span><span>광고 · 추적 없음</span></div>
+  </section>
+
+  <!-- 7 · 끝 -->
+  <section class="scene" id="s7">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="en">SLOW MARGIN</div>
+      <div class="tl" id="tl7">글은 앱이 아니라<br>파일로 남깁니다</div>
+      <div class="cta" id="cta7">앱스토어에서 ‘느린 여백’</div>
+    </div>
+  </section>
+
+  <div id="leafline"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const CARET = (t)=>`<span class="caret" style="opacity:${blink(t)}"></span>`;
+function marker(text,k){ return `<span class="mkh" style="opacity:${k};max-width:${k*4}em">${esc(text)}</span>`; }
+function collapse(t,a){ return 1-ease(seg(t,a,a+0.35)); }
+
+// 장면 [시작, 끝]
+const SC = { s1:[0,3.4], s2:[3.4,9.6], s3:[9.6,15.0], s4:[15.0,20.8], s5:[20.8,25.8], s6:[25.8,30.4], s7:[30.4,34.0] };
+const DURATION = 34.0;
+
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+function capIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .cap'); if(!el) return;
+  const p=out(seg(t,a,a+0.8));
+  el.style.transform=`translateY(${(1-p)*40}px)`; el.style.opacity=p;
+}
+function riseIn(el,t,a,dur=0.7,dist=60){ const p=out(seg(t,a,a+dur)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dist}px)`; }
+function tapXY(tapEl, x, y, t, at){
+  const sr=tapEl.parentElement.getBoundingClientRect();
+  const p=seg(t,at-0.3,at+0.4);
+  tapEl.style.left=(x-sr.left-60)+'px'; tapEl.style.top=(y-sr.top-60)+'px';
+  tapEl.style.opacity=p>0&&p<1?Math.sin(p*Math.PI):0; tapEl.style.transform=`scale(${0.6+p*0.6})`;
+}
+function tapAt(tapEl, target, t, at){ const r=target.getBoundingClientRect(); tapXY(tapEl, r.left+r.width/2, r.top+r.height/2, t, at); }
+function glowRow(el,t,a,b){ el.style.background = t>a && t<b ? `rgba(111,165,58,${0.18*(1-seg(t,b-1.0,b))})` : 'none'; }
+
+// ── 1 · 질문 ──
+function renderS1(t){
+  ['c11','c12','c13','c14','c15'].forEach((id,i)=>{
+    const el=$(id); const p=out(seg(t,0.05+i*0.12,0.65+i*0.12));
+    const drift=Math.sin(t*0.9+i*1.7)*10;
+    el.style.opacity=p; el.style.transform=`translateY(${(1-p)*50+drift}px) rotate(${(i%2?1:-1)*(2+i)}deg)`;
+  });
+  const hp=out(seg(t,0,1.2)); $('h11').style.transform=`scale(${1.04-0.04*hp})`; $('h11').style.opacity=1;
+  riseIn($('h12'),t,0.8,0.8,30);
+}
+
+// ── 2 · 쓰는 즉시 ── (promo.html 의 쓰기 장면과 같은 규칙 — `# ` 는 커서가 떠나면 접힌다)
+function renderS2(t){
+  const s=SC.s2[0]; const ed=$('ed2');
+  const L1='10월 메모', L2='오늘은 천천히 걸었다.';
+  const t1=s+0.9, enter1=s+2.1, t2=s+2.4;
+  let html='';
+  const full1='# '+L1; const n1=[...typed(full1,t,t1,9)].length;
+  const on1=t<enter1; const k1=on1?1:collapse(t,enter1);
+  let l1='';
+  if(n1>0){ const shown=[...full1].slice(0,n1).join('');
+    if(n1>=2) l1=marker('# ',k1)+`<span>${esc(shown.slice(2))}</span>`; else l1=`<span class="mk">${esc(shown)}</span>`; }
+  html+=`<div class="line h1">${l1}${on1?CARET(t):''}</div>`;
+  if(t>=enter1){ html+=`<div class="line">${esc(typed(L2,t,t2,9))}${CARET(t)}</div>`; }
+  ed.innerHTML=html;
+  // 파일 카드 — 첫 글자가 저장되면 파일이 보인다
+  riseIn($('fc2'),t,s+1.5,0.7,80);
+  glowRow($('r21'),t,s+1.9,s+5.6);
+}
+
+// ── 3 · 사진을 붙이면 ──
+function renderS3(t){
+  const s=SC.s3[0]; const drop=s+1.0;
+  const p=out(seg(t,drop,drop+0.5));
+  const ph=$('ph3'); ph.style.opacity=p; ph.style.transform=`scale(${0.7+0.3*p}) translateY(${(1-p)*-40}px)`;
+  // 붙여 넣은 줄 — 커서 줄이라 원문이 보였다가 사진이 자리를 잡으면 접힌다
+  const raw='![](assets/2026-11-02.jpg)';
+  const k = t<drop+0.9 ? 1 : collapse(t,drop+0.9);
+  $('ln3').innerHTML = t>=drop ? `<span class="mkh" style="opacity:${k};max-width:${k*20}em">${esc(raw)}</span>` : '';
+  $('ln3').style.minHeight = (62*k)+'px';
+  riseIn($('fc3'),t,s+0.3,0.7,80);
+  const r=$('r31'); const rp=out(seg(t,drop+0.6,drop+1.0));
+  r.style.opacity=rp; r.style.transform=`translateX(${(1-rp)*-60}px)`;
+  glowRow(r,t,drop+0.8,s+5.0);
+}
+
+// ── 4 · 앱을 지워도 ──
+function renderS4(t){
+  const s=SC.s4[0]; const wig=s+0.8, tapX=s+1.9, gone=tapX+0.35, filesUp=s+3.0;
+  const aps=[...document.querySelectorAll('#grid4 .ap')];
+  const jig = t>=wig && t<gone+0.3;
+  aps.forEach((el,i)=>{
+    const a = jig ? Math.sin(t*22+i*1.3)*2.4 : 0;
+    el.style.transform=`rotate(${a}deg)`;
+    el.querySelector('.x').style.opacity = jig ? out(seg(t,wig,wig+0.3)) : 0;
+  });
+  const our=$('our4'); const g=ease(seg(t,gone,gone+0.4));
+  our.style.opacity=1-g; our.style.transform+=` scale(${1-g})`;
+  tapAt($('tap4'),$('x4'),t,tapX);
+  const fp=out(seg(t,filesUp,filesUp+0.6));
+  const f=$('files4'); f.style.opacity=fp; f.style.transform=`translateY(${(1-fp)*300}px)`;
+  glowRow($('r41'),t,filesUp+0.6,s+5.6);
+}
+
+// ── 5 · 다시 받으면 ──
+function renderS5(t){
+  const s=SC.s5[0]; const tapGet=s+1.1, open=s+2.2, swap=s+2.5;
+  const got=t>=tapGet+0.2;
+  $('get5').textContent = got ? '열기' : '받기';
+  $('get5').style.background = got ? '#F2F2F7' : ''; $('get5').style.color = got ? 'var(--accent)' : '';
+  if(t<open-0.4) tapAt($('tap5'),$('get5'),t,tapGet); else tapAt($('tap5'),$('get5'),t,open);
+  const fp=out(seg(t,swap,swap+0.45));
+  const f=$('fold5'); f.style.opacity=fp; f.style.transform=`scale(${0.94+0.06*fp})`;
+  glowRow($('n51'),t,swap+0.5,s+4.8);
+}
+
+// ── 6 · 다른 앱에서도 ──
+function renderS6(t){
+  const s=SC.s6[0];
+  riseIn($('fc6'),t,s+0.2,0.7,80);
+  riseIn($('ft6'),t,s+1.6,0.7,40);
+}
+
+function renderS7(t){
+  const s=SC.s7[0];
+  const h=document.querySelector('#s7 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  riseIn($('tl7'),t,s+0.6,0.7,30); riseIn($('cta7'),t,s+1.2,0.7,30);
+}
+function renderPhone(sid,t){ const ph=document.querySelector('#'+sid+' .phone'); if(ph) riseIn(ph,t,SC[sid][0]+0.15,0.8,90); }
+
+const R = {s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6,s7:renderS7};
+
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001){ capIn(k,t,a+0.05); renderPhone(k,t); R[k](t); }
+  });
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>

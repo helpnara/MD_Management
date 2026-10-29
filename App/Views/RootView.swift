@@ -61,6 +61,8 @@ struct RootView: View {
         // 도구 줄을 아이폰에서만 줄이려면 **바깥 화면**의 폭을 봐야 한다. 예전에는 이 값을
         // 시트에만 건넸다 — 그때는 띠가 둘이 되는 것만 막으면 됐다 (빌드 24 · 13번).
         .environment(\.rootIsCompact, horizontalSizeClass == .compact)
+        // 노트 목록 칸이 **폴더 칸이 안 보이는지** 알아야 돋보기를 세운다 (286).
+        .environment(\.folderColumnHidden, columnVisibility != .all)
         .tint(Palette.accent)
         // **⌘N · ⌘F 는 어느 화면에서나** (230, 2026-10-09 전수 조사). 예전에는 노트 목록에 걸려 있어 목록이 안 보이면
         // (아이패드에서 노트만 크게 · 아이폰에서 노트를 연 채) 아무 일도 없었다. 바깥에 걸어 두고, 찾기는 목록부터 꺼낸다.
@@ -81,6 +83,12 @@ struct RootView: View {
             if library.launch.attachmentTest { await library.makeAttachmentTest() }
             if library.launch.newNote { await library.createNote() }
             if let term = library.launch.searchTerm { library.searchText = term }
+        }
+        // CI — **어디서나 찾기 시트** (`-searchSheet` · 286). 앱이 자리를 잡은 뒤에 · `-search` 와 같이 주면 결과가 든 시트를 찍는다.
+        .task {
+            guard library.launch.searchSheet else { return }
+            try? await Task.sleep(for: .milliseconds(1200))
+            library.sheet = .search
         }
         .task(id: library.selectedFolder) {
             library.autoSelectsFirstNote = prefersPreselectedNote
@@ -148,6 +156,8 @@ struct RootView: View {
                 LinkFilePicker().environmentObject(library)
             case .brokenLinks:
                 BrokenLinkList().environmentObject(library)
+            case .search:
+                SearchSheet().environmentObject(library)
             case .code(_, let block):
                 CodeViewer(block: block)
             }
@@ -158,13 +168,19 @@ struct RootView: View {
 
     /// ⌘F (230) — 검색 칸이 있는 노트 목록부터 꺼낸다. 아이폰 폭에서는 뒤로 가기와 같이 노트를 닫고 목록으로 간다.
     private func openSearch() {
+        // 시트 위에 시트를 올리지 않는다 (286 · 12) — 설정 · 공유가 떠 있으면 아무 일도 없다.
+        guard library.sheet == nil else { return }
         if horizontalSizeClass == .compact {
-            // 아이폰은 노트 목록의 찾기 칸 — 노트를 연 채면 목록으로 돌아온다.
-            library.selectedNoteID = nil
+            // **아이폰은 노트를 연 채면 찾기 시트** (286). 예전에는 노트를 닫고 목록의 칸으로 돌아갔다 — 보던 노트를 잃었다.
+            if library.selectedNoteID != nil {
+                library.sheet = .search
+                return
+            }
         } else if columnVisibility != .all {
-            // **아이패드의 찾기 칸은 폴더 칸에 있다** (260). 노트만 크게 보던 때 · 두 칸 · 시스템이 고르던 때(세로 화면은
-            // 폴더 칸을 숨길 수 있다) 모두 세 칸을 다 연다.
-            columnVisibility = .all
+            // **폴더 칸이 안 보이면 찾기 시트** (286). 예전에는 세 칸을 다 열어 버렸다(260) — 노트만 크게 보던 짜임이 깨졌다.
+            // 두 칸 · 노트만 · 시스템이 고르던 때(세로 화면은 폴더 칸을 숨길 수 있다) 모두 시트.
+            library.sheet = .search
+            return
         }
         library.searchRequestedAt = Date()
     }
@@ -480,17 +496,10 @@ private struct FolderSidebar: View {
             // 폴더로 들어갈 때는 칸 글자가 노트 목록 위에 흐리게 남았다 — 화면을 넘길 때 칸을 내비게이션 막대가 따로 움직인다.
             // 화면의 일부로 그리면 화면과 **함께** 움직인다.
             //
-            // **아이폰은 목록 위에 붙박이로** (266, 2026-10-23 사용자 — *폴더 목록에서의 검색 창과 노트 목록에서의 검색 창이 이질적*) —
+            // **목록 위에 붙박이로** (266, 2026-10-23 사용자 — *폴더 목록에서의 검색 창과 노트 목록에서의 검색 창이 이질적*) —
             // 노트 목록의 칸과 **같은 것**(`SearchField`)을 **같은 자리**(`safeAreaInset` — 막대 바로 아래 · 같은 여백)에. 목록을 밀어도 남는다.
-            // 아이패드 폴더 칸은 목록의 첫 줄로 둔다 — 떠 있는 옆 칸이라 붙박이 띠의 바탕이 칸의 바탕과 안 맞는다.
-            if !rootIsCompact {
-                Section {
-                    searchField
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-            }
+            // **아이패드 폴더 칸도** (286, 2026-10-29 사용자 — *검색하면서 위로 검색어 입력칸이 올라간다*). 266 때는 목록의 첫 줄로 두었다 —
+            // 떠 있는 옆 칸이라 띠의 바탕이 칸의 바탕과 안 맞아서. 띠의 바탕을 **막대와 같은 재질**(`.bar`)로 칠하면 칸의 바탕 위에 섞인다.
             if !query.isEmpty {
                 SearchHitRows { path in await openFromFolders(path) }
             } else if searchPresented {
@@ -502,6 +511,8 @@ private struct FolderSidebar: View {
         .safeAreaInset(edge: .top, spacing: 0) {
             if rootIsCompact {
                 searchField.background(Palette.paperGrouped)
+            } else {
+                searchField.background(.bar)
             }
         }
         .overlay {
@@ -612,27 +623,8 @@ private struct FolderSidebar: View {
     /// 공유 창의 최근 노트(244)와 **같은 값**(`recentNotes`)이다 — 이름 바꾸기 · 옮기기 · 휴지통을 저절로 따라간다.
     /// 가짜 *최근* 폴더 줄은 두지 않는다 — 새 노트 · 새 폴더 · 끌어다 놓기 · 노트 수가 고른 폴더를 실제 폴더로 믿는다.
     private var recentSection: some View {
-        Section {
-            ForEach(library.recentNotes.prefix(LibraryModel.recentListCount)) { note in
-                Button {
-                    Task { await openRecent(note.relativePath) }
-                } label: {
-                    RecentNoteRow(note: note)
-                }
-            }
-            if library.recentNotes.isEmpty {
-                Text("노트가 없습니다")
-                    .font(.scaled(.callout))
-                    .foregroundStyle(Palette.inkFaint)
-            }
-        } header: {
-            Text("최근 고친 노트")
-        } footer: {
-            // 예전 칸 안 안내(*제목 · 본문 · tag: · path:*)를 여기로 — 칸 안 글은 *어디를* 찾는지를 말한다 (260).
-            Text("제목과 본문을 찾습니다. tag:태그 · path:폴더 로 좁힐 수 있습니다.")
-                .font(.scaled(.caption))
-                .foregroundStyle(Palette.inkFaint)
-        }
+        // 찾기 시트(286)와 **같은 구역**이다 — 그리는 자리가 둘이면 갈린다.
+        RecentNotesSection { path in await openRecent(path) }
     }
 
     /// 최근 고친 노트 한 줄을 눌렀을 때 — 돌아오면 폴더가 보이게 찾기를 닫는다 (찾을 말이 없었으니 찾기는 여기서 끝난 것이다).
@@ -798,6 +790,8 @@ private struct FolderSidebar: View {
 private struct NoteList: View {
     @EnvironmentObject private var library: LibraryModel
     @Environment(\.rootIsCompact) private var rootIsCompact
+    /// 아이패드에서 폴더 칸이 접혔나 (286) — 그때만 막대에 돋보기를 세운다.
+    @Environment(\.folderColumnHidden) private var folderColumnHidden
     /// 찾기 칸에 글쇠가 가 있나 (266 — 폴더 화면과 같은 칸을 직접 그린다).
     @FocusState private var searchFocused: Bool
 
@@ -865,6 +859,18 @@ private struct NoteList: View {
             library.searchRequestedAt = nil
         }
         .toolbar {
+            // **폴더 칸이 안 보일 때의 찾기** (286, 2026-10-29 사용자 — *1번째 컬럼을 접은 상황이라면 다시 펼쳐서 검색해야*).
+            // 아이패드에서 폴더 칸을 접으면 찾기 칸이 함께 사라졌다 — 돋보기가 찾기 시트를 연다. 폴더 칸이 보이면 그 칸이 그 몫이라 세우지 않는다.
+            // 아이폰은 이 목록 위에 칸이 붙박이라(266) 필요 없다.
+            if !rootIsCompact, folderColumnHidden {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        library.sheet = .search
+                    } label: {
+                        Label("찾기", systemImage: "magnifyingglass")
+                    }
+                }
+            }
             // **이 폴더 안에 새 폴더** (218) — 노트 목록의 폴더가 곧 고른 폴더다. 아이폰은 여기가 하위 폴더를 만드는 길.
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -1158,6 +1164,92 @@ private struct SearchField: View {
         .padding(.horizontal, Metrics.gutter)
         .padding(.vertical, Metrics.rowSpacing)
         .animation(.default, value: showsCancel)
+    }
+}
+
+/// **빈 찾기 칸 아래의 최근 고친 노트 구역** (261 · 286). 폴더 화면과 찾기 시트가 **같은 이것**을 쓴다 — 보여 주는 자리가 둘이면 갈린다 (CLAUDE §1).
+/// 머리글 · 열 줄 · 없으면 *노트가 없습니다* · 바닥의 안내 글(어디를 · 어떻게 좁히는지 — 260).
+private struct RecentNotesSection: View {
+    @EnvironmentObject private var library: LibraryModel
+    let open: @MainActor (String) async -> Void
+
+    var body: some View {
+        Section {
+            ForEach(library.recentNotes.prefix(LibraryModel.recentListCount)) { note in
+                Button {
+                    Task { await open(note.relativePath) }
+                } label: {
+                    RecentNoteRow(note: note)
+                }
+            }
+            if library.recentNotes.isEmpty {
+                Text("노트가 없습니다")
+                    .font(.scaled(.callout))
+                    .foregroundStyle(Palette.inkFaint)
+            }
+        } header: {
+            Text("최근 고친 노트")
+        } footer: {
+            // 예전 칸 안 안내(*제목 · 본문 · tag: · path:*)를 여기로 — 칸 안 글은 *어디를* 찾는지를 말한다 (260).
+            Text("제목과 본문을 찾습니다. tag:태그 · path:폴더 로 좁힐 수 있습니다.")
+                .font(.scaled(.caption))
+                .foregroundStyle(Palette.inkFaint)
+        }
+    }
+}
+
+/// **어디서나 찾기 — 한 장의 시트** (286, 2026-10-29 사용자 — *언제 어디서나 노트 내 내용을 검색할 수 있도록*).
+/// 노트를 연 채(···) · 아이패드에서 폴더 칸을 접은 채(노트 목록의 돋보기) · ⌘F 로 칸이 안 보일 때 뜬다.
+/// 폴더 · 목록의 칸과 **같은 것**(`SearchField` · `RecentNotesSection` · `SearchHitRows` · `SearchUnavailable`)을 올린다 — 새로 그리지 않는다.
+/// 고르면 시트를 닫고 **노트만 바꾼다** — 보던 짜임(세 칸 · 두 칸 · 노트만)은 그대로다. 예전 ⌘F 는 세 칸을 다 열거나(260) 노트를 닫았다(230).
+/// 닫히면 찾던 말을 **비운다** — 글은 폴더 · 목록의 칸과 하나(`searchText`)라, 남겨 두면 그 화면으로 돌아갔을 때 결과 화면이 서 있다.
+private struct SearchSheet: View {
+    @EnvironmentObject private var library: LibraryModel
+    @FocusState private var searchFocused: Bool
+
+    private var query: String { library.searchText.trimmingCharacters(in: .whitespaces) }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if query.isEmpty {
+                    RecentNotesSection { path in await open(path) }
+                } else {
+                    SearchHitRows { path in await open(path) }
+                }
+            }
+            // 폴더 화면과 같은 자리 · 같은 바탕 (266). *취소* 는 막대의 **닫기**가 맡는다 — 칸 옆에 또 두면 둘이 된다.
+            .safeAreaInset(edge: .top, spacing: 0) {
+                SearchField(focused: $searchFocused, showsCancel: false) {}
+                    .background(Palette.paperGrouped)
+            }
+            .overlay {
+                if !query.isEmpty { SearchUnavailable() }
+            }
+            .navigationTitle("찾기")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { library.sheet = nil }
+                        .keyboardShortcut(.cancelAction)
+                }
+            }
+        }
+        // 시트가 다 올라온 뒤에 칸에 초점 — 자판이 바로 선다. 올라오는 중에 주면 움직임에 묻혀 안 선다 (⌘F 와 같은 기다림 — 230).
+        .task {
+            try? await Task.sleep(for: .milliseconds(350))
+            searchFocused = true
+        }
+        .onDisappear { library.searchText = "" }
+    }
+
+    /// 기다리는 일(있는지 · 쓰던 글 저장 · 요약)을 먼저 끝내고(`prepareOpen` · 263), 시트를 닫은 뒤 **한 번에** 연다.
+    /// 찾기로 연 것은 링크가 아니다 — 왔던 노트 길(`linkTrail`)에 쌓이지 않는다 (결과 줄과 같다).
+    private func open(_ path: String) async {
+        let commit = await library.prepareOpen(relativePath: path)
+        searchFocused = false
+        library.sheet = nil
+        commit?()
     }
 }
 
@@ -1686,6 +1778,13 @@ private struct NoteDetail: View {
                 // **안 열리는 링크 찾기는 살펴보기다** — 읽기 모드에서도 쓸 수 있어야
                 // 해서 설정으로 내리지 않고 여기 두되, 제 묶음에 세운다 (146).
                 Section {
+                    // **노트를 연 채 찾기** (286, 2026-10-29 사용자 — *언제 어디서나 노트 내 내용을 검색할 수 있도록*). 아이폰 · 아이패드
+                    // 같은 자리. 막대에 단추를 더 세우지 않는다 — 아이폰 쓰기 모드의 막대는 이미 꽉 찼다 (125). ⌘F 도 같은 시트.
+                    Button {
+                        library.sheet = .search
+                    } label: {
+                        Label("모든 노트에서 찾기", systemImage: "magnifyingglass")
+                    }
                     Button {
                         library.showBrokenLinks()
                     } label: {
@@ -2221,6 +2320,19 @@ extension EnvironmentValues {
     var rootIsCompact: Bool {
         get { self[RootIsCompactKey.self] }
         set { self[RootIsCompactKey.self] = newValue }
+    }
+}
+
+/// 아이패드에서 **폴더 칸이 접혔나** (286) — 찾기 칸이 폴더 칸에 있으므로, 접히면 노트 목록 막대에 돋보기를 세운다.
+/// `columnVisibility` 는 바깥 화면의 상태라 환경으로 내린다.
+private struct FolderColumnHiddenKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var folderColumnHidden: Bool {
+        get { self[FolderColumnHiddenKey.self] }
+        set { self[FolderColumnHiddenKey.self] = newValue }
     }
 }
 

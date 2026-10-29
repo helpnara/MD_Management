@@ -12,12 +12,12 @@ updated: 2026-10-22
 
 ---
 
-## 0. 지금 상태 (2026-10-26 — **1.1.18 (빌드 133) 배포** · 1.1.16 (빌드 123) 배포 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.18)
+## 0. 지금 상태 (2026-10-29 — **1.1.19 (빌드 134) 심사 제출** · 1.1.18 (빌드 133) 배포 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.19)
 
 | | |
 |---|---|
 | 번들 ID | `com.helpnara.markdown` |
-| 출시된 판 | **1.1.18** (빌드 133 · 2026-10-26 배포) — 한국어 · 영어. 그 앞 1.1.16 (빌드 123) · 1.1.15 (빌드 122) · 1.1.14 (빌드 121). 1.1.13 · 1.1.17 은 내지 않고 건너뜀 |
+| 출시된 판 | **1.1.18** (빌드 133 · 2026-10-26 배포) — 한국어 · 영어. **1.1.19 (빌드 134) 은 2026-10-29 심사 제출 · 결과 기다리는 중.** 그 앞 1.1.16 (빌드 123) · 1.1.15 (빌드 122). 1.1.13 · 1.1.17 은 내지 않고 건너뜀 |
 | 빌드 번호 | **CI 실행 번호와 같다** (`testflight.yml` 이 `github.run_number` 를 넣는다) — 심사에 낼 빌드를 확인 목록 0번의 판으로 고른다 |
 | 처리방침 · 지원 | 한국어 `/privacy/` · 영어 `/en/privacy/` (열리는 것 확인 — 2026-09-24 · 2026-10-07) |
 | 스크린샷 | 두 언어 같은 짜임 — 아이폰 6.1" · 6.5" · 6.9" 다섯 장씩 · 아이패드 13" 세로 다섯 장 (글귀 · CI 촬영 · `docs/store/screenshots/{ko,en}/`). 아이패드 5번(찾기)은 1.1.12 에서 갈았다 · 아이폰 미리보기 영상 두 언어 |
@@ -174,6 +174,16 @@ https://helpnara.github.io/MD_Management/privacy/
 4. **영어 스크린샷.** 영어 칸에 안 올리면 **한국어 스크린샷이 그대로 보인다.** 영어 견본 노트 `docs/samples/en/` 으로 한국어 때와 같은 차례로 찍는다
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
+
+### 1.1.19 제출 순서 — 빌드 134 (2026-10-29 — 0 ~ 10 확인 끝 · 사용자 — *나머지는 모두 확인 완료.*)
+
+> 286 찾기 칸을 언제 어디서나 (찾기 시트 · 아이패드 붙박이 칸 — `docs/67-build-134.md`). 그림 · 설명 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로. 프로모션 텍스트는 11-02 에 홍보 주 글로 간다 (심사와 따로).
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.19` → **빌드** 칸에서 **134** (`1.1.19 (134)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 세 줄 (`docs/store/1.1.19-새로운-기능.txt`)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — §1-영어 세 줄 → **저장**
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+5. ✅ 제출 (2026-10-29 사용자 — *1.1.19 심사 제출 완료.*) — `main` 병합 (= 1.1.19)
 
 ### 1.1.18 제출 순서 — 빌드 133 (2026-10-26 — 1 ~ 16 확인 끝 · 1.1.17 (빌드 124) 은 내지 않았다)
 
@@ -490,14 +500,12 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.18** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.16 의 글은 `docs/store/1.1.16-새로운-기능.txt` 끝.
+> **1.1.19** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.18 의 글은 `docs/store/1.1.18-새로운-기능.txt` 끝.
 
 ```
-• Lists feel more natural to edit. Pressing Return at the very start of a line moves the line down with its number intact, and pressing Delete at the start of an item’s text removes the number or bullet first.
-• You can write a paragraph under a numbered item: the indent button now lines it up with the item’s text, and numbering continues afterwards.
-• When a number goes from 9 to 10, items nested under it stay nested.
-• Lists with several blank lines between items are numbered as one list.
-• Fixed a crash when pressing Return on an empty item at the end of a list.
+• Search while reading a note. Choose Search All Notes from the More menu, and picking a result takes you straight to that note.
+• On iPad, search even with the folder column hidden: tap the magnifying glass above the note list. The search field in the folder column now stays at the top while you scroll.
+• ⌘F on an external keyboard opens search without changing the layout you were looking at.
 ```
 
 ---
@@ -615,6 +623,7 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-10-29 | ✅ **1.1.19 (빌드 134) 제출** (사용자 — *1.1.19 심사 제출 완료.*). 286 찾기 칸을 언제 어디서나 — 새로운 기능 세 줄 (한 · 영) · 자동 출시 · `main` 병합 |
 | 2026-10-26 | ✅ **1.1.18 (빌드 133) 승인 · 배포** (사용자 — *심사 결과 승인 및 배포 완료.*). 번호 목록 두루 점검 278 ~ 285 — 제출 당일 승인 |
 | 2026-10-26 | ✅ **1.1.18 (빌드 133) 제출** (사용자 — *1.1.18 심사 제출 완료.*). 번호 목록 두루 점검 278 ~ 285 — 새로운 기능 다섯 줄 (한 · 영) · 자동 출시 · `main` 병합. 1.1.17 은 내지 않았다 |
 | 2026-10-25 | ✅ **1.1.16 (빌드 123) 승인 · 배포** (사용자 — *1.1.16 심사 배포 완료.*). 274 · 275 안 받은 노트 · 첫 색인 |
@@ -741,15 +750,13 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.18** (2026-10-26 — 278 ~ 285 번호 목록 두루 점검 · 1.1.17 은 내지 않았다). 글은 `docs/store/1.1.18-새로운-기능.txt`. 1.1.16 의 글은 `docs/store/1.1.16-새로운-기능.txt`.
+> **1.1.19** (2026-10-29 — 286 찾기 칸을 언제 어디서나). 글은 `docs/store/1.1.19-새로운-기능.txt`. 1.1.18 의 글은 `docs/store/1.1.18-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 목록에서 줄을 바꾸고 지우는 일이 자연스러워졌습니다. 줄 맨 앞에서 줄을 바꾸면 그 줄이 번호 그대로 내려가고, 글 맨 앞에서 지우면 번호나 글머리표가 먼저 없어집니다.
-• 번호 항목 아래에 설명 문단을 쓸 수 있습니다. 들여쓰기 단추가 항목의 글 칸까지 들어가고, 그 뒤에도 번호가 이어집니다.
-• 번호가 9에서 10으로 바뀌어도 그 안에 들여쓴 항목이 밖으로 빠지지 않습니다.
-• 항목 사이에 빈 줄이 여러 줄 있어도 한 목록으로 번호를 맞춥니다.
-• 목록 끝의 빈 항목에서 줄을 바꿀 때 앱이 꺼지던 문제를 고쳤습니다.
+• 노트를 보는 중에도 찾을 수 있습니다. 오른쪽 위 더 보기 메뉴의 ‘모든 노트에서 찾기’를 누르면 찾기 창이 뜨고, 결과를 고르면 그 노트로 바로 갑니다.
+• 아이패드에서 폴더 칸을 접은 채로도 찾습니다. 노트 목록 위의 돋보기를 누르면 됩니다. 폴더 칸의 찾기 칸은 목록을 밀어도 맨 위에 남습니다.
+• 외장 키보드의 ⌘F 는 보던 화면을 바꾸지 않고 찾기 창을 엽니다.
 ```
 

@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>찾기 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B; --marker:#B9B2A7;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45;
+  --screen:#FFFFFF; --grouped:#F2F2F7; --rule:#E4DED3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+.cap{position:absolute;left:80px;right:80px;top:170px;text-align:center}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:74px;line-height:1.28;letter-spacing:-1px}
+.cap p{margin-top:26px;font-size:38px;line-height:1.5;color:var(--faint);font-weight:500}
+.kicker{display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--leaf);margin-bottom:22px}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:640px;width:740px;height:1190px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.22), 0 6px 18px rgba(0,0,0,.12)}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--screen);overflow:hidden}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:9}
+.nav{position:absolute;top:100px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 40px;gap:20px}
+.nav .back{width:70px;height:70px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;justify-content:center}
+.nav .title{font-size:36px;font-weight:500;flex:1}
+.nav .pill{height:70px;padding:0 26px;border-radius:35px;background:#F4F4F6;display:flex;align-items:center;gap:28px;color:var(--accent);font-size:34px;font-weight:700}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(10,122,255,.18);border:4px solid rgba(10,122,255,.45);pointer-events:none;z-index:8}
+svg.ic{width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--accent);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+
+/* 첫 장면 */
+.hook{position:absolute;left:0;right:0;top:560px;text-align:center}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:104px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:40px;font-size:44px;color:#4A4640;font-weight:500}
+.hook p b{color:var(--leaf);font-weight:700}
+.chipl{position:absolute;height:84px;padding:0 34px;border-radius:42px;background:#fff;box-shadow:0 14px 34px rgba(80,60,30,.14);
+  display:flex;align-items:center;gap:16px;font-size:32px;color:#55514B;white-space:nowrap}
+.chipl i{width:30px;height:30px;border-radius:8px;background:#E7E1D6;flex:none}
+
+/* 폴더 화면 · 찾기 */
+.fold{position:absolute;inset:0;background:var(--grouped)}
+.fold .big{position:absolute;top:150px;left:48px;font-size:62px;font-weight:900}
+.sfield{position:absolute;top:262px;left:40px;right:40px;height:84px;border-radius:42px;background:#E4E4EA;display:flex;align-items:center;padding:0 28px;gap:16px;font-size:34px;color:#8A8A8E;white-space:pre}
+.sfield svg{width:36px;height:36px;stroke:#8A8A8E;stroke-width:4;fill:none;flex:none}
+.sfield .q{color:var(--ink)}
+.sfield .cx{margin-left:auto;color:var(--accent);font-size:32px}
+.glist{position:absolute;top:380px;left:40px;right:40px}
+.glist .gh{font-size:26px;color:#8A8A8E;margin:0 26px 12px}
+.glist .gb{background:#fff;border-radius:26px;padding:0 28px}
+.grow{padding:20px 0;border-bottom:1px solid #EDEDF0;font-size:34px;border-radius:14px}
+.grow:last-child{border-bottom:none}
+.grow b{display:flex;align-items:center;gap:14px;font-weight:500}
+.grow b svg{width:30px;height:30px;stroke:#8A8A8E;stroke-width:3;fill:none;stroke-linecap:round}
+.grow .ln{display:block;font-size:28px;color:#8A8A8E;margin-top:4px}
+.grow .ln em{font-style:normal;color:var(--ink);font-weight:700}
+.grow small{display:flex;align-items:center;gap:8px;font-size:24px;color:#8A8A8E;margin-top:6px}
+.grow small i{display:inline-block;width:26px;height:20px;border-radius:4px;background:#7FB6E8}
+.frow2{height:96px;display:flex;align-items:center;gap:22px;border-bottom:1px solid #EDEDF0;font-size:34px}
+.frow2:last-child{border-bottom:none}
+.frow2 .fi{width:46px;height:36px;border-radius:7px;background:#7FB6E8;flex:none}
+.frow2 .n{margin-left:auto;color:#8A8A8E;font-size:30px}
+.gfoot{font-size:24px;color:#8A8A8E;margin:14px 26px;line-height:1.5}
+.kb{position:absolute;left:0;right:0;bottom:0;height:400px;background:#D5D3CE;padding:18px 10px 0;z-index:6}
+.kb .r{display:flex;justify-content:center;gap:10px;margin-bottom:12px}
+.kb .k{width:62px;height:76px;border-radius:12px;background:#fff;box-shadow:0 2px 0 #A9A6A0;display:flex;align-items:center;justify-content:center;font-size:34px;color:#222}
+.kb .k.w{width:96px;background:#B9B6B0;font-size:28px}
+.kb .k.sp{width:330px;font-size:28px;color:#555}
+.kb .k.rt{width:150px;background:#B9B6B0;font-size:28px}
+
+/* 읽기 화면 */
+.rd{position:absolute;top:230px;left:52px;right:52px;font-size:38px;line-height:1.62}
+.rd h1{font-size:60px;font-weight:900;line-height:1.3;margin-bottom:14px}
+.rd ol{padding-left:62px;margin:10px 0 30px}
+.rd li{padding:4px 0;border-radius:12px}
+.rd p{color:#3a3733}
+
+/* 기기 안에서 */
+.facts{position:absolute;left:0;right:0;top:1180px;text-align:center}
+.facts span{display:inline-block;margin:10px 10px;padding:22px 40px;border-radius:50px;background:#fff;box-shadow:0 10px 30px rgba(80,60,30,.12);font-size:38px;font-weight:700}
+.bigcard{position:absolute;left:120px;right:120px;top:640px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:50px 56px}
+.bigcard .row{display:flex;align-items:center;gap:26px;font-size:40px;padding:22px 0;border-bottom:1px solid #EEE9E0}
+.bigcard .row:last-child{border-bottom:none}
+.bigcard .row b{font-family:'Noto Sans Mono',monospace;font-weight:600;color:var(--accent);min-width:230px}
+.bigcard .row span{color:#4A4640}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:400px;text-align:center}
+.hero img{width:380px;height:380px;border-radius:88px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:130px;margin-top:64px;letter-spacing:2px}
+.hero .en{font-size:34px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:46px;margin-top:60px;font-weight:500;color:#4A4640;line-height:1.5}
+.hero .cta{display:inline-block;margin-top:70px;padding:30px 60px;border-radius:60px;background:var(--ink);color:#fff;font-size:40px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 1 · 질문 -->
+  <section class="scene" id="s1">
+    <div class="chipl" id="c11" style="left:100px;top:250px"><i></i>회의록 10-28</div>
+    <div class="chipl" id="c12" style="left:560px;top:400px"><i></i>가을 산책</div>
+    <div class="chipl" id="c13" style="left:150px;top:1290px"><i></i>비 오는 날</div>
+    <div class="chipl" id="c14" style="left:600px;top:1440px"><i></i>차 우리기</div>
+    <div class="chipl" id="c15" style="left:300px;top:1590px"><i></i>읽을거리</div>
+    <div class="hook">
+      <h1 id="h11">노트가 300개면,<br>찾는 게 일입니다</h1>
+      <p id="h12"><b>느린 여백</b>은 두 글자면 찾습니다</p>
+    </div>
+  </section>
+
+  <!-- 2 · 초성 -->
+  <section class="scene" id="s2">
+    <div class="cap"><div class="kicker">첫소리만 쳐도</div><h2>ㅎㅇㄹ 만 쳐도<br>회의록이 나옵니다</h2><p>제목은 초성으로 찾습니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="fold">
+        <div class="big">폴더</div>
+        <div class="sfield" id="sf2"><svg viewBox="0 0 40 40"><circle cx="17" cy="17" r="10"/><path d="M25 25 L33 33"/></svg><span id="q2">모든 노트에서 찾기</span><span class="cx" id="cx2" style="opacity:0">취소</span></div>
+        <div class="glist" id="fl2">
+          <div class="gb">
+            <div class="frow2"><div class="fi"></div>받은 글<span class="n">12</span></div>
+            <div class="frow2"><div class="fi"></div>일<span class="n">37</span></div>
+            <div class="frow2"><div class="fi"></div>일기<span class="n">48</span></div>
+            <div class="frow2"><div class="fi"></div>레시피<span class="n">15</span></div>
+          </div>
+        </div>
+        <div class="glist" id="rl2" style="opacity:0">
+          <div class="gh">최근 고친 노트</div>
+          <div class="gb">
+            <div class="grow"><b>차 우리기</b><small>2026. 10. 29. 오전 8:10</small></div>
+            <div class="grow"><b>회의록 10-28</b><small>2026. 10. 28. 오후 4:02</small></div>
+            <div class="grow"><b>읽을거리</b><small>2026. 10. 27. 오후 9:14</small></div>
+          </div>
+          <div class="gfoot">제목과 본문을 찾습니다. tag:태그 · path:폴더 로 좁힐 수 있습니다.</div>
+        </div>
+        <div class="glist" id="hl2" style="opacity:0">
+          <div class="gb">
+            <div class="grow" id="h21"><b>회의록 10-28 <svg viewBox="0 0 30 30"><path d="M5 7 H25 M15 7 V24"/></svg></b><small><i></i>일</small></div>
+            <div class="grow"><b>회의록 10-21 <svg viewBox="0 0 30 30"><path d="M5 7 H25 M15 7 V24"/></svg></b><small><i></i>일</small></div>
+            <div class="grow"><b>주간 회의록 <svg viewBox="0 0 30 30"><path d="M5 7 H25 M15 7 V24"/></svg></b><small><i></i>일</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="kb" id="kb2"><div class="r"><div class="k">ㅂ</div><div class="k">ㅈ</div><div class="k">ㄷ</div><div class="k">ㄱ</div><div class="k">ㅅ</div><div class="k">ㅛ</div><div class="k">ㅕ</div><div class="k">ㅑ</div><div class="k">ㅐ</div><div class="k">ㅔ</div></div><div class="r"><div class="k">ㅁ</div><div class="k">ㄴ</div><div class="k" id="k2o">ㅇ</div><div class="k" id="k2r">ㄹ</div><div class="k" id="k2h">ㅎ</div><div class="k">ㅗ</div><div class="k">ㅓ</div><div class="k">ㅏ</div><div class="k">ㅣ</div></div><div class="r"><div class="k w">⇧</div><div class="k">ㅋ</div><div class="k">ㅌ</div><div class="k">ㅊ</div><div class="k">ㅍ</div><div class="k">ㅠ</div><div class="k">ㅜ</div><div class="k">ㅡ</div><div class="k w">⌫</div></div><div class="r"><div class="k w">123</div><div class="k w">가</div><div class="k sp">스페이스</div><div class="k rt">검색</div></div></div>
+      <div class="tap" id="tap2" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 3 · 본문 -->
+  <section class="scene" id="s3">
+    <div class="cap"><div class="kicker">본문도</div><h2>두 글자면<br>본문까지 찾습니다</h2><p>맞은 줄이 결과에 함께 보입니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="fold">
+        <div class="big">폴더</div>
+        <div class="sfield"><svg viewBox="0 0 40 40"><circle cx="17" cy="17" r="10"/><path d="M25 25 L33 33"/></svg><span id="q3"></span><span class="cx">취소</span></div>
+        <div class="glist" id="hl3" style="opacity:0">
+          <div class="gb">
+            <div class="grow" id="h31"><b>차 우리기</b><span class="ln">3. <em>찻잎</em> 넣기</span><small><i></i>레시피</small></div>
+            <div class="grow"><b>읽을거리</b><span class="ln"><em>찻잎</em> 사기</span><small><i></i>받은 글</small></div>
+            <div class="grow"><b>겨울 차 고르기</b><span class="ln">우린 <em>찻잎</em>은 두 번까지</span><small><i></i>레시피</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="kb"><div class="r"><div class="k">ㅂ</div><div class="k">ㅈ</div><div class="k">ㄷ</div><div class="k">ㄱ</div><div class="k">ㅅ</div><div class="k">ㅛ</div><div class="k">ㅕ</div><div class="k">ㅑ</div><div class="k">ㅐ</div><div class="k">ㅔ</div></div><div class="r"><div class="k">ㅁ</div><div class="k">ㄴ</div><div class="k">ㅇ</div><div class="k">ㄹ</div><div class="k">ㅎ</div><div class="k">ㅗ</div><div class="k">ㅓ</div><div class="k">ㅏ</div><div class="k">ㅣ</div></div><div class="r"><div class="k w">⇧</div><div class="k">ㅋ</div><div class="k">ㅌ</div><div class="k">ㅊ</div><div class="k">ㅍ</div><div class="k">ㅠ</div><div class="k">ㅜ</div><div class="k">ㅡ</div><div class="k w">⌫</div></div><div class="r"><div class="k w">123</div><div class="k w">가</div><div class="k sp">스페이스</div><div class="k rt">검색</div></div></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 좁히기 -->
+  <section class="scene" id="s4">
+    <div class="cap"><div class="kicker">좁히기</div><h2>폴더나 태그로<br>범위를 좁힙니다</h2><p>path:폴더 · tag:태그 를 앞에 붙이면 됩니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="fold">
+        <div class="big">폴더</div>
+        <div class="sfield"><svg viewBox="0 0 40 40"><circle cx="17" cy="17" r="10"/><path d="M25 25 L33 33"/></svg><span id="q4"></span><span class="cx">취소</span></div>
+        <div class="glist" id="hl4" style="opacity:0">
+          <div class="gb">
+            <div class="grow" id="h41"><b>비 오는 날</b><span class="ln"><em>비</em>가 와서 집에서 차를 우렸다.</span><small><i></i>일기</small></div>
+            <div class="grow"><b>10월 메모</b><span class="ln"><em>비</em> 그친 뒤 천천히 걸었다.</span><small><i></i>일기</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="kb"><div class="r"><div class="k">ㅂ</div><div class="k">ㅈ</div><div class="k">ㄷ</div><div class="k">ㄱ</div><div class="k">ㅅ</div><div class="k">ㅛ</div><div class="k">ㅕ</div><div class="k">ㅑ</div><div class="k">ㅐ</div><div class="k">ㅔ</div></div><div class="r"><div class="k">ㅁ</div><div class="k">ㄴ</div><div class="k">ㅇ</div><div class="k">ㄹ</div><div class="k">ㅎ</div><div class="k">ㅗ</div><div class="k">ㅓ</div><div class="k">ㅏ</div><div class="k">ㅣ</div></div><div class="r"><div class="k w">⇧</div><div class="k">ㅋ</div><div class="k">ㅌ</div><div class="k">ㅊ</div><div class="k">ㅍ</div><div class="k">ㅠ</div><div class="k">ㅜ</div><div class="k">ㅡ</div><div class="k w">⌫</div></div><div class="r"><div class="k w">123</div><div class="k w">가</div><div class="k sp">스페이스</div><div class="k rt">검색</div></div></div>
+    </div></div>
+  </section>
+
+  <!-- 5 · 누르면 바로 -->
+  <section class="scene" id="s5">
+    <div class="cap"><div class="kicker">누르면 바로</div><h2>결과를 누르면<br>노트가 한 번에 열립니다</h2><p>읽기 화면으로 곧장</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="fold" id="fold5">
+        <div class="big">폴더</div>
+        <div class="sfield"><svg viewBox="0 0 40 40"><circle cx="17" cy="17" r="10"/><path d="M25 25 L33 33"/></svg><span class="q">찻잎</span><span class="cx">취소</span></div>
+        <div class="glist">
+          <div class="gb">
+            <div class="grow" id="h51"><b>차 우리기</b><span class="ln">3. <em>찻잎</em> 넣기</span><small><i></i>레시피</small></div>
+            <div class="grow"><b>읽을거리</b><span class="ln"><em>찻잎</em> 사기</span><small><i></i>받은 글</small></div>
+            <div class="grow"><b>겨울 차 고르기</b><span class="ln">우린 <em>찻잎</em>은 두 번까지</span><small><i></i>레시피</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="screen" id="note5" style="position:absolute;inset:0;opacity:0">
+        <div class="nav"><div class="back"><svg class="ic" viewBox="0 0 40 40"><path d="M24 8 L12 20 L24 32"/></svg></div><div class="title"></div><div class="pill">···&nbsp;<svg class="ic" viewBox="0 0 40 40"><path d="M26 7 L33 14 L15 32 L7 33 L8 25 Z"/></svg></div></div>
+        <div class="rd">
+          <h1>차 우리기</h1>
+          <ol>
+            <li>물 끓이기</li>
+            <li>물 식히기</li>
+            <li id="l53">찻잎 넣기</li>
+            <li>3분 기다리기</li>
+            <li>잔에 따르기</li>
+          </ol>
+          <p>녹차는 70도쯤이 좋다.</p>
+        </div>
+      </div>
+      <div class="tap" id="tap5" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 6 · 기기 안에서 -->
+  <section class="scene" id="s6">
+    <div class="cap"><div class="kicker">기기 안에서</div><h2>서버 없이<br>기기 안에서 찾습니다</h2><p>글은 밖으로 나가지 않습니다</p></div>
+    <div class="bigcard" id="bc6">
+      <div class="row" id="b61"><b>ㅎㅇㄹ</b><span>제목은 첫소리로</span></div>
+      <div class="row" id="b62"><b>찻잎</b><span>본문은 두 글자부터</span></div>
+      <div class="row" id="b63"><b>path:일기</b><span>폴더로 좁히기</span></div>
+      <div class="row" id="b64"><b>tag:산책</b><span>태그로 좁히기</span></div>
+    </div>
+    <div class="facts" id="ft6"><span>계정 없음</span><span>서버 없음</span><span>광고 · 추적 없음</span></div>
+  </section>
+
+  <!-- 7 · 끝 -->
+  <section class="scene" id="s7">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="en">SLOW MARGIN</div>
+      <div class="tl" id="tl7">두 글자면<br>찾습니다</div>
+      <div class="cta" id="cta7">앱스토어에서 ‘느린 여백’</div>
+    </div>
+  </section>
+
+  <div id="leafline"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const CARET = (t)=>`<span class="caret" style="opacity:${blink(t)}"></span>`;
+
+// 장면 [시작, 끝]
+const SC = { s1:[0,3.4], s2:[3.4,10.0], s3:[10.0,15.2], s4:[15.2,20.4], s5:[20.4,25.4], s6:[25.4,30.4], s7:[30.4,34.0] };
+const DURATION = 34.0;
+
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+function capIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .cap'); if(!el) return;
+  const p=out(seg(t,a,a+0.8));
+  el.style.transform=`translateY(${(1-p)*40}px)`; el.style.opacity=p;
+}
+function riseIn(el,t,a,dur=0.7,dist=60){ const p=out(seg(t,a,a+dur)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dist}px)`; }
+function tapAt(tapEl, target, t, at){
+  const r=target.getBoundingClientRect(), sr=tapEl.parentElement.getBoundingClientRect();
+  const p=seg(t,at-0.3,at+0.4);
+  tapEl.style.left=(r.left-sr.left+r.width/2-60)+'px'; tapEl.style.top=(r.top-sr.top+r.height/2-60)+'px';
+  tapEl.style.opacity=p>0&&p<1?Math.sin(p*Math.PI):0; tapEl.style.transform=`scale(${0.6+p*0.6})`;
+}
+function glowRow(el,t,a,b){ el.style.background = t>a && t<b ? `rgba(111,165,58,${0.18*(1-seg(t,b-1.0,b))})` : 'none'; }
+function flashKey(el, f){
+  el.style.background = f>0.05 ? `rgb(${Math.round(255-90*f)},${Math.round(255-50*f)},255)` : '';
+  el.style.transform = `translateY(${f*4}px)`;
+}
+const pulse=(t,at)=>Math.sin(seg(t,at-0.14,at+0.14)*Math.PI);
+// 찾기 칸 — 친 글 + 커서, 비었으면 안내 글
+function field(qEl, text, t, active){
+  if(!active){ qEl.innerHTML='모든 노트에서 찾기'; qEl.className=''; return; }
+  qEl.className='q'; qEl.innerHTML = esc(text)+CARET(t);
+}
+
+// ── 1 · 질문 ──
+function renderS1(t){
+  ['c11','c12','c13','c14','c15'].forEach((id,i)=>{
+    const el=$(id); const p=out(seg(t,0.05+i*0.12,0.65+i*0.12));
+    const drift=Math.sin(t*0.9+i*1.7)*10;
+    el.style.opacity=p; el.style.transform=`translateY(${(1-p)*50+drift}px) rotate(${(i%2?1:-1)*(2+i)}deg)`;
+  });
+  const hp=out(seg(t,0,1.2)); $('h11').style.transform=`scale(${1.04-0.04*hp})`; $('h11').style.opacity=1;
+  riseIn($('h12'),t,0.8,0.8,30);
+}
+
+// ── 2 · 첫소리 ──
+function renderS2(t){
+  const s=SC.s2[0]; const tapField=s+0.9, t1=s+2.3, cps=3.2;
+  tapAt($('tap2'),$('sf2'),t,tapField);
+  const open=out(seg(t,tapField+0.15,tapField+0.5));
+  $('fl2').style.opacity=1-open; $('cx2').style.opacity=open;
+  const kb=$('kb2'); kb.style.transform=`translateY(${(1-open)*400}px)`;
+  const q=typed('ㅎㅇㄹ',t,t1,cps);
+  field($('q2'),q,t,t>=tapField+0.15);
+  const n=[...q].length;
+  // 최근 고친 노트 → 결과 (두 글자부터)
+  const hits = n>=2;
+  const hp = hits ? out(seg(t,t1+2/cps,t1+2/cps+0.3)) : 0;
+  $('rl2').style.opacity=hits?0:open; $('rl2').style.transform=`translateY(${(1-open)*30}px)`;
+  $('hl2').style.opacity=hp; $('hl2').style.transform=`translateY(${(1-hp)*24}px)`;
+  glowRow($('h21'),t,t1+3/cps+0.2,s+6.2);
+  flashKey($('k2h'),pulse(t,t1+1/cps)); flashKey($('k2o'),pulse(t,t1+2/cps)); flashKey($('k2r'),pulse(t,t1+3/cps));
+}
+
+// ── 3 · 본문 ──
+function renderS3(t){
+  const s=SC.s3[0]; const t1=s+0.8, cps=2.6;
+  const q=typed('찻잎',t,t1,cps);
+  field($('q3'),q,t,true);
+  const hp=[...q].length>=2 ? out(seg(t,t1+2/cps+0.1,t1+2/cps+0.4)) : 0;
+  $('hl3').style.opacity=hp; $('hl3').style.transform=`translateY(${(1-hp)*24}px)`;
+  glowRow($('h31'),t,t1+2/cps+0.5,s+4.8);
+}
+
+// ── 4 · 좁히기 ──
+function renderS4(t){
+  const s=SC.s4[0]; const t1=s+0.6, cps=7;
+  const full='path:일기 비'; const q=typed(full,t,t1,cps);
+  field($('q4'),q,t,true);
+  const done=[...q].length>=[...full].length;
+  const hp=done ? out(seg(t,t1+[...full].length/cps+0.1,t1+[...full].length/cps+0.4)) : 0;
+  $('hl4').style.opacity=hp; $('hl4').style.transform=`translateY(${(1-hp)*24}px)`;
+  glowRow($('h41'),t,t1+[...full].length/cps+0.5,s+4.8);
+}
+
+// ── 5 · 누르면 바로 ──
+function renderS5(t){
+  const s=SC.s5[0]; const at=s+1.3;
+  tapAt($('tap5'),$('h51'),t,at);
+  const p=out(seg(t,at+0.2,at+0.6));
+  $('note5').style.opacity=p; $('note5').style.transform=`translateX(${(1-p)*120}px)`;
+  glowRow($('l53'),t,at+0.6,s+4.6);
+}
+
+// ── 6 · 기기 안에서 ──
+function renderS6(t){
+  const s=SC.s6[0];
+  riseIn($('bc6'),t,s+0.2,0.7,80);
+  ['b61','b62','b63','b64'].forEach((id,i)=>{ const el=$(id); const p=out(seg(t,s+0.6+i*0.25,s+1.0+i*0.25)); el.style.opacity=p; el.style.transform=`translateX(${(1-p)*-40}px)`; });
+  riseIn($('ft6'),t,s+1.9,0.7,40);
+}
+
+function renderS7(t){
+  const s=SC.s7[0];
+  const h=document.querySelector('#s7 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  riseIn($('tl7'),t,s+0.6,0.7,30); riseIn($('cta7'),t,s+1.2,0.7,30);
+}
+function renderPhone(sid,t){ const ph=document.querySelector('#'+sid+' .phone'); if(ph) riseIn(ph,t,SC[sid][0]+0.15,0.8,90); }
+
+const R = {s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6,s7:renderS7};
+
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001){ capIn(k,t,a+0.05); renderPhone(k,t); R[k](t); }
+  });
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>

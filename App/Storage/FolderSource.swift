@@ -332,6 +332,8 @@ struct LaunchOptions: Sendable {
     /// (찾기 칸을 닫으며 넘어간다). `-folderSearch` 와 같이 준다. *읽기 모드로 열기* 설정은 실행 인자 `-mode.reading YES` 로 —
     /// 실행 인자는 설정 파일에 남지 않는다 (빌드 116 첫 바퀴 — 앱 안에서 켰더니 남아서 뒤 장들이 다 읽기로 열렸다).
     var openFirstRecent = false
+    /// **어디서나 찾기 시트를 띄우고 시작한다** (286) — CI 가 노트를 연 채 뜬 시트를 찍는다. `-search` 와 같이 주면 결과가 든 시트.
+    var searchSheet = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -353,7 +355,8 @@ struct LaunchOptions: Sendable {
             storeFolder: arguments.contains("-storeFolder"),
             folderSearch: arguments.contains("-folderSearch"),
             openFirstHit: arguments.contains("-openFirstHit"),
-            openFirstRecent: arguments.contains("-openFirstRecent")
+            openFirstRecent: arguments.contains("-openFirstRecent"),
+            searchSheet: arguments.contains("-searchSheet")
         )
     }
 }
