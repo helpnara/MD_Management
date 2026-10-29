@@ -424,6 +424,8 @@ jobs:
           shoot 16-folder-search-open.png -sampleFolder -folderSearch -search 2026 -openFirstHit -mode.reading YES
           shoot 17-folder-search-open-write.png -sampleFolder -folderSearch -search 2026 -openFirstHit
           shoot 18-folder-recent-open.png -sampleFolder -folderSearch -openFirstRecent -mode.reading YES
+          # **어디서나 찾기 시트** (286) — 노트를 연 채 ··· → 모든 노트에서 찾기 · ⌘F 가 띄우는 것. 노트 위에 시트가 서고 결과 셋이 보여야 한다.
+          shoot 19-search-sheet.png -sampleFolder -openFirstNote -searchSheet -search 2026
           # **새 노트** — 만들기 → 열기 흐름. 편집기에 `# 새 노트` 한 줄이 보여야 한다.
           shoot 10-new-note.png -sampleFolder -newNote
           # **첨부 시험** — 사진 셋(영문 · 한글+공백 · 퍼센트 인코딩)이 다
@@ -539,6 +541,9 @@ jobs:
               -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
             # 260 — 아이패드의 찾기 칸 · 결과는 폴더 칸에. 가운데 칸은 폴더의 노트 그대로.
             shoot ipad/04-search.png -sampleFolder -search 2026
+            # **아이패드 폴더 칸의 찾기 칸이 붙박이** (286) — 띠의 바탕이 칸의 바탕과 섞여야 한다 (266 때 안 맞아 미뤘던 것).
+            # **찾기 시트** — 아이패드에서도 노트 위에 뜬다.
+            shoot ipad/05-search-sheet.png -sampleFolder -searchSheet -search 2026
             mkdir -p screenshots/en/ipad
             shoot en/ipad/01-split.png -sampleFolder "${EN[@]}"
             UDID="${{ steps.sim.outputs.udid }}"
