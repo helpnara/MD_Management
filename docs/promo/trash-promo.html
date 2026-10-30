@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>휴지통 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B; --marker:#B9B2A7;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45; --red:#E5483C;
+  --screen:#FFFFFF; --grouped:#F2F2F7; --rule:#E4DED3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+.cap{position:absolute;left:80px;right:80px;top:170px;text-align:center}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:74px;line-height:1.28;letter-spacing:-1px}
+.cap p{margin-top:26px;font-size:38px;line-height:1.5;color:var(--faint);font-weight:500}
+.kicker{display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--leaf);margin-bottom:22px}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:640px;width:740px;height:1190px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.22), 0 6px 18px rgba(0,0,0,.12)}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--screen);overflow:hidden}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:9}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(10,122,255,.18);border:4px solid rgba(10,122,255,.45);pointer-events:none;z-index:12}
+svg.ic{width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.caret{display:inline-block;width:3px;height:1.05em;background:var(--accent);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+
+/* 막대 */
+.bar{position:absolute;top:96px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 36px;gap:18px;z-index:3}
+.bar .back{color:var(--accent);font-size:34px;display:flex;align-items:center;gap:4px}
+.bar .back svg{width:34px;height:34px;stroke:var(--accent);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.bar .mid{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.bar .mid b{display:block;font-size:34px;font-weight:700}
+.bar .mid small{display:block;font-size:22px;color:#8A8A8E}
+.bar .right{margin-left:auto;color:var(--red);font-size:32px}
+
+/* 노트 목록 */
+.plain{position:absolute;top:206px;left:0;right:0;bottom:0;background:#fff}
+.nrow{position:relative;height:150px;overflow:hidden;border-bottom:1px solid #EDEDF0}
+.nrow .acts{position:absolute;right:0;top:0;bottom:0;display:flex}
+.nrow .acts span{width:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#fff;font-size:24px}
+.nrow .acts span svg{width:36px;height:36px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.nrow .face{position:absolute;inset:0;background:#fff;padding:22px 44px}
+.nrow .face b{display:block;font-size:34px;font-weight:500}
+.nrow .face span{display:block;font-size:28px;color:#8A8A8E;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nrow .face small{display:block;font-size:22px;color:#8A8A8E;margin-top:4px}
+
+/* 묶음 목록 (설정 · 휴지통) */
+.grouped{position:absolute;top:206px;left:0;right:0;bottom:0;background:var(--grouped);padding:10px 34px}
+.gh{font-size:24px;color:#8A8A8E;margin:24px 22px 10px}
+.gb{background:#fff;border-radius:26px;padding:0 26px}
+.gf{font-size:22px;color:#8A8A8E;margin:12px 22px;line-height:1.5}
+.srow{height:92px;display:flex;align-items:center;gap:20px;border-bottom:1px solid #EDEDF0;font-size:32px}
+.srow:last-child{border-bottom:none}
+.srow svg{width:38px;height:38px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.srow .n{margin-left:auto;color:#8A8A8E}
+.srow .chev{width:20px;height:30px;stroke:#C4C4C8;stroke-width:4;flex:none}
+.trow{position:relative;overflow:hidden;border-bottom:1px solid #EDEDF0}
+.trow:last-child{border-bottom:none}
+.trow .acts{position:absolute;right:-26px;top:0;bottom:0;display:flex}
+.trow .acts span{width:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#fff;font-size:24px;background:var(--red)}
+.trow .acts span svg{width:36px;height:36px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.trow .face{position:relative;background:#fff;padding:20px 0;display:flex;align-items:center;gap:16px}
+.trow .face .t{flex:1;min-width:0}
+.trow .face b{display:block;font-size:32px;font-weight:400}
+.trow .face small{display:block;font-size:22px;color:#8A8A8E;margin-top:4px}
+.trow .face .fo{display:flex;align-items:center;gap:8px}
+.trow .face .fo i{display:inline-block;width:24px;height:18px;border:2px solid #8A8A8E;border-radius:3px}
+.restore{flex:none;height:62px;padding:0 26px;border-radius:31px;background:#E9EEF8;color:var(--accent);font-size:28px;display:flex;align-items:center}
+
+/* 확인창 */
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.28);z-index:10;opacity:0}
+.alert{position:absolute;left:90px;right:90px;top:360px;border-radius:40px;background:rgba(246,246,246,.98);z-index:11;overflow:hidden;opacity:0;text-align:center}
+.alert h4{font-size:34px;font-weight:700;margin:40px 40px 12px}
+.alert p{font-size:26px;line-height:1.45;color:#3A3A3C;margin:0 40px 28px}
+.alert .field{margin:0 40px 30px;height:68px;border-radius:14px;background:#fff;border:2px solid #D8D8DC;font-size:28px;text-align:left;padding:0 18px;display:flex;align-items:center;color:var(--ink)}
+.alert .field.ph{color:#B0B0B4}
+.alert .btns{display:flex;border-top:1px solid #D8D8DC}
+.alert .btns span{flex:1;height:96px;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--accent)}
+.alert .btns span+span{border-left:1px solid #D8D8DC}
+.alert .btns .d{color:var(--red);font-weight:700}
+.alert .btns.col{flex-direction:column}
+.alert .btns.col span+span{border-left:none;border-top:1px solid #D8D8DC}
+
+/* 첫 장면 */
+.hook{position:absolute;left:0;right:0;top:560px;text-align:center}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:104px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:40px;font-size:44px;color:#4A4640;font-weight:500}
+.hook p b{color:var(--leaf);font-weight:700}
+.chipl{position:absolute;height:84px;padding:0 34px;border-radius:42px;background:#fff;box-shadow:0 14px 34px rgba(80,60,30,.14);
+  display:flex;align-items:center;gap:16px;font-size:32px;color:#55514B;white-space:nowrap}
+.chipl svg{width:32px;height:32px;stroke:#B5A894;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+
+/* 요약 */
+.bigcard{position:absolute;left:100px;right:100px;top:620px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:40px 50px}
+.bigcard .row{display:flex;align-items:center;gap:26px;font-size:36px;padding:24px 0;border-bottom:1px solid #EEE9E0}
+.bigcard .row:last-child{border-bottom:none}
+.bigcard .row b{min-width:190px;font-weight:700}
+.bigcard .row b.r{color:var(--red)}
+.bigcard .row b.a{color:var(--accent)}
+.bigcard .row span{color:#4A4640}
+.facts{position:absolute;left:0;right:0;top:1330px;text-align:center}
+.facts span{display:inline-block;margin:10px 10px;padding:22px 40px;border-radius:50px;background:#fff;box-shadow:0 10px 30px rgba(80,60,30,.12);font-size:38px;font-weight:700}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:400px;text-align:center}
+.hero img{width:380px;height:380px;border-radius:88px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:130px;margin-top:64px;letter-spacing:2px}
+.hero .en{font-size:34px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:46px;margin-top:60px;font-weight:500;color:#4A4640;line-height:1.5}
+.hero .cta{display:inline-block;margin-top:70px;padding:30px 60px;border-radius:60px;background:var(--ink);color:#fff;font-size:40px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 1 · 질문 -->
+  <section class="scene" id="s1">
+    <div class="chipl" id="c11" style="left:100px;top:250px"><svg viewBox="0 0 32 32"><path d="M6 9 H26 M12 9 V6 H20 V9 M9 9 L10 27 H22 L23 9"/></svg>회의록 10-28</div>
+    <div class="chipl" id="c12" style="left:570px;top:400px"><svg viewBox="0 0 32 32"><path d="M6 9 H26 M12 9 V6 H20 V9 M9 9 L10 27 H22 L23 9"/></svg>여행 사진</div>
+    <div class="chipl" id="c13" style="left:150px;top:1290px"><svg viewBox="0 0 32 32"><path d="M6 9 H26 M12 9 V6 H20 V9 M9 9 L10 27 H22 L23 9"/></svg>일기 폴더</div>
+    <div class="chipl" id="c14" style="left:620px;top:1440px"><svg viewBox="0 0 32 32"><path d="M6 9 H26 M12 9 V6 H20 V9 M9 9 L10 27 H22 L23 9"/></svg>차 우리기</div>
+    <div class="chipl" id="c15" style="left:290px;top:1590px"><svg viewBox="0 0 32 32"><path d="M6 9 H26 M12 9 V6 H20 V9 M9 9 L10 27 H22 L23 9"/></svg>읽을거리</div>
+    <div class="hook">
+      <h1 id="h11">잘못 지워도,<br>돌아옵니다</h1>
+      <p id="h12"><b>느린 여백</b>은 바로 지우지 않습니다</p>
+    </div>
+  </section>
+
+  <!-- 2 · 지우면 -->
+  <section class="scene" id="s2">
+    <div class="cap"><div class="kicker">지우면</div><h2>바로 지우지 않고<br>휴지통으로 옮깁니다</h2><p>내 폴더 안의 .trash 로 — 파일 그대로</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="bar"><span class="back"><svg viewBox="0 0 34 34"><path d="M21 6 L10 17 L21 28"/></svg>폴더</span><span class="mid"><b>일</b><small id="cnt2">노트 4개</small></span></div>
+      <div class="plain" id="list2">
+        <div class="nrow" id="r21"><div class="acts"><span style="background:#8E8A84"><svg viewBox="0 0 36 36"><path d="M4 10 H14 L17 13 H32 V29 H4 Z"/></svg>이동</span><span style="background:var(--accent)"><svg viewBox="0 0 36 36"><path d="M24 6 L30 12 L13 29 L6 30 L7 23 Z"/></svg>이름</span><span style="background:var(--red)"><svg viewBox="0 0 36 36"><path d="M6 10 H30 M13 10 V6 H23 V10 M10 10 L11 31 H25 L26 10"/></svg>지우기</span></div>
+          <div class="face"><b>회의록 10-28</b><span>다음 주까지 정할 것 세 가지</span><small>2026. 10. 28. 오후 4:02</small></div></div>
+        <div class="nrow" id="r22"><div class="face"><b>회의록 10-21</b><span>지난 회의에서 넘어온 일</span><small>2026. 10. 21. 오후 3:40</small></div></div>
+        <div class="nrow" id="r23"><div class="face"><b>주간 회의록</b><span>월요일마다 쓰는 틀</span><small>2026. 10. 20. 오전 9:12</small></div></div>
+        <div class="nrow" id="r24"><div class="face"><b>할 일</b><span>이번 주 안에 끝낼 것</span><small>2026. 10. 19. 오후 8:30</small></div></div>
+      </div>
+      <div class="dim" id="dim2"></div>
+      <div class="alert" id="al2"><h4>지울까요?</h4><p>회의록 10-28 을 폴더 안 .trash 로 옮깁니다. 설정 → 휴지통에서 되돌릴 수 있습니다.</p><div class="btns col"><span class="d" id="ok2">지우기</span><span>취소</span></div></div>
+      <div class="tap" id="tap2" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 3 · 되돌리기 -->
+  <section class="scene" id="s3">
+    <div class="cap"><div class="kicker">되돌리기</div><h2>단추 하나면<br>원래 폴더로</h2><p>어느 폴더에서 왔는지 함께 보입니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div id="set3" style="position:absolute;inset:0;z-index:1;background:var(--grouped)">
+        <div class="bar"><span class="mid"><b>설정</b></span></div>
+        <div class="grouped">
+          <div class="gh">노트</div>
+          <div class="gb">
+            <div class="srow" id="tr3"><svg viewBox="0 0 38 38"><path d="M7 11 H31 M15 11 V7 H23 V11 M11 11 L12 32 H26 L27 11"/></svg>휴지통<span class="n">3개</span><svg class="chev" viewBox="0 0 20 30"><path d="M5 4 L15 15 L5 26"/></svg></div>
+            <div class="srow"><svg viewBox="0 0 38 38"><rect x="7" y="9" width="24" height="20" rx="3"/><path d="M11 25 L17 18 L21 22 L24 19 L28 25"/></svg>안 쓰는 첨부<svg class="chev" viewBox="0 0 20 30" style="margin-left:auto"><path d="M5 4 L15 15 L5 26"/></svg></div>
+          </div>
+          <div class="gf">지운 노트는 폴더 안 .trash 로 옮겨집니다. 파일 앱은 숨김 폴더를 보여 주지 않으므로 여기서 봅니다.</div>
+        </div>
+      </div>
+      <div id="trash3" style="position:absolute;inset:0;z-index:2;background:var(--grouped);opacity:0">
+        <div class="bar"><span class="back"><svg viewBox="0 0 34 34"><path d="M21 6 L10 17 L21 28"/></svg>설정</span><span class="mid"><b>휴지통</b></span><span class="right">비우기</span></div>
+        <div class="grouped">
+          <div class="gb" style="margin-top:20px">
+            <div class="trow" id="t31"><div class="face"><div class="t"><b>회의록 10-28</b><small>2026. 10. 28. 오후 4:02</small><small class="fo"><i></i>일</small></div><span class="restore" id="rs3">되돌리기</span></div></div>
+            <div class="trow"><div class="face"><div class="t"><b>지난 여행 메모</b><small>2026. 9. 30. 오후 7:11</small><small class="fo"><i></i>여행</small></div><span class="restore">되돌리기</span></div></div>
+            <div class="trow"><div class="face"><div class="t"><b>임시 메모</b><small>2026. 9. 12. 오전 10:05</small><small class="fo"><i></i>Slow Margin</small></div><span class="restore">되돌리기</span></div></div>
+          </div>
+          <div class="gf">되돌리기는 원래 있던 폴더로 돌려놓습니다. 줄을 왼쪽으로 밀면 영구 삭제할 수 있습니다.</div>
+        </div>
+      </div>
+      <div id="back3" style="position:absolute;inset:0;z-index:3;background:#fff;opacity:0">
+        <div class="bar"><span class="back"><svg viewBox="0 0 34 34"><path d="M21 6 L10 17 L21 28"/></svg>폴더</span><span class="mid"><b>일</b><small>노트 4개</small></span></div>
+        <div class="plain">
+          <div class="nrow" id="b31"><div class="face"><b>회의록 10-28</b><span>다음 주까지 정할 것 세 가지</span><small>2026. 10. 28. 오후 4:02</small></div></div>
+          <div class="nrow"><div class="face"><b>회의록 10-21</b><span>지난 회의에서 넘어온 일</span><small>2026. 10. 21. 오후 3:40</small></div></div>
+          <div class="nrow"><div class="face"><b>주간 회의록</b><span>월요일마다 쓰는 틀</span><small>2026. 10. 20. 오전 9:12</small></div></div>
+          <div class="nrow"><div class="face"><b>할 일</b><span>이번 주 안에 끝낼 것</span><small>2026. 10. 19. 오후 8:30</small></div></div>
+        </div>
+      </div>
+      <div class="tap" id="tap3" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 영구 삭제 -->
+  <section class="scene" id="s4">
+    <div class="cap"><div class="kicker">영구 삭제는</div><h2>‘지우기’ 를 직접 쳐야<br>지워집니다</h2><p>단추 한 번으로는 사라지지 않습니다</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div style="position:absolute;inset:0;background:var(--grouped)">
+        <div class="bar"><span class="back"><svg viewBox="0 0 34 34"><path d="M21 6 L10 17 L21 28"/></svg>설정</span><span class="mid"><b>휴지통</b></span><span class="right">비우기</span></div>
+        <div class="grouped">
+          <div class="gb" style="margin-top:20px">
+            <div class="trow" id="t41"><div class="acts"><span id="pg4"><svg viewBox="0 0 36 36"><path d="M6 10 H30 M13 10 V6 H23 V10 M10 10 L11 31 H25 L26 10 M4 4 L32 32"/></svg>영구 삭제</span></div><div class="face" id="f41"><div class="t"><b>임시 메모</b><small>2026. 9. 12. 오전 10:05</small><small class="fo"><i></i>Slow Margin</small></div><span class="restore">되돌리기</span></div></div>
+            <div class="trow"><div class="face"><div class="t"><b>지난 여행 메모</b><small>2026. 9. 30. 오후 7:11</small><small class="fo"><i></i>여행</small></div><span class="restore">되돌리기</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="dim" id="dim4"></div>
+      <div class="alert" id="al4"><h4>영구 삭제</h4><p>임시 메모 과 그 노트만 쓰던 첨부를 완전히 지웁니다. 되돌릴 수 없습니다. 지우려면 지우기 라고 입력하세요.</p><div class="field" id="fd4">확인 문구</div><div class="btns col"><span class="d" id="ok4">영구 삭제</span><span>취소</span></div></div>
+      <div class="tap" id="tap4" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 5 · 요약 -->
+  <section class="scene" id="s5">
+    <div class="cap"><div class="kicker">지워도 내 폴더 안에</div><h2>되돌릴 수 없는 일은<br>한 번 더 묻습니다</h2><p>휴지통도 내 아이클라우드 폴더 안에 있습니다</p></div>
+    <div class="bigcard" id="bc5">
+      <div class="row" id="b51"><b class="r">지우기</b><span>폴더 안 .trash 로 옮김</span></div>
+      <div class="row" id="b52"><b class="a">되돌리기</b><span>원래 있던 폴더로</span></div>
+      <div class="row" id="b53"><b class="a">폴더째 지워도</b><span>되돌리면 폴더가 다시</span></div>
+      <div class="row" id="b54"><b class="r">영구 삭제</b><span>‘지우기’ 를 쳐야만</span></div>
+    </div>
+    <div class="facts" id="ft5"><span>계정 없음</span><span>서버 없음</span><span>광고 · 추적 없음</span></div>
+  </section>
+
+  <!-- 6 · 끝 -->
+  <section class="scene" id="s6">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="en">SLOW MARGIN</div>
+      <div class="tl" id="tl6">잘못 지워도,<br>돌아옵니다</div>
+      <div class="cta" id="cta6">앱스토어에서 ‘느린 여백’</div>
+    </div>
+  </section>
+
+  <div id="leafline"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+
+const SC = { s1:[0,3.4], s2:[3.4,10.0], s3:[10.0,18.2], s4:[18.2,25.6], s5:[25.6,30.6], s6:[30.6,34.0] };
+const DURATION = 34.0;
+
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+function capIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .cap'); if(!el) return;
+  const p=out(seg(t,a,a+0.8));
+  el.style.transform=`translateY(${(1-p)*40}px)`; el.style.opacity=p;
+}
+function riseIn(el,t,a,dur=0.7,dist=60){ const p=out(seg(t,a,a+dur)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dist}px)`; }
+function tapXY(tapEl, x, y, t, at, dur=0.7){
+  const sr=tapEl.parentElement.getBoundingClientRect();
+  const p=seg(t,at-0.3,at-0.3+dur);
+  tapEl.style.left=(x-sr.left-60)+'px'; tapEl.style.top=(y-sr.top-60)+'px';
+  tapEl.style.opacity=p>0&&p<1?Math.sin(p*Math.PI):0; tapEl.style.transform=`scale(${0.6+p*0.6})`;
+}
+function tapAt(tapEl, target, t, at){ const r=target.getBoundingClientRect(); tapXY(tapEl, r.left+r.width/2, r.top+r.height/2, t, at); }
+function glowRow(el,t,a,b){ el.style.background = t>a && t<b ? `rgba(111,165,58,${0.18*(1-seg(t,b-1.0,b))})` : ''; }
+function showAlert(dim,al,t,a,b){ const p=out(seg(t,a,a+0.25))*(1-seg(t,b,b+0.2)); dim.style.opacity=p; al.style.opacity=p; al.style.transform=`scale(${1.08-0.08*out(seg(t,a,a+0.25))})`; }
+// 손가락으로 왼쪽으로 민다 — 손가락 원이 줄 위에서 왼쪽으로 끌린다
+function swipeTap(tapEl, row, t, a, dist){
+  const r=row.getBoundingClientRect(), sr=tapEl.parentElement.getBoundingClientRect();
+  const p=seg(t,a-0.2,a+0.6);
+  const x=r.right-120-ease(seg(t,a,a+0.45))*dist, y=r.top+r.height/2;
+  tapEl.style.left=(x-sr.left-60)+'px'; tapEl.style.top=(y-sr.top-60)+'px';
+  tapEl.style.opacity=p>0&&p<1?Math.sin(p*Math.PI)*0.9:0; tapEl.style.transform='scale(0.9)';
+}
+
+// ── 1 · 질문 ──
+function renderS1(t){
+  ['c11','c12','c13','c14','c15'].forEach((id,i)=>{
+    const el=$(id); const p=out(seg(t,0.05+i*0.12,0.65+i*0.12));
+    const drift=Math.sin(t*0.9+i*1.7)*10;
+    el.style.opacity=p; el.style.transform=`translateY(${(1-p)*50+drift}px) rotate(${(i%2?1:-1)*(2+i)}deg)`;
+  });
+  const hp=out(seg(t,0,1.2)); $('h11').style.transform=`scale(${1.04-0.04*hp})`; $('h11').style.opacity=1;
+  riseIn($('h12'),t,0.8,0.8,30);
+}
+
+// ── 2 · 지우면 — 줄을 밀어 지우기 → 확인창 → 지우기 (RootView.swipeActions · trashMessage) ──
+function renderS2(t){
+  const s=SC.s2[0], sw=s+1.1, tapDel=s+2.1, conf=s+4.0, gone=conf+0.2;
+  const face=document.querySelector('#r21 .face');
+  const open=ease(seg(t,sw,sw+0.45))*(1-ease(seg(t,gone,gone+0.3)));
+  face.style.transform=`translateX(${-390*open}px)`;
+  const tap=$('tap2');
+  if(t<tapDel-0.4) swipeTap(tap,$('r21'),t,sw,320);
+  else if(t<conf-0.5) tapAt(tap,document.querySelector('#r21 .acts span:last-child'),t,tapDel);
+  else tapAt(tap,$('ok2'),t,conf);
+  showAlert($('dim2'),$('al2'),t,tapDel+0.2,conf+0.05);
+  // 줄이 접혀 사라진다
+  const g=ease(seg(t,gone+0.2,gone+0.7));
+  const r=$('r21'); r.style.height=(150*(1-g))+'px'; r.style.opacity=1-g;
+  $('cnt2').textContent = t>=gone+0.5 ? '노트 3개' : '노트 4개';
+}
+
+// ── 3 · 되돌리기 — 설정 → 휴지통 → 되돌리기 → 원래 폴더 (TrashView.row · restore) ──
+function renderS3(t){
+  const s=SC.s3[0], tapTr=s+1.2, toTrash=s+1.5, tapRs=s+3.6, rsGone=tapRs+0.2, toBack=s+5.4;
+  const tp=out(seg(t,toTrash,toTrash+0.4));
+  $('trash3').style.opacity=tp; $('trash3').style.transform=`translateX(${(1-tp)*200}px)`;
+  const g=ease(seg(t,rsGone,rsGone+0.5));
+  const r=$('t31'); r.style.maxHeight=(170*(1-g))+'px'; r.style.opacity=1-g;
+  glowRow(document.querySelector('#t31 .face'),t,tapRs-0.1,tapRs+0.3);
+  const bp=out(seg(t,toBack,toBack+0.45));
+  $('back3').style.opacity=bp; $('back3').style.transform=`translateX(${(1-bp)*-200}px)`;
+  glowRow(document.querySelector('#b31 .face'),t,toBack+0.4,s+8.0);
+  const tap=$('tap3');
+  if(t<toTrash) tapAt(tap,$('tr3'),t,tapTr); else tapAt(tap,$('rs3'),t,tapRs);
+}
+
+// ── 4 · 영구 삭제 — 밀기 → 영구 삭제 → 확인 문구 ‘지우기’ 를 쳐야 (PurgeAlert · purgeConfirmation) ──
+function renderS4(t){
+  const s=SC.s4[0], sw=s+1.1, tapPg=s+2.0, typeAt=s+3.4, conf=s+5.3, gone=conf+0.2;
+  const face=$('f41');
+  const open=ease(seg(t,sw,sw+0.45))*(1-ease(seg(t,gone,gone+0.3)));
+  face.style.transform=`translateX(${-200*open}px)`;
+  const tap=$('tap4');
+  if(t<tapPg-0.4) swipeTap(tap,$('t41'),t,sw,180);
+  else if(t<typeAt) tapAt(tap,$('pg4'),t,tapPg);
+  else tapAt(tap,$('ok4'),t,conf);
+  showAlert($('dim4'),$('al4'),t,tapPg+0.2,conf+0.05);
+  const q=typed('지우기',t,typeAt,2.4);
+  const fd=$('fd4');
+  if(q.length===0){ fd.className='field ph'; fd.innerHTML='확인 문구'; }
+  else { fd.className='field'; fd.innerHTML=q+`<span class="caret" style="opacity:${blink(t)}"></span>`; }
+  const g=ease(seg(t,gone+0.2,gone+0.7));
+  const r=$('t41'); r.style.maxHeight=(170*(1-g))+'px'; r.style.opacity=1-g;
+}
+
+// ── 5 · 요약 ──
+function renderS5(t){
+  const s=SC.s5[0];
+  riseIn($('bc5'),t,s+0.2,0.7,80);
+  ['b51','b52','b53','b54'].forEach((id,i)=>{ const el=$(id); const p=out(seg(t,s+0.6+i*0.25,s+1.0+i*0.25)); el.style.opacity=p; el.style.transform=`translateX(${(1-p)*-40}px)`; });
+  riseIn($('ft5'),t,s+1.9,0.7,40);
+}
+
+function renderS6(t){
+  const s=SC.s6[0];
+  const h=document.querySelector('#s6 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  riseIn($('tl6'),t,s+0.6,0.7,30); riseIn($('cta6'),t,s+1.2,0.7,30);
+}
+function renderPhone(sid,t){ const ph=document.querySelector('#'+sid+' .phone'); if(ph) riseIn(ph,t,SC[sid][0]+0.15,0.8,90); }
+
+const R = {s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6};
+
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001){ capIn(k,t,a+0.05); renderPhone(k,t); R[k](t); }
+  });
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
