@@ -230,6 +230,11 @@ actor FolderStore {
     /// 이 파일이 **지금 내려와 있고 최신인가.** 기기 안 파일은 늘 참이다.
     /// URL 은 자원 값을 캐시하므로 **새로 만들어** 본다 (85 와 같은 까닭).
     func isCurrent(_ url: URL) -> Bool {
+        Self.isCurrentNow(url)
+    }
+
+    /// `isCurrent` 의 몸 — 액터 밖(메모에서 가져오기, 289)에서도 같은 셈으로 본다. 재는 자리는 여기 하나다.
+    static func isCurrentNow(_ url: URL) -> Bool {
         var fresh = URL(fileURLWithPath: url.path)
         fresh.removeAllCachedResourceValues()
         let values = try? fresh.resourceValues(forKeys: [.isUbiquitousItemKey,
@@ -1082,6 +1087,27 @@ actor FolderStore {
         }
         if let error = thrown ?? coordinationError { throw error }
         return String(path.dropFirst(folder.isEmpty ? 0 : folder.count + 1))
+    }
+
+    /// **밖의 파일을 금고 안 정한 자리로 복사한다** (289 — 메모에서 내보낸 폴더 가져오기). 메모리에 올리지 않는다(181 과 같다).
+    /// **덮어쓰지 않는다** — 자리는 `NotesExport.plan` 이 새 폴더 안에서 겹치지 않게 골랐다. 그래도 있으면 실패로 돌려준다.
+    func copyFile(from source: URL, to relativePath: String) throws {
+        openScopeIfNeeded()
+        try createFolder(Paths.directory(of: relativePath))
+        let target = root.appendingPathComponent(relativePath)
+        guard !FileManager.default.fileExists(atPath: target.path) else { throw CocoaError(.fileWriteFileExists) }
+        var thrown: Error?
+        var coordinationError: NSError?
+        NSFileCoordinator().coordinate(readingItemAt: source, options: [],
+                                       writingItemAt: target, options: .forReplacing,
+                                       error: &coordinationError) { readURL, writeURL in
+            do {
+                try FileManager.default.copyItem(at: readURL, to: writeURL)
+            } catch {
+                thrown = error
+            }
+        }
+        if let error = thrown ?? coordinationError { throw error }
     }
 
     /// 새 첨부의 금고 기준 경로 — `assets/` 를 만들고, 금고 전체에서 겹치지 않는 이름을 고른다 (178).

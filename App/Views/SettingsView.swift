@@ -14,7 +14,9 @@ struct SettingsView: View {
     @Environment(\.rootIsCompact) private var rootIsCompact
     @State private var showsTrash = false
     /// 폴더 고르기 창 (b). `fileImporter` 는 시트 위에 문서 선택 창을 띄운다.
+    /// **창은 하나, 쓰임은 둘** (289) — 쓸 폴더 고르기 · 메모에서 내보낸 폴더 가져오기. `fileImporter` 를 둘 걸면 하나만 뜬다.
     @State private var pickingFolder = false
+    @State private var picksNotesExport = false
     /// **`첫 줄을 파일명으로` 를 켤 때 한 번 물어본다** (메뉴 검토 4). 여는 것만으로
     /// 파일을 고치는 유일한 스위치다 — 끄는 것은 안 묻는다.
     @State private var confirmsFileNameSync = false
@@ -32,6 +34,7 @@ struct SettingsView: View {
                     // — *이슈가 될만한 것은 사전에 제거하자*). 남의 상표는 심사에서 걸리는
                     // 자리다. 뜻은 그대로 두고 **하는 일**로 적는다.
                     Button {
+                        picksNotesExport = false
                         pickingFolder = true
                     } label: {
                         Label("다른 폴더 고르기", systemImage: "folder.badge.gearshape")
@@ -124,6 +127,13 @@ struct SettingsView: View {
                     } label: {
                         Label("안 쓰는 첨부", systemImage: "photo.stack")
                     }
+                    // **마크다운으로 내보낸 폴더 가져오기** (289 — 메모 앱의 내보내기가 첫 쓰임. 화면 글에는 다른 앱 이름을 쓰지 않는다, CLAUDE.md §6) — 노트마다 폴더 · `Attachments` 로 온 것을 한 폴더 · `assets` 로.
+                    Button {
+                        picksNotesExport = true
+                        pickingFolder = true
+                    } label: {
+                        Label("마크다운으로 내보낸 폴더 가져오기", systemImage: "square.and.arrow.down.on.square")
+                    }
                     NavigationLink {
                         FilesHelpView()
                     } label: {
@@ -132,7 +142,7 @@ struct SettingsView: View {
                 } header: {
                     Text("노트")
                 } footer: {
-                    Text("지운 노트는 폴더 안 `.trash` 로 옮겨집니다. `파일` 앱은 숨김 폴더를 보여 주지 않으므로 여기서 봅니다. **안 쓰는 첨부**는 어느 노트도 가리키지 않는 사진 · 파일입니다.")
+                    Text("지운 노트는 폴더 안 `.trash` 로 옮겨집니다. `파일` 앱은 숨김 폴더를 보여 주지 않으므로 여기서 봅니다. **안 쓰는 첨부**는 어느 노트도 가리키지 않는 사진 · 파일입니다. 다른 노트 앱이 **마크다운으로 내보낸 폴더**는 같은 이름의 새 폴더로 들여옵니다 — 노트는 한 폴더에, 사진은 그 안 assets 로. 압축 파일이면 `파일` 앱에서 먼저 눌러 풀어 주세요. 고른 폴더는 그대로 남습니다.")
                 }
 
                 // **도움** (122 · T11). 무엇이 어긋났는지 보는 곳과, 만드는 사람이 쓰는
@@ -177,7 +187,11 @@ struct SettingsView: View {
             .fileImporter(isPresented: $pickingFolder, allowedContentTypes: [.folder]) { result in
                 switch result {
                 case .success(let url):
-                    Task { await library.chooseFolder(url) }
+                    if picksNotesExport {
+                        Task { await library.importNotesExport(from: url) }
+                    } else {
+                        Task { await library.chooseFolder(url) }
+                    }
                 case .failure(let error):
                     library.report(String(localized: "폴더를 고르지 못했습니다: \(error.localizedDescription)"))
                 }

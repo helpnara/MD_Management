@@ -48,6 +48,7 @@ FORMAT_CASES = ROOT / "Tools" / "golden" / "format-cases.json"
 ENTER_CASES = ROOT / "Tools" / "golden" / "enter-cases.json"
 BACKSPACE_CASES = ROOT / "Tools" / "golden" / "backspace-cases.json"
 LINEBREAK_CASES = ROOT / "Tools" / "golden" / "linebreak-cases.json"
+NOTES_EXPORT_CASES = ROOT / "Tools" / "golden" / "notes-export-cases.json"
 LINK_TRIGGER_CASES = ROOT / "Tools" / "golden" / "link-trigger-cases.json"
 OUTLINE_CASES = ROOT / "Tools" / "golden" / "outline-cases.json"
 PASTE_CASES = ROOT / "Tools" / "golden" / "paste-cases.json"
@@ -2831,6 +2832,7 @@ def build() -> dict:
         "enterCases": build_enter_cases(),
         "backspaceCases": build_backspace_cases(),
         "lineBreakCases": build_linebreak_cases(),
+        "notesExportCases": build_notes_export_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
         "pasteCases": build_paste_cases(),
         "brokenCases": build_broken_cases(),
@@ -3360,6 +3362,134 @@ def build_linebreak_cases() -> list[dict]:
             raise SystemExit(f"::error::[{case['name']}] 고치고 나니 제목 · 목록이 줄었다: {before} → {after}")
         out.append({"name": case["name"], "text": text, "repaired": fixed,
                     "breaks": count["breaks"], "spaces": count["spaces"]})
+    return out
+
+
+# 289 — 메모의 *마크다운으로 보내기* 를 앱의 꼴로 (Swift `NotesExport`). 노트는 한 폴더에 나란히, 첨부는 그 폴더의 `assets/` 로,
+# 링크는 새 자리에 맞춰. 겹치는 이름은 `이름 2.png` — 대소문자 · 정규화를 가리지 않고 견준다. 맥 압축 꼬리(`__MACOSX/` · `.…`)는 건너뛴다.
+
+
+def notes_export_is_junk(path: str) -> bool:
+    return any(p == "__MACOSX" or p.startswith(".") for p in path.split("/") if p)
+
+
+def _export_join(folder: str, name: str) -> str:
+    return name if not folder else folder + "/" + name
+
+
+def _export_unique(name: str, folder: str, used: set) -> str:
+    dot = name.rfind(".")
+    stem, ext = (name[:dot], name[dot:]) if dot > 0 else (name, "")
+    candidate, number = name, 2
+    while _export_join(folder, candidate).lower() in used:
+        candidate = f"{stem} {number}{ext}"
+        number += 1
+    used.add(_export_join(folder, candidate).lower())
+    return candidate
+
+
+def notes_export_plan(files: list, folder: str, taken: list) -> dict:
+    base = nfc(folder)
+    used = {nfc(t).lower() for t in taken}
+    notes, attachments, skipped = [], [], []
+    for path in sorted(nfc(f) for f in files):
+        if notes_export_is_junk(path):
+            skipped.append(path)
+            continue
+        name = [p for p in path.split("/") if p][-1]
+        if file_extension(path) in NOTE_EXTS:
+            notes.append({"source": path, "destination": _export_join(base, _export_unique(name, base, used))})
+        else:
+            assets = _export_join(base, "assets")
+            attachments.append({"source": path, "destination": _export_join(assets, _export_unique(name, assets, used))})
+    return {"notes": notes, "files": attachments, "skipped": skipped}
+
+
+def _export_relink_one(raw: str, note: str, new_folder: str, moves: dict) -> str:
+    wrapped = len(raw) >= 2 and raw.startswith("<") and raw.endswith(">")
+    inner = raw[1:-1] if wrapped else raw
+    anchor, target = "", inner
+    hash_at = inner.find("#")
+    if hash_at > 0:
+        anchor, target = inner[hash_at:], inner[:hash_at]
+    got = resolve(target, note)
+    if got["kind"] != "relative" or got["value"] not in moves:
+        return raw
+    link = relative_link(new_folder, moves[got["value"]]) + anchor
+    return "<" + link + ">" if (wrapped or " " in link) else link
+
+
+def notes_export_converted(text: str, source: str, destination: str, moves: dict) -> str:
+    text = line_breaks_repaired(text)          # 줄바꿈 먼저 — 링크 주소는 `\n` 에서만 멈춘다
+    if "](" not in text:
+        return text
+    note, new_folder = nfc(source), directory_of(nfc(destination))
+    out, cursor = [], 0
+    while True:
+        bracket = text.find("](", cursor)
+        if bracket < 0:
+            break
+        out.append(text[cursor:bracket + 2])
+        cursor = bracket + 2
+        piece = read_destination(text, cursor)
+        if piece is None:
+            continue
+        raw, end = piece
+        out.append(_export_relink_one(raw, note, new_folder, moves))
+        out.append(text[end])
+        cursor = end + 1
+    out.append(text[cursor:])
+    return "".join(out)
+
+
+def _cmark_targets(text: str, note_path: str) -> list:
+    """cmark 가 읽은 링크 · 사진 주소를 노트 자리에서 푼 것 — 우리 걸음과 따로 센다."""
+    html = cmarkgfm.github_flavored_markdown_to_html(text)
+    out = []
+    for attr in re.findall(r'(?:href|src)="([^"]*)"', html):
+        got = resolve(html_lib.unescape(attr), note_path)
+        out.append(got["value"] if got["kind"] == "relative" else None)
+    return out
+
+
+def build_notes_export_cases() -> list[dict]:
+    """289 — ① 꼬리 · 숨김을 빼고 모든 파일이 한 번씩 옮겨지고 ② 새 자리가 겹치지 않으며 ③ cmark 가 읽은 링크마다 —
+    옮긴 파일을 가리키던 것은 새 자리에서 **옮긴 곳**을 가리키고, 아닌 것은 그대로이며 ④ 제목 · 목록 수가 줄지 않는다."""
+    spec = json.loads(NOTES_EXPORT_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        name = case["name"]
+        plan = notes_export_plan(case["files"], case["folder"], case["taken"])
+        moves = {m["source"]: m["destination"] for m in plan["notes"] + plan["files"]}
+        kept = [nfc(f) for f in case["files"] if not notes_export_is_junk(nfc(f))]
+        if sorted(moves) != sorted(kept):
+            raise SystemExit(f"::error::[{name}] 옮길 파일이 빠지거나 겹쳤다")
+        dests = [d.lower() for d in moves.values()] + [nfc(t).lower() for t in case["taken"]]
+        if len(set(dests)) != len(dests):
+            raise SystemExit(f"::error::[{name}] 새 자리가 겹친다")
+        for m, home in [(m, nfc(case["folder"])) for m in plan["notes"]] + \
+                       [(m, _export_join(nfc(case["folder"]), "assets")) for m in plan["files"]]:
+            if directory_of(m["destination"]) != home:
+                raise SystemExit(f"::error::[{name}] {m['destination']} 는 {home!r} 바로 아래여야 한다")
+        notes = {nfc(k): v for k, v in case["notes"].items()}
+        if sorted(notes) != sorted(m["source"] for m in plan["notes"]):
+            raise SystemExit(f"::error::[{name}] 노트 글과 노트 목록이 갈린다")
+        converted = []
+        for m in plan["notes"]:
+            text = notes[m["source"]]
+            got = notes_export_converted(text, m["source"], m["destination"], moves)
+            before = _cmark_targets(line_breaks_repaired(text), m["source"])
+            after = _cmark_targets(got, m["destination"])
+            if len(before) != len(after):
+                raise SystemExit(f"::error::[{name}] 링크 수가 달라졌다: {len(before)} → {len(after)}")
+            for b, a in zip(before, after):
+                if b in moves and a != moves[b]:
+                    raise SystemExit(f"::error::[{name}] {b} 는 {moves[b]} 를 가리켜야 하는데 {a}")
+            if _structure(got)[0] < _structure(text)[0] or _structure(got)[1] < _structure(text)[1]:
+                raise SystemExit(f"::error::[{name}] 제목 · 목록이 줄었다")
+            converted.append({"source": m["source"], "text": text, "converted": got})
+        out.append({"name": name, "folder": case["folder"], "files": case["files"], "taken": case["taken"],
+                    "plan": plan, "notes": converted})
     return out
 
 
@@ -4454,7 +4584,7 @@ def tally(loaded: dict) -> str:
     때마다 한쪽만 고쳐져 셈이 빠졌다."""
     parts = [
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
-        ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("지우기", "backspaceCases"), ("줄바꿈 고치기", "lineBreakCases"), ("번호", "renumberCases"),
+        ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("지우기", "backspaceCases"), ("줄바꿈 고치기", "lineBreakCases"), ("메모 가져오기", "notesExportCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"), ("평가 부탁", "reviewCases"), ("보이는 줄", "previewCases"),

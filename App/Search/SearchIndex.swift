@@ -75,7 +75,10 @@ actor SearchIndex {
     /// - v3 (빌드 103 · 242): 미리보기 줄을 보이는 글로(`PreviewLine`) — 링크는 제목만, `**` 등은 뗀다.
     /// - v4 (빌드 112 · 253 · 255): `note.links`(이 노트가 가리키는 폴더 안 경로 — 역링크를 여기서 찾는다) ·
     ///   `note_fts` 의 rowid 를 `note.id` 로 맞춤(지우기가 표 전체를 훑지 않게) · 트랜잭션.
-    private static let version = 4
+    /// - v5 (빌드 136 · 290): 본문 · 제목을 **NFC 로** 넣는다. 찾는 말은 NFC 로 바꾸는데(`Paths.normalized`) 넣는 글은 그대로라,
+    ///   맥에서 오거나 메모가 내보낸 글의 NFD 낱말은 화면에는 같아 보여도 **찾아지지 않았다** (289 의 내보낸 노트에 7곳).
+    ///   보여 주는 글도 이 사본에서 나오지만 NFC 와 NFD 는 같은 글자로 그려진다 — 원본 파일은 건드리지 않는다(ADR-0001).
+    private static let version = 5
 
     /// **안 받은 노트가 이보다 많으면 내려받기를 시키지 않는다** (245, 2026-10-13 사용자 — *만약 수천개라면 유사한 상황이
     /// 발생할 가능성 · a 방식이 나을 것*). 그 아래면 예전처럼 받아서 본문까지 — 노트 150개쯤인 폴더는 본문 검색이 그대로다.
@@ -385,6 +388,7 @@ actor SearchIndex {
         let parsed = FrontMatterParser.parse(text)
         let tags = " " + (parsed.frontMatter?.tags ?? []).map { Paths.normalized($0) }.joined(separator: " ") + " "
         let firstLine = Self.firstBodyLine(of: parsed.body)
+        let title = Paths.normalized(note.title)   // 290 — 찾는 말과 같은 꼴로
         // 253 — 이 노트가 가리키는 폴더 안 경로 (역링크 · 폴더 링크 셈과 같은 `linkTargets`).
         let targets = AttachmentLedger.linkTargets(of: note.relativePath, text: text)
         let links = targets.isEmpty ? "" : Self.linksSeparator + targets.joined(separator: Self.linksSeparator) + Self.linksSeparator
@@ -392,11 +396,11 @@ actor SearchIndex {
         INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links) VALUES(?,?,?,?,?,?,?)
         ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
           size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links
-        """, [note.relativePath, note.title, String(mtime), String(note.size), tags, firstLine, links])
+        """, [note.relativePath, title, String(mtime), String(note.size), tags, firstLine, links])
         guard let id = rowID(of: note.relativePath) else { return firstLine }
         run("DELETE FROM note_fts WHERE rowid = ?", [.int(id)])
         run("INSERT INTO note_fts(rowid, rel_path, title, body, tags) VALUES(?,?,?,?,?)",
-            [.int(id), .text(note.relativePath), .text(note.title), .text(text), .text(tags)])
+            [.int(id), .text(note.relativePath), .text(title), .text(Paths.normalized(text)), .text(tags)])
         return firstLine
     }
 
@@ -406,11 +410,11 @@ actor SearchIndex {
         INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links) VALUES(?,?,?,?,?,?,?)
         ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
           size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links
-        """, [note.relativePath, note.title, String(Self.titleOnlyStamp), String(note.size), "", "", ""])
+        """, [note.relativePath, Paths.normalized(note.title), String(Self.titleOnlyStamp), String(note.size), "", "", ""])
         guard let id = rowID(of: note.relativePath) else { return }
         run("DELETE FROM note_fts WHERE rowid = ?", [.int(id)])
         run("INSERT INTO note_fts(rowid, rel_path, title, body, tags) VALUES(?,?,?,?,?)",
-            [.int(id), .text(note.relativePath), .text(note.title), .text(""), .text("")])
+            [.int(id), .text(note.relativePath), .text(Paths.normalized(note.title)), .text(""), .text("")])
     }
 
     /// `note` 표의 번호 — `note_fts` 의 rowid 와 같다.

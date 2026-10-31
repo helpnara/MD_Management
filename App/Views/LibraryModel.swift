@@ -1799,6 +1799,146 @@ final class LibraryModel: ObservableObject {
         if !failed.isEmpty { report(String(localized: "첨부하지 못했습니다: \(failed.joined(separator: ", "))")) }
     }
 
+    // MARK: - 메모에서 내보낸 폴더 가져오기 (289)
+
+    /// **메모의 *마크다운으로 보내기* 를 앱의 꼴로 들여온다** (289, 2026-11-01 사용자 — *이런 파일이 많다고 생각할때*).
+    ///
+    /// 고른 폴더(메모가 내보낸 것 · 압축을 푼 것)를 **맨 위에 같은 이름의 새 폴더**로 들여온다. 노트는 그 폴더에 나란히,
+    /// 첨부는 그 폴더의 `assets/` 로, 링크는 새 자리에 맞춰 — 무엇을 어디로는 `NotesExport` 가 정한다.
+    /// **원본은 건드리지 않는다**(복사만). 줄바꿈 · 빈칸 글자도 들여오며 고친다(287) — 메모가 내보낸 글에 `U+2028` · 붙는 빈칸이 있다.
+    func importNotesExport(from picked: URL) async {
+        guard let store else { return }
+        await save()
+        // 앱이 쓰는 폴더 자신이나 그것을 품은 폴더를 고르면 금고를 금고 안에 한 벌 더 베낀다 — 막는다.
+        let vault = store.root.standardizedFileURL.resolvingSymlinksInPath().path
+        let chosen = picked.standardizedFileURL.resolvingSymlinksInPath().path
+        if Paths.normalized(vault) == Paths.normalized(chosen) || Paths.relative(of: vault, under: chosen) != nil {
+            report(String(localized: "앱이 쓰는 폴더는 가져올 수 없습니다. 내보낸 폴더를 골라 주세요."))
+            return
+        }
+        let scoped = picked.startAccessingSecurityScopedResource()
+        defer { if scoped { picked.stopAccessingSecurityScopedResource() } }
+        let entries = await Task.detached(priority: .userInitiated) { Self.exportEntries(in: picked) }.value
+        let byPath = Dictionary(entries.map { ($0.path, $0.url) }, uniquingKeysWith: { first, _ in first })
+        let wanted = NotesExport.plan(files: Array(byPath.keys), into: "")
+        guard !wanted.notes.isEmpty else {
+            report(String(localized: "고른 폴더에 노트(.md · .txt)가 없습니다. 압축 파일이면 파일 앱에서 먼저 눌러 풀어 주세요."))
+            return
+        }
+        let name = Paths.normalized(picked.lastPathComponent)
+        var imported = 0
+        var copied = 0
+        var failed: [String] = []
+        var folder = ""
+        do {
+            folder = try await store.createSubfolder(named: name)
+            let plan = NotesExport.plan(files: Array(byPath.keys), into: folder)
+            let moves = plan.moves
+            let total = plan.notes.count + plan.files.count
+            await working(String(localized: "노트를 가져오는 중"), total: total) { meter in
+                var done = 0
+                for move in plan.files {
+                    done += 1
+                    meter.tick(done, of: total, every: 5)
+                    guard let url = byPath[move.source], await Self.waitDownloaded(url) else {
+                        failed.append(move.source)
+                        continue
+                    }
+                    do {
+                        try await store.copyFile(from: url, to: move.destination)
+                        copied += 1
+                    } catch {
+                        failed.append(move.source)
+                    }
+                }
+                for move in plan.notes {
+                    done += 1
+                    meter.tick(done, of: total, every: 5)
+                    guard let url = byPath[move.source], await Self.waitDownloaded(url),
+                          let text = await Task.detached(priority: .userInitiated, operation: { Self.readExternalText(url) }).value
+                    else {
+                        failed.append(move.source)
+                        continue
+                    }
+                    let converted = NotesExport.converted(text, source: move.source, destination: move.destination,
+                                                          moves: moves)
+                    do {
+                        try await store.writeText(converted, to: move.destination)
+                        imported += 1
+                    } catch {
+                        failed.append(move.source)
+                    }
+                }
+            }
+        } catch {
+            report(String(localized: "가져오지 못했습니다: \(error.localizedDescription)"))
+            return
+        }
+        log("메모 가져오기: \(name) → \(folder) · 노트 \(imported)개 · 첨부 \(copied)개 · 건너뜀 \(wanted.skipped.count)개 · 실패 \(failed.count)개")
+        sheet = nil
+        selectedFolder = folder
+        await reloadFolders()
+        await reloadNotes()
+        if failed.isEmpty {
+            notify(String(localized: "노트 \(imported)개 · 첨부 \(copied)개를 \(folder) 폴더로 가져왔습니다. 고른 폴더는 그대로 있습니다."))
+        } else {
+            report(String(localized: "노트 \(imported)개 · 첨부 \(copied)개를 가져왔고, 가져오지 못한 것이 있습니다: \(failed.joined(separator: ", "))"))
+        }
+    }
+
+    /// 고른 폴더 안 파일 하나 — 고른 폴더 기준 경로(NFC)와 읽을 주소.
+    private struct ExportEntry: Sendable {
+        let path: String
+        let url: URL
+    }
+
+    /// 고른 폴더를 훑는다 — 파일만, 깊이 상관없이. 옛 iCloud 자리표시자(`.이름.icloud`)는 진짜 이름으로 돌려 적는다(내려받기는 읽기 전에).
+    /// 맥 압축 꼬리 · 숨김 파일도 그대로 넘긴다 — 거르는 것은 `NotesExport.isJunk` 한 곳이다.
+    nonisolated private static func exportEntries(in folder: URL) -> [ExportEntry] {
+        let base = folder.standardizedFileURL.resolvingSymlinksInPath().path
+        guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.isDirectoryKey],
+                                                          options: []) else { return [] }
+        var out: [ExportEntry] = []
+        for case let url as URL in walker {
+            if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true { continue }
+            guard var path = Paths.relative(of: url.standardizedFileURL.resolvingSymlinksInPath().path, under: base)
+            else { continue }
+            var file = url
+            let name = Paths.normalized(url.lastPathComponent)
+            if name.hasPrefix("."), name.hasSuffix(".icloud"), name.count > ".icloud".count + 1 {
+                let real = String(name.dropFirst().dropLast(".icloud".count))
+                file = url.deletingLastPathComponent().appendingPathComponent(real)
+                let parent = Paths.directory(of: path)
+                path = parent.isEmpty ? real : parent + "/" + real
+            }
+            out.append(ExportEntry(path: path, url: file))
+        }
+        return out
+    }
+
+    /// iCloud 에서 아직 안 내려온 파일이면 내려받기를 시키고 기다린다 — **다 안 내려온 파일을 읽으면 잘린 글이 온다**(`FolderStore.readText`).
+    /// 내려왔나는 `FolderStore.isCurrentNow` 로 본다(재는 자리 하나). 자리표시자만 있던 파일은 진짜 파일이 생길 때까지.
+    nonisolated private static func waitDownloaded(_ url: URL) async -> Bool {
+        func ready() -> Bool { FileManager.default.fileExists(atPath: url.path) && FolderStore.isCurrentNow(url) }
+        if ready() { return true }
+        try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+        for _ in 0..<240 {   // 0.5초씩 2분
+            try? await Task.sleep(for: .milliseconds(500))
+            if ready() { return true }
+        }
+        return false
+    }
+
+    /// 밖의 노트 하나를 글로 — 조정된 읽기 · 글자 인코딩은 금고 노트와 같은 셈(`FolderStore.decode`).
+    nonisolated private static func readExternalText(_ url: URL) -> String? {
+        var data: Data?
+        var error: NSError?
+        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { readURL in
+            data = try? Data(contentsOf: readURL)
+        }
+        return data.flatMap { FolderStore.decode($0)?.text }
+    }
+
     // MARK: - 공유 (설계서 §7.6)
 
     /// 노트 하나를 공유한다. 첨부가 없으면 `.md` 하나, 있으면 `.zip` 하나.

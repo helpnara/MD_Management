@@ -7874,6 +7874,280 @@
       "tooDeep": true
     }
   ],
+  "notesExportCases": [
+    {
+      "files": [
+        "메모/첫 노트/첫 노트.md",
+        "메모/첫 노트/Attachments/A1B2C3D4-0000-4000-8000-000000000001.jpeg",
+        "메모/첫 노트/Attachments/A1B2C3D4-0000-4000-8000-000000000002.png",
+        "메모/둘째/둘째.md",
+        "메모/둘째/Attachments/E5F6A7B8-0000-4000-8000-000000000003.jpeg",
+        "__MACOSX/메모/첫 노트/._첫 노트.md",
+        "__MACOSX/메모/둘째/Attachments/._E5F6A7B8-0000-4000-8000-000000000003.jpeg",
+        "메모/.DS_Store"
+      ],
+      "folder": "메모",
+      "name": "메모 두 편 묶음 — 맥 압축 꼬리 포함",
+      "notes": [
+        {
+          "converted": "# 둘째\n\n   - 하나\n   - 둘\n\n![](assets/E5F6A7B8-0000-4000-8000-000000000003.jpeg)\n[첫 노트](<첫 노트.md>)\n",
+          "source": "메모/둘째/둘째.md",
+          "text": "# 둘째     - 하나    - 둘  ![](Attachments/E5F6A7B8-0000-4000-8000-000000000003.jpeg) [첫 노트](<../첫 노트/첫 노트.md>)\n"
+        },
+        {
+          "converted": "# 첫 노트\n\n![](assets/A1B2C3D4-0000-4000-8000-000000000001.jpeg)\n\n본문 [안내](https://example.com/guide)\n\n![](assets/A1B2C3D4-0000-4000-8000-000000000002.png)\n",
+          "source": "메모/첫 노트/첫 노트.md",
+          "text": "# 첫 노트\n\n![](Attachments/A1B2C3D4-0000-4000-8000-000000000001.jpeg)\n\n본문 [안내](https://example.com/guide)\n\n![](Attachments/A1B2C3D4-0000-4000-8000-000000000002.png)\n"
+        }
+      ],
+      "plan": {
+        "files": [
+          {
+            "destination": "메모/assets/E5F6A7B8-0000-4000-8000-000000000003.jpeg",
+            "source": "메모/둘째/Attachments/E5F6A7B8-0000-4000-8000-000000000003.jpeg"
+          },
+          {
+            "destination": "메모/assets/A1B2C3D4-0000-4000-8000-000000000001.jpeg",
+            "source": "메모/첫 노트/Attachments/A1B2C3D4-0000-4000-8000-000000000001.jpeg"
+          },
+          {
+            "destination": "메모/assets/A1B2C3D4-0000-4000-8000-000000000002.png",
+            "source": "메모/첫 노트/Attachments/A1B2C3D4-0000-4000-8000-000000000002.png"
+          }
+        ],
+        "notes": [
+          {
+            "destination": "메모/둘째.md",
+            "source": "메모/둘째/둘째.md"
+          },
+          {
+            "destination": "메모/첫 노트.md",
+            "source": "메모/첫 노트/첫 노트.md"
+          }
+        ],
+        "skipped": [
+          "__MACOSX/메모/둘째/Attachments/._E5F6A7B8-0000-4000-8000-000000000003.jpeg",
+          "__MACOSX/메모/첫 노트/._첫 노트.md",
+          "메모/.DS_Store"
+        ]
+      },
+      "taken": []
+    },
+    {
+      "files": [
+        "한글/한글.md",
+        "한글/Attachments/사진.png"
+      ],
+      "folder": "가져온 메모",
+      "name": "맥 압축의 NFD 이름",
+      "notes": [
+        {
+          "converted": "![사진](assets/사진.png)\n\n![같은 사진](assets/사진.png)\n",
+          "source": "한글/한글.md",
+          "text": "![사진](Attachments/사진.png)\n\n![같은 사진](Attachments/%EC%82%AC%EC%A7%84.png)\n"
+        }
+      ],
+      "plan": {
+        "files": [
+          {
+            "destination": "가져온 메모/assets/사진.png",
+            "source": "한글/Attachments/사진.png"
+          }
+        ],
+        "notes": [
+          {
+            "destination": "가져온 메모/한글.md",
+            "source": "한글/한글.md"
+          }
+        ],
+        "skipped": []
+      },
+      "taken": []
+    },
+    {
+      "files": [
+        "가/노트.md",
+        "가/Attachments/img.png",
+        "나/노트.md",
+        "나/Attachments/img.png",
+        "다/노트.MD"
+      ],
+      "folder": "묶음",
+      "name": "같은 이름 — 노트 · 첨부 모두 번호",
+      "notes": [
+        {
+          "converted": "![](assets/img.png)\n[나 노트](<노트 2.md#절>)\n",
+          "source": "가/노트.md",
+          "text": "![](Attachments/img.png)\n[나 노트](../나/노트.md#절)\n"
+        },
+        {
+          "converted": "![](<assets/img 2.png>)\n[가 노트](노트.md)\n",
+          "source": "나/노트.md",
+          "text": "![](Attachments/img.png)\n[가 노트](../가/노트.md)\n"
+        },
+        {
+          "converted": "[다](https://example.com/#다) [앵커](#제목)\n",
+          "source": "다/노트.MD",
+          "text": "[다](https://example.com/#다) [앵커](#제목)\n"
+        }
+      ],
+      "plan": {
+        "files": [
+          {
+            "destination": "묶음/assets/img.png",
+            "source": "가/Attachments/img.png"
+          },
+          {
+            "destination": "묶음/assets/img 2.png",
+            "source": "나/Attachments/img.png"
+          }
+        ],
+        "notes": [
+          {
+            "destination": "묶음/노트.md",
+            "source": "가/노트.md"
+          },
+          {
+            "destination": "묶음/노트 2.md",
+            "source": "나/노트.md"
+          },
+          {
+            "destination": "묶음/노트 3.MD",
+            "source": "다/노트.MD"
+          }
+        ],
+        "skipped": []
+      },
+      "taken": []
+    },
+    {
+      "files": [
+        "노트/노트.md",
+        "노트/Attachments/img.png",
+        "노트/Attachments/설명서.pdf"
+      ],
+      "folder": "가져온",
+      "name": "이미 있는 이름은 피한다",
+      "notes": [
+        {
+          "converted": "![](<assets/img 2.png>)\n[설명서](assets/설명서.pdf)\n",
+          "source": "노트/노트.md",
+          "text": "![](Attachments/img.png)\n[설명서](Attachments/설명서.pdf)\n"
+        }
+      ],
+      "plan": {
+        "files": [
+          {
+            "destination": "가져온/assets/img 2.png",
+            "source": "노트/Attachments/img.png"
+          },
+          {
+            "destination": "가져온/assets/설명서.pdf",
+            "source": "노트/Attachments/설명서.pdf"
+          }
+        ],
+        "notes": [
+          {
+            "destination": "가져온/노트 3.md",
+            "source": "노트/노트.md"
+          }
+        ],
+        "skipped": []
+      },
+      "taken": [
+        "가져온/노트.md",
+        "가져온/assets/img.png",
+        "가져온/노트 2.md"
+      ]
+    },
+    {
+      "files": [
+        "회의/회의.md",
+        "회의/Attachments/사진 1.jpg"
+      ],
+      "folder": "메모",
+      "name": "빈칸 든 첨부 이름 · 없는 첨부 · 바깥 링크",
+      "notes": [
+        {
+          "converted": "![](<assets/사진 1.jpg>)\n![](<assets/사진 1.jpg>)\n![](Attachments/없는.png)\n[밖](../../바깥.md)\n[주소](https://example.com/a(b))\n",
+          "source": "회의/회의.md",
+          "text": "![](<Attachments/사진 1.jpg>)\n![](Attachments/%EC%82%AC%EC%A7%84%201.jpg)\n![](Attachments/없는.png)\n[밖](../../바깥.md)\n[주소](https://example.com/a(b))\n"
+        }
+      ],
+      "plan": {
+        "files": [
+          {
+            "destination": "메모/assets/사진 1.jpg",
+            "source": "회의/Attachments/사진 1.jpg"
+          }
+        ],
+        "notes": [
+          {
+            "destination": "메모/회의.md",
+            "source": "회의/회의.md"
+          }
+        ],
+        "skipped": []
+      },
+      "taken": []
+    },
+    {
+      "files": [
+        "장보기.txt",
+        "Attachments/영수증.heic"
+      ],
+      "folder": "장보기",
+      "name": "한 노트 폴더를 고른 경우 — 노트가 맨 위에",
+      "notes": [
+        {
+          "converted": "- 우유\n\n![](assets/영수증.heic)\n",
+          "source": "장보기.txt",
+          "text": "- 우유\n\n![](Attachments/영수증.heic)\n"
+        }
+      ],
+      "plan": {
+        "files": [
+          {
+            "destination": "장보기/assets/영수증.heic",
+            "source": "Attachments/영수증.heic"
+          }
+        ],
+        "notes": [
+          {
+            "destination": "장보기/장보기.txt",
+            "source": "장보기.txt"
+          }
+        ],
+        "skipped": []
+      },
+      "taken": []
+    },
+    {
+      "files": [
+        "빈/빈.md"
+      ],
+      "folder": "메모",
+      "name": "링크도 첨부도 없는 노트",
+      "notes": [
+        {
+          "converted": "그냥 글 (괄호) ](짝 없음\n",
+          "source": "빈/빈.md",
+          "text": "그냥 글 (괄호) ](짝 없음\n"
+        }
+      ],
+      "plan": {
+        "files": [],
+        "notes": [
+          {
+            "destination": "메모/빈.md",
+            "source": "빈/빈.md"
+          }
+        ],
+        "skipped": []
+      },
+      "taken": []
+    }
+  ],
   "orderedNumberCases": [
     {
       "line": "1. 가나다",
