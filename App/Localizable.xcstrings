@@ -1873,6 +1873,28 @@
         }
       }
     },
+    "보이지 않는 줄바꿈 · 빈칸 글자 %lld개를 고쳤습니다" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Fixed %lld hidden line break or space character"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Fixed %lld hidden line break and space characters"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "복사" : {
       "localizations" : {
         "en" : {
@@ -2923,6 +2945,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turned the URL into a link. You can undo this."
+          }
+        }
+      }
+    },
+    "줄바꿈 고치기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fix Line Breaks"
           }
         }
       }
