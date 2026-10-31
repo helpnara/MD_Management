@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>아이패드 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B; --marker:#B9B2A7;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45;
+  --grouped:#F2F2F7; --rule:#E4DED3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+.cap{position:absolute;left:70px;right:70px;top:170px;text-align:center}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:74px;line-height:1.28;letter-spacing:-1px}
+.cap p{margin-top:26px;font-size:38px;line-height:1.5;color:var(--faint);font-weight:500}
+.kicker{display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--leaf);margin-bottom:22px}
+
+/* 아이패드 (가로) */
+.ipad{position:absolute;left:24px;top:640px;width:1032px;height:860px;border-radius:52px;background:#1C1B1A;padding:22px;
+  box-shadow:0 40px 90px rgba(80,60,30,.22), 0 6px 18px rgba(0,0,0,.12)}
+.scr{position:relative;width:100%;height:100%;border-radius:30px;background:#fff;overflow:hidden;font-size:28px}
+.col{position:absolute;top:0;bottom:0;overflow:hidden}
+.side{background:#F7F7F9}
+.side .card{position:absolute;inset:12px;border-radius:22px;background:#FAFAFB;box-shadow:0 2px 10px rgba(0,0,0,.06);padding:16px 18px}
+.side h5{font-size:32px;font-weight:700;margin:4px 4px 12px}
+.sf{height:54px;border-radius:27px;background:#E9E9EE;display:flex;align-items:center;gap:8px;padding:0 14px;color:#8A8A8E;font-size:23px;overflow:hidden;margin-bottom:12px;white-space:nowrap}
+.sf svg{width:20px;height:20px;stroke:#8A8A8E;stroke-width:3;fill:none;flex:none}
+.frow{height:64px;display:flex;align-items:center;gap:12px;padding:0 10px;border-radius:14px;font-size:28px;white-space:nowrap}
+.frow i{width:32px;height:24px;border-radius:4px;background:#7FB6E8;flex:none}
+.frow .n{margin-left:auto;color:#8A8A8E;font-size:24px}
+.frow.on{background:var(--accent);color:#fff}
+.frow.on i{background:#fff}
+.frow.on .n{color:#fff}
+.list{background:#fff;border-right:1px solid #ECECEC}
+.lbar{height:84px;display:flex;align-items:center;padding:0 18px;gap:12px}
+.lbar b{font-size:28px;font-weight:700;display:block}
+.lbar small{font-size:19px;color:#8A8A8E;display:block}
+.lbar .ic{margin-left:auto;display:flex;gap:16px;color:var(--accent)}
+.lbar .ic svg{width:32px;height:32px;stroke:var(--accent);stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nrow{margin:0 10px;padding:12px 14px;border-radius:14px;white-space:nowrap;overflow:hidden}
+.nrow b{display:block;font-size:27px;font-weight:500}
+.nrow span{display:block;font-size:22px;color:#8A8A8E;margin-top:2px;overflow:hidden;text-overflow:ellipsis}
+.nrow small{display:block;font-size:18px;color:#8A8A8E;margin-top:2px}
+.nrow.on{background:#E6E6EB}
+.detail{background:#fff}
+.dbar{height:84px;display:flex;align-items:center;padding:0 22px;gap:14px;font-size:20px}
+.dbar .ic{margin-left:auto;display:flex;gap:18px}
+.dbar .ic svg{width:32px;height:32px;stroke:var(--accent);stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.doc{padding:6px 28px;font-size:28px;line-height:1.6;white-space:pre-wrap}
+.doc h1{font-size:42px;font-weight:900;margin-bottom:8px}
+.doc .mk{color:var(--marker)}
+.doc ol{padding-left:38px}
+.caret{display:inline-block;width:3px;height:1.05em;background:var(--accent);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+.tbar{position:absolute;left:0;right:0;bottom:0;height:68px;border-top:1px solid #ECECEC;background:#FAFAF8;display:flex;align-items:center;justify-content:space-around;color:var(--accent);font-size:28px}
+.tbar b{font-weight:900}.tbar i{font-family:'Noto Serif KR',serif}
+.tap{position:absolute;width:76px;height:76px;border-radius:38px;background:rgba(10,122,255,.18);border:3px solid rgba(10,122,255,.45);pointer-events:none;z-index:20}
+.ghost{position:absolute;width:310px;padding:10px 14px;border-radius:14px;background:#fff;box-shadow:0 16px 40px rgba(0,0,0,.22);z-index:19;opacity:0;white-space:nowrap}
+.ghost b{display:block;font-size:27px;font-weight:500}
+.ghost small{display:block;font-size:18px;color:#8A8A8E}
+
+/* 시트 */
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.25);z-index:15;opacity:0}
+.sheet{position:absolute;left:170px;right:170px;top:50px;bottom:110px;border-radius:24px;background:var(--grouped);z-index:16;opacity:0;overflow:hidden}
+.sheet .hd{height:72px;display:flex;align-items:center;padding:0 22px;font-size:26px;position:relative}
+.sheet .hd .c{color:var(--accent)}
+.sheet .hd b{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.sheet .sf{margin:0 16px 14px;background:#E3E3E8}
+.sheet .res{margin:0 16px;background:#fff;border-radius:16px;padding:0 16px}
+.sheet .r{padding:14px 0;border-bottom:1px solid #EDEDF0;font-size:27px}
+.sheet .r:last-child{border-bottom:none}
+.sheet .r span{display:block;font-size:22px;color:#8A8A8E}
+.sheet .r em{font-style:normal;color:var(--ink);font-weight:700}
+
+/* 키 */
+.keys{position:absolute;left:0;right:0;top:1550px;text-align:center;height:150px}
+.kc{display:inline-flex;align-items:center;justify-content:center;min-width:110px;height:110px;padding:0 26px;margin:0 8px;border-radius:24px;background:#fff;
+  box-shadow:0 10px 0 #D9D2C5, 0 18px 30px rgba(0,0,0,.12);font-size:52px;font-weight:700;color:var(--ink);font-family:'Noto Sans KR',sans-serif}
+.kl{display:block;margin-top:30px;font-size:36px;color:#4A4640;font-weight:500}
+
+/* 첫 장면 */
+.hook{position:absolute;left:0;right:0;top:560px;text-align:center}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:100px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:40px;font-size:44px;color:#4A4640;font-weight:500}
+.hook p b{color:var(--leaf);font-weight:700}
+.chipl{position:absolute;height:84px;padding:0 34px;border-radius:42px;background:#fff;box-shadow:0 14px 34px rgba(80,60,30,.14);
+  display:flex;align-items:center;gap:16px;font-size:34px;color:#55514B;white-space:nowrap;font-weight:700}
+
+/* 같은 파일 */
+.phone{position:absolute;width:300px;height:620px;border-radius:52px;background:#1C1B1A;padding:12px;box-shadow:0 30px 70px rgba(80,60,30,.22)}
+.phone .ps{width:100%;height:100%;border-radius:42px;background:#fff;overflow:hidden;padding:70px 22px 0;font-size:17px;line-height:1.6}
+.phone .ps h1{font-size:26px;font-weight:900;margin-bottom:6px}
+.phone .ps ol{padding-left:24px}
+.mini{position:absolute;width:660px;height:500px;border-radius:40px;background:#1C1B1A;padding:16px;box-shadow:0 30px 70px rgba(80,60,30,.22)}
+.mini .ms{width:100%;height:100%;border-radius:26px;background:#fff;overflow:hidden;display:flex}
+.mini .ml{width:200px;background:#F7F7F9;padding:20px 14px;font-size:15px;border-right:1px solid #ECECEC}
+.mini .ml div{padding:8px 10px;border-radius:10px}
+.mini .ml .on{background:#E6E6EB}
+.mini .md{flex:1;padding:28px 28px;font-size:17px;line-height:1.6}
+.mini .md h1{font-size:26px;font-weight:900;margin-bottom:6px}
+.mini .md ol{padding-left:24px}
+.filetag{position:absolute;left:0;right:0;top:1330px;text-align:center}
+.filetag span{display:inline-block;padding:20px 40px;border-radius:24px;background:#2A2724;color:#F4EFE6;font-family:'Noto Sans Mono',monospace;font-size:30px}
+.facts{position:absolute;left:0;right:0;top:1460px;text-align:center}
+.facts span{display:inline-block;margin:10px 10px;padding:22px 40px;border-radius:50px;background:#fff;box-shadow:0 10px 30px rgba(80,60,30,.12);font-size:38px;font-weight:700}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:400px;text-align:center}
+.hero img{width:380px;height:380px;border-radius:88px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:130px;margin-top:64px;letter-spacing:2px}
+.hero .en{font-size:34px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:46px;margin-top:60px;font-weight:500;color:#4A4640;line-height:1.5}
+.hero .cta{display:inline-block;margin-top:70px;padding:30px 60px;border-radius:60px;background:var(--ink);color:#fff;font-size:40px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 1 · 질문 -->
+  <section class="scene" id="s1">
+    <div class="chipl" id="c11" style="left:110px;top:250px">⌘N</div>
+    <div class="chipl" id="c12" style="left:640px;top:390px">⌘F</div>
+    <div class="chipl" id="c13" style="left:170px;top:1300px">⌘B</div>
+    <div class="chipl" id="c14" style="left:660px;top:1440px">⌘E</div>
+    <div class="chipl" id="c15" style="left:360px;top:1590px">세 칸</div>
+    <div class="hook">
+      <h1 id="h11">아이패드에서는<br>책상처럼 펼쳐 씁니다</h1>
+      <p id="h12"><b>느린 여백</b> · 아이폰과 같은 앱 하나</p>
+    </div>
+  </section>
+
+  <!-- 2~5 · 아이패드 하나를 장면마다 다시 그린다 -->
+  <section class="scene" id="s2">
+    <div class="cap"><div class="kicker">세 칸</div><h2>폴더 · 목록 · 노트를<br>한 화면에 나란히</h2><p>폴더를 누르면 목록, 노트를 누르면 오른쪽에</p></div>
+    <div class="ipad"><div class="scr" id="pad2"></div></div>
+  </section>
+  <section class="scene" id="s3">
+    <div class="cap"><div class="kicker">끌어다 놓기</div><h2>노트를 끌어<br>폴더에 놓으면 옮겨집니다</h2><p>메뉴를 열지 않아도 됩니다</p></div>
+    <div class="ipad"><div class="scr" id="pad3"></div></div>
+  </section>
+  <section class="scene" id="s4">
+    <div class="cap"><div class="kicker">외장 키보드</div><h2>손을 떼지 않고<br>새 노트부터 읽기까지</h2><p>⌘ 를 누르고 있으면 단축키 목록이 뜹니다</p></div>
+    <div class="ipad"><div class="scr" id="pad4"></div></div>
+    <div class="keys" id="keys4"></div>
+  </section>
+  <section class="scene" id="s5">
+    <div class="cap"><div class="kicker">넓게 쓰다가도</div><h2>폴더 칸을 접어도<br>찾기는 바로</h2><p>목록 위 돋보기 · ⌘F 로 언제든</p></div>
+    <div class="ipad"><div class="scr" id="pad5"></div></div>
+  </section>
+
+  <!-- 6 · 같은 파일 -->
+  <section class="scene" id="s6">
+    <div class="cap"><div class="kicker">같은 파일</div><h2>아이폰과 아이패드가<br>같은 파일을 엽니다</h2><p>내 아이클라우드 폴더의 .md 하나</p></div>
+    <div class="mini" id="mi6" style="left:60px;top:690px"><div class="ms">
+      <div class="ml"><div>장 볼 것</div><div class="on">차 우리기</div><div>읽을거리</div><div>10월 메모</div></div>
+      <div class="md"><h1>차 우리기</h1><ol><li>물 끓이기</li><li>물 식히기</li><li>찻잎 넣기</li><li>3분 기다리기</li></ol></div>
+    </div></div>
+    <div class="phone" id="ph6" style="left:720px;top:620px"><div class="ps"><h1>차 우리기</h1><ol><li>물 끓이기</li><li>물 식히기</li><li>찻잎 넣기</li><li>3분 기다리기</li></ol></div></div>
+    <div class="filetag" id="ft6"><span>iCloud Drive › Slow Margin › 차 우리기.md</span></div>
+    <div class="facts" id="fa6"><span>계정 없음</span><span>서버 없음</span><span>광고 · 추적 없음</span></div>
+  </section>
+
+  <!-- 7 · 끝 -->
+  <section class="scene" id="s7">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="en">SLOW MARGIN</div>
+      <div class="tl" id="tl7">아이폰 · 아이패드<br>같은 앱 하나</div>
+      <div class="cta" id="cta7">앱스토어에서 ‘느린 여백’</div>
+    </div>
+  </section>
+
+  <div id="leafline"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const CARET = t => `<span class="caret" style="opacity:${blink(t)}"></span>`;
+
+const SC = { s1:[0,3.4], s2:[3.4,9.2], s3:[9.2,14.6], s4:[14.6,21.6], s5:[21.6,27.0], s6:[27.0,31.0], s7:[31.0,34.0] };
+const DURATION = 34.0;
+
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+function capIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .cap'); if(!el) return;
+  const p=out(seg(t,a,a+0.8));
+  el.style.transform=`translateY(${(1-p)*40}px)`; el.style.opacity=p;
+}
+function riseIn(el,t,a,dur=0.7,dist=60){ const p=out(seg(t,a,a+dur)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dist}px)`; }
+function tapOn(scr, el, t, at){
+  const tap=scr.querySelector('.tap'); if(!tap||!el) return;
+  const r=el.getBoundingClientRect(), sr=scr.getBoundingClientRect();
+  const p=seg(t,at-0.3,at+0.4);
+  tap.style.left=(r.left-sr.left+r.width/2-38)+'px'; tap.style.top=(r.top-sr.top+r.height/2-38)+'px';
+  tap.style.opacity=p>0&&p<1?Math.sin(p*Math.PI):0; tap.style.transform=`scale(${0.6+p*0.6})`;
+}
+const glow=(t,a,b)=> t>a&&t<b ? `background:rgba(111,165,58,${0.2*(1-seg(t,b-1.0,b))})` : '';
+
+// ── 아이패드 화면 한 장 그리기 ──
+const SEARCH_ICON='<svg viewBox="0 0 20 20"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M13 13 L17 17"/></svg>';
+const I_NEWF='<svg viewBox="0 0 26 26"><path d="M3 7 H10 L12 9 H23 V21 H3 Z M17 12 V18 M14 15 H20"/></svg>';
+const I_NEWN='<svg viewBox="0 0 26 26"><path d="M17 4 L22 9 L11 20 L5 21 L6 15 Z M4 24 H22"/></svg>';
+const I_SRCH='<svg viewBox="0 0 26 26"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 L22 22"/></svg>';
+const I_MORE='<svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="10"/><circle cx="8" cy="13" r="1"/><circle cx="13" cy="13" r="1"/><circle cx="18" cy="13" r="1"/></svg>';
+const I_BOOK='<svg viewBox="0 0 26 26"><path d="M3 6 C8 4 11 5 13 8 C15 5 18 4 23 6 L23 21 C18 19 15 20 13 23 C11 20 8 19 3 21 Z M13 8 L13 23"/></svg>';
+const I_PEN='<svg viewBox="0 0 26 26"><path d="M17 4 L22 9 L10 21 L4 22 L5 16 Z"/></svg>';
+const FOLDERS=[['받은 글',12],['레시피',15],['일',37],['보관',8]];
+const NOTES={ '레시피':[['차 우리기','1. 물 끓이기','10. 29. 오전 8:10'],['겨울 차 고르기','우린 찻잎은 두 번까지','10. 27. 오후 6:02'],['레몬청','레몬 3 · 설탕 같은 무게','10. 20. 오후 9:40']],
+             '받은 글':[['읽을거리','천천히 읽을 것들','10. 30. 오후 9:14'],['가을 산책길','공유로 받은 링크','10. 25. 오후 2:11']] };
+function pad({sideW=270, folder='받은 글', sel=-1, notes=null, detail='', reading=false, counts={}, rowStyle=[], noteStyle=[], search=false, extra=''}){
+  const listW=330, dx=sideW, dw=988-sideW-listW;
+  const ns = notes || NOTES[folder] || [];
+  let h='';
+  if(sideW>0){
+    h+=`<div class="col side" style="left:0;width:${sideW}px"><div class="card"><h5>폴더</h5><div class="sf">${SEARCH_ICON}모든 노트에서 찾기</div>`;
+    FOLDERS.forEach(([n,c],i)=>{ h+=`<div class="frow${n===folder?' on':''}" data-f="${n}" style="${rowStyle[i]||''}"><i></i>${n}<span class="n">${counts[n]??c}</span></div>`; });
+    h+=`</div></div>`;
+  }
+  h+=`<div class="col list" style="left:${dx}px;width:${listW}px"><div class="lbar"><div><b>${folder}</b><small>노트 ${ns.length}개</small></div><div class="ic">${search?`<span id="mag">${I_SRCH}</span>`:''}${I_NEWF}${I_NEWN}</div></div>`;
+  ns.forEach((n,i)=>{ h+=`<div class="nrow${i===sel?' on':''}" data-n="${i}" style="${noteStyle[i]||''}"><b>${n[0]}</b><span>${n[1]}</span><small>2026. ${n[2]}</small></div>`; });
+  h+=`</div>`;
+  h+=`<div class="col detail" style="left:${dx+listW}px;width:${dw}px"><div class="dbar">${sel>=0||detail?'':''}<div class="ic">${I_MORE}${reading?I_PEN:I_BOOK}</div></div><div class="doc">${detail}</div>${detail&&!reading?'<div class="tbar"><b>B</b><i>I</i><s>S</s><span>&lt;/&gt;</span><span>⛓</span><span>☰</span></div>':''}</div>`;
+  h+=extra+'<div class="tap" style="opacity:0"></div>';
+  return h;
+}
+const TEA_READ='<h1>차 우리기</h1><ol><li>물 끓이기</li><li>물 식히기</li><li>찻잎 넣기</li><li>3분 기다리기</li></ol>';
+const TEA_EDIT='<h1>차 우리기</h1>1. 물 끓이기\n2. 물 식히기\n3. 찻잎 넣기\n4. 3분 기다리기';
+
+// ── 1 ──
+function renderS1(t){
+  ['c11','c12','c13','c14','c15'].forEach((id,i)=>{
+    const el=$(id); const p=out(seg(t,0.05+i*0.12,0.65+i*0.12));
+    const drift=Math.sin(t*0.9+i*1.7)*10;
+    el.style.opacity=p; el.style.transform=`translateY(${(1-p)*50+drift}px) rotate(${(i%2?1:-1)*(2+i)}deg)`;
+  });
+  const hp=out(seg(t,0,1.2)); $('h11').style.transform=`scale(${1.04-0.04*hp})`; $('h11').style.opacity=1;
+  riseIn($('h12'),t,0.8,0.8,30);
+}
+
+// ── 2 · 세 칸 — 폴더를 누르면 목록, 노트를 누르면 오른쪽에 ──
+function renderS2(t){
+  const s=SC.s2[0], tapF=s+1.3, tapN=s+3.0;
+  const folder = t>=tapF+0.15 ? '레시피' : '받은 글';
+  const sel = t>=tapN+0.15 ? 0 : -1;
+  const scr=$('pad2');
+  scr.innerHTML = pad({folder, sel, detail: sel>=0 ? TEA_EDIT : ''});
+  if(t<tapN-0.5) tapOn(scr, scr.querySelector('[data-f="레시피"]'), t, tapF);
+  else tapOn(scr, scr.querySelector('[data-n="0"]'), t, tapN);
+}
+
+// ── 3 · 끌어다 놓기 — 노트 줄을 폴더 줄에 (draggable · dropDestination → beginMove) ──
+function renderS3(t){
+  const s=SC.s3[0], grab=s+1.1, drop=s+2.8;
+  const moved = t>=drop+0.1;
+  const notes = NOTES['레시피'].filter((_,i)=>!(moved && i===2));
+  const counts = { '레시피': moved?14:15, '보관': moved?9:8 };
+  const rowStyle = [,, , glow(t,drop,s+5.0) ];
+  const noteStyle = [,, t>=grab&&!moved ? 'opacity:.35' : ''];
+  const scr=$('pad3');
+  scr.innerHTML = pad({folder:'레시피', sel:0, detail:TEA_EDIT, counts, rowStyle, noteStyle, notes,
+                       extra:`<div class="ghost" id="gh3"><b>레몬청</b><small>2026. 10. 20. 오후 9:40</small></div>`});
+  const sr=scr.getBoundingClientRect();
+  const from=scr.querySelector('[data-n="2"]'), to=scr.querySelector('[data-f="보관"]');
+  if(!moved && from){
+    const a=from.getBoundingClientRect(), b=to.getBoundingClientRect();
+    const p=ease(seg(t,grab+0.3,drop));
+    const x=(a.left-sr.left)+((b.left-sr.left+10)-(a.left-sr.left))*p, y=(a.top-sr.top)+((b.top-sr.top-8)-(a.top-sr.top))*p;
+    const g=$('gh3'); g.style.left=x+'px'; g.style.top=y+'px'; g.style.opacity = t>=grab ? 1 : 0; g.style.transform=`scale(${t>=grab?1.04:1}) rotate(${-2*p}deg)`;
+    const tap=scr.querySelector('.tap'); const tp=seg(t,grab-0.3,drop+0.2);
+    tap.style.left=(x+60-38)+'px'; tap.style.top=(y+20-38)+'px'; tap.style.opacity = tp>0&&tp<1 ? 0.9 : 0;
+  }
+}
+
+// ── 4 · 외장 키보드 — ⌘N 새 노트 · 치기 · ⌘B · ⌘E 읽기 ──
+function renderS4(t){
+  const s=SC.s4[0], kN=s+1.0, tp=s+1.8, kB=s+3.6, kE=s+5.0;
+  const scr=$('pad4');
+  let notes=NOTES['레시피'].slice(); let sel=0, detail=TEA_EDIT, reading=false;
+  if(t>=kN+0.15){
+    notes=[['새 노트','','10. 31. 오전 9:02'],...notes]; sel=0;
+    const line = typed('장 볼 것: 찻잎',t,tp,8);
+    const bold = t>=kB+0.1;
+    const l2 = bold ? `장 볼 것: <span class="mk">**</span><b>찻잎</b><span class="mk">**</span>` : (line.includes('찻잎') && t>=kB-0.6 ? `장 볼 것: <span style="background:rgba(10,122,255,.22)">찻잎</span>` : esc(line));
+    detail = `<h1><span class="mk"># </span>새 노트</h1>${l2}${t<kE?CARET(t):''}`;
+    if(t>=kE+0.1){ reading=true; detail='<h1>새 노트</h1>장 볼 것: <b>찻잎</b>'; }
+  }
+  scr.innerHTML = pad({folder:'레시피', sel, notes, detail, reading});
+  // 키 표시
+  const K=[[kN,['⌘','N'],'새 노트'],[kB,['⌘','B'],'굵게'],[kE,['⌘','E'],'읽기 ↔ 쓰기']];
+  let cur=null; K.forEach(k=>{ if(t>=k[0]-0.25 && t<k[0]+1.2) cur=k; });
+  const kd=$('keys4');
+  if(cur){ const p=out(seg(t,cur[0]-0.25,cur[0])); const down=Math.sin(seg(t,cur[0]-0.05,cur[0]+0.2)*Math.PI);
+    kd.innerHTML = cur[1].map(k=>`<span class="kc" style="transform:translateY(${down*8}px)">${k}</span>`).join('<span style="font-size:44px;color:#8C857B"> + </span>') + `<span class="kl">${cur[2]}</span>`;
+    kd.style.opacity=p*(1-seg(t,cur[0]+0.9,cur[0]+1.2)); }
+  else kd.style.opacity=0;
+}
+
+// ── 5 · 폴더 칸 접기 → 돋보기 → 찾기 시트 → 노트 (286 · 1.1.19) ──
+function renderS5(t){
+  const s=SC.s5[0], fold=s+0.8, tapMag=s+2.0, tq=s+2.6, pick=s+4.2;
+  const sideW = Math.round(270*(1-ease(seg(t,fold,fold+0.5))));
+  const collapsed = t>=fold+0.5;
+  const sheetP = out(seg(t,tapMag+0.15,tapMag+0.45))*(1-seg(t,pick+0.1,pick+0.35));
+  const q=typed('찻잎',t,tq,4);
+  const after = t>=pick+0.2;
+  const extra = `<div class="dim" style="opacity:${sheetP}"></div><div class="sheet" style="opacity:${sheetP};transform:translateY(${(1-sheetP)*40}px)">
+     <div class="hd"><span class="c">닫기</span><b>찾기</b></div>
+     <div class="sf">${SEARCH_ICON}<span style="color:var(--ink)">${q}</span>${sheetP>0.5&&!after?CARET(t):''}</div>
+     ${[...q].length>=2?`<div class="res"><div class="r" id="r51">겨울 차 고르기<span>우린 <em>찻잎</em>은 두 번까지</span></div><div class="r">차 우리기<span>3. <em>찻잎</em> 넣기</span></div><div class="r">읽을거리<span><em>찻잎</em> 사기</span></div></div>`:''}
+   </div>`;
+  const sel = after ? 1 : 0;
+  const detail = after ? '<h1>겨울 차 고르기</h1>우린 찻잎은 두 번까지.\n물은 80도쯤.' : TEA_EDIT;
+  const scr=$('pad5');
+  scr.innerHTML = pad({sideW, folder:'레시피', sel, detail, search: collapsed, extra});
+  if(t<tapMag+0.5) tapOn(scr, scr.querySelector('#mag'), t, tapMag);
+  else tapOn(scr, scr.querySelector('#r51'), t, pick);
+}
+
+// ── 6 · 같은 파일 ──
+function renderS6(t){
+  const s=SC.s6[0];
+  riseIn($('mi6'),t,s+0.2,0.7,80); riseIn($('ph6'),t,s+0.5,0.7,80);
+  riseIn($('ft6'),t,s+1.2,0.6,30); riseIn($('fa6'),t,s+1.7,0.6,30);
+}
+function renderS7(t){
+  const s=SC.s7[0];
+  const h=document.querySelector('#s7 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  riseIn($('tl7'),t,s+0.6,0.7,30); riseIn($('cta7'),t,s+1.2,0.7,30);
+}
+function renderPad(sid,t){ const ph=document.querySelector('#'+sid+' .ipad'); if(ph) riseIn(ph,t,SC[sid][0]+0.15,0.8,90); }
+
+const R = {s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6,s7:renderS7};
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001){ capIn(k,t,a+0.05); renderPad(k,t); R[k](t); }
+  });
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
