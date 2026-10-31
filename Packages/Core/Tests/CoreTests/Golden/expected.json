@@ -6288,6 +6288,92 @@
       }
     ]
   },
+  "lineBreakCases": [
+    {
+      "breaks": 4,
+      "name": "줄 구분 글자로 이은 제목과 목록 (사용자 노트 꼴)",
+      "repaired": "## 1일차\n- 실습 환경\n- 자사 플랫폼\n\n## 2일차",
+      "spaces": 0,
+      "text": "## 1일차 - 실습 환경 - 자사 플랫폼  ## 2일차"
+    },
+    {
+      "breaks": 2,
+      "name": "붙는 빈칸 + 빈칸을 번갈아 들여쓴 하위 목록",
+      "repaired": "1. 시스템 계층\n    - L1\n    - L2",
+      "spaces": 4,
+      "text": "1. 시스템 계층     - L1     - L2"
+    },
+    {
+      "breaks": 1,
+      "name": "문단 구분 글자",
+      "repaired": "첫 문단\n둘째 문단",
+      "spaces": 0,
+      "text": "첫 문단 둘째 문단"
+    },
+    {
+      "breaks": 3,
+      "name": "다음 줄 · 세로 탭 · 폼 피드",
+      "repaired": "가\n나\n다\n라",
+      "spaces": 0,
+      "text": "가나\u000b다\f라"
+    },
+    {
+      "breaks": 0,
+      "name": "줄 가운데 붙는 빈칸은 그대로",
+      "repaired": "값 단위 그대로\n- 항목 하나",
+      "spaces": 0,
+      "text": "값 단위 그대로\n- 항목 하나"
+    },
+    {
+      "breaks": 0,
+      "name": "줄 앞이라도 글자 뒤의 붙는 빈칸은 그대로",
+      "repaired": "  가 나",
+      "spaces": 1,
+      "text": "  가 나"
+    },
+    {
+      "breaks": 0,
+      "name": "보통 줄바꿈 · CRLF 는 그대로",
+      "repaired": "가\r\n나\n다",
+      "spaces": 0,
+      "text": "가\r\n나\n다"
+    },
+    {
+      "breaks": 0,
+      "name": "고칠 것이 없다",
+      "repaired": "# 제목\n\n- 항목\n    코드",
+      "spaces": 0,
+      "text": "# 제목\n\n- 항목\n    코드"
+    },
+    {
+      "breaks": 0,
+      "name": "빈 글",
+      "repaired": "",
+      "spaces": 0,
+      "text": ""
+    },
+    {
+      "breaks": 1,
+      "name": "탭과 붙는 빈칸이 섞인 줄 앞",
+      "repaired": "- 위\n\t  - 아래",
+      "spaces": 2,
+      "text": "- 위 \t  - 아래"
+    },
+    {
+      "breaks": 3,
+      "name": "코드 울타리 안의 줄 구분 글자",
+      "repaired": "```\nSELECT 1\n    FROM t\n```",
+      "spaces": 2,
+      "text": "``` SELECT 1     FROM t ```"
+    },
+    {
+      "breaks": 3,
+      "name": "줄 구분 글자 바로 뒤 인용",
+      "repaired": "글\n\n> 인용 줄\n> 둘째",
+      "spaces": 0,
+      "text": "글  > 인용 줄 > 둘째"
+    }
+  ],
   "lineMapCases": [
     {
       "anchors": [

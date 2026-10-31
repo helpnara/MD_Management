@@ -33,8 +33,8 @@ public enum MapPlaces {
     /// 지도 앱의 공유 글 머리말.
     static let headers: [[Unicode.Scalar]] = ["[네이버지도]", "[카카오맵]"].map { Array($0.unicodeScalars) }
 
-    /// 줄바꿈으로 보는 글자.
-    static let breaks: Set<Unicode.Scalar> = ["\n", "\r", "\u{0B}", "\u{0C}", "\u{85}", "\u{2028}", "\u{2029}"]
+    /// 줄바꿈으로 보는 글자 — `\n` · `\r` 과 마크다운이 줄바꿈으로 안 보는 글자들(`LineBreaks.foreign` · 287 과 같은 목록).
+    static let breaks: Set<Unicode.Scalar> = LineBreaks.foreign.union(["\n", "\r"])
 
     /// 빈칸으로 보는 글자 — 줄바꿈 · 빈칸 · 탭 · 붙는 빈칸(`U+00A0`) · 넓은 빈칸 · 보이지 않는 폭 없는 글자.
     static let blanks: Set<Unicode.Scalar> = breaks.union([

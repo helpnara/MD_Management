@@ -1794,6 +1794,15 @@ private struct NoteDetail: View {
                     Text("살펴보기")
                 }
                 Section {
+                    // **줄바꿈 고치기** (287, 2026-11-01 사용자 노트) — 웹 · 다른 노트 앱에서 온 줄 구분 글자(`U+2028`) · 붙는 빈칸 들여쓰기가
+                    // 있을 때만 선다. 누를 때만 파일을 고친다 (ADR-0001). 붙여 넣는 글은 붙일 때 저절로 고친다 — 이것은 이미 들어온 파일 몫이다.
+                    if !library.foreignCharacters.isEmpty {
+                        Button {
+                            Task { await library.repairLineBreaks() }
+                        } label: {
+                            Label("줄바꿈 고치기", systemImage: "text.alignleft")
+                        }
+                    }
                     Button {
                         library.beginRename(note)
                     } label: {

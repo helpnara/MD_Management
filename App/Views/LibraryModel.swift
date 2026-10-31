@@ -38,7 +38,16 @@ final class LibraryModel: ObservableObject {
     /// **조용히 물러난 것**이다 — 진단 화면이 이것을 크게 보여 준다 (A2).
     @Published private(set) var iCloudAvailable = false
     @Published private(set) var isLoading = false
-    @Published private(set) var noteText = ""
+    @Published private(set) var noteText = "" {
+        // 287 — 불러온 · 저장한 글에 마크다운이 줄바꿈 · 빈칸으로 안 보는 글자가 있나. **글자 하나마다가 아니라** 글이 들어오고
+        // 저장될 때만 센다(229 — 치는 동안 모델을 흔들지 않는다). ··· 메뉴가 이것을 보고 *줄바꿈 고치기* 를 세운다.
+        didSet {
+            let found = LineBreaks.count(noteText)
+            if found != foreignCharacters { foreignCharacters = found }
+        }
+    }
+    /// 지금 노트에서 고칠 줄바꿈 · 빈칸 글자 수 (287). 둘 다 0 이면 메뉴를 안 세운다.
+    @Published private(set) var foreignCharacters = LineBreaks.Count(breaks: 0, spaces: 0)
     /// 편집기가 들고 있는 지금 글. 아직 파일에 안 들어갔을 수 있다.
     /// 편집기의 지금 글. **`@Published` 가 아니다** (229, 2026-10-09 전수 조사) — 이것을 보는 화면이 없는데, 글자 하나마다
     /// 모델 전체가 바뀌었다고 알려 목록 · 폴더 · 띠까지 다시 그렸다. 긴 노트에서 치는 속도를 깎던 자리다.
@@ -274,6 +283,8 @@ final class LibraryModel: ObservableObject {
             case link(title: String, path: String, noteFolder: String)
             /// 목록 모양 (193) — `nil` 이면 **단추를 누른 것**: 번호 ↔ 글머리표. 길게 눌러 고르면 그 모양.
             case list(ListMarker?)
+            /// **줄바꿈 고치기** (287) — 글 전체를 `LineBreaks.repaired` 로. 글 길이가 같아 커서는 그 자리.
+            case repairLineBreaks
         }
     }
 
@@ -432,7 +443,8 @@ final class LibraryModel: ObservableObject {
         // 2. 서식 있는 글 — 글 전체를 마크다운으로
         if let html = pasted.html, let converted = HTMLMarkdown.convert(html) {
             if HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: converted) {
-                var text = placeAttachments(converted, slots: HTMLMarkdown.imageSlots(html), pasted: pasted).text
+                // 287 — 바꾼 글에도 줄 구분 글자가 남을 수 있다. 번호 맞추기보다 먼저 (줄이 서야 번호를 본다).
+                var text = LineBreaks.repaired(placeAttachments(converted, slots: HTMLMarkdown.imageSlots(html), pasted: pasted).text)
                 if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) { text = fixed.text }
                 recordPaste(pasted, outcome: "서식을 마크다운으로 바꿈")
                 guard text != pasted.plain else { return nil }
@@ -446,7 +458,7 @@ final class LibraryModel: ObservableObject {
         if let given = pasted.markdown?.trimmingCharacters(in: .whitespacesAndNewlines), !given.isEmpty,
            HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: given) {
             // 표의 빈 머리줄은 첫 줄로 — 우리 변환과 같은 모양 (2026-10-03 사용자).
-            var markdown = HTMLMarkdown.promoteEmptyHeaders(given)
+            var markdown = LineBreaks.repaired(HTMLMarkdown.promoteEmptyHeaders(given))    // 287
             // 첨부 자리(U+FFFC)가 있으면 서식 있는 글의 첨부로 채운다 (243) — 예전에는 빈 자리 글자가 그대로 남았다.
             if Self.hasAttachmentMarks(markdown) {
                 markdown = placeAttachments(markdown, slots: Self.blankSlots(markdown), pasted: pasted).text
@@ -459,6 +471,13 @@ final class LibraryModel: ObservableObject {
         // 3. 평문 — 번호 겹침과 링크 고치기
         var text = pasted.plain
         var notes: [String] = []
+        // 287 — **줄바꿈 · 빈칸 글자부터** (2026-11-01 사용자 노트 — 웹 · 다른 노트 앱에서 온 글의 줄바꿈 1,056곳이 `U+2028` 이라
+        // 제목 · 목록이 하나도 안 섰다). 줄이 서야 아래의 번호 맞추기 · 링크 고치기가 줄을 본다. 글자 수는 그대로다.
+        let foreign = LineBreaks.count(text)
+        if !foreign.isEmpty {
+            text = LineBreaks.repaired(text)
+            notes.append(String(localized: "보이지 않는 줄바꿈 · 빈칸 글자 \(foreign.breaks + foreign.spaces)개를 고쳤습니다"))
+        }
         if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) {
             text = fixed.text
             notes.append(String(localized: "겹친 번호를 지웠습니다"))
@@ -2513,6 +2532,25 @@ final class LibraryModel: ObservableObject {
     /// **읽기 화면에서 체크상자를 눌렀다** (211). 그 줄의 `[ ]` · `[x]` 한 글자만 뒤집어
     /// 편집기와 **같은 문**(`noteEdited`)으로 넣고 바로 쓴다 — 본문을 고치는 길은 하나다 (CLAUDE.md §1).
     /// 저장이 읽기 화면을 다시 그린다 (`write` → `renderReading`). 체크상자 줄이 아니면 아무것도 안 한다.
+    /// **줄바꿈 고치기** (287) — ··· 메뉴. 고를 때만 파일을 고친다 (ADR-0001 — 몰래 고치지 않는다).
+    /// 쓰기 화면이면 **편집기가** 한 번의 바꾸기로 (되돌리기 한 번), 읽기 화면이면 체크상자와 **같은 문**(`noteEdited` → 저장)으로.
+    /// 본문을 고치는 길은 이 둘뿐이다 (CLAUDE.md §1).
+    func repairLineBreaks() async {
+        guard draftPath != nil else { return }
+        let text = isDirty ? draft : noteText
+        let found = LineBreaks.count(text)
+        guard !found.isEmpty else { return }
+        let message = String(localized: "보이지 않는 줄바꿈 · 빈칸 글자 \(found.breaks + found.spaces)개를 고쳤습니다")
+        if isReading {
+            noteEdited(LineBreaks.repaired(text))
+            await save()
+            notify(message + ".", aboutNote: true)
+        } else {
+            format(.repairLineBreaks)
+            notify(message + String(localized: ". 되돌리기로 무를 수 있습니다."), aboutNote: true)
+        }
+    }
+
     func toggleTask(line: Int) async {
         guard draftPath != nil else { return }
         let text = isDirty ? draft : noteText

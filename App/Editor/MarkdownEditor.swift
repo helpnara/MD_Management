@@ -779,6 +779,15 @@ struct MarkdownEditor: UIViewRepresentable {
             case .list(let marker):
                 restyleList(marker, in: view)
                 return true
+            case .repairLineBreaks:
+                // 287 — 글 전체를 한 번에 (되돌리기 한 번). 글 길이가 같으므로(한 글자 → 한 글자) 고른 자리를 그대로 둔다.
+                let text = view.textStorage.string
+                let fixed = LineBreaks.repaired(text)
+                guard fixed != text else { return true }
+                let selection = view.selectedRange
+                return apply(Formatting.Edit(start: 0, length: (text as NSString).length, text: fixed,
+                                             selectionStart: selection.location,
+                                             selectionLength: selection.length), in: view)
             }
         }
 

@@ -47,6 +47,7 @@ PIN_CASES = ROOT / "Tools" / "golden" / "pin-cases.json"
 FORMAT_CASES = ROOT / "Tools" / "golden" / "format-cases.json"
 ENTER_CASES = ROOT / "Tools" / "golden" / "enter-cases.json"
 BACKSPACE_CASES = ROOT / "Tools" / "golden" / "backspace-cases.json"
+LINEBREAK_CASES = ROOT / "Tools" / "golden" / "linebreak-cases.json"
 LINK_TRIGGER_CASES = ROOT / "Tools" / "golden" / "link-trigger-cases.json"
 OUTLINE_CASES = ROOT / "Tools" / "golden" / "outline-cases.json"
 PASTE_CASES = ROOT / "Tools" / "golden" / "paste-cases.json"
@@ -2829,6 +2830,7 @@ def build() -> dict:
         "outlineCases": build_outline_cases(),
         "enterCases": build_enter_cases(),
         "backspaceCases": build_backspace_cases(),
+        "lineBreakCases": build_linebreak_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
         "pasteCases": build_paste_cases(),
         "brokenCases": build_broken_cases(),
@@ -3308,7 +3310,62 @@ def build_initials_cases() -> dict:
 # 나머지가 주소. 글 전체가 장소들이어야만 바꾼다. 빈칸 · 줄바꿈은 못 박은 목록 — 플랫폼마다 *빈칸* 의 뜻이 다르다.
 MAP_CASES = ROOT / "Tools" / "golden" / "map-cases.json"
 MAP_HEADERS = ("[네이버지도]", "[카카오맵]")
-MAP_BREAKS = "\n\r\x0b\x0c\x85\u2028\u2029"
+def _line_break_walk(text: str):
+    """(글자, 바꿀 것) — 'keep' · 'break' · 'space'. Swift `LineBreaks.walk` 와 같은 걸음. 줄 앞은 줄 첫머리부터 빈칸 · 탭 · 붙는 빈칸만 이어진 동안."""
+    at_start = True
+    for ch in text:
+        if ch in FOREIGN_BREAKS:
+            yield ch, "break"; at_start = True
+        elif ch in "\n\r":
+            yield ch, "keep"; at_start = True
+        elif at_start and ch == "\u00a0":
+            yield ch, "space"
+        elif at_start and ch in " \t":
+            yield ch, "keep"
+        else:
+            yield ch, "keep"; at_start = False
+
+
+def line_breaks_count(text: str) -> dict:
+    kinds = [k for _, k in _line_break_walk(text)]
+    return {"breaks": kinds.count("break"), "spaces": kinds.count("space")}
+
+
+def line_breaks_repaired(text: str) -> str:
+    return "".join("\n" if k == "break" else " " if k == "space" else ch for ch, k in _line_break_walk(text))
+
+
+def _structure(text: str) -> tuple[int, int]:
+    html = cmarkgfm.github_flavored_markdown_to_html(text)
+    return len(re.findall(r"<h[1-6]", html)), len(re.findall(r"<li", html))
+
+
+def build_linebreak_cases() -> list[dict]:
+    """287 — 고친 글은 ① 글 길이(UTF-16)가 같고 ② 줄바꿈 · 빈칸 글자를 빼면 같고 ③ 제목 · 목록 수가 줄지 않는다 (cmark)."""
+    spec = json.loads(LINEBREAK_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        text = case["text"]
+        fixed = line_breaks_repaired(text)
+        count = line_breaks_count(text)
+        if len(to_units(fixed)) != len(to_units(text)):
+            raise SystemExit(f"::error::[{case['name']}] 고친 글의 길이가 달라졌다")
+        strip = lambda x: "".join(c for c in x if c not in "\n\r \t\u00a0" + FOREIGN_BREAKS)
+        if strip(fixed) != strip(text):
+            raise SystemExit(f"::error::[{case['name']}] 보이는 글자가 바뀌었다")
+        if (count["breaks"] == 0 and count["spaces"] == 0) != (fixed == text):
+            raise SystemExit(f"::error::[{case['name']}] 센 수와 고친 글이 갈린다")
+        before, after = _structure(text), _structure(fixed)
+        if after[0] < before[0] or after[1] < before[1]:
+            raise SystemExit(f"::error::[{case['name']}] 고치고 나니 제목 · 목록이 줄었다: {before} → {after}")
+        out.append({"name": case["name"], "text": text, "repaired": fixed,
+                    "breaks": count["breaks"], "spaces": count["spaces"]})
+    return out
+
+
+# 287 — 마크다운이 줄바꿈으로 안 보는 줄바꿈 글자 (Swift `LineBreaks.foreign`). 지도 장소도 이 목록으로 줄을 나눈다 — 적는 자리는 여기 하나.
+FOREIGN_BREAKS = "\x0b\x0c\x85\u2028\u2029"
+MAP_BREAKS = "\n\r" + FOREIGN_BREAKS
 MAP_BLANKS = MAP_BREAKS + " \t\xa0\u1680" + "".join(chr(c) for c in range(0x2000, 0x200E)) + "\u202f\u205f\u2060\u3000\ufeff"
 
 
@@ -4397,7 +4454,7 @@ def tally(loaded: dict) -> str:
     때마다 한쪽만 고쳐져 셈이 빠졌다."""
     parts = [
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
-        ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("지우기", "backspaceCases"), ("번호", "renumberCases"),
+        ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("지우기", "backspaceCases"), ("줄바꿈 고치기", "lineBreakCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"), ("평가 부탁", "reviewCases"), ("보이는 줄", "previewCases"),
