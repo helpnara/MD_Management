@@ -865,6 +865,16 @@
         }
       }
     },
+    "고른 폴더에 노트(.md · .txt)가 없습니다. 압축 파일이면 파일 앱에서 먼저 눌러 풀어 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The chosen folder has no notes (.md · .txt). If it's a zip file, tap it in the Files app first to unzip it."
+          }
+        }
+      }
+    },
     "고정" : {
       "localizations" : {
         "en" : {
@@ -1259,6 +1269,26 @@
         }
       }
     },
+    "노트 %lld개 · 첨부 %lld개를 %@ 폴더로 가져왔습니다. 고른 폴더는 그대로 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported notes: %lld · attachments: %lld into the %@ folder. The chosen folder is unchanged."
+          }
+        }
+      }
+    },
+    "노트 %lld개 · 첨부 %lld개를 가져왔고, 가져오지 못한 것이 있습니다: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imported notes: %lld · attachments: %lld. Some items couldn't be imported: %@"
+          }
+        }
+      }
+    },
     "노트 %lld개 만들기 (작은 노트 · 약 20MB)" : {
       "localizations" : {
         "en" : {
@@ -1317,6 +1347,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Notes"
+          }
+        }
+      }
+    },
+    "노트를 가져오는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing notes"
           }
         }
       }
@@ -1659,6 +1699,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Last error"
+          }
+        }
+      }
+    },
+    "마크다운으로 내보낸 폴더 가져오기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import an Exported Markdown Folder"
           }
         }
       }
@@ -2475,6 +2525,16 @@
         }
       }
     },
+    "앱이 쓰는 폴더는 가져올 수 없습니다. 내보낸 폴더를 골라 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can't import the folder the app is using. Choose the exported folder."
+          }
+        }
+      }
+    },
     "어느 폴더 안으로" : {
       "localizations" : {
         "en" : {
@@ -3049,12 +3109,12 @@
         }
       }
     },
-    "지운 노트는 폴더 안 `.trash` 로 옮겨집니다. `파일` 앱은 숨김 폴더를 보여 주지 않으므로 여기서 봅니다. **안 쓰는 첨부**는 어느 노트도 가리키지 않는 사진 · 파일입니다." : {
+    "지운 노트는 폴더 안 `.trash` 로 옮겨집니다. `파일` 앱은 숨김 폴더를 보여 주지 않으므로 여기서 봅니다. **안 쓰는 첨부**는 어느 노트도 가리키지 않는 사진 · 파일입니다. 다른 노트 앱이 **마크다운으로 내보낸 폴더**는 같은 이름의 새 폴더로 들여옵니다 — 노트는 한 폴더에, 사진은 그 안 assets 로. 압축 파일이면 `파일` 앱에서 먼저 눌러 풀어 주세요. 고른 폴더는 그대로 남습니다." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deleted notes are moved to the `.trash` folder inside your folder. The Files app doesn't show hidden folders, so you can see them here. **Unused attachments** are photos and files that no note links to."
+            "value" : "Deleted notes are moved to the `.trash` folder inside your folder. The Files app doesn't show hidden folders, so you can see them here. **Unused attachments** are photos and files that no note links to. A **folder exported as Markdown** from another notes app comes in as a new folder with the same name — notes side by side, images in its assets folder. If it's a zip file, tap it in the Files app first to unzip it. The chosen folder stays as it is."
           }
         }
       }
