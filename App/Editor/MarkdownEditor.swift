@@ -261,7 +261,7 @@ final class MarkdownTextView: UITextView {
         selectedTextRange = textRange(from: moved, to: moved)
     }
 
-    /// 커서가 든 줄의 **위 · 아래 줄**에서 같은 가로 자리의 글자 자리. 문서 처음 · 끝을 넘어가면 `nil` (UIKit 에 맡긴다).
+    /// 커서가 든 줄의 **위 · 아래 줄**에서 같은 가로 자리의 글자 자리. 문서 처음 · 끝을 넘어가면 처음 · 끝. 조각을 못 얻는 드문 자리만 `nil`.
     private func lineNeighbor(up: Bool) -> Int? {
         guard let layout = textLayoutManager, let content = layout.textContentManager else { return nil }
         let text = textStorage.string as NSString
@@ -295,30 +295,46 @@ final class MarkdownTextView: UITextView {
         let goalX = verticalGoal?.caret == caret ? verticalGoal!.x : caretX
 
         // 목표 줄 — 같은 문단의 이웃 줄, 없으면 이웃 문단의 끝 · 첫 줄.
+        //
+        // **이웃 문단은 글(문자열)로 자리를 정하고, 그 범위의 배치를 앞으로 보장한 뒤 조각을 받는다** (빌드 141 — 거꾸로 훑기
+        // `.reverse` 는 배치를 보장하지 못해, 커서가 떠나며 기호를 숨긴 **직전 문단**(배치가 지워진 상태)에서 빈손으로 돌아왔다.
+        // 그때 UIKit 이동으로 물러나 처음으로 튀었고(*321 → 0*), 문단 끝에서 ↑ 가 안 먹다가 한 칸 오른쪽으로 가면 먹었다).
+        // 문서 처음 · 끝은 여기서 바로 정한다 — UIKit 으로 물러나는 길이 평평한 ↑↓ 에는 더 없다.
         var targetLine: NSTextLineFragment?
         var targetStart = start
         let next = up ? index - 1 : index + 1
         if lines.indices.contains(next) {
             targetLine = lines[next]
         } else {
-            var neighbor: NSTextLayoutFragment?
+            let end = content.offset(from: origin, to: fragment.rangeInElement.endLocation)
+            let neighborRange: NSRange
             if up {
-                layout.enumerateTextLayoutFragments(from: fragment.rangeInElement.location,
-                                                    options: [.ensuresLayout, .reverse]) { candidate in
-                    if candidate === fragment { return true }
-                    neighbor = candidate
-                    return false
-                }
+                guard start > 0 else { verticalGoal = (0, goalX); return 0 }           // 문서 첫 문단 — 처음으로 (UIKit 과 같다)
+                neighborRange = text.paragraphRange(for: NSRange(location: start - 1, length: 0))
             } else {
-                layout.enumerateTextLayoutFragments(from: fragment.rangeInElement.endLocation,
-                                                    options: [.ensuresLayout]) { candidate in
-                    if candidate === fragment { return true }
-                    neighbor = candidate
-                    return false
-                }
+                guard end < text.length else { verticalGoal = (text.length, goalX); return text.length }   // 마지막 문단 — 끝으로
+                neighborRange = text.paragraphRange(for: NSRange(location: end, length: 0))
+            }
+            // 조각을 끝내 못 받으면 글자 자리로 — 위는 이웃 문단의 끝(줄바꿈 앞), 아래는 이웃 문단의 첫 글자. 멀리 튀는 일은 없다.
+            let byText = up
+                ? max(neighborRange.location, NSMaxRange(neighborRange) - (text.character(at: NSMaxRange(neighborRange) - 1) == 0x0A ? 1 : 0))
+                : neighborRange.location
+            guard let nStart = content.location(origin, offsetBy: neighborRange.location),
+                  let nEnd = content.location(origin, offsetBy: NSMaxRange(neighborRange)),
+                  let whole = NSTextRange(location: up ? nStart : fragment.rangeInElement.location,
+                                          end: up ? fragment.rangeInElement.endLocation : nEnd) else {
+                verticalGoal = (byText, goalX)
+                return byText
+            }
+            layout.ensureLayout(for: whole)
+            var neighbor: NSTextLayoutFragment?
+            layout.enumerateTextLayoutFragments(from: nStart, options: [.ensuresLayout]) { candidate in
+                neighbor = candidate
+                return false
             }
             guard let neighbor, let edge = up ? neighbor.textLineFragments.last : neighbor.textLineFragments.first else {
-                return nil
+                verticalGoal = (byText, goalX)
+                return byText
             }
             targetLine = edge
             targetStart = content.offset(from: origin, to: neighbor.rangeInElement.location)
