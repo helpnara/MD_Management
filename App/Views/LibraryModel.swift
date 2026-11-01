@@ -1749,10 +1749,18 @@ final class LibraryModel: ObservableObject {
         let folder = Paths.directory(of: note.relativePath)
         var lines: [String] = []
         var failed: [String] = []
+        var folders: [String] = []
         await working(String(localized: "파일을 넣는 중"), total: urls.count) { meter in
         for (index, url) in urls.enumerated() {
             meter.tick(index, of: urls.count, every: 1)
             let name = Paths.normalized(url.lastPathComponent)
+            // **폴더는 첨부가 아니다** (296). 고르기 창은 이제 파일만 주지만, 다른 길로 폴더가 오면 예전에는 `copyAsset` 이
+            // 폴더째 `assets/이름-1.bin` 으로 복사하고 링크까지 넣었다. 고르기 창의 폴더 주소는 끝에 `/` 가 붙는다 — 보안 범위를
+            // 열지 않고도 안다. 못 믿을 때는 속성으로 한 번 더.
+            if url.hasDirectoryPath || (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                folders.append(name)
+                continue
+            }
             // **노트는 노트로** (111). 폴더 안의 것이면 그 자리로 링크하고, 밖의 것이면
             // 그 노트 옆에 들여온다. 어느 쪽이든 `assets/` 에는 안 들어간다.
             if Paths.isNoteFile(name) {
@@ -1813,6 +1821,7 @@ final class LibraryModel: ObservableObject {
         }
         // 사진과 같다 (235) — 다 성공했다고 남의 알림을 지우지 않는다.
         if !failed.isEmpty { report(String(localized: "첨부하지 못했습니다: \(failed.joined(separator: ", "))")) }
+        if !folders.isEmpty { report(String(localized: "폴더는 첨부할 수 없습니다: \(folders.joined(separator: ", "))")) }
     }
 
     // MARK: - 메모에서 내보낸 폴더 가져오기 (289)

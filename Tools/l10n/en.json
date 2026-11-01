@@ -442,6 +442,7 @@
  "폴더 이름을 바꾸지 못했습니다: %@": "Couldn't rename the folder: %@",
  "폴더 줄의 **되돌리기**는 안의 노트와 첨부를 모두 원래 폴더로 돌려놓습니다. 줄을 누르면 안의 것이 보입니다.": "**Restore** on a folder row puts all its notes and attachments back in their original folder. Tap the row to see what's inside.",
  "폴더는 두 단계까지라 %@ 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.": "Folders can only go two levels deep, so it will be created in %@. If the name is taken, a number is added.",
+ "폴더는 첨부할 수 없습니다: %@": "Folders can't be attached: %@",
  "폴더를 가리키는 링크를 세는 중": "Counting links to this folder",
  "폴더를 고르지 못했습니다: %@": "Couldn't choose the folder: %@",
  "폴더를 되돌리는 중": "Restoring folder",
