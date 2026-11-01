@@ -222,7 +222,10 @@ final class MarkdownTextView: UITextView {
                                   input: "i", modifierFlags: .command)
         let link = UIKeyCommand(title: String(localized: "링크"), action: #selector(linkPressed),
                                 input: "k", modifierFlags: .command)
-        let all = [deeper, shallower, bold, italic, link]
+        // **↑↓ 는 우리가 옮긴다** (294 — 아래 `moveCaretVertically`). 수정 키가 붙은 것(⇧ 고르기 · ⌥ · ⌘)은 UIKit 그대로.
+        let up = UIKeyCommand(input: UIKeyCommand.inputUpArrow, modifierFlags: [], action: #selector(upPressed))
+        let down = UIKeyCommand(input: UIKeyCommand.inputDownArrow, modifierFlags: [], action: #selector(downPressed))
+        let all = [deeper, shallower, bold, italic, link, up, down]
         for command in all { command.wantsPriorityOverSystemBehavior = true }
         return all
     }
@@ -232,6 +235,106 @@ final class MarkdownTextView: UITextView {
     @objc private func boldPressed() { onShortcut?(.bold) }
     @objc private func italicPressed() { onShortcut?(.italic) }
     @objc private func linkPressed() { onShortcut?(.link) }
+    @objc private func upPressed() { moveCaretVertically(up: true) }
+    @objc private func downPressed() { moveCaretVertically(up: false) }
+
+    // MARK: - ↑↓ (294)
+
+    /// 세로로 옮길 때 지키는 **가로 자리** — 짧은 줄을 지나도 원래 칸으로 돌아온다. 커서가 다른 길로 움직였으면 버린다.
+    private var verticalGoal: (caret: Int, x: CGFloat)?
+
+    /// **↑↓ 를 앱이 옮긴다** (294, 2026-11-01 사용자 — 아이패드 외장 키보드로 글머리표 목록을 오가면 커서가 문서 처음 · 끝으로 튐.
+    /// 칠하기를 한 바퀴 미룬 빌드 140 에서도 같은 1초에 *1532 → 0 · 0 → 1733* 두 번 튀었다 — 반만 고친 것이었다).
+    ///
+    /// UIKit 의 ↑↓ 는 **커서 네모의 위아래 한 줄 자리를 화면에서 되묻는** 식이라, 그 자리의 배치 조각이 아직 없으면(커서 문단의
+    /// 기호 · 링크 주소를 드러내고 숨기며 줄 높이가 바뀐 직후 · 키를 누르고 있을 때) 문서 **처음 · 끝**으로 떨어진다. 여기서는
+    /// 글 배치 엔진에게 **커서가 든 줄 조각과 그 이웃 줄을 직접** 묻는다 — 배치를 보장하며(`ensuresLayout`) 글자 자리로 간다.
+    /// 조각을 못 얻는 자리(글 끝 · 조합 중 · 고른 글이 있을 때)는 UIKit 의 이동(`position(from:in:offset:)`)으로 물러난다.
+    private func moveCaretVertically(up: Bool) {
+        if selectedRange.length == 0, markedTextRange == nil, let target = lineNeighbor(up: up) {
+            selectedRange = NSRange(location: target, length: 0)
+            return
+        }
+        verticalGoal = nil
+        guard let range = selectedTextRange,
+              let moved = position(from: up ? range.start : range.end, in: up ? .up : .down, offset: 1) else { return }
+        selectedTextRange = textRange(from: moved, to: moved)
+    }
+
+    /// 커서가 든 줄의 **위 · 아래 줄**에서 같은 가로 자리의 글자 자리. 문서 처음 · 끝을 넘어가면 `nil` (UIKit 에 맡긴다).
+    private func lineNeighbor(up: Bool) -> Int? {
+        guard let layout = textLayoutManager, let content = layout.textContentManager else { return nil }
+        let text = textStorage.string as NSString
+        guard text.length > 0 else { return nil }
+        let caret = min(max(selectedRange.location, 0), text.length)
+        let origin = content.documentRange.location
+        guard let location = content.location(origin, offsetBy: caret) else { return nil }
+
+        // 커서가 든 배치 조각(문단). 글 끝(마지막 줄바꿈 뒤)에는 조각이 없을 수 있다 — 한 글자 앞의 조각을 쓴다.
+        var found: NSTextLayoutFragment?
+        layout.enumerateTextLayoutFragments(from: location, options: [.ensuresLayout]) { fragment in
+            found = fragment
+            return false
+        }
+        if found == nil, caret > 0, let before = content.location(origin, offsetBy: caret - 1) {
+            layout.enumerateTextLayoutFragments(from: before, options: [.ensuresLayout]) { fragment in
+                found = fragment
+                return false
+            }
+        }
+        guard let fragment = found else { return nil }
+        let start = content.offset(from: origin, to: fragment.rangeInElement.location)
+        let inside = caret - start
+        let lines = fragment.textLineFragments
+        guard !lines.isEmpty, let last = lines.last else { return nil }
+        // 커서가 든 줄 조각 — 줄 끝과 다음 줄 첫 글자는 같은 자리라, 글자가 든 줄을 먼저 보고 맨 끝만 마지막 줄로.
+        guard let index = lines.firstIndex(where: { NSLocationInRange(inside, $0.characterRange) })
+                ?? (inside == NSMaxRange(last.characterRange) ? lines.count - 1 : nil) else { return nil }
+        let line = lines[index]
+        let caretX = line.typographicBounds.minX + line.locationForCharacter(at: inside).x
+        let goalX = verticalGoal?.caret == caret ? verticalGoal!.x : caretX
+
+        // 목표 줄 — 같은 문단의 이웃 줄, 없으면 이웃 문단의 끝 · 첫 줄.
+        var targetLine: NSTextLineFragment?
+        var targetStart = start
+        let next = up ? index - 1 : index + 1
+        if lines.indices.contains(next) {
+            targetLine = lines[next]
+        } else {
+            var neighbor: NSTextLayoutFragment?
+            if up {
+                layout.enumerateTextLayoutFragments(from: fragment.rangeInElement.location,
+                                                    options: [.ensuresLayout, .reverse]) { candidate in
+                    if candidate === fragment { return true }
+                    neighbor = candidate
+                    return false
+                }
+            } else {
+                layout.enumerateTextLayoutFragments(from: fragment.rangeInElement.endLocation,
+                                                    options: [.ensuresLayout]) { candidate in
+                    if candidate === fragment { return true }
+                    neighbor = candidate
+                    return false
+                }
+            }
+            guard let neighbor, let edge = up ? neighbor.textLineFragments.last : neighbor.textLineFragments.first else {
+                return nil
+            }
+            targetLine = edge
+            targetStart = content.offset(from: origin, to: neighbor.rangeInElement.location)
+        }
+        guard let target = targetLine else { return nil }
+
+        // 목표 줄에서 같은 가로 자리의 글자. 줄 끝의 줄바꿈 글자 뒤로는 안 간다 — 그 자리는 다음 줄 첫 글자다.
+        let localX = max(0, goalX - target.typographicBounds.minX)
+        let offset = target.characterIndex(for: CGPoint(x: localX, y: target.typographicBounds.height / 2))
+        let lineStart = targetStart + target.characterRange.location
+        let lineEnd = targetStart + NSMaxRange(target.characterRange)
+        var result = min(max(targetStart + offset, lineStart), min(lineEnd, text.length))
+        if result > lineStart, result == lineEnd, text.character(at: result - 1) == 0x0A { result -= 1 }
+        verticalGoal = (result, goalX)
+        return result
+    }
 }
 
 /// 라이브 편집기 (ADR-0005 L1).
