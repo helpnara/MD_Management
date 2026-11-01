@@ -2,6 +2,8 @@
 • 노트에 사진처럼 넣은 PDF 는 첫 쪽이 보이고, 누르면 PDF 를 엽니다. 동영상 · 문서 같은 다른 첨부는 이름이 든 카드로 보이고 눌러서 엽니다. 빈칸으로 보이던 자리입니다.
 • 문서를 첨부할 때 고르기 창에서 폴더 안으로 들어갈 수 있습니다.
 • 제목에 # 이 든 노트로 가는 링크가 열리지 않던 것을 고쳤습니다.
+• 다른 앱에서 복사한 글이 서식과 사진 없이 붙던 경우를 고쳤습니다. 줄 번호 뒤에 보이지 않는 빈칸이 있을 때였습니다.
+• 세로로 긴 손글씨 그림을 붙여 넣으면 흐려지던 것을 고쳤습니다. 긴 그림도 가로 폭을 지켜 저장합니다.
 
 — English (What’s New in This Version) —
 
@@ -9,3 +11,5 @@
 • A PDF placed in a note like a photo now shows its first page, and tapping it opens the PDF. Other attachments such as videos and documents appear as a card with the file name — tap to open. These used to show as a blank space.
 • When attaching a document, you can now open folders in the file picker.
 • Fixed links to notes whose title contains a # not opening.
+• Fixed text copied from other apps sometimes pasting without its formatting and photos (when a line number was followed by an invisible space).
+• Fixed tall handwriting images becoming blurry when pasted. Tall images now keep their width when saved.

@@ -175,14 +175,14 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
-### 1.1.22 제출 순서 — 빌드 144 (2026-11-01 준비 · 확인 끝 · **1.1.21 승인 · 배포 뒤에**)
+### 1.1.22 제출 순서 — 빌드 145 (2026-11-01 준비 · 빌드 144 확인 끝 · 145 는 298 · 299 확인 뒤 · **1.1.21 승인 · 배포 뒤에**)
 
 > 294 ↑↓ 커서 튐 (네 빌드 — 140 ~ 143) · 295 `![](…pdf)` 첫 쪽 그림 · 파일 카드 · 296 문서 첨부 창 파일만 · 297 `#` 든 파일 이름 링크 (빌드 144). 그림 · 설명 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로.
 > **1.1.21 이 심사 중이면 새 판을 만들 수 없다** (1.0.3 때와 같다) — 승인 · 배포된 뒤 낸다.
 
-1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.22` → **빌드** 칸에서 **144** (`1.1.22 (144)`)
-2. 한국어 칸 *이 버전의 새로운 기능* — 아래 네 줄 (`docs/store/1.1.22-새로운-기능.txt` · 243자 / 4000)
-3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — 아래 영어 네 줄 (501자 / 4000) → **저장**
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.22` → **빌드** 칸에서 **145** (`1.1.22 (145)`) — 144 가 아니다(298 · 299 가 없다)
+2. 한국어 칸 *이 버전의 새로운 기능* — 아래 여섯 줄 (`docs/store/1.1.22-새로운-기능.txt` · 372자 / 4000)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — 아래 영어 여섯 줄 (752자 / 4000) → **저장**
 4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
 5. 제출 → `main` 병합 (= 1.1.22) → 승인 · 배포 기다림
 
@@ -191,6 +191,8 @@ https://helpnara.github.io/MD_Management/privacy/
 • 노트에 사진처럼 넣은 PDF 는 첫 쪽이 보이고, 누르면 PDF 를 엽니다. 동영상 · 문서 같은 다른 첨부는 이름이 든 카드로 보이고 눌러서 엽니다. 빈칸으로 보이던 자리입니다.
 • 문서를 첨부할 때 고르기 창에서 폴더 안으로 들어갈 수 있습니다.
 • 제목에 # 이 든 노트로 가는 링크가 열리지 않던 것을 고쳤습니다.
+• 다른 앱에서 복사한 글이 서식과 사진 없이 붙던 경우를 고쳤습니다. 줄 번호 뒤에 보이지 않는 빈칸이 있을 때였습니다.
+• 세로로 긴 손글씨 그림을 붙여 넣으면 흐려지던 것을 고쳤습니다. 긴 그림도 가로 폭을 지켜 저장합니다.
 ```
 
 ```
@@ -198,6 +200,8 @@ https://helpnara.github.io/MD_Management/privacy/
 • A PDF placed in a note like a photo now shows its first page, and tapping it opens the PDF. Other attachments such as videos and documents appear as a card with the file name — tap to open. These used to show as a blank space.
 • When attaching a document, you can now open folders in the file picker.
 • Fixed links to notes whose title contains a # not opening.
+• Fixed text copied from other apps sometimes pasting without its formatting and photos (when a line number was followed by an invisible space).
+• Fixed tall handwriting images becoming blurry when pasted. Tall images now keep their width when saved.
 ```
 
 ### 1.1.21 제출 순서 — 빌드 138 (2026-11-01 준비 · 사용자 — *심사는 이번 빌드까지 포함해서 제출 준비하자* · *여기까지 포함해서*)
