@@ -913,6 +913,7 @@
           "unchecked": 1
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -959,6 +960,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1038,6 +1040,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1100,6 +1103,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1150,6 +1154,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1218,6 +1223,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1295,6 +1301,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1358,6 +1365,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1419,6 +1427,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1485,6 +1494,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [],
         "imageSrcs": [],
         "listItems": 0,
@@ -1519,6 +1529,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1563,6 +1574,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1613,6 +1625,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1676,6 +1689,7 @@
           "unchecked": 2
         },
         "codeBlocks": 2,
+        "fileCards": [],
         "headings": [
           1,
           2,
@@ -1716,6 +1730,226 @@
       },
       "source": "---\ntitle: 표와 코드가 든 노트\ntags: [렌더]\n---\n\n# 표와 코드가 든 노트\n\n## 표\n\n| 하는 것 | 어디서 |\n|---|---|\n| 보기 · 고치기 | 파일을 열면 바로 |\n| 찾기 | 아래 검색 |\n\n## 할 일\n\n- [x] 끝낸 것\n- [ ] 안 한 것\n- [ ] 또 안 한 것\n- 체크박스가 아닌 항목\n\n## 코드\n\n```swift\nlet note = try store.readText(at: \"회의.md\")\n```\n\n들여쓰기 코드도 하나:\n\n    plain code\n\n> 인용문 한 줄.\n\n---\n\n*기울임* 과 **굵게** 와 `인라인 코드`.\n\n![그림](assets/그림.png)\n",
       "title": "표와 코드가 든 노트"
+    },
+    {
+      "body": "# 첨부 넷\n\n![](assets/보고서.pdf)\n\n![](assets/회의.mov)\n\n![](assets/사진.png)\n\n![](assets/없는.pdf)\n\n[견적서](assets/보고서.pdf)\n",
+      "existing": [
+        "자료/assets/보고서.pdf",
+        "자료/assets/사진.png",
+        "자료/assets/회의.mov"
+      ],
+      "file": "files.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "fileCards": [
+          {
+            "path": "자료/assets/보고서.pdf",
+            "thumb": true
+          },
+          {
+            "path": "자료/assets/회의.mov",
+            "thumb": false
+          }
+        ],
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/%EC%9E%90%EB%A3%8C/assets/%EC%82%AC%EC%A7%84.png"
+        ],
+        "listItems": 0,
+        "missing": [
+          "assets/%EC%97%86%EB%8A%94.pdf"
+        ],
+        "missingDecoded": [
+          "assets/없는.pdf"
+        ],
+        "tables": 0
+      },
+      "links": [
+        {
+          "destination": "assets/%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%ED%9A%8C%EC%9D%98.mov",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%EC%82%AC%EC%A7%84.png",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%EC%97%86%EB%8A%94.pdf",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf",
+          "kind": "link"
+        }
+      ],
+      "name": "files.md",
+      "notePath": "자료/첨부.md",
+      "resolved": [
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/assets/보고서.pdf"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/assets/회의.mov"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/assets/사진.png"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/assets/없는.pdf"
+        },
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/assets/보고서.pdf"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "자료/첨부.md",
+          "자료/assets/보고서.pdf",
+          "자료/assets/회의.mov",
+          "자료/assets/사진.png"
+        ],
+        "missing": [
+          "assets/%EC%97%86%EB%8A%94.pdf"
+        ],
+        "missingDecoded": [
+          "assets/없는.pdf"
+        ],
+        "mode": "zip"
+      },
+      "source": "# 첨부 넷\n\n![](assets/보고서.pdf)\n\n![](assets/회의.mov)\n\n![](assets/사진.png)\n\n![](assets/없는.pdf)\n\n[견적서](assets/보고서.pdf)\n",
+      "title": "첨부 넷"
+    },
+    {
+      "body": "# 이름에 #태그 가 든 노트들\n\n[고려대 교육](<고려대 교육 #과제관리 #관점요약.md>)\n\n[머리말로](노트.md#머리말)\n\n![사진](<사진 #1.png>)\n\n[퍼센트로 적은 것](%EA%B3%A0%EB%A0%A4%EB%8C%80%20%EA%B5%90%EC%9C%A1%20%23%EA%B3%BC%EC%A0%9C%EA%B4%80%EB%A6%AC%20%23%EA%B4%80%EC%A0%90%EC%9A%94%EC%95%BD.md)\n\n[같은 문서 안](#머리말)\n\n[없는 것](<회의 #메모.md>)\n",
+      "existing": [
+        "자료/고려대 교육 #과제관리 #관점요약.md",
+        "자료/노트.md",
+        "자료/사진 #1.png"
+      ],
+      "file": "hash-names.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "fileCards": [],
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/%EC%9E%90%EB%A3%8C/%EC%82%AC%EC%A7%84%20%231.png"
+        ],
+        "listItems": 0,
+        "missing": [
+          "%ED%9A%8C%EC%9D%98%20#%EB%A9%94%EB%AA%A8.md"
+        ],
+        "missingDecoded": [
+          "회의 #메모.md"
+        ],
+        "tables": 0
+      },
+      "links": [
+        {
+          "destination": "%EA%B3%A0%EB%A0%A4%EB%8C%80%20%EA%B5%90%EC%9C%A1%20#%EA%B3%BC%EC%A0%9C%EA%B4%80%EB%A6%AC%20#%EA%B4%80%EC%A0%90%EC%9A%94%EC%95%BD.md",
+          "kind": "link"
+        },
+        {
+          "destination": "%EB%85%B8%ED%8A%B8.md#%EB%A8%B8%EB%A6%AC%EB%A7%90",
+          "kind": "link"
+        },
+        {
+          "destination": "%EC%82%AC%EC%A7%84%20#1.png",
+          "kind": "image"
+        },
+        {
+          "destination": "%EA%B3%A0%EB%A0%A4%EB%8C%80%20%EA%B5%90%EC%9C%A1%20%23%EA%B3%BC%EC%A0%9C%EA%B4%80%EB%A6%AC%20%23%EA%B4%80%EC%A0%90%EC%9A%94%EC%95%BD.md",
+          "kind": "link"
+        },
+        {
+          "destination": "#%EB%A8%B8%EB%A6%AC%EB%A7%90",
+          "kind": "link"
+        },
+        {
+          "destination": "%ED%9A%8C%EC%9D%98%20#%EB%A9%94%EB%AA%A8.md",
+          "kind": "link"
+        }
+      ],
+      "name": "hash-names.md",
+      "notePath": "자료/태그.md",
+      "resolved": [
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/고려대 교육 #과제관리 #관점요약.md"
+        },
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/노트.md"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/사진 #1.png"
+        },
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/고려대 교육 #과제관리 #관점요약.md"
+        },
+        {
+          "linkKind": "link",
+          "target": "empty",
+          "value": ""
+        },
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/회의 #메모.md"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "자료/태그.md",
+          "자료/고려대 교육 #과제관리 #관점요약.md",
+          "자료/노트.md",
+          "자료/사진 #1.png"
+        ],
+        "missing": [
+          "%ED%9A%8C%EC%9D%98%20#%EB%A9%94%EB%AA%A8.md"
+        ],
+        "missingDecoded": [
+          "회의 #메모.md"
+        ],
+        "mode": "zip"
+      },
+      "source": "# 이름에 #태그 가 든 노트들\n\n[고려대 교육](<고려대 교육 #과제관리 #관점요약.md>)\n\n[머리말로](노트.md#머리말)\n\n![사진](<사진 #1.png>)\n\n[퍼센트로 적은 것](%EA%B3%A0%EB%A0%A4%EB%8C%80%20%EA%B5%90%EC%9C%A1%20%23%EA%B3%BC%EC%A0%9C%EA%B4%80%EB%A6%AC%20%23%EA%B4%80%EC%A0%90%EC%9A%94%EC%95%BD.md)\n\n[같은 문서 안](#머리말)\n\n[없는 것](<회의 #메모.md>)\n",
+      "title": "이름에 #태그 가 든 노트들"
     }
   ],
   "contextCases": [
@@ -5402,6 +5636,19 @@
         "plain": null
       },
       {
+        "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 3.0px 0.0px; font: 29.1px '.AppleSystemUIFont'}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.5px '.AppleSystemUIFont'; min-height: 23.3px}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.5px '.AppleSystemUIFont'}\np.p4 {margin: 9.0px 0.0px 8.0px 0.0px; font: 17.5px '.AppleSystemUIFont'}\nspan.s1 {font-family: 'UICTFontTextStyleBody'; font-weight: bold; font-style: normal; font-size: 29.12px}\nspan.s2 {font-family: 'UICTFontTextStyleBody'; font-weight: normal; font-style: normal; font-size: 17.47px}\n</style>\n</head>\n<body>\n<p class=\"p1\"><span class=\"s1\">모임 1기 #점검회의</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p3\"><span class=\"s2\">1) 일시 : 2022년 1월 21일 (금요일) 13:00-15:30</span></p>\n<p class=\"p3\"><span class=\"s2\">2) 방법 : 화상 회의</span></p>\n<p class=\"p3\"><span class=\"s2\">3) 대상</span></p>\n<p class=\"p3\"><span class=\"s2\">     ① (13:00) 첫째 과제 (가)</span></p>\n<p class=\"p3\"><span class=\"s2\">     ② (13:30) 둘째 과제 (나, 다)</span></p>\n<p class=\"p3\"><span class=\"s2\">&lt;&lt;30분 쉬고 진행&gt;&gt;</span></p>\n<p class=\"p3\"><span class=\"s2\">4) 내용 : 진행 상황 및 이슈 보고 </span></p>\n<p class=\"p4\"><span class=\"s2\"><img src=\"file:///Attachment.png\" alt=\"Attachment.png\"></span></p>\n</body>\n</html>\n",
+        "images": [
+          {
+            "alt": "Attachment.png",
+            "src": "file:///Attachment.png"
+          }
+        ],
+        "keeps": true,
+        "markdown": "# 모임 1기 #점검회의\n\n1) 일시 : 2022년 1월 21일 (금요일) 13:00-15:30\n\n2) 방법 : 화상 회의\n\n3) 대상\n\n① (13:00) 첫째 과제 (가)\n\n② (13:30) 둘째 과제 (나, 다)\n\n<<30분 쉬고 진행>>\n\n4) 내용 : 진행 상황 및 이슈 보고\n\n￼",
+        "name": "메모 — 마지막 줄이 사진, 그 앞 줄의 번호 뒤가 U+00A0 (298 · 2026-11-01 사용자 진단 — 사진이 안 붙고 평문으로 붙었다)",
+        "plain": "모임 1기 #점검회의\n\n1) 일시 : 2022년 1월 21일 (금요일) 13:00-15:30\n2) 방법 : 화상 회의\n3) 대상\n     ① (13:00) 첫째 과제 (가)\n     ② (13:30) 둘째 과제 (나, 다)\n<<30분 쉬고 진행>>\n4) 내용 : 진행 상황 및 이슈 보고 \n\n"
+      },
+      {
         "html": "<table><tr><th>이름</th><th>값</th></tr><tr><td>가</td><td>1</td></tr></table>",
         "images": [],
         "keeps": null,
@@ -5581,6 +5828,12 @@
         "name": "글 속 숫자는 그대로 본다",
         "plain": "모두 2. 건",
         "result": false
+      },
+      {
+        "converted": "1) 일시 : 금요일\n\n4) 내용 : 보고",
+        "name": "번호 뒤가 붙는 빈칸(U+00A0)이어도 번호다 (298 · 2026-11-01 사용자 진단 — 메모의 평문은 `4)␣내용` 의 빈칸이 U+00A0, 변환한 글은 빈칸이라 평문의 4 만 남아 글자가 빠진 것으로 읽혔다)",
+        "plain": "1) 일시 : 금요일\n4) 내용 : 보고 ",
+        "result": true
       }
     ],
     "promote": [
@@ -5738,6 +5991,68 @@
       }
     ]
   },
+  "imageFitCases": [
+    {
+      "height": 3024,
+      "longSide": 2048.0,
+      "name": "보통 사진 4:3 — 긴 변 2048",
+      "width": 4032
+    },
+    {
+      "height": 2160,
+      "longSide": 2048.0,
+      "name": "16:9 — 짧은 변 1152 라 그대로 2048",
+      "width": 3840
+    },
+    {
+      "height": 2000,
+      "longSide": 2048.0,
+      "name": "2:1 — 짧은 변 꼭 1024 라 그대로 2048",
+      "width": 4000
+    },
+    {
+      "height": 6400,
+      "longSide": 4096.0,
+      "name": "세로로 긴 손글씨 1:4 (사용자 299) — 가로 1024 를 지켜 세로 4096",
+      "width": 1600
+    },
+    {
+      "height": 12000,
+      "longSide": 6144.0,
+      "name": "1:6 — 가로 1024 · 세로 6144",
+      "width": 2000
+    },
+    {
+      "height": 20000,
+      "longSide": 8192.0,
+      "name": "아주 긴 띠 1:10 — 긴 변 8192 에서 멈춘다",
+      "width": 2000
+    },
+    {
+      "height": 6000,
+      "longSide": 6000.0,
+      "name": "원본 가로가 1024 보다 작은 긴 그림 — 가로를 키우지 않고 원본 그대로",
+      "width": 800
+    },
+    {
+      "height": 900,
+      "longSide": 1200.0,
+      "name": "작은 사진 — 키우지 않는다",
+      "width": 1200
+    },
+    {
+      "height": 1600,
+      "longSide": 4096.0,
+      "name": "가로로 긴 그림도 같다",
+      "width": 6400
+    },
+    {
+      "height": 0,
+      "longSide": 2048.0,
+      "name": "0 이면 2048",
+      "width": 0
+    }
+  ],
   "inboxCases": [
     {
       "existing": {},
@@ -7519,6 +7834,38 @@
       "pick": null,
       "query": null,
       "text": "어제 >>회의"
+    },
+    {
+      "applied": "어제 [고려대 교육 #과제관리 #관점요약](<고려대 교육 %23과제관리 %23관점요약.md>)",
+      "caret": 7,
+      "edit": {
+        "length": 4,
+        "selectionLength": 0,
+        "selectionStart": 52,
+        "start": 3,
+        "text": "[고려대 교육 #과제관리 #관점요약](<고려대 교육 %23과제관리 %23관점요약.md>)"
+      },
+      "menuApplied": "어제 >>고려[고려대 교육 #과제관리 #관점요약](<고려대 교육 %23과제관리 %23관점요약.md>)",
+      "menuEdit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 56,
+        "start": 7,
+        "text": "[고려대 교육 #과제관리 #관점요약](<고려대 교육 %23과제관리 %23관점요약.md>)"
+      },
+      "name": "꺾쇠 둘 — #태그 가 든 제목을 고르면 주소의 # 은 %23 (297)",
+      "noteFolder": "자료",
+      "pick": {
+        "path": "자료/고려대 교육 #과제관리 #관점요약.md",
+        "title": "고려대 교육 #과제관리 #관점요약"
+      },
+      "query": {
+        "length": 4,
+        "start": 3,
+        "text": "고려",
+        "trigger": ">>"
+      },
+      "text": "어제 >>고려"
     }
   ],
   "mapCases": [
@@ -11346,6 +11693,13 @@
       "name": "LF-닫는괄호가-다음줄이면-안고친다",
       "rebased": "[a](assets/a.png 설명\n다음 줄 (괄호) 끝)\n",
       "text": "[a](assets/a.png 설명\n다음 줄 (괄호) 끝)\n",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "이름에 # 든 노트 — 옮겨도 이름 그대로 (297)",
+      "rebased": "[고려대](<../고려대 교육 #과제관리 #관점요약.md>) [절](../노트.md#머리말) ![](<../사진 #1.png>)",
+      "text": "[고려대](<고려대 교육 #과제관리 #관점요약.md>) [절](노트.md#머리말) ![](<사진 #1.png>)",
       "to": "회의"
     }
   ],

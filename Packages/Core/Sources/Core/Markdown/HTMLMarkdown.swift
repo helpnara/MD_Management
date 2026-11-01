@@ -162,8 +162,10 @@ public enum HTMLMarkdown {
         }.joined(separator: "\n")
     }
 
+    /// 298 — **붙는 빈칸(U+00A0)은 빈칸으로 보고** 번호를 뗀다. 메모의 평문은 `4)␣내용` 의 빈칸이 U+00A0 인데 변환한 글은
+    /// 빈칸이라, 평문에서만 `4` 가 번호로 안 떼여 *글자가 빠졌다* 로 읽혔다 (2026-11-01 사용자 진단 — 사진이 안 붙고 평문으로).
     static func letters(_ text: String) -> [Unicode.Scalar] {
-        dropListNumbers(text).precomposedStringWithCanonicalMapping.unicodeScalars.filter { scalar in
+        dropListNumbers(replacing(text, string([nbsp]), with: " ")).precomposedStringWithCanonicalMapping.unicodeScalars.filter { scalar in
             switch scalar.properties.generalCategory {
             case .uppercaseLetter, .lowercaseLetter, .titlecaseLetter, .modifierLetter, .otherLetter, .decimalNumber:
                 return true

@@ -95,6 +95,24 @@
       "existing": [
         "assets/그림.png"
       ]
+    },
+    {
+      "file": "files.md",
+      "notePath": "자료/첨부.md",
+      "existing": [
+        "자료/assets/보고서.pdf",
+        "자료/assets/회의.mov",
+        "자료/assets/사진.png"
+      ]
+    },
+    {
+      "file": "hash-names.md",
+      "notePath": "자료/태그.md",
+      "existing": [
+        "자료/고려대 교육 #과제관리 #관점요약.md",
+        "자료/노트.md",
+        "자료/사진 #1.png"
+      ]
     }
   ]
 }

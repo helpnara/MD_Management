@@ -3877,6 +3877,16 @@
         }
       }
     },
+    "폴더는 첨부할 수 없습니다: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folders can't be attached: %@"
+          }
+        }
+      }
+    },
     "폴더를 가리키는 링크를 세는 중" : {
       "localizations" : {
         "en" : {

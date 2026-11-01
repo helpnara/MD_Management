@@ -162,12 +162,8 @@ public enum MarkdownLinks {
                                files: [String]) -> String? {
         let wrapped = raw.hasPrefix("<") && raw.hasSuffix(">") && raw.count >= 2
         let inner = wrapped ? String(raw.dropFirst().dropLast()) : raw
-        var anchor = ""
-        var target = inner
-        if let hash = inner.firstIndex(of: "#"), hash != inner.startIndex {
-            anchor = String(inner[hash...])
-            target = String(inner[inner.startIndex..<hash])
-        }
+        // 297 — `#` 을 가르는 규칙은 `Paths.splitAnchor` 하나.
+        let (target, anchor) = Paths.splitAnchor(inner)
         guard !target.isEmpty else { return nil }
         // 바깥 주소 · 절대경로 · 폴더 밖은 손대지 않는다.
         guard case .relative(let here) = Paths.resolve(link: target, fromNoteAt: note) else {
@@ -223,12 +219,8 @@ public enum MarkdownLinks {
                                  old: String, new: String) -> String {
         let wrapped = raw.hasPrefix("<") && raw.hasSuffix(">") && raw.count >= 2
         let inner = wrapped ? String(raw.dropFirst().dropLast()) : raw
-        var anchor = ""
-        var target = inner
-        if let hash = inner.firstIndex(of: "#"), hash != inner.startIndex {
-            anchor = String(inner[hash...])
-            target = String(inner[inner.startIndex..<hash])
-        }
+        // 297 — `#` 을 가르는 규칙은 `Paths.splitAnchor` 하나.
+        let (target, anchor) = Paths.splitAnchor(inner)
         guard case .relative(let resolved) = Paths.resolve(link: target, fromNoteAt: noteOld) else { return raw }
         let moved: String
         if resolved.hasPrefix(old + "/") {
@@ -253,12 +245,8 @@ public enum MarkdownLinks {
         let wrapped = raw.hasPrefix("<") && raw.hasSuffix(">") && raw.count >= 2
         let inner = wrapped ? String(raw.dropFirst().dropLast()) : raw
         // 앵커(`노트.md#절`)는 떼어 두었다가 도로 붙인다.
-        var anchor = ""
-        var target = inner
-        if let hash = inner.firstIndex(of: "#"), hash != inner.startIndex {
-            anchor = String(inner[hash...])
-            target = String(inner[inner.startIndex..<hash])
-        }
+        // 297 — `#` 을 가르는 규칙은 `Paths.splitAnchor` 하나.
+        let (target, anchor) = Paths.splitAnchor(inner)
         guard case .relative(let resolved) = Paths.resolve(link: target, fromNoteAt: note) else {
             return raw
         }

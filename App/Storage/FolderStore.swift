@@ -13,6 +13,8 @@ actor FolderStore {
     let root: URL
     /// 파일마다 마지막으로 읽은 인코딩. **UTF-8 이 아닌 파일을 조용히 고쳐 쓰지 않으려고** 둔다.
     private var encodings: [String: String.Encoding] = [:]
+    /// 작은 그림 캐시 (295) — 경로 → (고친 시각 · 긴 변 · PNG). `thumbnail(forRelativePath:maxPixel:)` 이 쓴다.
+    private var thumbnails: [String: (stamp: Date?, pixel: CGFloat, data: Data)] = [:]
     let kind: FolderKind
 
     /// 보안 범위 폴더((b))는 쓰는 동안 접근을 열어 두어야 한다.
@@ -1503,16 +1505,26 @@ extension FolderStore: AssetProvider {
     /// 읽기 화면에 건네는 파일의 상한 — 사진 한 장으로는 넉넉하다 (181).
     static let largestHandedToViewer = 64 * 1024 * 1024
 
-    /// 폴더 안 사진의 **작은 그림** — 커서 줄 사진 띠 (181). 파일에서 바로 줄여 읽는다.
+    /// 폴더 안 사진의 **작은 그림** — 커서 줄 사진 띠 (181) · 읽기 화면의 PDF 첫 쪽 (295). 파일에서 바로 줄여 읽는다.
+    /// **재는 자리 하나** — 띠와 읽기 화면이 같은 함수를 쓴다. 같은 파일(고친 시각 같음) · 같은 크기면 한 번 만든 것을 준다 —
+    /// PDF 첫 쪽은 수십 ms 라 노트를 열 때마다 다시 그리면 PDF 가 많은 노트가 굼뜨다. 64개를 넘으면 비운다.
     func thumbnail(forRelativePath path: String, maxPixel: CGFloat) -> Data? {
         guard Paths.join(base: "", relative: path) == Paths.normalized(path) else { return nil }
         openScopeIfNeeded()
+        let url = root.appendingPathComponent(path)
+        let stamp = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+        if let hit = thumbnails[path], hit.stamp == stamp, hit.pixel == maxPixel { return hit.data }
         var result: Data?
-        coordinateRead(root.appendingPathComponent(path)) { readURL in
+        coordinateRead(url) { readURL in
             result = ImageImport.thumbnailPNG(at: readURL, maxPixel: maxPixel)
+        }
+        if let result {
+            if thumbnails.count >= 64 { thumbnails.removeAll() }
+            thumbnails[path] = (stamp, maxPixel, result)
         }
         return result
     }
+
 
     /// 후보 경로 가운데 실제로 있는 것만. 렌더러에 넘길 `exists` 를 만든다.
     func existingPaths(among candidates: [String]) -> Set<String> {

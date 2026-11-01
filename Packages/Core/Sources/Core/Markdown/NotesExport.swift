@@ -107,12 +107,8 @@ public enum NotesExport {
     private static func relink(_ raw: String, note: String, newFolder: String, moves: [String: String]) -> String {
         let wrapped = raw.hasPrefix("<") && raw.hasSuffix(">") && raw.count >= 2
         let inner = wrapped ? String(raw.dropFirst().dropLast()) : raw
-        var anchor = ""
-        var target = inner
-        if let hash = inner.firstIndex(of: "#"), hash != inner.startIndex {
-            anchor = String(inner[hash...])
-            target = String(inner[inner.startIndex..<hash])
-        }
+        // 297 — `#` 을 가르는 규칙은 `Paths.splitAnchor` 하나.
+        let (target, anchor) = Paths.splitAnchor(inner)
         guard case .relative(let resolved) = Paths.resolve(link: target, fromNoteAt: note),
               let moved = moves[resolved] else { return raw }
         let link = Paths.relativeLink(from: newFolder, to: moved) + anchor

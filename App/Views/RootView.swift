@@ -1501,7 +1501,10 @@ private struct NoteDetail: View {
                 await library.insertPhotos(datas)
             }
         }
-        .fileImporter(isPresented: $showsDocumentPicker, allowedContentTypes: [.item],
+        // **파일만** (296, 2026-11-01 사용자 화면 — 폴더 안의 폴더에 못 들어갔다). `.item` 은 폴더도 들어 고르기 창이 폴더를
+        // *들어갈 곳* 이 아니라 *고를 항목* 으로 다뤘다 — 여러 개 고르기에서는 누르면 골라질 뿐이다. `.data` 는 파일(사진 · PDF ·
+        // 동영상 · 문서)만이라 폴더는 다시 들어갈 곳이 된다. 폴더를 골라야 하는 창(가져오기 · 다른 폴더 고르기)은 `.folder` 그대로.
+        .fileImporter(isPresented: $showsDocumentPicker, allowedContentTypes: [.data],
                       allowsMultipleSelection: true) { result in
             switch result {
             case .success(let urls):
@@ -2323,6 +2326,7 @@ private struct SaveIndicator: View {
 
 /// 폴더가 아직 없을 때 쓰는 빈 제공자.
 private struct EmptyAssetProvider: AssetProvider {
+    func thumbnail(forRelativePath path: String, maxPixel: CGFloat) async -> Data? { nil }
     func data(forRelativePath path: String) async -> Data? { nil }
 }
 

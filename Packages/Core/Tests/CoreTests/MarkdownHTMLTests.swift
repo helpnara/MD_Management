@@ -50,6 +50,17 @@ final class MarkdownHTMLTests: XCTestCase {
         }
     }
 
+    /// **사진이 아닌 `![](…)` 는 파일 카드** (295) — PDF 는 첫 쪽 그림(`yb://thumb/`)이 붙고, 누르면 `yb://note/` 링크다.
+    func testFileCardsMatchPython() throws {
+        for item in try GoldenTests.loadGolden().cases {
+            let rendered = MarkdownHTML.render(
+                markdown: item.source,
+                notePath: item.notePath,
+                existing: Set(item.existing))
+            XCTAssertEqual(fileCards(in: rendered.bodyHTML), item.html.fileCards, "[\(item.name)] 파일 카드")
+        }
+    }
+
     func testMissingAttachmentsMatchPython() throws {
         for item in try GoldenTests.loadGolden().cases {
             let rendered = MarkdownHTML.render(
@@ -177,19 +188,37 @@ final class MarkdownHTMLTests: XCTestCase {
         return total
     }
 
-    /// `<img ... src="..." ...>` 의 주소를 나온 순서대로.
+    /// `<img ... src="..." ...>` 의 주소를 나온 순서대로. 파일 카드의 첫 쪽 그림(`yb-file-thumb`)은 사진이 아니라 뺀다 (295).
     private func imageSources(in html: String) -> [String] {
         var sources: [String] = []
         var index = html.startIndex
         while let img = html.range(of: "<img", range: index..<html.endIndex) {
             guard let close = html.range(of: ">", range: img.upperBound..<html.endIndex) else { break }
             let tag = html[img.upperBound..<close.lowerBound]
-            if let src = tag.range(of: "src=\""),
+            if !tag.contains("yb-file-thumb"),
+               let src = tag.range(of: "src=\""),
                let end = tag.range(of: "\"", range: src.upperBound..<tag.endIndex) {
                 sources.append(String(tag[src.upperBound..<end.lowerBound]))
             }
             index = close.upperBound
         }
         return sources
+    }
+
+    /// `<a class="yb-file…" href="yb://note/…">…</a>` 하나마다 경로(퍼센트를 푼 것)와 첫 쪽 그림이 있나.
+    private func fileCards(in html: String) -> [GoldenTests.Golden.HTMLFacts.FileCard] {
+        var out: [GoldenTests.Golden.HTMLFacts.FileCard] = []
+        var index = html.startIndex
+        while let open = html.range(of: "<a class=\"yb-file", range: index..<html.endIndex) {
+            guard let close = html.range(of: "</a>", range: open.upperBound..<html.endIndex) else { break }
+            let card = html[open.lowerBound..<close.upperBound]
+            if let href = card.range(of: "href=\"yb://note/"),
+               let end = card.range(of: "\"", range: href.upperBound..<card.endIndex) {
+                let path = MarkdownHTML.relativePath(fromURLPath: "/" + card[href.upperBound..<end.lowerBound])
+                out.append(.init(path: path, thumb: card.contains("yb://thumb/")))
+            }
+            index = close.upperBound
+        }
+        return out
     }
 }

@@ -12,12 +12,12 @@ updated: 2026-10-22
 
 ---
 
-## 0. 지금 상태 (2026-11-01 — **1.1.21 (빌드 138) 심사 제출** · 1.1.19 (빌드 134) 배포 · 1.1.18 (빌드 133) 배포 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.19)
+## 0. 지금 상태 (2026-11-01 — **1.1.22 (빌드 145) 심사 제출** (1.1.21 거둠) · 1.1.19 (빌드 134) 배포 · 1.1.18 (빌드 133) 배포 · 1.1.21 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.22)
 
 | | |
 |---|---|
 | 번들 ID | `com.helpnara.markdown` |
-| 출시된 판 | **1.1.19** (빌드 134 · 2026-10-30 배포) — 한국어 · 영어. 그 앞 1.1.18 (빌드 133) · 1.1.16 (빌드 123) · 1.1.15 (빌드 122). 1.1.13 · 1.1.17 은 내지 않고 건너뜀 |
+| 출시된 판 | **1.1.19** (빌드 134 · 2026-10-30 배포) — 한국어 · 영어. 그 앞 1.1.18 (빌드 133) · 1.1.16 (빌드 123) · 1.1.15 (빌드 122). 1.1.13 · 1.1.17 · 1.1.21 은 내지 않고 건너뜀 (1.1.21 은 심사 중 거둠 — 1.1.22 에 합쳐 낸다) |
 | 빌드 번호 | **CI 실행 번호와 같다** (`testflight.yml` 이 `github.run_number` 를 넣는다) — 심사에 낼 빌드를 확인 목록 0번의 판으로 고른다 |
 | 처리방침 · 지원 | 한국어 `/privacy/` · 영어 `/en/privacy/` (열리는 것 확인 — 2026-09-24 · 2026-10-07) |
 | 스크린샷 | 두 언어 같은 짜임 — 아이폰 6.1" · 6.5" · 6.9" 다섯 장씩 · 아이패드 13" 세로 다섯 장 (글귀 · CI 촬영 · `docs/store/screenshots/{ko,en}/`). 아이패드 5번(찾기)은 1.1.12 에서 갈았다 · 아이폰 미리보기 영상 두 언어 |
@@ -175,7 +175,51 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
-### 1.1.21 제출 순서 — 빌드 138 (2026-11-01 준비 · 사용자 — *심사는 이번 빌드까지 포함해서 제출 준비하자* · *여기까지 포함해서*)
+### 1.1.22 제출 순서 — 빌드 145 (2026-11-01 준비 · 빌드 145 확인 끝 · **1.1.21 을 거두고 바로 낸다** — 사용자 *1.1.21 심사 제출 취소하고 바로 1.1.22로 제출 준비하자*)
+
+> 1.1.21 몫 — 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 · 293 설정 · 진단 재구성 (빌드 136 ~ 138) **+** 1.1.22 몫 — 294 ↑↓ 커서 튐 · 295 `![](…pdf)` 첫 쪽 그림 · 파일 카드 · 296 문서 첨부 창 파일만 · 297 `#` 든 파일 이름 링크 (빌드 144) · 298 메모 붙여넣기 안전장치 · 299 긴 손글씨 그림 (빌드 145). 그림 · 설명 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로.
+> **1.1.21 은 출시되지 않으므로 새로운 기능에 두 판의 줄을 합쳐 적는다** — 열두 줄. 1.1.21 은 1.1.13 · 1.1.17 처럼 건너뛴 판이 된다.
+> 거두는 길은 1.1.13 때와 같다 (아래 1.1.13 → 1.1.14 절) — 거둔 판은 *개발자가 거부함* 상태가 되고 **그 화면의 버전 번호 칸을 고쳐** 쓴다. 심사 중이면 새 판(**iOS 앱 +**)은 못 만든다.
+
+1. App Store Connect → 앱 → 왼쪽 **1.1.21** (심사 대기 중 · 심사 중) → 오른쪽 위 **심사에서 제거** (심사 중이면 *심사 취소* 로 보일 수 있다) → 확인 → 상태가 **개발자가 거부함** 으로 바뀐다
+2. 그 화면 맨 위 **버전 번호** 칸(연필)을 `1.1.22` 로 고친다 (안 고쳐지면 **iOS 앱 +** → `1.1.22` 로 새로 만들고 아래를 거기에 넣는다)
+3. **빌드** 칸 — 138 을 빼고(−) **145** 를 고른다 (`1.1.22 (145)`) — 144 가 아니다(298 · 299 가 없다)
+4. 한국어 칸 *이 버전의 새로운 기능* — 1.1.21 여섯 줄이 들어 있을 것이다. **지우고** 아래 열두 줄로 바꾼다 (`docs/store/1.1.22-새로운-기능.txt` · 851자 / 4000)
+5. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — 아래 영어 열두 줄로 바꾼다 (1660자 / 4000) → **저장**
+6. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+7. 제출 → `main` 병합 (= 1.1.22) → 승인 · 배포 기다림
+
+```
+• 다른 곳에서 옮겨 온 글의 보이지 않는 줄바꿈 · 빈칸 글자를 고칩니다. 붙여 넣을 때 저절로 고치고, 이미 들어온 노트는 더 보기 메뉴의 ‘줄바꿈 고치기’로 고칩니다. 제목과 목록이 제 모양으로 섭니다.
+• 다른 노트 앱이 마크다운으로 내보낸 폴더를 가져옵니다. 설정 → 폴더 → ‘마크다운으로 내보낸 폴더 가져오기’를 누르면 노트는 한 폴더에 나란히, 사진은 그 폴더의 assets 로 모으고 링크를 맞춥니다. 고른 폴더는 그대로 둡니다.
+• 노트를 다른 폴더로 옮길 때 그 노트만 쓰는 사진도 함께 옮깁니다. 옛 폴더를 지워도 사진이 깨지지 않습니다.
+• 휴지통에서 지운 폴더를 폴더째 되돌릴 수 있습니다.
+• 다른 기기에서 만든 글의 한글 낱말이 찾기에 걸리지 않던 것을 고쳤습니다.
+• 설정 화면을 정리했습니다. 폴더 · 노트 · 정리 · 도움 네 묶음으로 줄이고, 안내는 ‘사용법’ 한 화면에 모았습니다. 앱 판은 설정 맨 아래에 있습니다.
+• 외장 키보드로 글머리표 목록을 위아래 화살표로 오갈 때 커서가 글의 처음이나 끝으로 튀던 것을 고쳤습니다.
+• 노트에 사진처럼 넣은 PDF 는 첫 쪽이 보이고, 누르면 PDF 를 엽니다. 동영상 · 문서 같은 다른 첨부는 이름이 든 카드로 보이고 눌러서 엽니다. 빈칸으로 보이던 자리입니다.
+• 문서를 첨부할 때 고르기 창에서 폴더 안으로 들어갈 수 있습니다.
+• 제목에 # 이 든 노트로 가는 링크가 열리지 않던 것을 고쳤습니다.
+• 다른 앱에서 복사한 글이 서식과 사진 없이 붙던 경우를 고쳤습니다. 줄 번호 뒤에 보이지 않는 빈칸이 있을 때였습니다.
+• 세로로 긴 손글씨 그림을 붙여 넣으면 흐려지던 것을 고쳤습니다. 긴 그림도 가로 폭을 지켜 저장합니다.
+```
+
+```
+• Fixes hidden line breaks and spaces in text brought in from elsewhere. Pasting fixes them automatically; for notes already in your folder, choose Fix Line Breaks from the More menu. Headings and lists show up as they should.
+• Import a folder exported as Markdown from another notes app: Settings → Folder → Import an Exported Markdown Folder. Notes go side by side in one folder, photos into its assets folder, and links are updated. The chosen folder stays as it is.
+• Moving a note to another folder now moves the photos only that note uses along with it, so deleting the old folder no longer breaks them.
+• Restore a deleted folder from the Trash in one step.
+• Korean words in text made on other devices now show up in search.
+• A tidier Settings screen: four groups — Folder, Notes, Cleanup, Help — with the explanations gathered on a single Guide page. The app version is at the bottom of Settings.
+• Fixed the cursor jumping to the start or end of a note when moving through a bulleted list with the arrow keys on an external keyboard.
+• A PDF placed in a note like a photo now shows its first page, and tapping it opens the PDF. Other attachments such as videos and documents appear as a card with the file name — tap to open. These used to show as a blank space.
+• When attaching a document, you can now open folders in the file picker.
+• Fixed links to notes whose title contains a # not opening.
+• Fixed text copied from other apps sometimes pasting without its formatting and photos (when a line number was followed by an invisible space).
+• Fixed tall handwriting images becoming blurry when pasted. Tall images now keep their width when saved.
+```
+
+### 1.1.21 제출 순서 — 빌드 138 (2026-11-01 준비 · 제출 · **같은 날 거둠 — 1.1.22 에 합쳐 낸다**, 사용자 — *1.1.21 심사 제출 취소하고 바로 1.1.22로 제출 준비하자*)
 
 > 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC (빌드 136 — 0 ~ 10 확인 끝) · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 (빌드 137 — 0 ~ 11 확인 끝) · 293 설정 · 진단 재구성 (빌드 138).
 > **1.1.20 (빌드 135) 은 내지 않는다** — 287 이 1.1.21 에 들었다. 그림 · 설명 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로.
@@ -638,6 +682,8 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-11-01 | ✅ **1.1.22 (빌드 145) 제출** (사용자 — *1.1.22 심사 제출 완료. main 병합하자.*). 287 · 289 ~ 299 — 두 판 몫 열두 줄. `main` 병합 (= 1.1.22) |
+| 2026-11-01 | **1.1.21 (빌드 138) 심사 거둠 → 1.1.22 (빌드 145) 로 낸다** (사용자 — *1.1.21 심사 제출 취소하고 바로 1.1.22로 제출 준비하자*) — 새로운 기능은 두 판을 합쳐 열두 줄 · 1.1.21 은 건너뛴 판 |
 | 2026-11-01 | ✅ **1.1.21 (빌드 138) 제출** (사용자 — *1.1.21 심사 제출 완료.*). 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 · 293 설정 정리 — 새로운 기능 여섯 줄 (한 · 영) · 자동 출시 · `main` 병합. 1.1.20 은 내지 않음 |
 | 2026-10-30 | ✅ **1.1.19 (빌드 134) 승인 · 배포** (사용자 — *1.1.19 심사 및 배포 완료.*). 286 찾기 칸을 언제 어디서나 |
 | 2026-10-29 | ✅ **1.1.19 (빌드 134) 제출** (사용자 — *1.1.19 심사 제출 완료.*). 286 찾기 칸을 언제 어디서나 — 새로운 기능 세 줄 (한 · 영) · 자동 출시 · `main` 병합 |
