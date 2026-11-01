@@ -13,6 +13,8 @@ actor FolderStore {
     let root: URL
     /// 파일마다 마지막으로 읽은 인코딩. **UTF-8 이 아닌 파일을 조용히 고쳐 쓰지 않으려고** 둔다.
     private var encodings: [String: String.Encoding] = [:]
+    /// 작은 그림 캐시 (295) — 경로 → (고친 시각 · 긴 변 · PNG). `thumbnail(forRelativePath:maxPixel:)` 이 쓴다.
+    private var thumbnails: [String: (stamp: Date?, pixel: CGFloat, data: Data)] = [:]
     let kind: FolderKind
 
     /// 보안 범위 폴더((b))는 쓰는 동안 접근을 열어 두어야 한다.
@@ -1523,7 +1525,6 @@ extension FolderStore: AssetProvider {
         return result
     }
 
-    private var thumbnails: [String: (stamp: Date?, pixel: CGFloat, data: Data)] = [:]
 
     /// 후보 경로 가운데 실제로 있는 것만. 렌더러에 넘길 `exists` 를 만든다.
     func existingPaths(among candidates: [String]) -> Set<String> {
