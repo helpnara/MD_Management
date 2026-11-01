@@ -175,15 +175,15 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
-### 1.1.21 제출 순서 — 빌드 137 (2026-11-01 준비 · 사용자 — *심사는 이번 빌드까지 포함해서 제출 준비하자*)
+### 1.1.21 제출 순서 — 빌드 138 (2026-11-01 준비 · 사용자 — *심사는 이번 빌드까지 포함해서 제출 준비하자* · *여기까지 포함해서*)
 
-> 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC (빌드 136 — 0 ~ 10 확인 끝) · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 (빌드 137).
+> 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC (빌드 136 — 0 ~ 10 확인 끝) · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 (빌드 137 — 0 ~ 11 확인 끝) · 293 설정 · 진단 재구성 (빌드 138).
 > **1.1.20 (빌드 135) 은 내지 않는다** — 287 이 1.1.21 에 들었다. 그림 · 설명 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로.
 > 새로운 기능에 **다른 앱 이름을 쓰지 않았다** (CLAUDE.md §6) — *다른 노트 앱이 마크다운으로 내보낸 폴더*.
 
-1. 빌드 137 확인 목록(`docs/70-build-137.md`) 끝 → App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.21` → **빌드** 칸에서 **137** (`1.1.21 (137)`)
-2. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 다섯 줄 (`docs/store/1.1.21-새로운-기능.txt` · 388자 / 4000)
-3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — §1-영어 다섯 줄 (732자 / 4000) → **저장**
+1. 빌드 138 확인 목록(`docs/71-build-138.md`) 끝 → App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.21` → **빌드** 칸에서 **138** (`1.1.21 (138)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 여섯 줄 (`docs/store/1.1.21-새로운-기능.txt` · 478자 / 4000)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — §1-영어 여섯 줄 (906자 / 4000) → **저장**
 4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
 5. 제출 → 승인 · 배포 뒤 `main` 병합 (= 1.1.21)
 
@@ -520,6 +520,7 @@ https://helpnara.github.io/MD_Management/en/privacy/
 • Moving a note to another folder now moves the photos only that note uses along with it, so deleting the old folder no longer breaks them.
 • Restore a deleted folder from the Trash in one step.
 • Korean words in text made on other devices now show up in search.
+• A tidier Settings screen: four groups — Folder, Notes, Cleanup, Help — with the explanations gathered on a single Guide page. The app version is at the bottom of Settings.
 ```
 
 ---
@@ -765,7 +766,7 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.21** (2026-11-01 — 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더). 글은 `docs/store/1.1.21-새로운-기능.txt`. 1.1.19 의 글은 `docs/store/1.1.19-새로운-기능.txt`.
+> **1.1.21** (2026-11-01 — 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 · 293 설정 정리). 글은 `docs/store/1.1.21-새로운-기능.txt`. 1.1.19 의 글은 `docs/store/1.1.19-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
@@ -775,5 +776,6 @@ python3 Tools/store/count.py
 • 노트를 다른 폴더로 옮길 때 그 노트만 쓰는 사진도 함께 옮깁니다. 옛 폴더를 지워도 사진이 깨지지 않습니다.
 • 휴지통에서 지운 폴더를 폴더째 되돌릴 수 있습니다.
 • 다른 기기에서 만든 글의 한글 낱말이 찾기에 걸리지 않던 것을 고쳤습니다.
+• 설정 화면을 정리했습니다. 폴더 · 노트 · 정리 · 도움 네 묶음으로 줄이고, 안내는 ‘사용법’ 한 화면에 모았습니다. 앱 판은 설정 맨 아래에 있습니다.
 ```
 
