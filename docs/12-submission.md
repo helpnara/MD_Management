@@ -516,7 +516,7 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ```
 • Fixes hidden line breaks and spaces in text brought in from elsewhere. Pasting fixes them automatically; for notes already in your folder, choose Fix Line Breaks from the More menu. Headings and lists show up as they should.
-• Import a folder exported as Markdown from another notes app: Settings → Notes → Import an Exported Markdown Folder. Notes go side by side in one folder, photos into its assets folder, and links are updated. The chosen folder stays as it is.
+• Import a folder exported as Markdown from another notes app: Settings → Folder → Import an Exported Markdown Folder. Notes go side by side in one folder, photos into its assets folder, and links are updated. The chosen folder stays as it is.
 • Moving a note to another folder now moves the photos only that note uses along with it, so deleting the old folder no longer breaks them.
 • Restore a deleted folder from the Trash in one step.
 • Korean words in text made on other devices now show up in search.
@@ -772,7 +772,7 @@ python3 Tools/store/count.py
 
 ```
 • 다른 곳에서 옮겨 온 글의 보이지 않는 줄바꿈 · 빈칸 글자를 고칩니다. 붙여 넣을 때 저절로 고치고, 이미 들어온 노트는 더 보기 메뉴의 ‘줄바꿈 고치기’로 고칩니다. 제목과 목록이 제 모양으로 섭니다.
-• 다른 노트 앱이 마크다운으로 내보낸 폴더를 가져옵니다. 설정 → 노트 → ‘마크다운으로 내보낸 폴더 가져오기’를 누르면 노트는 한 폴더에 나란히, 사진은 그 폴더의 assets 로 모으고 링크를 맞춥니다. 고른 폴더는 그대로 둡니다.
+• 다른 노트 앱이 마크다운으로 내보낸 폴더를 가져옵니다. 설정 → 폴더 → ‘마크다운으로 내보낸 폴더 가져오기’를 누르면 노트는 한 폴더에 나란히, 사진은 그 폴더의 assets 로 모으고 링크를 맞춥니다. 고른 폴더는 그대로 둡니다.
 • 노트를 다른 폴더로 옮길 때 그 노트만 쓰는 사진도 함께 옮깁니다. 옛 폴더를 지워도 사진이 깨지지 않습니다.
 • 휴지통에서 지운 폴더를 폴더째 되돌릴 수 있습니다.
 • 다른 기기에서 만든 글의 한글 낱말이 찾기에 걸리지 않던 것을 고쳤습니다.
