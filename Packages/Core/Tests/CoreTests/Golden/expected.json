@@ -7753,6 +7753,200 @@
       "result": null
     }
   ],
+  "moveAttachmentCases": [
+    {
+      "files": [
+        "메모/assets/u1.jpeg",
+        "메모/assets/u2.png",
+        "메모/assets/u3.jpeg"
+      ],
+      "folder": "공부",
+      "moves": {
+        "메모/assets/u1.jpeg": "공부/assets/u1.jpeg",
+        "메모/assets/u2.png": "공부/assets/u2.png"
+      },
+      "name": "가져온 폴더에서 다른 폴더로 — 사진이 따라간다 (사용자 291)",
+      "note": "메모/A.md",
+      "notes": {
+        "공부/기존.md": "글",
+        "메모/A.md": "![](assets/u1.jpeg)\n![](assets/u2.png)\n[웹](https://example.com/a)",
+        "메모/B.md": "![](assets/u3.jpeg)"
+      },
+      "rebased": "![](assets/u1.jpeg)\n![](assets/u2.png)\n[웹](https://example.com/a)",
+      "text": "![](assets/u1.jpeg)\n![](assets/u2.png)\n[웹](https://example.com/a)",
+      "trashed": {}
+    },
+    {
+      "files": [
+        "회의/assets/own.png",
+        "회의/assets/shared.png"
+      ],
+      "folder": "공부",
+      "moves": {
+        "회의/assets/own.png": "공부/assets/own.png"
+      },
+      "name": "다른 노트도 쓰는 사진은 제자리 — 링크만 고친다",
+      "note": "회의/A.md",
+      "notes": {
+        "회의/A.md": "![](assets/own.png)\n![](assets/shared.png)",
+        "회의/B.md": "![](assets/shared.png)"
+      },
+      "rebased": "![](assets/own.png)\n![](../회의/assets/shared.png)",
+      "text": "![](assets/own.png)\n![](assets/shared.png)",
+      "trashed": {}
+    },
+    {
+      "files": [
+        "공부/assets/a.png",
+        "여행/assets/a-2.png",
+        "회의/assets/a.png"
+      ],
+      "folder": "공부",
+      "moves": {
+        "회의/assets/a.png": "공부/assets/a-3.png"
+      },
+      "name": "새 폴더에 같은 이름 — 번호 · 금고의 다른 이름도 피한다",
+      "note": "회의/A.md",
+      "notes": {
+        "공부/B.md": "글",
+        "여행/C.md": "![](assets/a-2.png)",
+        "회의/A.md": "![](assets/a.png)"
+      },
+      "rebased": "![](assets/a-3.png)",
+      "text": "![](assets/a.png)",
+      "trashed": {}
+    },
+    {
+      "files": [
+        "메모/assets/u1.jpeg"
+      ],
+      "folder": "정리",
+      "moves": {
+        "메모/assets/u1.jpeg": "정리/assets/u1.jpeg"
+      },
+      "name": "이미 옮겨 둔 노트 — 옛 폴더를 가리키던 사진이 모인다",
+      "note": "공부/A.md",
+      "notes": {
+        "공부/A.md": "![](../메모/assets/u1.jpeg)"
+      },
+      "rebased": "![](assets/u1.jpeg)",
+      "text": "![](../메모/assets/u1.jpeg)",
+      "trashed": {}
+    },
+    {
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "folder": "공부",
+      "moves": {},
+      "name": "못 읽은 노트가 있으면 안 옮긴다 — 링크만",
+      "note": "회의/A.md",
+      "notes": {
+        "다른/C.md": null,
+        "회의/A.md": "![](assets/a.png)"
+      },
+      "rebased": "![](../회의/assets/a.png)",
+      "text": "![](assets/a.png)",
+      "trashed": {}
+    },
+    {
+      "files": [
+        "자료/계약.pdf"
+      ],
+      "folder": "공부",
+      "moves": {},
+      "name": "assets 밖 파일은 사용자의 것 — 안 옮긴다",
+      "note": "회의/A.md",
+      "notes": {
+        "회의/A.md": "[계약](../자료/계약.pdf)"
+      },
+      "rebased": "[계약](../자료/계약.pdf)",
+      "text": "[계약](../자료/계약.pdf)",
+      "trashed": {}
+    },
+    {
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "folder": "공부",
+      "moves": {},
+      "name": "휴지통 노트가 쓰는 사진은 제자리 — 되돌리면 같이 돌아와야 한다",
+      "note": "회의/A.md",
+      "notes": {
+        "회의/A.md": "![](assets/a.png)"
+      },
+      "rebased": "![](../회의/assets/a.png)",
+      "text": "![](assets/a.png)",
+      "trashed": {
+        ".trash/회의/옛.md": "![](assets/a.png)"
+      }
+    },
+    {
+      "files": [
+        "회의/assets/u.png"
+      ],
+      "folder": "",
+      "moves": {
+        "회의/assets/u.png": "assets/u.png"
+      },
+      "name": "맨 위로 옮기기",
+      "note": "회의/A.md",
+      "notes": {
+        "회의/A.md": "![](assets/u.png)"
+      },
+      "rebased": "![](assets/u.png)",
+      "text": "![](assets/u.png)",
+      "trashed": {}
+    },
+    {
+      "files": [
+        "공부/assets/x.png"
+      ],
+      "folder": "공부",
+      "moves": {},
+      "name": "새 폴더 assets 에 이미 있는 사진 — 그대로 · 링크만 짧아진다",
+      "note": "회의/A.md",
+      "notes": {
+        "회의/A.md": "![](../공부/assets/x.png)"
+      },
+      "rebased": "![](assets/x.png)",
+      "text": "![](../공부/assets/x.png)",
+      "trashed": {}
+    },
+    {
+      "files": [
+        "회의/assets/내 사진.png"
+      ],
+      "folder": "공부",
+      "moves": {
+        "회의/assets/내 사진.png": "공부/assets/내 사진.png"
+      },
+      "name": "이름에 빈칸 · 퍼센트 꼴",
+      "note": "회의/A.md",
+      "notes": {
+        "회의/A.md": "![](<assets/내 사진.png>)\n![](assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.png)"
+      },
+      "rebased": "![](<assets/내 사진.png>)\n![](<assets/내 사진.png>)",
+      "text": "![](<assets/내 사진.png>)\n![](assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.png)",
+      "trashed": {}
+    },
+    {
+      "files": [
+        "회의/assets/a.png"
+      ],
+      "folder": "공부",
+      "moves": {},
+      "name": "다른 노트가 이름만 적어 둔 사진 — 쓰는 것으로 본다",
+      "note": "회의/A.md",
+      "notes": {
+        "회의/A.md": "![](assets/a.png)",
+        "회의/B.md": "![[a.png]]"
+      },
+      "rebased": "![](../회의/assets/a.png)",
+      "text": "![](assets/a.png)",
+      "trashed": {}
+    }
+  ],
   "nestingCases": [
     {
       "cmark": 0,
@@ -14082,6 +14276,269 @@
       "result": null
     }
   ],
+  "trashGroupCases": {
+    "groups": [
+      {
+        "candidates": [
+          "메모",
+          "메모/assets"
+        ],
+        "existing": [],
+        "folders": [
+          {
+            "folder": "메모",
+            "paths": [
+              ".trash/메모/A.md",
+              ".trash/메모/assets/u1.jpeg"
+            ]
+          }
+        ],
+        "loose": [],
+        "name": "지운 폴더 하나",
+        "trashed": [
+          ".trash/메모/A.md",
+          ".trash/메모/assets/u1.jpeg"
+        ]
+      },
+      {
+        "candidates": [
+          "회의"
+        ],
+        "existing": [
+          "회의"
+        ],
+        "folders": [],
+        "loose": [
+          ".trash/회의/A.md"
+        ],
+        "name": "폴더는 있고 노트 하나만 지움 — 낱개",
+        "trashed": [
+          ".trash/회의/A.md"
+        ]
+      },
+      {
+        "candidates": [
+          "A",
+          "A/B"
+        ],
+        "existing": [
+          "A"
+        ],
+        "folders": [
+          {
+            "folder": "A/B",
+            "paths": [
+              ".trash/A/B/y.md"
+            ]
+          }
+        ],
+        "loose": [
+          ".trash/A/x.md"
+        ],
+        "name": "안의 폴더만 지움",
+        "trashed": [
+          ".trash/A/B/y.md",
+          ".trash/A/x.md"
+        ]
+      },
+      {
+        "candidates": [
+          "A",
+          "A/B"
+        ],
+        "existing": [],
+        "folders": [
+          {
+            "folder": "A",
+            "paths": [
+              ".trash/A/B/y.md",
+              ".trash/A/x.md"
+            ]
+          }
+        ],
+        "loose": [],
+        "name": "바깥 폴더째 — 안의 폴더도 한 줄에",
+        "trashed": [
+          ".trash/A/B/y.md",
+          ".trash/A/x.md"
+        ]
+      },
+      {
+        "candidates": [],
+        "existing": [],
+        "folders": [],
+        "loose": [
+          ".trash/x.md"
+        ],
+        "name": "맨 위 노트 — 낱개",
+        "trashed": [
+          ".trash/x.md"
+        ]
+      },
+      {
+        "candidates": [
+          "옮겨야 하는 MD파일",
+          "옮겨야 하는 MD파일/assets"
+        ],
+        "existing": [
+          "공부"
+        ],
+        "folders": [
+          {
+            "folder": "옮겨야 하는 MD파일",
+            "paths": [
+              ".trash/옮겨야 하는 MD파일/assets/u1.jpeg",
+              ".trash/옮겨야 하는 MD파일/assets/u2.png"
+            ]
+          }
+        ],
+        "loose": [],
+        "name": "첨부만 남은 폴더 (사용자 291)",
+        "trashed": [
+          ".trash/옮겨야 하는 MD파일/assets/u1.jpeg",
+          ".trash/옮겨야 하는 MD파일/assets/u2.png"
+        ]
+      },
+      {
+        "candidates": [
+          "메모"
+        ],
+        "existing": [
+          "메모"
+        ],
+        "folders": [],
+        "loose": [
+          ".trash/메모/A.md"
+        ],
+        "name": "같은 이름 폴더를 다시 만들었으면 낱개 — 알려진 한계",
+        "trashed": [
+          ".trash/메모/A.md"
+        ]
+      },
+      {
+        "candidates": [
+          "메모"
+        ],
+        "existing": [
+          "메모"
+        ],
+        "folders": [],
+        "loose": [
+          ".trash/메모/A.md"
+        ],
+        "name": "NFD 로 온 이름 — NFC 로 견준다",
+        "trashed": [
+          ".trash/메모/A.md"
+        ]
+      },
+      {
+        "candidates": [
+          "A",
+          "AB"
+        ],
+        "existing": [
+          "A"
+        ],
+        "folders": [
+          {
+            "folder": "AB",
+            "paths": [
+              ".trash/AB/y.md"
+            ]
+          }
+        ],
+        "loose": [
+          ".trash/A/x.md"
+        ],
+        "name": "이름 앞부분이 같은 두 폴더",
+        "trashed": [
+          ".trash/A/x.md",
+          ".trash/AB/y.md"
+        ]
+      }
+    ],
+    "purges": [
+      {
+        "files": [
+          ".trash/옮겨야/assets/u1.jpeg",
+          ".trash/옮겨야/assets/u2.jpeg"
+        ],
+        "folder": "옮겨야",
+        "name": "다른 폴더 노트가 원래 자리를 가리키는 사진은 남긴다 (291)",
+        "notes": {
+          "공부/A.md": "![](../옮겨야/assets/u1.jpeg)"
+        },
+        "purging": [
+          ".trash/옮겨야/assets/u2.jpeg"
+        ],
+        "trashed": {}
+      },
+      {
+        "files": [
+          ".trash/여행/assets/a.png"
+        ],
+        "folder": "여행",
+        "name": "노트와 그 노트만 쓰는 사진 모두",
+        "notes": {
+          "다른/B.md": "글"
+        },
+        "purging": [
+          ".trash/여행/A.md",
+          ".trash/여행/assets/a.png"
+        ],
+        "trashed": {
+          ".trash/여행/A.md": "![](assets/a.png)"
+        }
+      },
+      {
+        "files": [
+          ".trash/여행/assets/a.png"
+        ],
+        "folder": "여행",
+        "name": "폴더 밖 휴지통 노트가 쓰는 사진은 남긴다",
+        "notes": {},
+        "purging": [
+          ".trash/여행/A.md"
+        ],
+        "trashed": {
+          ".trash/기타/C.md": "![](../여행/assets/a.png)",
+          ".trash/여행/A.md": "![](assets/a.png)"
+        }
+      },
+      {
+        "files": [
+          ".trash/여행/assets/a.png"
+        ],
+        "folder": "여행",
+        "name": "못 읽은 노트가 있으면 노트만",
+        "notes": {
+          "다른/B.md": null
+        },
+        "purging": [
+          ".trash/여행/A.md"
+        ],
+        "trashed": {
+          ".trash/여행/A.md": "![](assets/a.png)"
+        }
+      },
+      {
+        "files": [
+          ".trash/A/B/assets/p.png",
+          ".trash/AB/z.png"
+        ],
+        "folder": "A",
+        "name": "안의 폴더까지 · 이름 앞부분이 같은 폴더는 안 건드림",
+        "notes": {},
+        "purging": [
+          ".trash/A/B/assets/p.png",
+          ".trash/A/B/y.md"
+        ],
+        "trashed": {
+          ".trash/A/B/y.md": "글"
+        }
+      }
+    ]
+  },
   "wrapCases": [
     {
       "applied": "이 문서는 [체크리스트](<자료/목돈 배치.md>) 입니다",

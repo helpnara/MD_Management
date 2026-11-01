@@ -1,0 +1,90 @@
+{
+ "_왜": "291 — 노트를 옮길 때 이 노트만 쓰는 assets 첨부는 새 폴더 assets 로 같이. 고르는 셈은 지울 때 같이 보낼 첨부(trashing)와 같다. expect 는 뜻(사람이 적음), 값은 generate.py 가 낸다.",
+ "cases": [
+  {
+   "name": "가져온 폴더에서 다른 폴더로 — 사진이 따라간다 (사용자 291)",
+   "notes": {
+    "메모/A.md": ["![](assets/u1.jpeg)", "![](assets/u2.png)", "[웹](https://example.com/a)"],
+    "메모/B.md": "![](assets/u3.jpeg)",
+    "공부/기존.md": "글"
+   },
+   "files": ["메모/assets/u1.jpeg", "메모/assets/u2.png", "메모/assets/u3.jpeg"],
+   "note": "메모/A.md", "folder": "공부",
+   "expect": {"메모/assets/u1.jpeg": "공부/assets/u1.jpeg", "메모/assets/u2.png": "공부/assets/u2.png"}
+  },
+  {
+   "name": "다른 노트도 쓰는 사진은 제자리 — 링크만 고친다",
+   "notes": {
+    "회의/A.md": ["![](assets/own.png)", "![](assets/shared.png)"],
+    "회의/B.md": "![](assets/shared.png)"
+   },
+   "files": ["회의/assets/own.png", "회의/assets/shared.png"],
+   "note": "회의/A.md", "folder": "공부",
+   "expect": {"회의/assets/own.png": "공부/assets/own.png"}
+  },
+  {
+   "name": "새 폴더에 같은 이름 — 번호 · 금고의 다른 이름도 피한다",
+   "notes": {"회의/A.md": "![](assets/a.png)", "공부/B.md": "글", "여행/C.md": "![](assets/a-2.png)"},
+   "files": ["회의/assets/a.png", "공부/assets/a.png", "여행/assets/a-2.png"],
+   "note": "회의/A.md", "folder": "공부",
+   "expect": {"회의/assets/a.png": "공부/assets/a-3.png"}
+  },
+  {
+   "name": "이미 옮겨 둔 노트 — 옛 폴더를 가리키던 사진이 모인다",
+   "notes": {"공부/A.md": "![](../메모/assets/u1.jpeg)"},
+   "files": ["메모/assets/u1.jpeg"],
+   "note": "공부/A.md", "folder": "정리",
+   "expect": {"메모/assets/u1.jpeg": "정리/assets/u1.jpeg"}
+  },
+  {
+   "name": "못 읽은 노트가 있으면 안 옮긴다 — 링크만",
+   "notes": {"회의/A.md": "![](assets/a.png)", "다른/C.md": null},
+   "files": ["회의/assets/a.png"],
+   "note": "회의/A.md", "folder": "공부",
+   "expect": {}
+  },
+  {
+   "name": "assets 밖 파일은 사용자의 것 — 안 옮긴다",
+   "notes": {"회의/A.md": "[계약](../자료/계약.pdf)"},
+   "files": ["자료/계약.pdf"],
+   "note": "회의/A.md", "folder": "공부",
+   "expect": {}
+  },
+  {
+   "name": "휴지통 노트가 쓰는 사진은 제자리 — 되돌리면 같이 돌아와야 한다",
+   "notes": {"회의/A.md": "![](assets/a.png)"},
+   "trashed": {".trash/회의/옛.md": "![](assets/a.png)"},
+   "files": ["회의/assets/a.png"],
+   "note": "회의/A.md", "folder": "공부",
+   "expect": {}
+  },
+  {
+   "name": "맨 위로 옮기기",
+   "notes": {"회의/A.md": "![](assets/u.png)"},
+   "files": ["회의/assets/u.png"],
+   "note": "회의/A.md", "folder": "",
+   "expect": {"회의/assets/u.png": "assets/u.png"}
+  },
+  {
+   "name": "새 폴더 assets 에 이미 있는 사진 — 그대로 · 링크만 짧아진다",
+   "notes": {"회의/A.md": "![](../공부/assets/x.png)"},
+   "files": ["공부/assets/x.png"],
+   "note": "회의/A.md", "folder": "공부",
+   "expect": {}
+  },
+  {
+   "name": "이름에 빈칸 · 퍼센트 꼴",
+   "notes": {"회의/A.md": ["![](<assets/내 사진.png>)", "![](assets/%EB%82%B4%20%EC%82%AC%EC%A7%84.png)"]},
+   "files": ["회의/assets/내 사진.png"],
+   "note": "회의/A.md", "folder": "공부",
+   "expect": {"회의/assets/내 사진.png": "공부/assets/내 사진.png"}
+  },
+  {
+   "name": "다른 노트가 이름만 적어 둔 사진 — 쓰는 것으로 본다",
+   "notes": {"회의/A.md": "![](assets/a.png)", "회의/B.md": "![[a.png]]"},
+   "files": ["회의/assets/a.png"],
+   "note": "회의/A.md", "folder": "공부",
+   "expect": {}
+  }
+ ]
+}

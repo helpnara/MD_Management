@@ -225,9 +225,16 @@ private struct NoteActionAlerts: ViewModifier {
         Button("취소", role: .cancel) { library.moveConfirm = nil }
     }
 
+    /// **하는 일대로 적는다** (291) — 예전 문구(*링크도 새 자리에 맞춰 고쳐야 사진과 첨부가 보입니다*)는 사진이 따라가는 것처럼 읽혔는데
+    /// 사진은 옛 폴더에 남았다. 이제 이 노트만 쓰는 첨부는 같이 가고, 남이 쓰는 것은 제자리에 둔다 — 몇 개인지 먼저 센다.
+    @ViewBuilder
     private func moveMessage(_ move: LibraryModel.Move) -> some View {
         // **한 덩이 글자로 둔다** (219) — 예전처럼 `+` 로 이으면 `Text` 가 번역 목록을 거치지 않고 `**…**` 도 굵게 안 그린다.
-        Text("이 노트에는 폴더 안을 가리키는 링크가 \(move.links)개 있습니다. 옮기면 자리가 달라지므로 링크도 새 자리에 맞춰 고쳐야 사진과 첨부가 보입니다. **그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다.")
+        if move.attachments > 0 {
+            Text("이 노트에는 폴더 안을 가리키는 링크가 \(move.links)개 있습니다. **고치고 옮기기** 는 이 노트만 쓰는 사진 · 첨부 \(move.attachments)개를 새 폴더로 함께 옮기고 링크를 새 자리에 맞춥니다. 다른 노트도 쓰는 것은 제자리에 두고 링크만 고칩니다. **그냥 옮기기** 를 고르면 본문도 파일도 그대로입니다.")
+        } else {
+            Text("이 노트에는 폴더 안을 가리키는 링크가 \(move.links)개 있습니다. **고치고 옮기기** 는 링크를 새 자리에 맞춥니다. 링크가 가리키는 파일은 제자리에 둡니다 — 이 노트만 쓰는 사진이 없습니다. **그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다.")
+        }
     }
 
     private var renamePresented: Binding<Bool> {

@@ -5,10 +5,6 @@
   "one": "\n\n%lld link from notes in other folders points inside this folder. It will be updated to match the new name.",
   "other": "\n\n%lld links from notes in other folders point inside this folder. They will be updated to match the new name."
  },
- " (링크 %lld개 고침)": {
-  "one": " (%lld link updated)",
-  "other": " (%lld links updated)"
- },
  " 다른 폴더의 노트에서 이 폴더 안을 가리키는 링크 %lld개도 함께 고칩니다.": {
   "one": " %lld link from notes in other folders that points inside this folder will also be updated.",
   "other": " %lld links from notes in other folders that point inside this folder will also be updated."
@@ -25,7 +21,10 @@
  "%@ 을 휴지통으로 옮길까요?": "Move %@ to Trash?",
  "%@ 의 새 이름입니다. 확장자는 안 적어도 됩니다.": "Enter a new name for %@. You don't need to include the extension.",
  "%@ 켜짐": "%@, On",
+ "%@ 폴더를 되돌렸습니다 — 노트 %lld개 · 첨부 %lld개.": "Restored the %@ folder — notes: %lld · attachments: %lld.",
+ "%@ 폴더에서 %lld개를 되돌리지 못했습니다. 휴지통에 남아 있습니다.": "Couldn't restore %2$lld items from the %1$@ folder. They're still in the Trash.",
  "%@ 폴더와 안의 노트 %lld개를 폴더 안 .trash 로 옮깁니다. 안의 폴더도 함께 갑니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.%@": "Moves the folder %@ and the notes inside it (%lld) to the hidden .trash folder, along with any folders inside. Restoring a note from Settings → Trash brings its folder back.%@",
+ "%@ 폴더의 노트 %lld개와 첨부를 완전히 지웁니다. 다른 노트가 쓰는 첨부는 남깁니다. 되돌릴 수 없습니다. 지우려면 %@ 라고 입력하세요.": "Permanently deletes the %1$@ folder's notes (%2$lld) and attachments. Attachments other notes use are kept. This can't be undone. To delete, type %3$@.",
  "%@ 폴더의 새 이름입니다. 안의 노트는 그대로 따라갑니다.%@": "Enter a new name for the folder %@. The notes inside move with it.%@",
  "%lld": "%lld",
  "%lld개": "%lld",
@@ -88,6 +87,7 @@
  "가져오지 못했습니다: %@": "Couldn't import: %@",
  "가져올까요?": "Import This File?",
  "갈래": "Types",
+ "같이 옮길 첨부를 세는 중": "Counting attachments to move along",
  "검색 색인": "Search Index",
  "검색 색인을 만드는 중": "Building the search index",
  "결과": "Result",
@@ -145,6 +145,7 @@
   "one": "%lld note",
   "other": "%lld notes"
  },
+ "노트 %lld개 · 첨부 %lld개": "Notes: %lld · Attachments: %lld",
  "노트 %lld개 · 첨부 %lld개를 %@ 폴더로 가져왔습니다. 고른 폴더는 그대로 있습니다.": "Imported notes: %lld · attachments: %lld into the %@ folder. The chosen folder is unchanged.",
  "노트 %lld개 · 첨부 %lld개를 가져왔고, 가져오지 못한 것이 있습니다: %@": "Imported notes: %lld · attachments: %lld. Some items couldn't be imported: %@",
  "노트 %lld개 만들기 (작은 노트 · 약 20MB)": "Create %lld notes (small notes · about 20MB)",
@@ -167,6 +168,10 @@
  "눌러서 미리 보고, 줄을 왼쪽으로 밀어 **휴지통으로** 옮깁니다. 파일 이름이 어느 노트에든 적혀 있으면 쓰는 것으로 보고 여기 넣지 않습니다.": "Tap to preview. Swipe left on a row to move it **to the Trash**. Files whose names appear in any note are considered in use and aren't listed.",
  "느린 여백에 보내기": "Send to Slow Margin",
  "다른 기기에서 고친 노트입니다. 내 글은 %@ 로 나란히 저장했습니다.": "This note was changed on another device. Your version was saved alongside it as %@.",
+ "다른 노트가 쓰는 첨부 %lld개는 남겼습니다. 되돌리면 그 노트에서 다시 보입니다.": {
+  "one": "Kept %lld attachment that another note uses. Restore it and it shows in that note again.",
+  "other": "Kept %lld attachments that other notes use. Restore them and they show in those notes again."
+ },
  "다른 폴더 고르기": "Choose Another Folder",
  "다른 폴더로 옮기기": "Move to Another Folder",
  "닫기": "Close",
@@ -312,10 +317,11 @@
  "이 노트": "This note",
  "이 노트를 가리키는 노트": "Notes Linking Here",
  "이 노트에는 이미 깨진 글자가 있습니다. 파일이 그렇게 저장돼 있어 앱이 되살릴 수 없습니다.": "This note already contains corrupted characters. They're saved that way in the file, so the app can't recover them.",
- "이 노트에는 폴더 안을 가리키는 링크가 %lld개 있습니다. 옮기면 자리가 달라지므로 링크도 새 자리에 맞춰 고쳐야 사진과 첨부가 보입니다. **그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다.": {
-  "one": "This note has %lld link to files in its folder. Moving the note changes where it lives, so the link needs updating for photos and attachments to keep showing. Choose **Just Move** to leave the text exactly as it is.",
-  "other": "This note has %lld links to files in its folder. Moving the note changes where it lives, so the links need updating for photos and attachments to keep showing. Choose **Just Move** to leave the text exactly as it is."
+ "이 노트에는 폴더 안을 가리키는 링크가 %lld개 있습니다. **고치고 옮기기** 는 링크를 새 자리에 맞춥니다. 링크가 가리키는 파일은 제자리에 둡니다 — 이 노트만 쓰는 사진이 없습니다. **그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다.": {
+  "one": "This note has %lld link to files in the folder. **Update and Move** updates it for the new location. The linked files stay where they are — no photos are used only by this note. Choose **Just Move** to leave the text exactly as it is.",
+  "other": "This note has %lld links to files in the folder. **Update and Move** updates them for the new location. The linked files stay where they are — no photos are used only by this note. Choose **Just Move** to leave the text exactly as it is."
  },
+ "이 노트에는 폴더 안을 가리키는 링크가 %lld개 있습니다. **고치고 옮기기** 는 이 노트만 쓰는 사진 · 첨부 %lld개를 새 폴더로 함께 옮기고 링크를 새 자리에 맞춥니다. 다른 노트도 쓰는 것은 제자리에 두고 링크만 고칩니다. **그냥 옮기기** 를 고르면 본문도 파일도 그대로입니다.": "Links in this note to files in the folder: %lld. **Update and Move** moves the photos and attachments only this note uses (%lld) into the new folder along with it, and updates the links. Files other notes also use stay where they are; only the links are updated. Choose **Just Move** to leave both the text and the files as they are.",
  "이 노트의 링크가 모두 제 파일을 가리킵니다.": "Every link in this note points to a file that exists.",
  "이 링크가 가리키는 파일이 폴더에 없습니다.\n%@\n\n링크의 경로는 노트가 있는 폴더 기준입니다.": "The file this link points to isn't in the folder.\n%@\n\nLink paths are relative to the note's folder.",
  "이 파일은 **Slow Margin 폴더 밖**에 있습니다.": "This file is **outside the Slow Margin folder**.",
@@ -359,6 +365,7 @@
  "지우지 못했습니다: %@": "Couldn't delete: %@",
  "지운 노트가 여기에 모입니다.": "Deleted notes appear here.",
  "지운 노트는 폴더 안 `.trash` 로 옮겨집니다. `파일` 앱은 숨김 폴더를 보여 주지 않으므로 여기서 봅니다. **안 쓰는 첨부**는 어느 노트도 가리키지 않는 사진 · 파일입니다. 다른 노트 앱이 **마크다운으로 내보낸 폴더**는 같은 이름의 새 폴더로 들여옵니다 — 노트는 한 폴더에, 사진은 그 안 assets 로. 압축 파일이면 `파일` 앱에서 먼저 눌러 풀어 주세요. 고른 폴더는 그대로 남습니다.": "Deleted notes are moved to the `.trash` folder inside your folder. The Files app doesn't show hidden folders, so you can see them here. **Unused attachments** are photos and files that no note links to. A **folder exported as Markdown** from another notes app comes in as a new folder with the same name — notes side by side, images in its assets folder. If it's a zip file, tap it in the Files app first to unzip it. The chosen folder stays as it is.",
+ "지운 폴더": "Deleted Folders",
  "지울까요?": "Delete?",
  "진단": "Diagnostics",
  "진단 정보": "Diagnostic Info",
@@ -372,6 +379,10 @@
  "찾을 수 없습니다": "Not found",
  "첨부": "Attachment",
  "첨부 %lld개 · %@": "Attachments: %lld · %@",
+ "첨부 %lld개를 노트와 함께 옮겼습니다.": {
+  "one": "Moved %lld attachment along with the note.",
+  "other": "Moved %lld attachments along with the note."
+ },
  "첨부 %lld개를 옮기지 못했습니다.": {
   "one": "Couldn't move %lld attachment.",
   "other": "Couldn't move %lld attachments."
@@ -426,9 +437,11 @@
  "폴더 이름 바꾸기": "Rename Folder",
  "폴더 이름을 바꾸고 링크를 고치는 중": "Renaming the folder and fixing links",
  "폴더 이름을 바꾸지 못했습니다: %@": "Couldn't rename the folder: %@",
+ "폴더 줄의 **되돌리기**는 안의 노트와 첨부를 모두 원래 폴더로 돌려놓습니다. 줄을 누르면 안의 것이 보입니다.": "**Restore** on a folder row puts all its notes and attachments back in their original folder. Tap the row to see what's inside.",
  "폴더는 두 단계까지라 %@ 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.": "Folders can only go two levels deep, so it will be created in %@. If the name is taken, a number is added.",
  "폴더를 가리키는 링크를 세는 중": "Counting links to this folder",
  "폴더를 고르지 못했습니다: %@": "Couldn't choose the folder: %@",
+ "폴더를 되돌리는 중": "Restoring folder",
  "폴더를 만들지 못했습니다: %@": "Couldn't create the folder: %@",
  "폴더를 옮기고 링크를 고치는 중": "Moving the folder and fixing links",
  "폴더를 옮기지 못했습니다: %@": "Couldn't move the folder: %@",

@@ -801,6 +801,8 @@ final class LibraryModel: ObservableObject {
         let note: NoteSummary
         let folder: String
         let links: Int
+        /// 같이 옮길 첨부 수 (291) — 확인창이 먼저 알린다. 옮길 때 다시 센다 (그 사이 바뀌었을 수 있다).
+        var attachments: Int = 0
         var id: String { note.relativePath + "→" + folder }
     }
     /// 폴더를 고르는 창 (아이폰 — 줄을 밀어 `이동`).
@@ -828,11 +830,14 @@ final class LibraryModel: ObservableObject {
     enum Purge: Identifiable {
         case all
         case one(NoteSummary)
+        /// 휴지통의 폴더 하나 (292).
+        case folder(TrashFolder)
 
         var id: String {
             switch self {
             case .all: return "*"
             case .one(let note): return note.id
+            case .folder(let folder): return "📁" + folder.folder
             }
         }
     }
@@ -1578,7 +1583,12 @@ final class LibraryModel: ObservableObject {
         if links == 0 {
             await finishMove(Move(note: note, folder: folder, links: 0), rebasesLinks: false)
         } else {
-            moveConfirm = Move(note: note, folder: folder, links: links)
+            // 291 — 이 노트만 쓰는 첨부는 같이 간다. 몇 개인지 먼저 센다 (지울 때와 같은 셈 · 색인 힌트로 읽을 노트를 줄인다).
+            let hint = await attachmentHint(for: note.relativePath)
+            let carried = await working(String(localized: "같이 옮길 첨부를 세는 중")) { _ in
+                await store.movingAttachments(of: note.relativePath, to: folder, hint: hint).count
+            }
+            moveConfirm = Move(note: note, folder: folder, links: links, attachments: carried)
         }
     }
 
@@ -1590,13 +1600,19 @@ final class LibraryModel: ObservableObject {
         movingNote = nil
         await save()
         do {
-            let moved = try await working(String(localized: "노트를 옮기는 중")) { _ in
+            let hint: CensusHint?
+            if rebasesLinks { hint = await attachmentHint(for: move.note.relativePath) } else { hint = nil }
+            let result = try await working(String(localized: "노트를 옮기는 중")) { _ in
                 try await store.moveNote(move.note.relativePath, to: move.folder,
-                                         rebasesLinks: rebasesLinks)
+                                         rebasesLinks: rebasesLinks, hint: hint)
             }
+            let moved = result.path
             pinned = await store.followPins(from: move.note.relativePath, to: moved)
             log("옮김: \(move.note.relativePath) → \(moved)"
-                + (rebasesLinks && move.links > 0 ? String(localized: " (링크 \(move.links)개 고침)") : ""))
+                + (rebasesLinks && move.links > 0 ? " (링크 \(move.links)개 고침 · 첨부 \(result.attachments)개 같이)" : ""))
+            if result.attachments > 0 {
+                notify(String(localized: "첨부 \(result.attachments)개를 노트와 함께 옮겼습니다."))
+            }
             if draftPath == move.note.relativePath { clearNote() }
             if selectedNoteID == move.note.relativePath { selectedNoteID = nil }
             await reloadFolders()
@@ -2021,11 +2037,59 @@ final class LibraryModel: ObservableObject {
     /// `.trash/` 안의 첨부(노트가 아닌 파일) — 휴지통 화면이 개수 · 용량과 함께 보여 준다 (173).
     @Published private(set) var trashedFiles: [TrashedFile] = []
 
+    /// **휴지통의 지운 폴더** (292) — 원래 폴더가 지금 없는 것끼리 묶은 줄. 묶는 셈은 Core `TrashGroups` 하나.
+    /// `trashed` · `trashedFiles` 는 그대로 **전부**다 (개수 · 비우기가 본다). 화면은 폴더 줄에 든 것을 낱개 목록에서 뺀다.
+    @Published private(set) var trashFolders: [TrashFolder] = []
+
+    struct TrashFolder: Identifiable {
+        /// 원래 폴더 (`.trash/` 없이).
+        let folder: String
+        let notes: [NoteSummary]
+        let files: [TrashedFile]
+        var paths: [String] { notes.map(\.relativePath) + files.map(\.relativePath) }
+        var id: String { folder }
+    }
+
+    /// 폴더 줄에 든 휴지통 경로 — 낱개 목록에서 뺀다.
+    var groupedTrashPaths: Set<String> {
+        Set(trashFolders.flatMap(\.paths))
+    }
+
     func reloadTrash() async {
         guard let store else { return }
         await working(String(localized: "휴지통을 읽는 중")) { _ in
-            trashed = await store.trashedNotes()
-            trashedFiles = await store.trashedAttachments()
+            let notes = await store.trashedNotes()
+            let files = await store.trashedAttachments()
+            let paths = notes.map(\.relativePath) + files.map(\.relativePath)
+            let existing = await store.existingPaths(among: TrashGroups.candidates(paths))
+            let grouping = TrashGroups.group(paths, existing: existing)
+            let noteByPath = Dictionary(notes.map { ($0.relativePath, $0) }, uniquingKeysWith: { first, _ in first })
+            let fileByPath = Dictionary(files.map { ($0.relativePath, $0) }, uniquingKeysWith: { first, _ in first })
+            trashed = notes
+            trashedFiles = files
+            trashFolders = grouping.folders.map { group in
+                TrashFolder(folder: group.folder,
+                            notes: group.paths.compactMap { noteByPath[$0] },
+                            files: group.paths.compactMap { fileByPath[$0] })
+            }
+        }
+    }
+
+    /// 휴지통의 폴더를 **통째로** 원래 자리로 (292).
+    func restoreTrashFolder(_ folder: TrashFolder) async {
+        guard let store else { return }
+        let total = folder.paths.count
+        let restored = await working(String(localized: "폴더를 되돌리는 중"), total: total) { meter in
+            await store.restoreTrashedFolder(folder.folder, paths: folder.paths, meter: meter)
+        }
+        log("폴더 되돌림: \(folder.folder) · \(restored)/\(total)")
+        await reloadTrash()
+        await reloadFolders()
+        await reloadNotes()
+        if restored == total {
+            notify(String(localized: "\(folder.folder) 폴더를 되돌렸습니다 — 노트 \(folder.notes.count)개 · 첨부 \(folder.files.count)개."))
+        } else {
+            report(String(localized: "\(folder.folder) 폴더에서 \(total - restored)개를 되돌리지 못했습니다. 휴지통에 남아 있습니다."))
         }
     }
 
@@ -2221,6 +2285,16 @@ final class LibraryModel: ObservableObject {
             case .one(let note):
                 let hint = await attachmentHint(for: note.relativePath)
                 try await working(String(localized: "영구 삭제하는 중")) { _ in try await store.deleteTrashed(note.relativePath, hint: hint) }
+            case .folder(let folder):
+                let result = try await working(String(localized: "영구 삭제하는 중")) { meter in
+                    try await store.purgeTrashedFolder(folder.folder, meter: meter)
+                }
+                log("휴지통 폴더 영구 삭제: \(folder.folder) · \(result.deleted)개 · 남김 \(result.kept)개")
+                if result.kept > 0 {
+                    await reloadTrash()
+                    notify(String(localized: "다른 노트가 쓰는 첨부 \(result.kept)개는 남겼습니다. 되돌리면 그 노트에서 다시 보입니다."))
+                    return
+                }
             }
             await reloadTrash()
             lastError = nil

@@ -326,8 +326,21 @@ struct TrashView: View {
 
     var body: some View {
         List {
+            // **지운 폴더는 폴더째** (292, 2026-11-01 사용자 — *폴더가 목록에 나와서 복구 가능하게*). 원래 폴더가 지금 없는 것끼리
+            // 한 줄로 — 되돌리기 한 번에 안의 노트 · 첨부가 모두 원래 자리로. 펼치면 안의 것을 하나씩 되돌릴 수도 있다.
+            if !library.trashFolders.isEmpty {
+                Section {
+                    ForEach(library.trashFolders) { folder in
+                        folderRow(folder)
+                    }
+                } header: {
+                    Text("지운 폴더")
+                } footer: {
+                    Text("폴더 줄의 **되돌리기**는 안의 노트와 첨부를 모두 원래 폴더로 돌려놓습니다. 줄을 누르면 안의 것이 보입니다.")
+                }
+            }
             Section {
-                ForEach(library.trashed) { note in
+                ForEach(looseNotes) { note in
                     row(note)
                 }
             } footer: {
@@ -339,7 +352,7 @@ struct TrashView: View {
             // 이 화면에도 `파일` 앱에도 안 보였다.
             if !library.trashedFiles.isEmpty {
                 Section {
-                    ForEach(library.trashedFiles) { file in
+                    ForEach(looseFiles) { file in
                         fileRow(file)
                     }
                 } header: {
@@ -417,6 +430,54 @@ extension TrashView {
         }
     }
 
+    /// 폴더 줄에 안 든 노트 · 첨부 (292). 개수 · 비우기는 전부(`trashed` · `trashedFiles`)를 본다.
+    fileprivate var looseNotes: [NoteSummary] {
+        let grouped = library.groupedTrashPaths
+        return library.trashed.filter { !grouped.contains($0.relativePath) }
+    }
+
+    fileprivate var looseFiles: [TrashedFile] {
+        let grouped = library.groupedTrashPaths
+        return library.trashedFiles.filter { !grouped.contains($0.relativePath) }
+    }
+
+    /// 지운 폴더 한 줄 (292) — 이름 · 안의 개수 · **되돌리기**. 펼치면 안의 노트 · 첨부 줄(낱개와 같은 줄).
+    fileprivate func folderRow(_ folder: LibraryModel.TrashFolder) -> some View {
+        DisclosureGroup {
+            ForEach(folder.notes) { note in
+                row(note)
+            }
+            ForEach(folder.files) { file in
+                fileRow(file)
+            }
+        } label: {
+            HStack(spacing: Metrics.rowSpacing) {
+                VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
+                    Label(folder.folder, systemImage: "folder")
+                        .font(.scaled(.body))
+                        .foregroundStyle(Palette.ink)
+                    Text("노트 \(folder.notes.count)개 · 첨부 \(folder.files.count)개")
+                        .font(.scaled(.caption))
+                        .foregroundStyle(Palette.inkFaint)
+                }
+                Spacer(minLength: Metrics.rowSpacing)
+                Button("되돌리기") {
+                    Task { await library.restoreTrashFolder(folder) }
+                }
+                .buttonStyle(.bordered)
+                .font(.scaled(.callout))
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                library.purgeText = ""
+                library.purging = .folder(folder)
+            } label: {
+                Label("영구 삭제", systemImage: "trash.slash")
+            }
+        }
+    }
+
     /// `.trash/여행/A.md` → `여행`. 최상위면 빈 문자열.
     fileprivate func originFolder(of note: NoteSummary) -> String {
         Paths.directory(of: FolderStore.originalPath(ofTrashed: note.relativePath))
@@ -453,6 +514,8 @@ private struct PurgeAlert: ViewModifier {
             Text("휴지통의 노트 \(library.trashed.count)개와 첨부 \(library.trashedFiles.count)개를 완전히 지웁니다. 되돌릴 수 없습니다. 지우려면 \(LibraryModel.purgeConfirmation) 라고 입력하세요.")
         case .one(let note):
             Text("\(note.title) 과 그 노트만 쓰던 첨부를 완전히 지웁니다. 되돌릴 수 없습니다. 지우려면 \(LibraryModel.purgeConfirmation) 라고 입력하세요.")
+        case .folder(let folder):
+            Text("\(folder.folder) 폴더의 노트 \(folder.notes.count)개와 첨부를 완전히 지웁니다. 다른 노트가 쓰는 첨부는 남깁니다. 되돌릴 수 없습니다. 지우려면 \(LibraryModel.purgeConfirmation) 라고 입력하세요.")
         }
     }
 }

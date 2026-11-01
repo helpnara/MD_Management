@@ -435,25 +435,78 @@ actor FolderStore {
     /// **사용자에게 몇 개를 고칠지 먼저 알린 뒤에** 참으로 부른다 (107 에서 62 를 지운 까닭).
     ///
     /// 이름이 겹치면 `이름 2.md` 로 비켜 간다. 옮겨진 자리의 상대경로를 준다.
-    func moveNote(_ relativePath: String, to folder: String, rebasesLinks: Bool) throws -> String {
+    ///
+    /// **이 노트만 쓰는 첨부는 같이 옮긴다** (291, 2026-11-01 사용자 — *링크를 보면 예전 폴더명 아래 그림으로 연결되어 있어*).
+    /// 예전에는 링크만 `../옛 폴더/assets/…` 로 고치고 사진은 옛 폴더에 두어, 옛 폴더를 지우면 옮긴 노트의 사진이 깨졌다.
+    /// 무엇을 옮길지는 `AttachmentLedger.moving` (지울 때 같이 보내는 셈과 같다). 파일을 **먼저** 옮기고 옮긴 것만 링크에 적는다 —
+    /// 하나를 못 옮기면 그 링크는 제자리를 가리키게 고쳐진다. 글을 못 쓰거나 노트를 못 옮기면 옮긴 파일 · 글을 되돌린다.
+    /// 돌려주는 것은 새 경로와 같이 옮긴 첨부 수.
+    func moveNote(_ relativePath: String, to folder: String, rebasesLinks: Bool,
+                  hint: CensusHint? = nil) throws -> (path: String, attachments: Int) {
         openScopeIfNeeded()
         let from = Paths.directory(of: relativePath)
-        guard from != folder else { return relativePath }
+        guard from != folder else { return (relativePath, 0) }
         let name = relativePath.split(separator: "/").last.map(String.init) ?? relativePath
 
+        var original: String?
+        var carried: [String: String] = [:]
         if rebasesLinks {
             let text = try readText(at: relativePath)
-            let fixed = MarkdownLinks.rebased(text, from: from, to: folder)
-            if fixed != text { try writeText(fixed, to: relativePath, expecting: text) }
+            let table = movingAttachments(of: relativePath, to: folder, hint: hint)
+            for old in AttachmentLedger.ordered(table.keys) {
+                guard let new = table[old] else { continue }
+                let target = root.appendingPathComponent(new)
+                guard !FileManager.default.fileExists(atPath: target.path) else { continue }
+                do {
+                    try createFolder(Paths.directory(of: new))
+                    try move(from: root.appendingPathComponent(old), to: target)
+                    carried[old] = new
+                } catch {
+                    continue
+                }
+            }
+            let fixed = MarkdownLinks.rebased(text, from: from, to: folder, moving: carried)
+            if fixed != text {
+                do {
+                    try writeText(fixed, to: relativePath, expecting: text)
+                    original = text
+                } catch {
+                    putBack(carried)
+                    throw error
+                }
+            }
         }
 
-        try createFolder(folder)
-        let target = uniqueRelativePath(name: name, in: folder)
-        try move(from: root.appendingPathComponent(relativePath),
-                 to: root.appendingPathComponent(target))
-        encodings[target] = encodings[relativePath]
-        encodings[relativePath] = nil
-        return target
+        do {
+            try createFolder(folder)
+            let target = uniqueRelativePath(name: name, in: folder)
+            try move(from: root.appendingPathComponent(relativePath),
+                     to: root.appendingPathComponent(target))
+            encodings[target] = encodings[relativePath]
+            encodings[relativePath] = nil
+            return (target, carried.count)
+        } catch {
+            if let original { try? writeText(original, to: relativePath) }
+            putBack(carried)
+            throw error
+        }
+    }
+
+    /// **옮길 때 같이 갈 첨부** (291) — 옛 자리 → 새 자리. 첨부를 하나도 안 가리키면 폴더 전체를 읽지 않는다 (253 과 같은 까닭).
+    /// 옮기기 확인창이 몇 개인지 먼저 알리려고도 부른다.
+    func movingAttachments(of notePath: String, to folder: String, hint: CensusHint?) -> [String: String] {
+        guard let text = try? readText(at: notePath),
+              !AttachmentLedger.preciseReferences(of: notePath, text: text).isEmpty else { return [:] }
+        let census = attachmentCensus(hint: hint)
+        return AttachmentLedger.moving(notePath, to: folder, notes: census.notes,
+                                       trashed: census.trashed, files: census.files)
+    }
+
+    /// 같이 옮긴 첨부를 제자리로 — 글을 못 썼거나 노트를 못 옮겼을 때.
+    private func putBack(_ carried: [String: String]) {
+        for (old, new) in carried {
+            try? move(from: root.appendingPathComponent(new), to: root.appendingPathComponent(old))
+        }
     }
 
     /// 이 노트가 **폴더 안을 가리키는 링크**를 몇 개 갖고 있나 (T1).
@@ -1007,6 +1060,50 @@ actor FolderStore {
         try move(from: root.appendingPathComponent(relativePath),
                  to: root.appendingPathComponent(target))
         return target
+    }
+
+    /// **휴지통의 폴더를 통째로 되돌린다** (292). `paths` 는 그 폴더 줄의 것(`TrashGroups.Folder.paths` — 노트 · 첨부 모두).
+    /// 하나씩 원래 자리로 — 첨부 되돌리기와 같은 길(`restoreAttachment`): 폴더가 없으면 만들고, 같은 이름이 있으면 번호.
+    /// 하나가 실패해도 나머지는 되돌린다. 되돌린 수를 준다. 끝나면 비어 남은 휴지통 폴더를 걷는다.
+    func restoreTrashedFolder(_ folder: String, paths: [String], meter: WorkMeter = .none) -> Int {
+        openScopeIfNeeded()
+        var restored = 0
+        for (index, path) in paths.enumerated() {
+            meter.tick(index + 1, of: paths.count, every: 10)
+            if (try? restoreAttachment(path)) != nil { restored += 1 }
+        }
+        removeEmptyTrashFolder(folder)
+        return restored
+    }
+
+    /// **휴지통의 폴더를 영구 삭제** (292). 지울 것은 `AttachmentLedger.purgingFolder` — 안의 노트는 모두, 첨부는 **남이 쓰지 않는 것만**
+    /// (291 처럼 노트를 먼저 밖으로 옮겼으면 그 노트의 사진이 여기 남아 있다 — 유일한 사본이라 남긴다). 지운 수 · 남긴 수를 준다.
+    func purgeTrashedFolder(_ folder: String, meter: WorkMeter = .none) throws -> (deleted: Int, kept: Int) {
+        openScopeIfNeeded()
+        let inside = ".trash/" + Paths.normalized(folder) + "/"
+        let census = attachmentCensus(meter: meter)
+        let members = census.trashed.keys.filter { $0.hasPrefix(inside) }.count
+            + census.files.filter { $0.hasPrefix(inside) && !Paths.isNoteFile($0) }.count
+        let doomed = AttachmentLedger.purgingFolder(folder, notes: census.notes, trashed: census.trashed, files: census.files)
+        var deleted = 0
+        for path in doomed where path.hasPrefix(inside) {
+            try remove(root.appendingPathComponent(path))
+            deleted += 1
+        }
+        removeEmptyTrashFolder(folder)
+        return (deleted, max(0, members - deleted))
+    }
+
+    /// 휴지통 안 그 폴더에 **파일이 하나도 없으면** 폴더째 걷는다 — 빈 폴더가 남아도 화면에는 안 보이지만 쌓이지 않게.
+    private func removeEmptyTrashFolder(_ folder: String) {
+        let url = root.appendingPathComponent(".trash/" + Paths.normalized(folder))
+        guard let walker = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [])
+        else { return }
+        for case let entry as URL in walker
+        where (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory != true {
+            return
+        }
+        try? remove(url)
     }
 
     /// **안 쓰는 첨부를 휴지통으로** (174). `.trash/<원래 경로>` 로 — 휴지통 화면에서 되돌릴 수 있다.

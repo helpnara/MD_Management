@@ -59,6 +59,8 @@ COUNT_CASES = ROOT / "Tools" / "golden" / "count-cases.json"
 PASTE_CONVERT_CASES = ROOT / "Tools" / "golden" / "paste-convert-cases.json"
 LINE_MAP_CASES = ROOT / "Tools" / "golden" / "line-map-cases.json"
 ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "attachment-cases.json"
+MOVE_ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "move-attachment-cases.json"
+TRASH_GROUP_CASES = ROOT / "Tools" / "golden" / "trash-group-cases.json"
 RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
 NESTING_CASES = ROOT / "Tools" / "golden" / "nesting-cases.json"
 EMPHASIS_CASES = ROOT / "Tools" / "golden" / "emphasis-cases.json"
@@ -1893,7 +1895,7 @@ def read_destination(text: str, start: int):
     return None
 
 
-def rebase_one(raw: str, note: str, new_folder: str) -> str:
+def rebase_one(raw: str, note: str, new_folder: str, moves: dict | None = None) -> str:
     wrapped = len(raw) >= 2 and raw.startswith("<") and raw.endswith(">")
     inner = raw[1:-1] if wrapped else raw
     anchor = ""
@@ -1905,11 +1907,12 @@ def rebase_one(raw: str, note: str, new_folder: str) -> str:
     got = resolve(target, note)
     if got["kind"] != "relative":
         return raw
-    link = relative_link(new_folder, got["value"]) + anchor
+    link = relative_link(new_folder, (moves or {}).get(got["value"], got["value"])) + anchor
     return "<" + link + ">" if (wrapped or " " in link) else link
 
 
-def rebase_links(text: str, old_folder: str, new_folder: str) -> str:
+def rebase_links(text: str, old_folder: str, new_folder: str, moves: dict | None = None) -> str:
+    """291 — `moves` 는 같이 옮긴 파일의 옛 자리 → 새 자리. 그 파일을 가리키던 링크는 새 자리로."""
     if old_folder == new_folder:
         return text
     note = "노트.md" if not old_folder else old_folder + "/노트.md"
@@ -1925,7 +1928,7 @@ def rebase_links(text: str, old_folder: str, new_folder: str) -> str:
         if piece is None:
             continue
         raw, end = piece
-        out.append(rebase_one(raw, note, new_folder))
+        out.append(rebase_one(raw, note, new_folder, moves))
         out.append(text[end])
         cursor = end + 1
     out.append(text[cursor:])
@@ -2833,6 +2836,8 @@ def build() -> dict:
         "backspaceCases": build_backspace_cases(),
         "lineBreakCases": build_linebreak_cases(),
         "notesExportCases": build_notes_export_cases(),
+        "moveAttachmentCases": build_move_attachment_cases(),
+        "trashGroupCases": build_trash_group_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
         "pasteCases": build_paste_cases(),
         "brokenCases": build_broken_cases(),
@@ -4003,6 +4008,150 @@ def build_attachment_cases() -> list[dict]:
     return out
 
 
+# ── 노트를 옮길 때 같이 옮길 첨부 (291) · 휴지통의 폴더 (292) ─────────────────────
+#
+# 291 — 고르는 셈은 지울 때 같이 보낼 첨부(`trashing_with`)와 같다: 이 노트만 쓰는 것 가운데 `assets/` 안의 것을 새 폴더 `assets/` 로.
+# 이미 거기 있으면 그대로. 같은 이름이 있으면 `이름-2.png` (빈칸으로 비키지 않는다 · 금고의 다른 이름과도 안 겹치게 — 178).
+# 292 — 휴지통 것마다 원래 자리의 폴더를 바깥부터 살펴 **처음으로 없는 폴더**에 묶는다. 폴더째 영구 삭제는 `purging_with` 를 폴더에 편 것.
+
+
+def moving_with(note: str, folder: str, notes: dict, trashed: dict, files: set) -> dict:
+    assets = "assets" if not folder else nfc(folder) + "/assets"
+    taken_paths = {nfc(f).lower() for f in files}
+    taken_names = {nfc(f.rsplit("/", 1)[-1]).lower() for f in files}
+    out = {}
+    for path in trashing_with(note, notes, trashed, files):
+        if not is_attachment_path(path) or directory_of(path) == assets:
+            continue
+        name = path.rsplit("/", 1)[-1]
+        candidate = assets + "/" + name
+        if candidate.lower() in taken_paths:
+            dot = name.rfind(".")
+            stem, ext = (name[:dot], name[dot:]) if dot > 0 else (name, "")
+            number = 2
+            while True:
+                candidate = f"{assets}/{stem}-{number}{ext}"
+                number += 1
+                if candidate.lower() not in taken_paths and candidate.rsplit("/", 1)[-1].lower() not in taken_names:
+                    break
+        taken_paths.add(candidate.lower())
+        taken_names.add(candidate.rsplit("/", 1)[-1].lower())
+        out[path] = candidate
+    return out
+
+
+def build_move_attachment_cases() -> list[dict]:
+    """291 — ① 뜻(사람이 적은 옮길 표)과 셈이 같고 ② 옮긴 뒤 **cmark 가 읽은 링크마다** 같은 파일(옮겼으면 새 자리)을 가리키며
+    ③ 옮긴 파일의 새 자리가 다른 파일과 안 겹치고 ④ 옛 규칙(링크만 고침)이면 옛 폴더를 지웠을 때 깨질 링크가 적어도 한 사례에 있다."""
+    spec = json.loads(MOVE_ATTACHMENT_CASES.read_text(encoding="utf-8"))
+    out = []
+    bitten = False
+
+    def texts(raw: dict) -> dict:
+        return {nfc(k): (None if v is None else "\n".join(v) if isinstance(v, list) else v) for k, v in raw.items()}
+
+    for case in spec["cases"]:
+        name = case["name"]
+        notes, trashed = texts(case.get("notes", {})), texts(case.get("trashed", {}))
+        files = {nfc(f) for f in case.get("files", [])}
+        note, folder = nfc(case["note"]), nfc(case["folder"])
+        moves = moving_with(note, folder, notes, trashed, files)
+        if "expect" in case and {nfc(k): nfc(v) for k, v in case["expect"].items()} != moves:
+            raise SystemExit(f"::error::[{name}] 옮길 표: 뜻 {case['expect']} · 셈 {moves}")
+        dests = [d.lower() for d in moves.values()]
+        if len(set(dests)) != len(dests) or any(d in {f.lower() for f in files} for d in dests):
+            raise SystemExit(f"::error::[{name}] 옮길 자리가 겹친다")
+        text = notes[note]
+        new_note = (folder + "/" if folder else "") + note.rsplit("/", 1)[-1]
+        rebased = rebase_links(text, directory_of(note), folder, moves) if directory_of(note) != folder else text
+        before, after = _cmark_targets(text, note), _cmark_targets(rebased, new_note)
+        if len(before) != len(after):
+            raise SystemExit(f"::error::[{name}] 링크 수가 달라졌다")
+        for b, a in zip(before, after):
+            if b is not None and a != moves.get(b, b):
+                raise SystemExit(f"::error::[{name}] {b} 는 {moves.get(b, b)} 를 가리켜야 하는데 {a}")
+        old_folder = directory_of(note)
+        if old_folder and any(b and b.startswith(old_folder + "/assets/") and b in moves for b in before):
+            bitten = True   # 옛 규칙이면 옛 폴더를 지울 때 이 링크가 깨진다
+        out.append({"name": name, "notes": notes, "trashed": trashed, "files": sorted(files),
+                    "note": note, "folder": folder, "moves": moves, "text": text, "rebased": rebased})
+    if not bitten:
+        raise SystemExit("::error::옛 규칙(링크만 고침)이 한 사례에도 안 걸렸다 — 291 을 표현 못 하는 사례들이다")
+    return out
+
+
+def trash_ancestors(path: str) -> list:
+    parts = nfc(original_of(path)).split("/")[:-1]
+    return ["/".join(parts[:i + 1]) for i in range(len(parts)) if parts[i]]
+
+
+def trash_group(trashed: list, existing: set) -> dict:
+    existing = {nfc(e) for e in existing}
+    folders, loose = {}, []
+    for path in trashed:
+        missing = next((a for a in trash_ancestors(path) if a not in existing), None)
+        if missing is None:
+            loose.append(path)
+        else:
+            folders.setdefault(missing, []).append(path)
+    return {"folders": [{"folder": k, "paths": sorted(v)} for k, v in sorted(folders.items())],
+            "loose": sorted(loose)}
+
+
+def purging_folder_with(folder: str, notes: dict, trashed: dict, files: set) -> list:
+    inside = ".trash/" + nfc(folder) + "/"
+    group_notes = [n for n in trashed if n.startswith(inside)]
+    group_files = [f for f in files if f.startswith(inside) and file_extension(f) not in NOTE_EXTS]
+    if any(t is None for t in notes.values()):
+        return sorted(group_notes)
+    others = {n: t for n, t in trashed.items() if not n.startswith(inside) and t is not None}
+    keep = []
+    for path in group_files:
+        home = original_of(path)
+        if any(uses(n, t, path) or uses(original_of(n), t, home) for n, t in others.items()):
+            continue
+        if home not in files and any(uses(n, t, home) for n, t in notes.items() if t is not None):
+            continue
+        keep.append(path)
+    return sorted(group_notes + keep)
+
+
+def build_trash_group_cases() -> dict:
+    """292 — 묶기: 뜻과 셈이 같고, 모든 휴지통 것이 한 번씩(폴더 하나 또는 낱개) 나오며, 폴더 줄의 원래 폴더는 지금 없다.
+    폴더째 영구 삭제: 뜻과 셈이 같고, 지우는 것은 모두 그 폴더 안이다."""
+    spec = json.loads(TRASH_GROUP_CASES.read_text(encoding="utf-8"))
+    groups, purges = [], []
+    for case in spec["groups"]:
+        trashed = [nfc(p) for p in case["trashed"]]
+        existing = {nfc(e) for e in case["existing"]}
+        candidates = sorted({a for p in trashed for a in trash_ancestors(p)})
+        got = trash_group(trashed, existing & set(candidates))
+        if "expect" in case and case["expect"] != got:
+            raise SystemExit(f"::error::[{case['name']}] 묶기: 뜻 {case['expect']} · 셈 {got}")
+        seen = [p for f in got["folders"] for p in f["paths"]] + got["loose"]
+        if sorted(seen) != sorted(trashed):
+            raise SystemExit(f"::error::[{case['name']}] 빠지거나 두 번 나온 것이 있다")
+        if any(f["folder"] in existing for f in got["folders"]):
+            raise SystemExit(f"::error::[{case['name']}] 있는 폴더를 지운 폴더로 묶었다")
+        groups.append({"name": case["name"], "trashed": trashed, "existing": sorted(existing),
+                       "candidates": candidates, "folders": got["folders"], "loose": got["loose"]})
+
+    def texts(raw: dict) -> dict:
+        return {nfc(k): (None if v is None else "\n".join(v) if isinstance(v, list) else v) for k, v in raw.items()}
+
+    for case in spec["purges"]:
+        notes, trashed = texts(case.get("notes", {})), texts(case.get("trashed", {}))
+        files = {nfc(f) for f in case["files"]}
+        got = purging_folder_with(case["folder"], notes, trashed, files)
+        if "expect" in case and sorted(nfc(x) for x in case["expect"]) != got:
+            raise SystemExit(f"::error::[{case['name']}] 폴더째 영구 삭제: 뜻 {case['expect']} · 셈 {got}")
+        if any(not p.startswith(".trash/" + nfc(case["folder"]) + "/") for p in got):
+            raise SystemExit(f"::error::[{case['name']}] 폴더 밖 것을 지운다")
+        purges.append({"name": case["name"], "folder": nfc(case["folder"]), "notes": notes, "trashed": trashed,
+                       "files": sorted(files), "purging": got})
+    return {"groups": groups, "purges": purges}
+
+
 # ── 폴더 이름을 바꿀 때 링크를 따라 고친다 (179) ────────────────────────────────
 #
 # 폴더 `old` 가 `new` 가 된다. 노트 하나의 링크 가운데 **old 안을 가리키던 것**만 new 안으로 옮겨 적는다.
@@ -4584,7 +4733,7 @@ def tally(loaded: dict) -> str:
     때마다 한쪽만 고쳐져 셈이 빠졌다."""
     parts = [
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
-        ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("지우기", "backspaceCases"), ("줄바꿈 고치기", "lineBreakCases"), ("메모 가져오기", "notesExportCases"), ("번호", "renumberCases"),
+        ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("지우기", "backspaceCases"), ("줄바꿈 고치기", "lineBreakCases"), ("메모 가져오기", "notesExportCases"), ("옮길 때 같이 갈 첨부", "moveAttachmentCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
         ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"), ("평가 부탁", "reviewCases"), ("보이는 줄", "previewCases"),
@@ -4593,6 +4742,9 @@ def tally(loaded: dict) -> str:
     files = loaded.get("pastedFileCases")
     if files:
         counted.append(f"붙여넣은 첨부 {len(files['kinds'])}·{len(files['labels'])}·{len(files['matches'])}건")
+    trash = loaded.get("trashGroupCases")
+    if trash:
+        counted.append(f"휴지통 폴더 {len(trash['groups'])}·{len(trash['purges'])}건")
     maps = loaded.get("mapCases")
     if maps:
         counted.append(f"지도 장소 {len(maps)}건")
