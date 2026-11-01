@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import html as html_lib
 import json
+import math
 import pathlib
 import re
 import sys
@@ -61,6 +62,7 @@ LINE_MAP_CASES = ROOT / "Tools" / "golden" / "line-map-cases.json"
 ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "attachment-cases.json"
 MOVE_ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "move-attachment-cases.json"
 TRASH_GROUP_CASES = ROOT / "Tools" / "golden" / "trash-group-cases.json"
+IMAGE_FIT_CASES = ROOT / "Tools" / "golden" / "image-fit-cases.json"
 RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
 NESTING_CASES = ROOT / "Tools" / "golden" / "nesting-cases.json"
 EMPHASIS_CASES = ROOT / "Tools" / "golden" / "emphasis-cases.json"
@@ -2859,6 +2861,7 @@ def build() -> dict:
         "notesExportCases": build_notes_export_cases(),
         "moveAttachmentCases": build_move_attachment_cases(),
         "trashGroupCases": build_trash_group_cases(),
+        "imageFitCases": build_image_fit_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
         "pasteCases": build_paste_cases(),
         "brokenCases": build_broken_cases(),
@@ -4134,6 +4137,43 @@ def purging_folder_with(folder: str, notes: dict, trashed: dict, files: set) -> 
     return sorted(group_notes + keep)
 
 
+IMAGE_MAX_SIDE, IMAGE_MIN_SHORT, IMAGE_HARD_MAX = 2048.0, 1024.0, 8192.0
+
+
+def image_fit_long_side(width: float, height: float) -> float:
+    """299 — 사진을 줄일 때의 긴 변. 긴 변 2048 로 줄였을 때 짧은 변이 1024 아래면 짧은 변 1024(원본이 작으면 원본)를 지킨다.
+    긴 변은 8192 까지. 작은 사진은 키우지 않는다. Swift `ImageFit.longSide` 와 같다."""
+    long, short = max(width, height), min(width, height)
+    if long <= 0 or short <= 0:
+        return IMAGE_MAX_SIDE
+    if long <= IMAGE_MAX_SIDE:
+        return float(long)
+    if short * IMAGE_MAX_SIDE / long >= IMAGE_MIN_SHORT:
+        return IMAGE_MAX_SIDE
+    kept = min(short, IMAGE_MIN_SHORT)
+    return float(math.floor(min(long * kept / short, IMAGE_HARD_MAX, long)))
+
+
+def build_image_fit_cases() -> list:
+    """299 — 뜻과 셈이 같고, 긴 변은 원본 · 8192 를 넘지 않으며, 짧은 변은 min(원본 짧은 변, 1024) 아래로 안 떨어진다."""
+    spec = json.loads(IMAGE_FIT_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        w, h = case["width"], case["height"]
+        got = image_fit_long_side(w, h)
+        if "expect" in case and got != case["expect"]:
+            raise SystemExit(f"::error::[{case['name']}] 긴 변: 뜻 {case['expect']} · 셈 {got}")
+        long, short = max(w, h), min(w, h)
+        if long > 0 and short > 0:
+            if got > max(long, IMAGE_MAX_SIDE) or got > IMAGE_HARD_MAX:
+                raise SystemExit(f"::error::[{case['name']}] 긴 변이 원본 · 8192 를 넘는다: {got}")
+            short_after = short * got / long
+            if got < IMAGE_HARD_MAX and short_after + 1 < min(short, IMAGE_MIN_SHORT):
+                raise SystemExit(f"::error::[{case['name']}] 짧은 변이 {short_after:.0f} 로 떨어진다")
+        out.append({"name": case["name"], "width": w, "height": h, "longSide": got})
+    return out
+
+
 def build_trash_group_cases() -> dict:
     """292 — 묶기: 뜻과 셈이 같고, 모든 휴지통 것이 한 번씩(폴더 하나 또는 낱개) 나오며, 폴더 줄의 원래 폴더는 지금 없다.
     폴더째 영구 삭제: 뜻과 셈이 같고, 지우는 것은 모두 그 폴더 안이다."""
@@ -4761,6 +4801,9 @@ def tally(loaded: dict) -> str:
     maps = loaded.get("mapCases")
     if maps:
         counted.append(f"지도 장소 {len(maps)}건")
+    fit = loaded.get("imageFitCases")
+    if fit:
+        counted.append(f"사진 줄이기 {len(fit)}건")
     initials = loaded.get("initialsCases")
     if initials:
         counted.append(f"제목 초성 {len(initials['initials'])}·{len(initials['queries'])}·{len(initials['matches'])}건")

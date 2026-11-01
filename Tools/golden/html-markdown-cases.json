@@ -232,6 +232,12 @@
    "name": "<video> · <audio> · <embed> 도 자리 하나 · 안의 대체 글은 안 붙인다",
    "html": "<p>앞 글<video controls><source src=\"file:///clip.mov\">이 브라우저는 동영상을 못 보여 줍니다</video>가운데<audio src=\"file:///voice.m4a\">녹음</audio><embed src=\"file:///doc.pdf\">끝</p>",
    "images": 3
+  },
+  {
+   "name": "메모 — 마지막 줄이 사진, 그 앞 줄의 번호 뒤가 U+00A0 (298 · 2026-11-01 사용자 진단 — 사진이 안 붙고 평문으로 붙었다)",
+   "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 3.0px 0.0px; font: 29.1px '.AppleSystemUIFont'}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.5px '.AppleSystemUIFont'; min-height: 23.3px}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.5px '.AppleSystemUIFont'}\np.p4 {margin: 9.0px 0.0px 8.0px 0.0px; font: 17.5px '.AppleSystemUIFont'}\nspan.s1 {font-family: 'UICTFontTextStyleBody'; font-weight: bold; font-style: normal; font-size: 29.12px}\nspan.s2 {font-family: 'UICTFontTextStyleBody'; font-weight: normal; font-style: normal; font-size: 17.47px}\n</style>\n</head>\n<body>\n<p class=\"p1\"><span class=\"s1\">모임 1기 #점검회의</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p3\"><span class=\"s2\">1) 일시 : 2022년 1월 21일 (금요일) 13:00-15:30</span></p>\n<p class=\"p3\"><span class=\"s2\">2) 방법 : 화상 회의</span></p>\n<p class=\"p3\"><span class=\"s2\">3) 대상</span></p>\n<p class=\"p3\"><span class=\"s2\">     ① (13:00) 첫째 과제 (가)</span></p>\n<p class=\"p3\"><span class=\"s2\">     ② (13:30) 둘째 과제 (나, 다)</span></p>\n<p class=\"p3\"><span class=\"s2\">&lt;&lt;30분 쉬고 진행&gt;&gt;</span></p>\n<p class=\"p3\"><span class=\"s2\">4) 내용 : 진행 상황 및 이슈 보고 </span></p>\n<p class=\"p4\"><span class=\"s2\"><img src=\"file:///Attachment.png\" alt=\"Attachment.png\"></span></p>\n</body>\n</html>\n",
+   "plain": "모임 1기 #점검회의\n\n1) 일시 : 2022년 1월 21일 (금요일) 13:00-15:30\n2) 방법 : 화상 회의\n3) 대상\n     ① (13:00) 첫째 과제 (가)\n     ② (13:30) 둘째 과제 (나, 다)\n<<30분 쉬고 진행>>\n4) 내용 : 진행 상황 및 이슈 보고 \n\n",
+   "images": 1
   }
  ],
  "fill": [
@@ -306,6 +312,12 @@
    "plain": "모두 2. 건",
    "converted": "모두 건",
    "want": false
+  },
+  {
+   "name": "번호 뒤가 붙는 빈칸(U+00A0)이어도 번호다 (298 · 2026-11-01 사용자 진단 — 메모의 평문은 `4)␣내용` 의 빈칸이 U+00A0, 변환한 글은 빈칸이라 평문의 4 만 남아 글자가 빠진 것으로 읽혔다)",
+   "plain": "1) 일시 : 금요일\n4) 내용 : 보고 ",
+   "converted": "1) 일시 : 금요일\n\n4) 내용 : 보고",
+   "want": true
   }
  ],
  "promote": [

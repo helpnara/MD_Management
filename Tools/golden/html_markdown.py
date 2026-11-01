@@ -1159,7 +1159,9 @@ def _drop_list_numbers(text: str) -> str:
 
 
 def letters(text: str) -> list:
-    t = unicodedata.normalize("NFC", _drop_list_numbers(text))
+    # 298 — 붙는 빈칸(U+00A0)은 빈칸으로 보고 번호를 뗀다. 메모의 평문은 `4)␣내용` 의 빈칸이 U+00A0 인데 변환한 글은
+    # 빈칸이라, 평문에서만 `4` 가 번호로 안 떼여 *글자가 빠졌다* 로 읽혔다 (2026-11-01 사용자 진단 — 사진이 안 붙고 평문으로).
+    t = unicodedata.normalize("NFC", _drop_list_numbers(text.replace("\u00a0", " ")))
     return [c for c in t if unicodedata.category(c) in ("Lu", "Ll", "Lt", "Lm", "Lo", "Nd")]
 
 

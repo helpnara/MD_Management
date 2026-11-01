@@ -10,8 +10,9 @@ import Core
 /// 긴 변을 줄여 파일을 작게 한다 — 노트 300개 · 20MB 예산(S1) 안에 사진이 들어와야 한다.
 enum ImageImport {
 
-    /// 긴 변 상한. 화면 폭 2배면 어느 기기에서도 선명하다.
-    static let maxSide: CGFloat = 2048
+    /// 긴 변 상한. 화면 폭 2배면 어느 기기에서도 선명하다. **규칙은 `Core.ImageFit` 하나** (299) — 세로로 긴 손글씨 그림은
+    /// 긴 변만 2048 로 맞추면 가로가 몇백 픽셀이 되어 글자를 못 읽는다. 짧은 변을 1024 까지 지킨다.
+    static let maxSide: CGFloat = CGFloat(ImageFit.maxSide)
 
     /// 주 액터 밖에서 부른다 — 디코딩과 인코딩이 수백 ms 걸린다.
     ///
@@ -20,8 +21,16 @@ enum ImageImport {
     /// 사진의 방향(EXIF)도 여기서 바로 세운다. 작은 사진은 키우지 않는다.
     static func jpeg(from data: Data, quality: CGFloat = 0.85) -> Data? {
         guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions),
-              let image = downsampled(source, maxPixel: maxSide) else { return nil }
+              let image = downsampled(source, maxPixel: fittedLongSide(of: source)) else { return nil }
         return UIImage(cgImage: image).jpegData(compressionQuality: quality)
+    }
+
+    /// 줄인 뒤의 긴 변 (299) — 원본의 가로 · 세로를 머리에서만 읽는다(풀지 않는다). 못 읽으면 `maxSide`.
+    private static func fittedLongSide(of source: CGImageSource) -> CGFloat {
+        guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Double,
+              let height = properties[kCGImagePropertyPixelHeight] as? Double else { return maxSide }
+        return CGFloat(ImageFit.longSide(width: width, height: height))
     }
 
     /// 폴더 안 사진의 **작은 그림**(PNG) — 커서 줄 사진 띠에 쓴다 (181). 파일을 통째로 메모리에

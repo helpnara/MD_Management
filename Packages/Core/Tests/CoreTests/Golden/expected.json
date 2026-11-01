@@ -5636,6 +5636,19 @@
         "plain": null
       },
       {
+        "html": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<meta http-equiv=\"Content-Style-Type\" content=\"text/css\">\n<title></title>\n<meta name=\"Generator\" content=\"Cocoa HTML Writer\">\n<style type=\"text/css\">\np.p1 {margin: 0.0px 0.0px 3.0px 0.0px; font: 29.1px '.AppleSystemUIFont'}\np.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.5px '.AppleSystemUIFont'; min-height: 23.3px}\np.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 17.5px '.AppleSystemUIFont'}\np.p4 {margin: 9.0px 0.0px 8.0px 0.0px; font: 17.5px '.AppleSystemUIFont'}\nspan.s1 {font-family: 'UICTFontTextStyleBody'; font-weight: bold; font-style: normal; font-size: 29.12px}\nspan.s2 {font-family: 'UICTFontTextStyleBody'; font-weight: normal; font-style: normal; font-size: 17.47px}\n</style>\n</head>\n<body>\n<p class=\"p1\"><span class=\"s1\">모임 1기 #점검회의</span></p>\n<p class=\"p2\"><span class=\"s2\"></span><br></p>\n<p class=\"p3\"><span class=\"s2\">1) 일시 : 2022년 1월 21일 (금요일) 13:00-15:30</span></p>\n<p class=\"p3\"><span class=\"s2\">2) 방법 : 화상 회의</span></p>\n<p class=\"p3\"><span class=\"s2\">3) 대상</span></p>\n<p class=\"p3\"><span class=\"s2\">     ① (13:00) 첫째 과제 (가)</span></p>\n<p class=\"p3\"><span class=\"s2\">     ② (13:30) 둘째 과제 (나, 다)</span></p>\n<p class=\"p3\"><span class=\"s2\">&lt;&lt;30분 쉬고 진행&gt;&gt;</span></p>\n<p class=\"p3\"><span class=\"s2\">4) 내용 : 진행 상황 및 이슈 보고 </span></p>\n<p class=\"p4\"><span class=\"s2\"><img src=\"file:///Attachment.png\" alt=\"Attachment.png\"></span></p>\n</body>\n</html>\n",
+        "images": [
+          {
+            "alt": "Attachment.png",
+            "src": "file:///Attachment.png"
+          }
+        ],
+        "keeps": true,
+        "markdown": "# 모임 1기 #점검회의\n\n1) 일시 : 2022년 1월 21일 (금요일) 13:00-15:30\n\n2) 방법 : 화상 회의\n\n3) 대상\n\n① (13:00) 첫째 과제 (가)\n\n② (13:30) 둘째 과제 (나, 다)\n\n<<30분 쉬고 진행>>\n\n4) 내용 : 진행 상황 및 이슈 보고\n\n￼",
+        "name": "메모 — 마지막 줄이 사진, 그 앞 줄의 번호 뒤가 U+00A0 (298 · 2026-11-01 사용자 진단 — 사진이 안 붙고 평문으로 붙었다)",
+        "plain": "모임 1기 #점검회의\n\n1) 일시 : 2022년 1월 21일 (금요일) 13:00-15:30\n2) 방법 : 화상 회의\n3) 대상\n     ① (13:00) 첫째 과제 (가)\n     ② (13:30) 둘째 과제 (나, 다)\n<<30분 쉬고 진행>>\n4) 내용 : 진행 상황 및 이슈 보고 \n\n"
+      },
+      {
         "html": "<table><tr><th>이름</th><th>값</th></tr><tr><td>가</td><td>1</td></tr></table>",
         "images": [],
         "keeps": null,
@@ -5815,6 +5828,12 @@
         "name": "글 속 숫자는 그대로 본다",
         "plain": "모두 2. 건",
         "result": false
+      },
+      {
+        "converted": "1) 일시 : 금요일\n\n4) 내용 : 보고",
+        "name": "번호 뒤가 붙는 빈칸(U+00A0)이어도 번호다 (298 · 2026-11-01 사용자 진단 — 메모의 평문은 `4)␣내용` 의 빈칸이 U+00A0, 변환한 글은 빈칸이라 평문의 4 만 남아 글자가 빠진 것으로 읽혔다)",
+        "plain": "1) 일시 : 금요일\n4) 내용 : 보고 ",
+        "result": true
       }
     ],
     "promote": [
@@ -5972,6 +5991,68 @@
       }
     ]
   },
+  "imageFitCases": [
+    {
+      "height": 3024,
+      "longSide": 2048.0,
+      "name": "보통 사진 4:3 — 긴 변 2048",
+      "width": 4032
+    },
+    {
+      "height": 2160,
+      "longSide": 2048.0,
+      "name": "16:9 — 짧은 변 1152 라 그대로 2048",
+      "width": 3840
+    },
+    {
+      "height": 2000,
+      "longSide": 2048.0,
+      "name": "2:1 — 짧은 변 꼭 1024 라 그대로 2048",
+      "width": 4000
+    },
+    {
+      "height": 6400,
+      "longSide": 4096.0,
+      "name": "세로로 긴 손글씨 1:4 (사용자 299) — 가로 1024 를 지켜 세로 4096",
+      "width": 1600
+    },
+    {
+      "height": 12000,
+      "longSide": 6144.0,
+      "name": "1:6 — 가로 1024 · 세로 6144",
+      "width": 2000
+    },
+    {
+      "height": 20000,
+      "longSide": 8192.0,
+      "name": "아주 긴 띠 1:10 — 긴 변 8192 에서 멈춘다",
+      "width": 2000
+    },
+    {
+      "height": 6000,
+      "longSide": 6000.0,
+      "name": "원본 가로가 1024 보다 작은 긴 그림 — 가로를 키우지 않고 원본 그대로",
+      "width": 800
+    },
+    {
+      "height": 900,
+      "longSide": 1200.0,
+      "name": "작은 사진 — 키우지 않는다",
+      "width": 1200
+    },
+    {
+      "height": 1600,
+      "longSide": 4096.0,
+      "name": "가로로 긴 그림도 같다",
+      "width": 6400
+    },
+    {
+      "height": 0,
+      "longSide": 2048.0,
+      "name": "0 이면 2048",
+      "width": 0
+    }
+  ],
   "inboxCases": [
     {
       "existing": {},
