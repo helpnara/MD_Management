@@ -160,8 +160,11 @@ public enum NoteLinking {
         // **대괄호는 역슬래시로 피한다** (152). 예전에는 `]` 를 빈칸으로 바꿨는데, 그러면
         // 사람이 고른 글자가 **망가진다** — `[것]` 이 `[것 ` 이 됐다. 파이썬 대조가 잡았다.
         // 역슬래시로 피하면 두 파서 모두 `[것]` 을 그대로 보여 준다.
-        let needsBrackets = path.contains(" ")
-        return "[" + escapedLabel(label) + "](" + (needsBrackets ? "<" + path + ">" : path) + ")"
+        // **`#` 은 `%23` 으로** (297) — 주소의 `#` 은 머리말 표시로 읽히므로 제목에 `#태그` 가 든 노트의 링크가 끊겼다. 읽는 쪽은 앵커를
+        // 뗀 뒤에 퍼센트를 풀므로 `%23` 은 이름으로 살아남고, 다른 앱에서도 파일로 읽힌다.
+        let safePath = path.replacingOccurrences(of: "#", with: "%23")
+        let needsBrackets = safePath.contains(" ")
+        return "[" + escapedLabel(label) + "](" + (needsBrackets ? "<" + safePath + ">" : safePath) + ")"
     }
 
     /// 링크 이름의 `[` · `]` · `\` 를 역슬래시로 피한다 — 링크를 짜는 곳(지도 장소 252 도)이 모두 이것을 쓴다.

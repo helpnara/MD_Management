@@ -279,8 +279,7 @@ def resolve(raw: str, note_path: str) -> dict:
         return {"kind": "external", "value": text}
     if text.startswith("#"):
         return {"kind": "empty", "value": ""}
-    if "#" in text:
-        text = text.split("#", 1)[0]
+    text = split_anchor(text)[0]   # 297 — 이름에 든 # 은 남긴다
     if not text:
         return {"kind": "empty", "value": ""}
 
@@ -297,6 +296,24 @@ def file_extension(path: str) -> str:
     name = path.rsplit("/", 1)[-1]
     dot = name.rfind(".")
     return name[dot + 1:].lower() if dot > 0 else ""
+
+
+# 297 — 링크 주소의 `#` 을 가를 때 파일 이름의 끝으로 보는 확장자 (Swift `Paths.knownExtensions`).
+KNOWN_EXTS = NOTE_EXTS | {"jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tif", "tiff", "svg", "avif",
+                          "pdf", "mov", "mp4", "m4a", "mp3", "wav", "zip", "docx", "xlsx", "pptx", "hwp", "hwpx", "csv", "json", "html"}
+
+
+def split_anchor(text: str) -> tuple:
+    """`#` 자리를 왼쪽부터 보며 그 앞까지가 아는 확장자로 끝나는 첫 자리에서만 앵커로 뗀다 (Swift `Paths.splitAnchor`)."""
+    start = 0
+    while True:
+        hash_at = text.find("#", start)
+        if hash_at < 0:
+            return text, ""
+        before = text[:hash_at]
+        if file_extension(before) in KNOWN_EXTS:
+            return before, text[hash_at:]
+        start = hash_at + 1
 
 
 # ── 뷰어 HTML — 설계서 §7.3 · ADR-0004 를 보고 다시 구현 ────────────────────
@@ -1562,6 +1579,7 @@ def markdown_link(label: str, path: str) -> str:
 
     대괄호는 **역슬래시로 피한다** (152) — 빈칸으로 바꾸면 사람이 고른 글자가 망가진다.
     """
+    path = path.replace("#", "%23")   # 297 — 주소의 # 은 머리말 표시로 읽힌다
     return "[" + escaped_label(label) + "](" + ("<" + path + ">" if " " in path else path) + ")"
 
 
@@ -1906,12 +1924,7 @@ def read_destination(text: str, start: int):
 def rebase_one(raw: str, note: str, new_folder: str, moves: dict | None = None) -> str:
     wrapped = len(raw) >= 2 and raw.startswith("<") and raw.endswith(">")
     inner = raw[1:-1] if wrapped else raw
-    anchor = ""
-    target = inner
-    hash_at = inner.find("#")
-    if hash_at > 0:
-        anchor = inner[hash_at:]
-        target = inner[:hash_at]
+    target, anchor = split_anchor(inner)   # 297
     got = resolve(target, note)
     if got["kind"] != "relative":
         return raw
@@ -3421,10 +3434,7 @@ def notes_export_plan(files: list, folder: str, taken: list) -> dict:
 def _export_relink_one(raw: str, note: str, new_folder: str, moves: dict) -> str:
     wrapped = len(raw) >= 2 and raw.startswith("<") and raw.endswith(">")
     inner = raw[1:-1] if wrapped else raw
-    anchor, target = "", inner
-    hash_at = inner.find("#")
-    if hash_at > 0:
-        anchor, target = inner[hash_at:], inner[:hash_at]
+    target, anchor = split_anchor(inner)   # 297
     got = resolve(target, note)
     if got["kind"] != "relative" or got["value"] not in moves:
         return raw
@@ -4172,12 +4182,7 @@ def build_trash_group_cases() -> dict:
 def retarget_one(raw: str, note_old: str, note_new: str, old: str, new: str):
     wrapped = len(raw) >= 2 and raw.startswith("<") and raw.endswith(">")
     inner = raw[1:-1] if wrapped else raw
-    anchor = ""
-    target = inner
-    hash_at = inner.find("#")
-    if hash_at > 0:
-        anchor = inner[hash_at:]
-        target = inner[:hash_at]
+    target, anchor = split_anchor(inner)   # 297
     got = resolve(target, note_old)
     if got["kind"] != "relative":
         return raw

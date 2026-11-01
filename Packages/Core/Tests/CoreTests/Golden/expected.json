@@ -1840,6 +1840,116 @@
       },
       "source": "# 첨부 넷\n\n![](assets/보고서.pdf)\n\n![](assets/회의.mov)\n\n![](assets/사진.png)\n\n![](assets/없는.pdf)\n\n[견적서](assets/보고서.pdf)\n",
       "title": "첨부 넷"
+    },
+    {
+      "body": "# 이름에 #태그 가 든 노트들\n\n[고려대 교육](<고려대 교육 #과제관리 #관점요약.md>)\n\n[머리말로](노트.md#머리말)\n\n![사진](<사진 #1.png>)\n\n[퍼센트로 적은 것](%EA%B3%A0%EB%A0%A4%EB%8C%80%20%EA%B5%90%EC%9C%A1%20%23%EA%B3%BC%EC%A0%9C%EA%B4%80%EB%A6%AC%20%23%EA%B4%80%EC%A0%90%EC%9A%94%EC%95%BD.md)\n\n[같은 문서 안](#머리말)\n\n[없는 것](<회의 #메모.md>)\n",
+      "existing": [
+        "자료/고려대 교육 #과제관리 #관점요약.md",
+        "자료/노트.md",
+        "자료/사진 #1.png"
+      ],
+      "file": "hash-names.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "fileCards": [],
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/%EC%9E%90%EB%A3%8C/%EC%82%AC%EC%A7%84%20%231.png"
+        ],
+        "listItems": 0,
+        "missing": [
+          "%ED%9A%8C%EC%9D%98%20#%EB%A9%94%EB%AA%A8.md"
+        ],
+        "missingDecoded": [
+          "회의 #메모.md"
+        ],
+        "tables": 0
+      },
+      "links": [
+        {
+          "destination": "%EA%B3%A0%EB%A0%A4%EB%8C%80%20%EA%B5%90%EC%9C%A1%20#%EA%B3%BC%EC%A0%9C%EA%B4%80%EB%A6%AC%20#%EA%B4%80%EC%A0%90%EC%9A%94%EC%95%BD.md",
+          "kind": "link"
+        },
+        {
+          "destination": "%EB%85%B8%ED%8A%B8.md#%EB%A8%B8%EB%A6%AC%EB%A7%90",
+          "kind": "link"
+        },
+        {
+          "destination": "%EC%82%AC%EC%A7%84%20#1.png",
+          "kind": "image"
+        },
+        {
+          "destination": "%EA%B3%A0%EB%A0%A4%EB%8C%80%20%EA%B5%90%EC%9C%A1%20%23%EA%B3%BC%EC%A0%9C%EA%B4%80%EB%A6%AC%20%23%EA%B4%80%EC%A0%90%EC%9A%94%EC%95%BD.md",
+          "kind": "link"
+        },
+        {
+          "destination": "#%EB%A8%B8%EB%A6%AC%EB%A7%90",
+          "kind": "link"
+        },
+        {
+          "destination": "%ED%9A%8C%EC%9D%98%20#%EB%A9%94%EB%AA%A8.md",
+          "kind": "link"
+        }
+      ],
+      "name": "hash-names.md",
+      "notePath": "자료/태그.md",
+      "resolved": [
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/고려대 교육 #과제관리 #관점요약.md"
+        },
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/노트.md"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/사진 #1.png"
+        },
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/고려대 교육 #과제관리 #관점요약.md"
+        },
+        {
+          "linkKind": "link",
+          "target": "empty",
+          "value": ""
+        },
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/회의 #메모.md"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "자료/태그.md",
+          "자료/고려대 교육 #과제관리 #관점요약.md",
+          "자료/노트.md",
+          "자료/사진 #1.png"
+        ],
+        "missing": [
+          "%ED%9A%8C%EC%9D%98%20#%EB%A9%94%EB%AA%A8.md"
+        ],
+        "missingDecoded": [
+          "회의 #메모.md"
+        ],
+        "mode": "zip"
+      },
+      "source": "# 이름에 #태그 가 든 노트들\n\n[고려대 교육](<고려대 교육 #과제관리 #관점요약.md>)\n\n[머리말로](노트.md#머리말)\n\n![사진](<사진 #1.png>)\n\n[퍼센트로 적은 것](%EA%B3%A0%EB%A0%A4%EB%8C%80%20%EA%B5%90%EC%9C%A1%20%23%EA%B3%BC%EC%A0%9C%EA%B4%80%EB%A6%AC%20%23%EA%B4%80%EC%A0%90%EC%9A%94%EC%95%BD.md)\n\n[같은 문서 안](#머리말)\n\n[없는 것](<회의 #메모.md>)\n",
+      "title": "이름에 #태그 가 든 노트들"
     }
   ],
   "contextCases": [
@@ -7643,6 +7753,38 @@
       "pick": null,
       "query": null,
       "text": "어제 >>회의"
+    },
+    {
+      "applied": "어제 [고려대 교육 #과제관리 #관점요약](<고려대 교육 %23과제관리 %23관점요약.md>)",
+      "caret": 7,
+      "edit": {
+        "length": 4,
+        "selectionLength": 0,
+        "selectionStart": 52,
+        "start": 3,
+        "text": "[고려대 교육 #과제관리 #관점요약](<고려대 교육 %23과제관리 %23관점요약.md>)"
+      },
+      "menuApplied": "어제 >>고려[고려대 교육 #과제관리 #관점요약](<고려대 교육 %23과제관리 %23관점요약.md>)",
+      "menuEdit": {
+        "length": 0,
+        "selectionLength": 0,
+        "selectionStart": 56,
+        "start": 7,
+        "text": "[고려대 교육 #과제관리 #관점요약](<고려대 교육 %23과제관리 %23관점요약.md>)"
+      },
+      "name": "꺾쇠 둘 — #태그 가 든 제목을 고르면 주소의 # 은 %23 (297)",
+      "noteFolder": "자료",
+      "pick": {
+        "path": "자료/고려대 교육 #과제관리 #관점요약.md",
+        "title": "고려대 교육 #과제관리 #관점요약"
+      },
+      "query": {
+        "length": 4,
+        "start": 3,
+        "text": "고려",
+        "trigger": ">>"
+      },
+      "text": "어제 >>고려"
     }
   ],
   "mapCases": [
@@ -11470,6 +11612,13 @@
       "name": "LF-닫는괄호가-다음줄이면-안고친다",
       "rebased": "[a](assets/a.png 설명\n다음 줄 (괄호) 끝)\n",
       "text": "[a](assets/a.png 설명\n다음 줄 (괄호) 끝)\n",
+      "to": "회의"
+    },
+    {
+      "from": "",
+      "name": "이름에 # 든 노트 — 옮겨도 이름 그대로 (297)",
+      "rebased": "[고려대](<../고려대 교육 #과제관리 #관점요약.md>) [절](../노트.md#머리말) ![](<../사진 #1.png>)",
+      "text": "[고려대](<고려대 교육 #과제관리 #관점요약.md>) [절](노트.md#머리말) ![](<사진 #1.png>)",
       "to": "회의"
     }
   ],

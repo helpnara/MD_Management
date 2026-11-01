@@ -52,13 +52,34 @@ public enum Paths {
 
     /// 라이브 편집기가 여는 파일인가.
     public static func isNoteFile(_ path: String) -> Bool {
-        ["md", "markdown", "txt"].contains(fileExtension(path))
+        noteExtensions.contains(fileExtension(path))
+    }
+
+    static let noteExtensions: Set<String> = ["md", "markdown", "txt"]
+    static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tif", "tiff", "svg", "avif"]
+    /// 링크 주소의 `#` 을 가를 때 **파일 이름의 끝으로 보는 확장자** (297) — 노트 · 사진 · 흔한 첨부. 파이썬 `KNOWN_EXTS` 와 같다.
+    static let knownExtensions: Set<String> = noteExtensions.union(imageExtensions).union([
+        "pdf", "mov", "mp4", "m4a", "mp3", "wav", "zip", "docx", "xlsx", "pptx", "hwp", "hwpx", "csv", "json", "html"
+    ])
+
+    /// **링크 주소의 `#` 이 머리말 표시인가, 이름의 일부인가** (297, 2026-11-01 사용자 — `<고려대 교육 #과제관리 #관점요약.md>` 가 안 열렸다).
+    /// `#` 자리를 왼쪽부터 보며 **그 앞까지가 아는 확장자로 끝나는 첫 자리**에서만 앵커로 뗀다 — `노트.md#머리말` → (`노트.md`, `#머리말`).
+    /// 그런 자리가 없으면 전체가 파일 이름 — 제목에 `#태그` 를 쓰는 노트. 떼는 자리는 **여기 하나**다 — `resolve` · 옮길 때 다시 적기 셋 ·
+    /// 가져오기가 모두 부른다 (예전에는 넷이 제각각이었다 · CLAUDE.md §1).
+    public static func splitAnchor(_ text: String) -> (path: String, anchor: String) {
+        var from = text.startIndex
+        while from < text.endIndex, let hash = text[from...].firstIndex(of: "#") {
+            let before = String(text[text.startIndex..<hash])
+            if knownExtensions.contains(fileExtension(before)) { return (before, String(text[hash...])) }
+            from = text.index(after: hash)
+        }
+        return (text, "")
     }
 
     /// **웹뷰가 `<img>` 로 그릴 수 있는 사진인가** (295). 아닌 것(PDF · 동영상 · 문서)을 `<img>` 로 넣으면 빈칸이 남는다 —
     /// 읽기 화면은 그것을 파일 카드로 그린다. 목록은 파이썬 쌍둥이(`IMAGE_EXTS`)와 같다.
     public static func isImageFile(_ path: String) -> Bool {
-        ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tif", "tiff", "svg", "avif"].contains(fileExtension(path))
+        imageExtensions.contains(fileExtension(path))
     }
 
     /// **폴더 목록에서 노트 하나로 세는가** (153, 사용자 · 2026-09-19 — *노트 개수가
@@ -188,10 +209,8 @@ public enum Paths {
         // 같은 문서 안 앵커.
         if text.hasPrefix("#") { return .empty }
 
-        // 문서 안 앵커를 떼어 낸다: `노트.md#머리말` → `노트.md`
-        if let hash = text.firstIndex(of: "#") {
-            text = String(text[text.startIndex..<hash])
-        }
+        // 문서 안 앵커를 떼어 낸다: `노트.md#머리말` → `노트.md`. 이름에 든 `#` 은 남긴다 (297 — 규칙은 `splitAnchor` 하나).
+        text = splitAnchor(text).path
         if text.isEmpty { return .empty }
 
         let decoded = text.removingPercentEncoding ?? text
