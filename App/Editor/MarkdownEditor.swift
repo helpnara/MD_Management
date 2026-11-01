@@ -291,7 +291,10 @@ final class MarkdownTextView: UITextView {
         guard let index = lines.firstIndex(where: { NSLocationInRange(inside, $0.characterRange) })
                 ?? (inside == NSMaxRange(last.characterRange) ? lines.count - 1 : nil) else { return nil }
         let line = lines[index]
-        let caretX = line.typographicBounds.minX + line.locationForCharacter(at: inside).x
+        // 줄 조각의 좌표는 **줄 제 자리** 기준이다 (Apple 의 TextKit 2 본보기 — `draw(at: typographicBounds.origin)`). 글 끝 등에서 값이
+        // 안 나오면(NaN) 줄 첫머리로 본다.
+        let localCaretX = line.locationForCharacter(at: inside).x
+        let caretX = line.typographicBounds.minX + (localCaretX.isFinite ? max(0, localCaretX) : 0)
         let goalX = verticalGoal?.caret == caret ? verticalGoal!.x : caretX
 
         // 목표 줄 — 같은 문단의 이웃 줄, 없으면 이웃 문단의 끝 · 첫 줄.
@@ -342,10 +345,19 @@ final class MarkdownTextView: UITextView {
         guard let target = targetLine else { return nil }
 
         // 목표 줄에서 같은 가로 자리의 글자. 줄 끝의 줄바꿈 글자 뒤로는 안 간다 — 그 자리는 다음 줄 첫 글자다.
+        //
+        // **돌아온 번호를 더하기 전에 줄 안으로 가둔다** (빌드 142 크래시 — `EXC_BREAKPOINT`, 키 반복 ↓ 에서). 줄 조각은 점이 줄 밖이면
+        // `NSNotFound`(정수 최댓값)를 돌려주고, 거기에 문단 자리를 더하면 **정수가 넘쳐** Swift 가 덫을 세운다. 세로 자리를 줄 제 자리 기준
+        // (높이의 반)으로 물어 안 나오면 문단 기준(`midY`)으로 한 번 더 묻고, 그래도 없으면 줄 끝으로.
         let localX = max(0, goalX - target.typographicBounds.minX)
-        let offset = target.characterIndex(for: CGPoint(x: localX, y: target.typographicBounds.height / 2))
+        let lineLength = NSMaxRange(target.characterRange)
+        var offset = target.characterIndex(for: CGPoint(x: localX, y: target.typographicBounds.height / 2))
+        if offset == NSNotFound || offset < 0 || offset > lineLength {
+            offset = target.characterIndex(for: CGPoint(x: localX, y: target.typographicBounds.midY))
+        }
+        if offset == NSNotFound || offset < 0 || offset > lineLength { offset = lineLength }
         let lineStart = targetStart + target.characterRange.location
-        let lineEnd = targetStart + NSMaxRange(target.characterRange)
+        let lineEnd = targetStart + lineLength
         var result = min(max(targetStart + offset, lineStart), min(lineEnd, text.length))
         if result > lineStart, result == lineEnd, text.character(at: result - 1) == 0x0A { result -= 1 }
         verticalGoal = (result, goalX)
