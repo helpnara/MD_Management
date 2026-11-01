@@ -12,6 +12,8 @@ import Core
 protocol AssetProvider: Sendable {
     /// 폴더 기준 상대경로의 내용. 없으면 `nil`.
     func data(forRelativePath path: String) async -> Data?
+    /// **작은 그림** (PNG) — 사진은 줄인 것, PDF 는 첫 쪽 (295). 못 만들면 `nil`.
+    func thumbnail(forRelativePath path: String, maxPixel: CGFloat) async -> Data?
 }
 
 /// WebKit 은 이 메서드들을 **메인 스레드에서만** 부른다. 그런데 SDK 가
@@ -29,12 +31,20 @@ final class NoteSchemeHandler: NSObject, WKURLSchemeHandler, @unchecked Sendable
         let identifier = ObjectIdentifier(task)
         running.insert(identifier)
 
-        guard let url = task.request.url, url.host == "note", let assets else {
+        guard let url = task.request.url, url.host == "note" || url.host == "thumb", let assets else {
             finish(task, identifier: identifier, with: Self.placeholderPNG, mimeType: "image/png")
             return
         }
 
         let path = MarkdownHTML.relativePath(fromURLPath: url.path)
+        // `yb://thumb/…` — PDF 의 첫 쪽 그림 (295). 못 만들면 투명 PNG — 카드에는 이름이 남는다.
+        if url.host == "thumb" {
+            Task { @MainActor [weak self] in
+                let data = await assets.thumbnail(forRelativePath: path, maxPixel: Self.thumbnailPixels)
+                self?.finish(task, identifier: identifier, with: data ?? Self.placeholderPNG, mimeType: "image/png")
+            }
+            return
+        }
         let mimeType = Self.mimeType(for: path)
 
         Task { @MainActor [weak self] in
@@ -63,6 +73,9 @@ final class NoteSchemeHandler: NSObject, WKURLSchemeHandler, @unchecked Sendable
         task.didReceive(data)
         task.didFinish()
     }
+
+    /// 첫 쪽 그림의 긴 변 — 아이패드 가로 한 칸을 채우고도 남는다. 더 크면 PDF 마다 메모리만 든다.
+    static let thumbnailPixels: CGFloat = 1200
 
     private static func mimeType(for path: String) -> String {
         let ext = Paths.fileExtension(path)

@@ -95,6 +95,15 @@
       "existing": [
         "assets/그림.png"
       ]
+    },
+    {
+      "file": "files.md",
+      "notePath": "자료/첨부.md",
+      "existing": [
+        "자료/assets/보고서.pdf",
+        "자료/assets/회의.mov",
+        "자료/assets/사진.png"
+      ]
     }
   ]
 }

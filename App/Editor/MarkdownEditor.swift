@@ -379,6 +379,10 @@ struct MarkdownEditor: UIViewRepresentable {
         private var lastFormatID: UUID?
         /// 지난 선택 (132). 어느 쪽 끝이 움직였는지 알려면 견줄 것이 있어야 한다.
         private var lastSelection: NSRange?
+        /// 칠하기를 한 바퀴 미뤄 둔 상태 (294) — 여러 번 바뀌어도 한 번만 칠한다.
+        private var focusRefreshQueued = false
+        /// 커서 튐을 가리는 지난 자리 (294 ③) — 글자 자리 · 그때 글 길이.
+        private var lastLeap: (location: Int, length: Int)?
         /// 마지막으로 알린 사진 주소. 바뀔 때만 알린다.
         private var lastImageLine: String??
         /// 마지막으로 알린 값. 바뀔 때만 알린다.
@@ -1584,8 +1588,53 @@ struct MarkdownEditor: UIViewRepresentable {
             reportImageLine(textView)
             reportActiveFormats(textView)
             reportLinkQuery(textView)
+            noteCaretLeap(textView)
+            // **칠하기는 한 바퀴 뒤** (294) — 커서 맞추기(`keepVisible`)보다 먼저 줄을 선다: 드러난 줄의 높이로 커서 자리를 재게.
+            scheduleFocusRefresh(textView)
             keepSelectionEdgeVisible(textView)
-            refreshFocus(textView)
+        }
+
+        /// **커서가 움직인 그 자리에서 칠하지 않는다** (294, 2026-11-01 사용자 — 아이패드 화면 녹화 *글머리표가 있는 글에서 아래 위
+        /// 화살표로 이동하다보면 한번에 처음이나 한번에 끝으로 커서가 점프*).
+        ///
+        /// ↑↓ 는 UIKit 이 **커서 네모의 위아래 한 줄 자리를 되묻는** 식으로 옮긴다. 그 이동이 끝나기 전에 이 대리자 안에서 옛 문단을
+        /// 숨기고 새 문단을 드러내면 — 링크 항목은 주소가 드러나며 **문단 높이가 바뀐다** — TextKit 2 가 그 자리의 배치 조각을
+        /// 아직 못 만든(어림) 채로 되돌려 주고, 조각이 없는 자리는 문서 **처음 · 끝**으로 떨어졌다. 100(`textViewDidBeginEditing`
+        /// 에서 칠했더니 커서가 글 끝으로) · 216(어림 배치)과 같은 모양이다. 한 바퀴 뒤면 이동이 끝난 배치 위에서 칠한다 —
+        /// 120Hz 에서 8ms 라 눈에 안 보인다. 그 사이 또 움직였으면 마지막 자리로 한 번만 칠한다.
+        private func scheduleFocusRefresh(_ textView: UITextView) {
+            guard !focusRefreshQueued else { return }
+            focusRefreshQueued = true
+            DispatchQueue.main.async { [weak self, weak textView] in
+                guard let self else { return }
+                self.focusRefreshQueued = false
+                guard let textView else { return }
+                self.refreshFocus(textView)
+                self.settleLayoutInViewport(textView)
+            }
+        }
+
+        /// 칠한 뒤 **보이는 범위의 배치를 확정한다** (294 ②) — 다음 화살표가 어림 조각을 밟지 않게. 문서 전체는 아니다 (큰 노트에서
+        /// 비싸다 — 216 은 전체였지만 드물게 돈다).
+        private func settleLayoutInViewport(_ textView: UITextView) {
+            guard let layout = textView.textLayoutManager,
+                  let viewport = layout.textViewportLayoutController.viewportRange else { return }
+            layout.ensureLayout(for: viewport)
+        }
+
+        /// **커서 튐을 적는다** (294 ③ — 어느 칸에서 잡았어야 했나: 시뮬레이터 스크린샷은 키보드 이동을 못 찍는다). 글은 그대로인데
+        /// 커서가 문서 **처음 · 끝**으로 문단 10개 넘게 한 번에 갔으면 최근 일에 남긴다 — 다시 나면 진단으로 잡힌다.
+        private func noteCaretLeap(_ textView: UITextView) {
+            let text = textView.textStorage.string as NSString
+            let now = textView.selectedRange.location
+            defer { lastLeap = (now, text.length) }
+            guard let last = lastLeap, last.length == text.length, textView.isFirstResponder,
+                  now != last.location, now == 0 || now == text.length else { return }
+            let span = NSRange(location: min(last.location, now), length: abs(now - last.location))
+            guard NSMaxRange(span) <= text.length else { return }
+            let paragraphs = text.substring(with: span).reduce(0) { $0 + ($1 == "\n" ? 1 : 0) }
+            guard paragraphs >= 10 else { return }
+            note("커서 튐: \(last.location) → \(now) (문단 \(paragraphs)개 · 글은 그대로)")
         }
 
         // MARK: - 원문을 드러낸 줄 (162)

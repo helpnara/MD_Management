@@ -73,6 +73,8 @@ SHARE_CASES = ROOT / "Tools" / "golden" / "share-cases.json"
 OUT = ROOT / "Packages" / "Core" / "Tests" / "CoreTests" / "Golden" / "expected.json"
 
 NOTE_EXTS = {"md", "markdown", "txt"}
+# 295 — 웹뷰가 `<img>` 로 그릴 수 있는 사진 (Swift `Paths.isImageFile` 과 같은 목록). 아닌 첨부는 파일 카드.
+IMAGE_EXTS = {"jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tif", "tiff", "svg", "avif"}
 MARKDOWN_EXTS = {"md", "markdown"}
 
 
@@ -345,6 +347,7 @@ def html_facts(note_path: str, text: str, existing: set[str]) -> dict:
                 break
 
     image_srcs: list[str] = []
+    file_cards: list[dict] = []
     missing: list[str] = []
     seen: set[str] = set()
 
@@ -360,7 +363,11 @@ def html_facts(note_path: str, text: str, existing: set[str]) -> dict:
             if kind == "empty":
                 continue
             if kind == "relative" and value in existing:
-                image_srcs.append(asset_url(value))
+                if file_extension(value) in IMAGE_EXTS:
+                    image_srcs.append(asset_url(value))
+                else:
+                    # 295 — 사진이 아닌 첨부는 파일 카드. PDF 는 첫 쪽 그림이 붙는다.
+                    file_cards.append({"path": value, "thumb": file_extension(value) == "pdf"})
             else:
                 # 외부 이미지도 안 보인다 — CSP 가 네트워크를 막는다.
                 miss(link["destination"])
@@ -377,6 +384,7 @@ def html_facts(note_path: str, text: str, existing: set[str]) -> dict:
         "tables": tables,
         "codeBlocks": code_blocks,
         "imageSrcs": image_srcs,
+        "fileCards": file_cards,
         "missing": missing,
         "missingDecoded": [nfc(urllib.parse.unquote(m)) for m in missing],
     }

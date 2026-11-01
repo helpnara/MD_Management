@@ -1,5 +1,6 @@
 import UIKit
 import ImageIO
+import PDFKit
 import UniformTypeIdentifiers
 import Core
 
@@ -26,6 +27,7 @@ enum ImageImport {
     /// 폴더 안 사진의 **작은 그림**(PNG) — 커서 줄 사진 띠에 쓴다 (181). 파일을 통째로 메모리에
     /// 올리지 않고 파일에서 바로 줄여 읽는다. 사진이 아니면 `nil`.
     static func thumbnailPNG(at url: URL, maxPixel: CGFloat) -> Data? {
+        if Paths.fileExtension(url.lastPathComponent) == "pdf" { return pdfFirstPagePNG(at: url, maxPixel: maxPixel) }
         guard let source = CGImageSourceCreateWithURL(url as CFURL, sourceOptions),
               let image = downsampled(source, maxPixel: maxPixel) else { return nil }
         let out = NSMutableData()
@@ -34,6 +36,18 @@ enum ImageImport {
         CGImageDestinationAddImage(destination, image, nil)
         guard CGImageDestinationFinalize(destination) else { return nil }
         return out as Data
+    }
+
+    /// **PDF 의 첫 쪽** (295) — 읽기 화면의 카드 · 커서 줄 띠. 긴 변을 `maxPixel` 로. 암호가 걸렸거나 쪽이 없으면 `nil`
+    /// (카드에는 이름만 남는다). 쪽의 회전은 PDFKit 이 맞춘다.
+    static func pdfFirstPagePNG(at url: URL, maxPixel: CGFloat) -> Data? {
+        guard let document = PDFDocument(url: url), !document.isLocked,
+              let page = document.page(at: 0) else { return nil }
+        let bounds = page.bounds(for: .cropBox)
+        guard bounds.width > 0, bounds.height > 0 else { return nil }
+        let scale = maxPixel / max(bounds.width, bounds.height)
+        let size = CGSize(width: bounds.width * scale, height: bounds.height * scale)
+        return page.thumbnail(of: size, for: .cropBox).pngData()
     }
 
     /// 원본을 캐시에 풀어 두지 않는다 — 줄인 것만 남는다.

@@ -913,6 +913,7 @@
           "unchecked": 1
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -959,6 +960,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1038,6 +1040,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1100,6 +1103,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1150,6 +1154,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1218,6 +1223,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1295,6 +1301,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1358,6 +1365,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1419,6 +1427,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1485,6 +1494,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [],
         "imageSrcs": [],
         "listItems": 0,
@@ -1519,6 +1529,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1563,6 +1574,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1613,6 +1625,7 @@
           "unchecked": 0
         },
         "codeBlocks": 0,
+        "fileCards": [],
         "headings": [
           1
         ],
@@ -1676,6 +1689,7 @@
           "unchecked": 2
         },
         "codeBlocks": 2,
+        "fileCards": [],
         "headings": [
           1,
           2,
@@ -1716,6 +1730,116 @@
       },
       "source": "---\ntitle: 표와 코드가 든 노트\ntags: [렌더]\n---\n\n# 표와 코드가 든 노트\n\n## 표\n\n| 하는 것 | 어디서 |\n|---|---|\n| 보기 · 고치기 | 파일을 열면 바로 |\n| 찾기 | 아래 검색 |\n\n## 할 일\n\n- [x] 끝낸 것\n- [ ] 안 한 것\n- [ ] 또 안 한 것\n- 체크박스가 아닌 항목\n\n## 코드\n\n```swift\nlet note = try store.readText(at: \"회의.md\")\n```\n\n들여쓰기 코드도 하나:\n\n    plain code\n\n> 인용문 한 줄.\n\n---\n\n*기울임* 과 **굵게** 와 `인라인 코드`.\n\n![그림](assets/그림.png)\n",
       "title": "표와 코드가 든 노트"
+    },
+    {
+      "body": "# 첨부 넷\n\n![](assets/보고서.pdf)\n\n![](assets/회의.mov)\n\n![](assets/사진.png)\n\n![](assets/없는.pdf)\n\n[견적서](assets/보고서.pdf)\n",
+      "existing": [
+        "자료/assets/보고서.pdf",
+        "자료/assets/사진.png",
+        "자료/assets/회의.mov"
+      ],
+      "file": "files.md",
+      "followLinkedNotes": true,
+      "frontMatter": null,
+      "html": {
+        "checkboxes": {
+          "checked": 0,
+          "unchecked": 0
+        },
+        "codeBlocks": 0,
+        "fileCards": [
+          {
+            "path": "자료/assets/보고서.pdf",
+            "thumb": true
+          },
+          {
+            "path": "자료/assets/회의.mov",
+            "thumb": false
+          }
+        ],
+        "headings": [
+          1
+        ],
+        "imageSrcs": [
+          "yb://note/%EC%9E%90%EB%A3%8C/assets/%EC%82%AC%EC%A7%84.png"
+        ],
+        "listItems": 0,
+        "missing": [
+          "assets/%EC%97%86%EB%8A%94.pdf"
+        ],
+        "missingDecoded": [
+          "assets/없는.pdf"
+        ],
+        "tables": 0
+      },
+      "links": [
+        {
+          "destination": "assets/%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%ED%9A%8C%EC%9D%98.mov",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%EC%82%AC%EC%A7%84.png",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%EC%97%86%EB%8A%94.pdf",
+          "kind": "image"
+        },
+        {
+          "destination": "assets/%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf",
+          "kind": "link"
+        }
+      ],
+      "name": "files.md",
+      "notePath": "자료/첨부.md",
+      "resolved": [
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/assets/보고서.pdf"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/assets/회의.mov"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/assets/사진.png"
+        },
+        {
+          "linkKind": "image",
+          "target": "relative",
+          "value": "자료/assets/없는.pdf"
+        },
+        {
+          "linkKind": "link",
+          "target": "relative",
+          "value": "자료/assets/보고서.pdf"
+        }
+      ],
+      "sharePlan": {
+        "includes": [
+          "자료/첨부.md",
+          "자료/assets/보고서.pdf",
+          "자료/assets/회의.mov",
+          "자료/assets/사진.png"
+        ],
+        "missing": [
+          "assets/%EC%97%86%EB%8A%94.pdf"
+        ],
+        "missingDecoded": [
+          "assets/없는.pdf"
+        ],
+        "mode": "zip"
+      },
+      "source": "# 첨부 넷\n\n![](assets/보고서.pdf)\n\n![](assets/회의.mov)\n\n![](assets/사진.png)\n\n![](assets/없는.pdf)\n\n[견적서](assets/보고서.pdf)\n",
+      "title": "첨부 넷"
     }
   ],
   "contextCases": [

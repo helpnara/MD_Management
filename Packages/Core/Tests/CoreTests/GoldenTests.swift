@@ -43,6 +43,12 @@ final class GoldenTests: XCTestCase {
             let tables: Int
             let codeBlocks: Int
             let imageSrcs: [String]
+            /// 사진이 아닌 첨부의 카드 (295) — 경로 · 첫 쪽 그림이 붙나 (PDF).
+            struct FileCard: Decodable, Equatable {
+                let path: String
+                let thumb: Bool
+            }
+            let fileCards: [FileCard]
             let missing: [String]
             let missingDecoded: [String]
         }

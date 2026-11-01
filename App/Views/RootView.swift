@@ -2323,6 +2323,7 @@ private struct SaveIndicator: View {
 
 /// 폴더가 아직 없을 때 쓰는 빈 제공자.
 private struct EmptyAssetProvider: AssetProvider {
+    func thumbnail(forRelativePath path: String, maxPixel: CGFloat) async -> Data? { nil }
     func data(forRelativePath path: String) async -> Data? { nil }
 }
 

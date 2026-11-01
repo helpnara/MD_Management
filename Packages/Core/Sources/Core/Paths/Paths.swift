@@ -55,6 +55,12 @@ public enum Paths {
         ["md", "markdown", "txt"].contains(fileExtension(path))
     }
 
+    /// **웹뷰가 `<img>` 로 그릴 수 있는 사진인가** (295). 아닌 것(PDF · 동영상 · 문서)을 `<img>` 로 넣으면 빈칸이 남는다 —
+    /// 읽기 화면은 그것을 파일 카드로 그린다. 목록은 파이썬 쌍둥이(`IMAGE_EXTS`)와 같다.
+    public static func isImageFile(_ path: String) -> Bool {
+        ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "tif", "tiff", "svg", "avif"].contains(fileExtension(path))
+    }
+
     /// **폴더 목록에서 노트 하나로 세는가** (153, 사용자 · 2026-09-19 — *노트 개수가
     /// 안 맞을 때가 있어*).
     ///

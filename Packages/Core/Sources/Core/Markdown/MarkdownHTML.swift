@@ -363,6 +363,27 @@ public enum MarkdownHTML {
         "<span class=\"yb-missing\">\(escape(label))</span>"
     }
 
+    /// PDF 의 첫 쪽 그림을 달라는 주소 (295). 앱의 스킴 핸들러가 `thumb` 를 받아 PNG 를 준다.
+    public static func thumbnailURL(_ relativePath: String) -> String {
+        "\(scheme)://thumb/" + encode(path: relativePath)
+    }
+
+    /// **사진이 아닌 첨부의 카드** (295) — `![](…)` 로 적힌 PDF · 동영상 · 문서. 누르면 앱이 미리보기(QuickLook)로 연다.
+    /// PDF 는 첫 쪽 그림 + 이름, 그 밖은 종류(확장자) + 이름. 파이썬 쌍둥이 `html_facts` 의 `fileCards` 와 같은 꼴.
+    static func fileCard(_ relativePath: String) -> String {
+        let name = escape(String(relativePath.split(separator: "/").last ?? Substring(relativePath)))
+        let href = assetURL(relativePath)
+        if Paths.fileExtension(relativePath) == "pdf" {
+            return "<a class=\"yb-file yb-file-pdf\" href=\"\(href)\">"
+                + "<img class=\"yb-file-thumb\" src=\"\(thumbnailURL(relativePath))\" alt=\"\">"
+                + "<span class=\"yb-file-name\">\(name)</span></a>"
+        }
+        let kind = escape(Paths.fileExtension(relativePath).uppercased())
+        return "<a class=\"yb-file\" href=\"\(href)\">"
+            + "<span class=\"yb-file-kind\">\(kind)</span>"
+            + "<span class=\"yb-file-name\">\(name)</span></a>"
+    }
+
     // MARK: - 기본 CSS
 
     /// **`px` 를 적지 않는다.** `font: -apple-system-body` 가 Dynamic Type 을
@@ -465,6 +486,15 @@ public enum MarkdownHTML {
       stroke-linecap: round; stroke-linejoin: round; }
     hr { border: none; border-top: 1px solid var(--yb-rule); margin: 2em 0; }
     img { max-width: 100%; height: auto; border-radius: 0.4em; display: block; margin: 1em auto; }
+    /* 사진이 아닌 첨부의 카드 (295) — PDF 는 첫 쪽 그림, 그 밖은 종류 · 이름. 누르면 미리보기 */
+    .yb-file { display: inline-flex; flex-direction: column; align-items: center; gap: 0.5em; max-width: 100%;
+      margin: 1em 0; padding: 0.7em; border: 1px solid var(--yb-rule); border-radius: 0.6em;
+      background: var(--yb-paper-raised); color: var(--yb-ink); text-decoration: none; }
+    .yb-file-thumb { display: block; max-width: 100%; max-height: 60vh; margin: 0; border-radius: 0.3em;
+      background: white; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
+    .yb-file-kind { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75em;
+      padding: 0.25em 0.6em; border-radius: 0.3em; background: var(--yb-rule); color: var(--yb-ink-faint); }
+    .yb-file-name { font-size: 0.9em; text-align: center; overflow-wrap: anywhere; }
     table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1em 0; }
     th, td { border: 1px solid var(--yb-rule); padding: 0.4em 0.6em; text-align: left; overflow-wrap: anywhere; }
     th { background: var(--yb-paper-raised); }
@@ -576,6 +606,10 @@ private struct NoteRewriter: MarkupRewriter {
                 record(source)
                 return InlineHTML(MarkdownHTML.missingBox(label: path))
             }
+            // **사진이 아니면 파일 카드** (295, 2026-11-01 사용자 — 메모가 내보낸 `![](…pdf)` 가 빈칸으로 보였다).
+            // 웹뷰는 PDF · 동영상을 `<img>` 로 못 그린다 — 있는데 못 그리는 파일은 아무 표시가 없었다. PDF 는 첫 쪽 그림을
+            // `yb://thumb/` 로 받아 보이고, 누르면 `yb://note/` 링크라 앱이 미리보기로 연다 (78 과 같은 길).
+            guard Paths.isImageFile(path) else { return InlineHTML(MarkdownHTML.fileCard(path)) }
             var copy = image
             copy.source = MarkdownHTML.assetURL(path)
             return copy
