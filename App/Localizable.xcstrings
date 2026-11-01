@@ -43,28 +43,6 @@
         }
       }
     },
-    " (링크 %lld개 고침)" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : " (%lld link updated)"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : " (%lld links updated)"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     " 다른 폴더의 노트에서 이 폴더 안을 가리키는 링크 %lld개도 함께 고칩니다." : {
       "localizations" : {
         "en" : {
@@ -207,12 +185,42 @@
         }
       }
     },
+    "%@ 폴더를 되돌렸습니다 — 노트 %lld개 · 첨부 %lld개." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restored the %@ folder — notes: %lld · attachments: %lld."
+          }
+        }
+      }
+    },
+    "%@ 폴더에서 %lld개를 되돌리지 못했습니다. 휴지통에 남아 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't restore %2$lld items from the %1$@ folder. They're still in the Trash."
+          }
+        }
+      }
+    },
     "%@ 폴더와 안의 노트 %lld개를 폴더 안 .trash 로 옮깁니다. 안의 폴더도 함께 갑니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.%@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Moves the folder %@ and the notes inside it (%lld) to the hidden .trash folder, along with any folders inside. Restoring a note from Settings → Trash brings its folder back.%@"
+          }
+        }
+      }
+    },
+    "%@ 폴더의 노트 %lld개와 첨부를 완전히 지웁니다. 다른 노트가 쓰는 첨부는 남깁니다. 되돌릴 수 없습니다. 지우려면 %@ 라고 입력하세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permanently deletes the %1$@ folder's notes (%2$lld) and attachments. Attachments other notes use are kept. This can't be undone. To delete, type %3$@."
           }
         }
       }
@@ -765,6 +773,16 @@
         }
       }
     },
+    "같이 옮길 첨부를 세는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Counting attachments to move along"
+          }
+        }
+      }
+    },
     "검색 색인" : {
       "localizations" : {
         "en" : {
@@ -1269,6 +1287,16 @@
         }
       }
     },
+    "노트 %lld개 · 첨부 %lld개" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes: %lld · Attachments: %lld"
+          }
+        }
+      }
+    },
     "노트 %lld개 · 첨부 %lld개를 %@ 폴더로 가져왔습니다. 고른 폴더는 그대로 있습니다." : {
       "localizations" : {
         "en" : {
@@ -1447,6 +1475,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This note was changed on another device. Your version was saved alongside it as %@."
+          }
+        }
+      }
+    },
+    "다른 노트가 쓰는 첨부 %lld개는 남겼습니다. 되돌리면 그 노트에서 다시 보입니다." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Kept %lld attachment that another note uses. Restore it and it shows in that note again."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Kept %lld attachments that other notes use. Restore them and they show in those notes again."
+                }
+              }
+            }
           }
         }
       }
@@ -2695,7 +2745,7 @@
         }
       }
     },
-    "이 노트에는 폴더 안을 가리키는 링크가 %lld개 있습니다. 옮기면 자리가 달라지므로 링크도 새 자리에 맞춰 고쳐야 사진과 첨부가 보입니다. **그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다." : {
+    "이 노트에는 폴더 안을 가리키는 링크가 %lld개 있습니다. **고치고 옮기기** 는 링크를 새 자리에 맞춥니다. 링크가 가리키는 파일은 제자리에 둡니다 — 이 노트만 쓰는 사진이 없습니다. **그냥 옮기기** 를 고르면 본문은 한 글자도 안 건드립니다." : {
       "localizations" : {
         "en" : {
           "variations" : {
@@ -2703,16 +2753,26 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "This note has %lld link to files in its folder. Moving the note changes where it lives, so the link needs updating for photos and attachments to keep showing. Choose **Just Move** to leave the text exactly as it is."
+                  "value" : "This note has %lld link to files in the folder. **Update and Move** updates it for the new location. The linked files stay where they are — no photos are used only by this note. Choose **Just Move** to leave the text exactly as it is."
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "This note has %lld links to files in its folder. Moving the note changes where it lives, so the links need updating for photos and attachments to keep showing. Choose **Just Move** to leave the text exactly as it is."
+                  "value" : "This note has %lld links to files in the folder. **Update and Move** updates them for the new location. The linked files stay where they are — no photos are used only by this note. Choose **Just Move** to leave the text exactly as it is."
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "이 노트에는 폴더 안을 가리키는 링크가 %lld개 있습니다. **고치고 옮기기** 는 이 노트만 쓰는 사진 · 첨부 %lld개를 새 폴더로 함께 옮기고 링크를 새 자리에 맞춥니다. 다른 노트도 쓰는 것은 제자리에 두고 링크만 고칩니다. **그냥 옮기기** 를 고르면 본문도 파일도 그대로입니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links in this note to files in the folder: %lld. **Update and Move** moves the photos and attachments only this note uses (%lld) into the new folder along with it, and updates the links. Files other notes also use stay where they are; only the links are updated. Choose **Just Move** to leave both the text and the files as they are."
           }
         }
       }
@@ -3119,6 +3179,16 @@
         }
       }
     },
+    "지운 폴더" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleted Folders"
+          }
+        }
+      }
+    },
     "지울까요?" : {
       "localizations" : {
         "en" : {
@@ -3245,6 +3315,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Attachments: %lld · %@"
+          }
+        }
+      }
+    },
+    "첨부 %lld개를 노트와 함께 옮겼습니다." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Moved %lld attachment along with the note."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Moved %lld attachments along with the note."
+                }
+              }
+            }
           }
         }
       }
@@ -3735,6 +3827,16 @@
         }
       }
     },
+    "폴더 줄의 **되돌리기**는 안의 노트와 첨부를 모두 원래 폴더로 돌려놓습니다. 줄을 누르면 안의 것이 보입니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Restore** on a folder row puts all its notes and attachments back in their original folder. Tap the row to see what's inside."
+          }
+        }
+      }
+    },
     "폴더는 두 단계까지라 %@ 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다." : {
       "localizations" : {
         "en" : {
@@ -3761,6 +3863,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn't choose the folder: %@"
+          }
+        }
+      }
+    },
+    "폴더를 되돌리는 중" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restoring folder"
           }
         }
       }
