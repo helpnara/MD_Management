@@ -58,34 +58,23 @@ struct DiagnosticsView: View {
                     }
                 }
 
-                Section("폴더") {
-                    row(String(localized: "쓰는 곳"), library.kind.label)
+                // **상태** (293 — 폴더 · 검색 색인 · 경로 · 앱 네 구역을 하나로). 설정과 겹치던 쓰는 곳 · 폴더 이름 · 노트 수와
+                // 판 · 번들 ID 는 설정 화면에 있다. `trigram` · 경로 · 걸린 시간은 만드는 사람 것이라 시험 도구로 갔다.
+                // **복사 글(`diagnosticsText`)은 그대로** — 화면에서 뺀 값도 거기 다 담긴다.
+                Section {
                     row(String(localized: "iCloud 를 잡았나"), library.iCloudAvailable ? String(localized: "예") : String(localized: "아니오"))
-                    row(String(localized: "폴더 이름"), library.folderName)
-                    row(String(localized: "노트"), String(localized: "\(library.notes.count)개"))
                     row(String(localized: "하위 폴더"), String(localized: "\(library.folders.count)개"))
                     // 258 — 링크 고치기 · 안 열리는 링크 찾기가 보는 금고 파일 수 (노트 · 첨부). 예전에는 2,000개에서 끊었다.
                     row(String(localized: "금고 파일"),
                         library.vaultPathsComplete
                             ? String(localized: "\(library.vaultPaths.count)개")
                             : String(localized: "\(library.vaultPaths.count)개 · 거기까지만 셌습니다"))
-                }
-
-
-                Section {
-
                     row(String(localized: "색인된 노트"), String(localized: "\(library.indexStatus.noteCount)개"))
-
-                    row("trigram", library.indexStatus.trigramAvailable ? String(localized: "있음") : String(localized: "없음 — LIKE 만"))
-
-                    row(String(localized: "색인 크기"), "\(library.indexStatus.fileBytes / 1024)KB")
-
                     // 245 — 아직 안 내려와 제목만 넣은 노트. 안 받은 노트가 500개를 넘으면 내려받기를 시키지 않는다.
                     row(String(localized: "제목만 색인"),
                         library.indexStatus.downloadsWithheld
                             ? String(localized: "\(library.indexStatus.titleOnlyCount)개 · 안 받은 노트가 많아 내려받지 않음")
                             : String(localized: "\(library.indexStatus.titleOnlyCount)개"))
-
                     // 274 — 안 받은 노트가 있으면 사람이 고를 수 있게 (안 받은 노트가 500개를 넘으면 앱은 스스로 받지 않는다 — 245).
                     if library.indexStatus.pendingDownloads > 0 {
                         Button {
@@ -95,22 +84,7 @@ struct DiagnosticsView: View {
                                   systemImage: "icloud.and.arrow.down")
                         }
                     }
-
-                    row(String(localized: "마지막 갱신"), String(format: String(localized: "%.2f초"), library.indexStatus.lastRefreshSeconds))
-
-                    // 앱이 스스로 잰 값이다 — 사람이 초시계를 들 수는 없다 (S1 · A5c).
-                    row(String(localized: "목록 읽기"), String(format: String(localized: "%.2f초"), library.listSeconds))
-
-                    row(String(localized: "마지막 검색"), String(format: String(localized: "%.2f초"), library.searchSeconds))
-
-                    // 노트 하나를 여는 데 걸린 시간 (253 · 전수 조사) — 읽기 · 그리기 · 역링크. 큰 폴더에서 어디가 느린지 여기서 본다.
-                    if !library.openTiming.path.isEmpty {
-                        row(String(localized: "마지막 열기"),
-                            String(format: String(localized: "%.2f초 (읽기 %.2f · 그리기 %.2f · 가리키는 노트 %.2f)"),
-                                   library.openTiming.total, library.openTiming.read,
-                                   library.openTiming.render, library.openTiming.backlinks))
-                    }
-
+                    row(String(localized: "색인 크기"), "\(library.indexStatus.fileBytes / 1024)KB")
                     if library.isIndexing {
                         HStack {
                             ProgressView()
@@ -125,27 +99,10 @@ struct DiagnosticsView: View {
                             Label("색인 다시 만들기", systemImage: "arrow.clockwise")
                         }
                     }
-
                 } header: {
-
-                    Text("검색 색인")
-
+                    Text("상태")
                 } footer: {
-
-                    Text("색인은 캐시입니다. 검색이 이상하면 다시 만드세요 — 파일은 건드리지 않습니다 (A4 · A5).")
-
-                }
-
-                Section("경로") {
-                    Text(library.rootPath)
-                        .font(.scaledMono(.caption))
-                        .foregroundStyle(Palette.inkFaint)
-                        .textSelection(.enabled)
-                }
-
-                Section("앱") {
-                    row(String(localized: "판"), "\(Bundle.appVersion) (\(Bundle.appBuild))")
-                    row(String(localized: "번들 ID"), Bundle.main.bundleIdentifier ?? "—")
+                    Text("색인은 캐시입니다. 검색이 이상하면 다시 만드세요 — 파일은 건드리지 않습니다. 쓰는 곳 · 폴더 이름 · 판은 설정 화면에 있습니다.")
                 }
 
                 if let error = library.lastError {
@@ -208,21 +165,7 @@ struct DiagnosticsView: View {
                     }
                 }
 
-                // **시험 도구는 한 칸 안쪽** (122 · T11). 누르면 **파일을 만드는** 단추라
-                // 쓰는 사람이 무엇이 어긋났는지 보러 왔을 때 눈앞에 있을 것이 아니다.
-                // 설정의 `시험 도구 보기` 를 켜야 이 칸이 나온다 — 기본은 꺼짐이다.
-                if library.showsTestTools {
-                    Section {
-                        NavigationLink {
-                            TestToolsView().environmentObject(library)
-                        } label: {
-                            Label("시험 도구", systemImage: "wrench.and.screwdriver")
-                        }
-                    } footer: {
-                        Text("첨부 · 큰 노트 · 규모 시험. **파일을 만드는 단추**입니다. 설정의 `시험 도구 보기` 를 끄면 이 칸이 사라집니다.")
-                    }
-                }
-
+                // 시험 도구는 여기 없다 (293) — 설정 → 도움에, 판을 다섯 번 누르면 보인다. 122 때는 이 아래 한 칸에 있었다.
                 Section {
                     Button {
                         UIPasteboard.general.string = library.diagnosticsText
@@ -248,6 +191,16 @@ struct DiagnosticsView: View {
     }
 
     private func row(_ name: String, _ value: String) -> some View {
+        ValueRow(name: name, value: value)
+    }
+}
+
+/// 이름 · 값 한 줄 — 진단과 시험 도구가 같이 쓴다 (293 — 걸린 시간이 시험 도구로 가며 둘이 됐다).
+private struct ValueRow: View {
+    let name: String
+    let value: String
+
+    var body: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(name)
                 .foregroundStyle(Palette.inkFaint)
@@ -261,11 +214,12 @@ struct DiagnosticsView: View {
     }
 }
 
-/// **시험 도구** (122 · T11 — 진단에서 한 칸 안쪽으로 내려왔다).
+/// **시험 도구** (122 · T11 — 진단에서 한 칸 안쪽으로 · 293 — 설정 → 도움으로).
 ///
 /// 여기 있는 것은 전부 **누르면 파일을 만든다.** 여기서 컴파일할 수 없어서(CLAUDE.md §2)
 /// 실기기에서 재볼 자리를 앱 안에 만든 것들이다 (101 · 102). 쓰는 사람의 화면이 아니므로
-/// 설정에서 켜야 보인다.
+/// 설정 맨 아래 판을 **다섯 번** 눌러야 보인다 (293 결정 ①). 맨 위의 걸린 시간은 규모 시험 안내가 가리키는 값이다 —
+/// 예전에는 진단 화면에 있어 다른 화면을 가리켰다.
 struct TestToolsView: View {
     @EnvironmentObject private var library: LibraryModel
     /// 300개를 만들기 전에 한 번 더 묻는다 — 되돌리기가 20MB 짜리다.
@@ -274,6 +228,29 @@ struct TestToolsView: View {
 
     var body: some View {
         List {
+            // **앱이 스스로 잰 값** — 사람이 초시계를 들 수는 없다 (S1 · A5c). 진단 정보 복사에도 담긴다.
+            Section {
+                ValueRow(name: String(localized: "마지막 갱신"), value: String(format: String(localized: "%.2f초"), library.indexStatus.lastRefreshSeconds))
+                ValueRow(name: String(localized: "목록 읽기"), value: String(format: String(localized: "%.2f초"), library.listSeconds))
+                ValueRow(name: String(localized: "마지막 검색"), value: String(format: String(localized: "%.2f초"), library.searchSeconds))
+                // 노트 하나를 여는 데 걸린 시간 (253 · 전수 조사) — 읽기 · 그리기 · 역링크. 큰 폴더에서 어디가 느린지 여기서 본다.
+                if !library.openTiming.path.isEmpty {
+                    ValueRow(name: String(localized: "마지막 열기"),
+                             value: String(format: String(localized: "%.2f초 (읽기 %.2f · 그리기 %.2f · 가리키는 노트 %.2f)"),
+                                           library.openTiming.total, library.openTiming.read,
+                                           library.openTiming.render, library.openTiming.backlinks))
+                }
+                ValueRow(name: "trigram", value: library.indexStatus.trigramAvailable ? String(localized: "있음") : String(localized: "없음 — LIKE 만"))
+                Text(library.rootPath)
+                    .font(.scaledMono(.caption))
+                    .foregroundStyle(Palette.inkFaint)
+                    .textSelection(.enabled)
+            } header: {
+                Text("걸린 시간 · 경로")
+            } footer: {
+                Text("앱이 스스로 잰 값입니다. 규모 시험을 만든 뒤 여기서 어디가 느린지 봅니다.")
+            }
+
             Section {
                 Button {
                     Task { await library.makeAttachmentTest() }

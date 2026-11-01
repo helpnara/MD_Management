@@ -90,6 +90,69 @@ public enum AttachmentLedger {
         }
     }
 
+    /// **노트를 옮길 때 같이 옮길 첨부** (291, 2026-11-01 사용자 — *링크를 보면 예전 폴더명 아래 그림으로 연결되어 있어*).
+    /// 예전에는 링크만 새 자리에 맞추고 사진은 옛 폴더에 두어, 옛 폴더를 지우면 옮긴 노트의 사진이 깨졌다.
+    ///
+    /// 고르는 셈은 **지울 때 같이 보낼 첨부(`trashing`)와 같다** — 이 노트만 쓰는 것. 그 가운데 `assets/` 안의 것만
+    /// (사용자가 둔 다른 파일은 앱의 것이 아니다) 새 폴더의 `assets/` 로. 이미 거기 있으면 그대로. 판정할 수 없으면 빈 표 — 아무것도 안 옮긴다.
+    /// 새 폴더 `assets/` 에 같은 이름이 있으면 `이름-2.png` — 빈칸으로 비키지 않는다(링크가 끊긴다) · 금고의 다른 이름과도 겹치지 않게 (178).
+    /// 돌려주는 것은 옛 자리 → 새 자리 (금고 기준). `MarkdownLinks.rebased(moving:)` 가 이 표로 링크를 적는다.
+    public static func moving(_ note: String, to folder: String,
+                              notes: [String: String?],
+                              trashed: [String: String?],
+                              files: Set<String>) -> [String: String] {
+        let assets = folder.isEmpty ? "assets" : Paths.normalized(folder) + "/assets"
+        var takenPaths = Set(files.map { Paths.normalized($0).lowercased() })
+        var takenNames = Set(files.map { Paths.normalized(String($0.split(separator: "/").last ?? Substring($0))).lowercased() })
+        var out: [String: String] = [:]
+        for path in trashing(note, notes: notes, trashed: trashed, files: files)
+        where isAttachmentPath(path) && Paths.directory(of: path) != assets {
+            let name = String(path.split(separator: "/").last ?? Substring(path))
+            var candidate = assets + "/" + name
+            if takenPaths.contains(candidate.lowercased()) {
+                let dot = name.lastIndex(of: ".").flatMap { $0 == name.startIndex ? nil : $0 }
+                let stem = dot.map { String(name[name.startIndex..<$0]) } ?? name
+                let ext = dot.map { String(name[$0...]) } ?? ""
+                var number = 2
+                repeat {
+                    let renamed = stem + "-\(number)" + ext
+                    candidate = assets + "/" + renamed
+                    number += 1
+                } while takenPaths.contains(candidate.lowercased())
+                    || takenNames.contains(String(candidate.split(separator: "/").last ?? "").lowercased())
+            }
+            takenPaths.insert(candidate.lowercased())
+            takenNames.insert(String(candidate.split(separator: "/").last ?? "").lowercased())
+            out[path] = candidate
+        }
+        return out
+    }
+
+    /// **휴지통의 폴더 하나를 영구 삭제할 때 지울 것** (292). `folder` 는 원래 폴더(`.trash/` 없이).
+    /// 안의 노트는 모두 지운다. 노트가 아닌 파일은 **남이 쓰면 남긴다** — 휴지통 밖 노트가 그 원래 자리를 가리키는데 거기 파일이 없거나
+    /// (291 처럼 노트만 먼저 옮긴 경우 — 이것이 유일한 사본), 이 폴더 밖 휴지통 노트가 쓰면. 살아 있는 노트 가운데 못 읽은 것이 있으면
+    /// 파일은 하나도 안 지운다 (노트만). `purging` 과 같은 규칙을 폴더에 편 것이다.
+    public static func purgingFolder(_ folder: String,
+                                     notes: [String: String?],
+                                     trashed: [String: String?],
+                                     files: Set<String>) -> [String] {
+        let inside = ".trash/" + Paths.normalized(folder) + "/"
+        let groupNotes = trashed.keys.filter { $0.hasPrefix(inside) }
+        let groupFiles = files.filter { $0.hasPrefix(inside) && !Paths.isNoteFile($0) }
+        guard notes.values.allSatisfy({ $0 != nil }) else { return ordered(groupNotes) }
+        let others = trashed.filter { !$0.key.hasPrefix(inside) }.compactMapValues { $0 }
+        let inBin = Usage(others)
+        let restored = Usage(Dictionary(others.map { (originalPath(of: $0.key), $0.value) }) { first, _ in first })
+        let live = Usage(notes.compactMapValues { $0 })
+        let removable = groupFiles.filter { path in
+            let home = originalPath(of: path)
+            if inBin.uses(path) || restored.uses(home) { return false }
+            if !files.contains(home) && live.uses(home) { return false }
+            return true
+        }
+        return ordered(groupNotes + removable)
+    }
+
     /// **폴더 밖 노트가 이 폴더 안을 가리키는 링크 수** (168). 폴더 이름을 바꾸거나 지우면
     /// 그 링크가 깨진다. 노트로 가는 링크도 센다. 못 읽은 노트는 셀 수 없어 뺀다.
     public static func incomingLinks(to folder: String, notes: [String: String?]) -> Int {

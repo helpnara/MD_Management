@@ -62,7 +62,11 @@ public enum MarkdownLinks {
     /// **앱이 본문을 고치는 유일한 자리다.** 그래서 사용자가 옮기라고 한 그 순간에만,
     /// **몇 개를 고칠지 먼저 알린 뒤에** 부른다 (107 에서 62 를 지운 까닭과 같다).
     /// 고칠 것이 없으면 원문을 그대로 돌려준다.
-    public static func rebased(_ text: String, from oldFolder: String, to newFolder: String) -> String {
+    ///
+    /// **같이 옮긴 첨부** (291) — `moves` 는 이 노트와 함께 옮긴 파일의 옛 자리 → 새 자리 (금고 기준). 그 파일을 가리키던 링크는
+    /// 새 자리로 적는다. 비어 있으면 예전과 같다 — 파일은 제자리, 링크만 새 노트 자리에 맞춘다.
+    public static func rebased(_ text: String, from oldFolder: String, to newFolder: String,
+                               moving moves: [String: String] = [:]) -> String {
         guard oldFolder != newFolder else { return text }
         let oldNote = oldFolder.isEmpty ? "노트.md" : oldFolder + "/노트.md"
         var out = ""
@@ -72,7 +76,7 @@ public enum MarkdownLinks {
             out += text[cursor..<bracket.upperBound]
             cursor = bracket.upperBound
             guard let piece = destination(in: text, from: cursor) else { continue }
-            let rewritten = rebase(piece.raw, note: oldNote, to: newFolder)
+            let rewritten = rebase(piece.raw, note: oldNote, to: newFolder, moves: moves)
             out += rewritten
             out += text[piece.end..<text.index(after: piece.end)]   // 닫는 `)`
             cursor = text.index(after: piece.end)
@@ -244,7 +248,8 @@ public enum MarkdownLinks {
     }
 
     /// 링크 하나를 새 폴더 기준으로. 폴더 안을 가리키지 않으면 그대로 둔다.
-    private static func rebase(_ raw: String, note: String, to newFolder: String) -> String {
+    private static func rebase(_ raw: String, note: String, to newFolder: String,
+                               moves: [String: String]) -> String {
         let wrapped = raw.hasPrefix("<") && raw.hasSuffix(">") && raw.count >= 2
         let inner = wrapped ? String(raw.dropFirst().dropLast()) : raw
         // 앵커(`노트.md#절`)는 떼어 두었다가 도로 붙인다.
@@ -257,7 +262,7 @@ public enum MarkdownLinks {
         guard case .relative(let resolved) = Paths.resolve(link: target, fromNoteAt: note) else {
             return raw
         }
-        let link = Paths.relativeLink(from: newFolder, to: resolved) + anchor
+        let link = Paths.relativeLink(from: newFolder, to: moves[resolved] ?? resolved) + anchor
         // 빈칸이 있으면 `<>` 로 감싼다 — 안 그러면 링크가 끊긴다.
         return (wrapped || link.contains(" ")) ? "<" + link + ">" : link
     }

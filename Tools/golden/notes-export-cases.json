@@ -1,0 +1,99 @@
+{
+ "_about": "289 — 메모의 마크다운으로 보내기를 앱의 꼴로. 노트는 한 폴더에 나란히, 첨부는 assets/ 로, 링크는 새 자리에 맞춰. 지어낸 글이다 — 사용자의 노트를 넣지 않는다.",
+ "cases": [
+  {
+   "name": "메모 두 편 묶음 — 맥 압축 꼬리 포함",
+   "folder": "메모",
+   "files": [
+    "메모/첫 노트/첫 노트.md",
+    "메모/첫 노트/Attachments/A1B2C3D4-0000-4000-8000-000000000001.jpeg",
+    "메모/첫 노트/Attachments/A1B2C3D4-0000-4000-8000-000000000002.png",
+    "메모/둘째/둘째.md",
+    "메모/둘째/Attachments/E5F6A7B8-0000-4000-8000-000000000003.jpeg",
+    "__MACOSX/메모/첫 노트/._첫 노트.md",
+    "__MACOSX/메모/둘째/Attachments/._E5F6A7B8-0000-4000-8000-000000000003.jpeg",
+    "메모/.DS_Store"
+   ],
+   "taken": [],
+   "notes": {
+    "메모/첫 노트/첫 노트.md": "# 첫 노트\n\n![](Attachments/A1B2C3D4-0000-4000-8000-000000000001.jpeg)\n\n본문 [안내](https://example.com/guide)\n\n![](Attachments/A1B2C3D4-0000-4000-8000-000000000002.png)\n",
+    "메모/둘째/둘째.md": "# 둘째     - 하나    - 둘  ![](Attachments/E5F6A7B8-0000-4000-8000-000000000003.jpeg) [첫 노트](<../첫 노트/첫 노트.md>)\n"
+   }
+  },
+  {
+   "name": "맥 압축의 NFD 이름",
+   "folder": "가져온 메모",
+   "files": [
+    "한글/한글.md",
+    "한글/Attachments/사진.png"
+   ],
+   "taken": [],
+   "notes": {
+    "한글/한글.md": "![사진](Attachments/사진.png)\n\n![같은 사진](Attachments/%EC%82%AC%EC%A7%84.png)\n"
+   }
+  },
+  {
+   "name": "같은 이름 — 노트 · 첨부 모두 번호",
+   "folder": "묶음",
+   "files": [
+    "가/노트.md",
+    "가/Attachments/img.png",
+    "나/노트.md",
+    "나/Attachments/img.png",
+    "다/노트.MD"
+   ],
+   "taken": [],
+   "notes": {
+    "가/노트.md": "![](Attachments/img.png)\n[나 노트](../나/노트.md#절)\n",
+    "나/노트.md": "![](Attachments/img.png)\n[가 노트](../가/노트.md)\n",
+    "다/노트.MD": "[다](https://example.com/#다) [앵커](#제목)\n"
+   }
+  },
+  {
+   "name": "이미 있는 이름은 피한다",
+   "folder": "가져온",
+   "files": [
+    "노트/노트.md",
+    "노트/Attachments/img.png",
+    "노트/Attachments/설명서.pdf"
+   ],
+   "taken": ["가져온/노트.md", "가져온/assets/img.png", "가져온/노트 2.md"],
+   "notes": {
+    "노트/노트.md": "![](Attachments/img.png)\n[설명서](Attachments/설명서.pdf)\n"
+   }
+  },
+  {
+   "name": "빈칸 든 첨부 이름 · 없는 첨부 · 바깥 링크",
+   "folder": "메모",
+   "files": [
+    "회의/회의.md",
+    "회의/Attachments/사진 1.jpg"
+   ],
+   "taken": [],
+   "notes": {
+    "회의/회의.md": "![](<Attachments/사진 1.jpg>)\n![](Attachments/%EC%82%AC%EC%A7%84%201.jpg)\n![](Attachments/없는.png)\n[밖](../../바깥.md)\n[주소](https://example.com/a(b))\n"
+   }
+  },
+  {
+   "name": "한 노트 폴더를 고른 경우 — 노트가 맨 위에",
+   "folder": "장보기",
+   "files": [
+    "장보기.txt",
+    "Attachments/영수증.heic"
+   ],
+   "taken": [],
+   "notes": {
+    "장보기.txt": "- 우유\n\n![](Attachments/영수증.heic)\n"
+   }
+  },
+  {
+   "name": "링크도 첨부도 없는 노트",
+   "folder": "메모",
+   "files": ["빈/빈.md"],
+   "taken": [],
+   "notes": {
+    "빈/빈.md": "그냥 글 (괄호) ](짝 없음\n"
+   }
+  }
+ ]
+}

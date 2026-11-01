@@ -12,7 +12,7 @@ updated: 2026-10-22
 
 ---
 
-## 0. 지금 상태 (2026-10-30 — **1.1.19 (빌드 134) 배포** · 1.1.18 (빌드 133) 배포 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.19)
+## 0. 지금 상태 (2026-11-01 — **1.1.21 (빌드 138) 심사 제출** · 1.1.19 (빌드 134) 배포 · 1.1.18 (빌드 133) 배포 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.19)
 
 | | |
 |---|---|
@@ -174,6 +174,18 @@ https://helpnara.github.io/MD_Management/privacy/
 4. **영어 스크린샷.** 영어 칸에 안 올리면 **한국어 스크린샷이 그대로 보인다.** 영어 견본 노트 `docs/samples/en/` 으로 한국어 때와 같은 차례로 찍는다
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
+
+### 1.1.21 제출 순서 — 빌드 138 (2026-11-01 준비 · 사용자 — *심사는 이번 빌드까지 포함해서 제출 준비하자* · *여기까지 포함해서*)
+
+> 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC (빌드 136 — 0 ~ 10 확인 끝) · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 (빌드 137 — 0 ~ 11 확인 끝) · 293 설정 · 진단 재구성 (빌드 138).
+> **1.1.20 (빌드 135) 은 내지 않는다** — 287 이 1.1.21 에 들었다. 그림 · 설명 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로.
+> 새로운 기능에 **다른 앱 이름을 쓰지 않았다** (CLAUDE.md §6) — *다른 노트 앱이 마크다운으로 내보낸 폴더*.
+
+1. 빌드 138 확인 목록(`docs/71-build-138.md`) 끝 → App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.21` → **빌드** 칸에서 **138** (`1.1.21 (138)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — §6 아래 여섯 줄 (`docs/store/1.1.21-새로운-기능.txt` · 478자 / 4000)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — §1-영어 여섯 줄 (907자 / 4000) → **저장**
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+5. ✅ 제출 (2026-11-01 사용자 — *1.1.21 심사 제출 완료.*) — `main` 병합 (= 1.1.21) → 승인 · 배포 기다림
 
 ### 1.1.19 제출 순서 — 빌드 134 (2026-10-29 — 0 ~ 10 확인 끝 · 사용자 — *나머지는 모두 확인 완료.*)
 
@@ -500,12 +512,15 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.19** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.18 의 글은 `docs/store/1.1.18-새로운-기능.txt` 끝.
+> **1.1.21** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.19 의 글은 `docs/store/1.1.19-새로운-기능.txt` 끝.
 
 ```
-• Search while reading a note. Choose Search All Notes from the More menu, and picking a result takes you straight to that note.
-• On iPad, search even with the folder column hidden: tap the magnifying glass above the note list. The search field in the folder column now stays at the top while you scroll.
-• ⌘F on an external keyboard opens search without changing the layout you were looking at.
+• Fixes hidden line breaks and spaces in text brought in from elsewhere. Pasting fixes them automatically; for notes already in your folder, choose Fix Line Breaks from the More menu. Headings and lists show up as they should.
+• Import a folder exported as Markdown from another notes app: Settings → Folder → Import an Exported Markdown Folder. Notes go side by side in one folder, photos into its assets folder, and links are updated. The chosen folder stays as it is.
+• Moving a note to another folder now moves the photos only that note uses along with it, so deleting the old folder no longer breaks them.
+• Restore a deleted folder from the Trash in one step.
+• Korean words in text made on other devices now show up in search.
+• A tidier Settings screen: four groups — Folder, Notes, Cleanup, Help — with the explanations gathered on a single Guide page. The app version is at the bottom of Settings.
 ```
 
 ---
@@ -623,6 +638,7 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-11-01 | ✅ **1.1.21 (빌드 138) 제출** (사용자 — *1.1.21 심사 제출 완료.*). 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 · 293 설정 정리 — 새로운 기능 여섯 줄 (한 · 영) · 자동 출시 · `main` 병합. 1.1.20 은 내지 않음 |
 | 2026-10-30 | ✅ **1.1.19 (빌드 134) 승인 · 배포** (사용자 — *1.1.19 심사 및 배포 완료.*). 286 찾기 칸을 언제 어디서나 |
 | 2026-10-29 | ✅ **1.1.19 (빌드 134) 제출** (사용자 — *1.1.19 심사 제출 완료.*). 286 찾기 칸을 언제 어디서나 — 새로운 기능 세 줄 (한 · 영) · 자동 출시 · `main` 병합 |
 | 2026-10-26 | ✅ **1.1.18 (빌드 133) 승인 · 배포** (사용자 — *심사 결과 승인 및 배포 완료.*). 번호 목록 두루 점검 278 ~ 285 — 제출 당일 승인 |
@@ -751,13 +767,16 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.19** (2026-10-29 — 286 찾기 칸을 언제 어디서나). 글은 `docs/store/1.1.19-새로운-기능.txt`. 1.1.18 의 글은 `docs/store/1.1.18-새로운-기능.txt`.
+> **1.1.21** (2026-11-01 — 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 · 293 설정 정리). 글은 `docs/store/1.1.21-새로운-기능.txt`. 1.1.19 의 글은 `docs/store/1.1.19-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 노트를 보는 중에도 찾을 수 있습니다. 오른쪽 위 더 보기 메뉴의 ‘모든 노트에서 찾기’를 누르면 찾기 창이 뜨고, 결과를 고르면 그 노트로 바로 갑니다.
-• 아이패드에서 폴더 칸을 접은 채로도 찾습니다. 노트 목록 위의 돋보기를 누르면 됩니다. 폴더 칸의 찾기 칸은 목록을 밀어도 맨 위에 남습니다.
-• 외장 키보드의 ⌘F 는 보던 화면을 바꾸지 않고 찾기 창을 엽니다.
+• 다른 곳에서 옮겨 온 글의 보이지 않는 줄바꿈 · 빈칸 글자를 고칩니다. 붙여 넣을 때 저절로 고치고, 이미 들어온 노트는 더 보기 메뉴의 ‘줄바꿈 고치기’로 고칩니다. 제목과 목록이 제 모양으로 섭니다.
+• 다른 노트 앱이 마크다운으로 내보낸 폴더를 가져옵니다. 설정 → 폴더 → ‘마크다운으로 내보낸 폴더 가져오기’를 누르면 노트는 한 폴더에 나란히, 사진은 그 폴더의 assets 로 모으고 링크를 맞춥니다. 고른 폴더는 그대로 둡니다.
+• 노트를 다른 폴더로 옮길 때 그 노트만 쓰는 사진도 함께 옮깁니다. 옛 폴더를 지워도 사진이 깨지지 않습니다.
+• 휴지통에서 지운 폴더를 폴더째 되돌릴 수 있습니다.
+• 다른 기기에서 만든 글의 한글 낱말이 찾기에 걸리지 않던 것을 고쳤습니다.
+• 설정 화면을 정리했습니다. 폴더 · 노트 · 정리 · 도움 네 묶음으로 줄이고, 안내는 ‘사용법’ 한 화면에 모았습니다. 앱 판은 설정 맨 아래에 있습니다.
 ```
 

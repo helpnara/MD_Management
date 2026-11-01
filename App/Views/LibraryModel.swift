@@ -38,7 +38,16 @@ final class LibraryModel: ObservableObject {
     /// **조용히 물러난 것**이다 — 진단 화면이 이것을 크게 보여 준다 (A2).
     @Published private(set) var iCloudAvailable = false
     @Published private(set) var isLoading = false
-    @Published private(set) var noteText = ""
+    @Published private(set) var noteText = "" {
+        // 287 — 불러온 · 저장한 글에 마크다운이 줄바꿈 · 빈칸으로 안 보는 글자가 있나. **글자 하나마다가 아니라** 글이 들어오고
+        // 저장될 때만 센다(229 — 치는 동안 모델을 흔들지 않는다). ··· 메뉴가 이것을 보고 *줄바꿈 고치기* 를 세운다.
+        didSet {
+            let found = LineBreaks.count(noteText)
+            if found != foreignCharacters { foreignCharacters = found }
+        }
+    }
+    /// 지금 노트에서 고칠 줄바꿈 · 빈칸 글자 수 (287). 둘 다 0 이면 메뉴를 안 세운다.
+    @Published private(set) var foreignCharacters = LineBreaks.Count(breaks: 0, spaces: 0)
     /// 편집기가 들고 있는 지금 글. 아직 파일에 안 들어갔을 수 있다.
     /// 편집기의 지금 글. **`@Published` 가 아니다** (229, 2026-10-09 전수 조사) — 이것을 보는 화면이 없는데, 글자 하나마다
     /// 모델 전체가 바뀌었다고 알려 목록 · 폴더 · 띠까지 다시 그렸다. 긴 노트에서 치는 속도를 깎던 자리다.
@@ -274,6 +283,8 @@ final class LibraryModel: ObservableObject {
             case link(title: String, path: String, noteFolder: String)
             /// 목록 모양 (193) — `nil` 이면 **단추를 누른 것**: 번호 ↔ 글머리표. 길게 눌러 고르면 그 모양.
             case list(ListMarker?)
+            /// **줄바꿈 고치기** (287) — 글 전체를 `LineBreaks.repaired` 로. 글 길이가 같아 커서는 그 자리.
+            case repairLineBreaks
         }
     }
 
@@ -432,7 +443,8 @@ final class LibraryModel: ObservableObject {
         // 2. 서식 있는 글 — 글 전체를 마크다운으로
         if let html = pasted.html, let converted = HTMLMarkdown.convert(html) {
             if HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: converted) {
-                var text = placeAttachments(converted, slots: HTMLMarkdown.imageSlots(html), pasted: pasted).text
+                // 287 — 바꾼 글에도 줄 구분 글자가 남을 수 있다. 번호 맞추기보다 먼저 (줄이 서야 번호를 본다).
+                var text = LineBreaks.repaired(placeAttachments(converted, slots: HTMLMarkdown.imageSlots(html), pasted: pasted).text)
                 if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) { text = fixed.text }
                 recordPaste(pasted, outcome: "서식을 마크다운으로 바꿈")
                 guard text != pasted.plain else { return nil }
@@ -446,7 +458,7 @@ final class LibraryModel: ObservableObject {
         if let given = pasted.markdown?.trimmingCharacters(in: .whitespacesAndNewlines), !given.isEmpty,
            HTMLMarkdown.keepsLetters(plain: pasted.plain, converted: given) {
             // 표의 빈 머리줄은 첫 줄로 — 우리 변환과 같은 모양 (2026-10-03 사용자).
-            var markdown = HTMLMarkdown.promoteEmptyHeaders(given)
+            var markdown = LineBreaks.repaired(HTMLMarkdown.promoteEmptyHeaders(given))    // 287
             // 첨부 자리(U+FFFC)가 있으면 서식 있는 글의 첨부로 채운다 (243) — 예전에는 빈 자리 글자가 그대로 남았다.
             if Self.hasAttachmentMarks(markdown) {
                 markdown = placeAttachments(markdown, slots: Self.blankSlots(markdown), pasted: pasted).text
@@ -459,6 +471,13 @@ final class LibraryModel: ObservableObject {
         // 3. 평문 — 번호 겹침과 링크 고치기
         var text = pasted.plain
         var notes: [String] = []
+        // 287 — **줄바꿈 · 빈칸 글자부터** (2026-11-01 사용자 노트 — 웹 · 다른 노트 앱에서 온 글의 줄바꿈 1,056곳이 `U+2028` 이라
+        // 제목 · 목록이 하나도 안 섰다). 줄이 서야 아래의 번호 맞추기 · 링크 고치기가 줄을 본다. 글자 수는 그대로다.
+        let foreign = LineBreaks.count(text)
+        if !foreign.isEmpty {
+            text = LineBreaks.repaired(text)
+            notes.append(String(localized: "보이지 않는 줄바꿈 · 빈칸 글자 \(foreign.breaks + foreign.spaces)개를 고쳤습니다"))
+        }
         if let fixed = Pasting.numbering(pasted: text, onLine: pasted.lineBefore) {
             text = fixed.text
             notes.append(String(localized: "겹친 번호를 지웠습니다"))
@@ -782,6 +801,8 @@ final class LibraryModel: ObservableObject {
         let note: NoteSummary
         let folder: String
         let links: Int
+        /// 같이 옮길 첨부 수 (291) — 확인창이 먼저 알린다. 옮길 때 다시 센다 (그 사이 바뀌었을 수 있다).
+        var attachments: Int = 0
         var id: String { note.relativePath + "→" + folder }
     }
     /// 폴더를 고르는 창 (아이폰 — 줄을 밀어 `이동`).
@@ -809,11 +830,14 @@ final class LibraryModel: ObservableObject {
     enum Purge: Identifiable {
         case all
         case one(NoteSummary)
+        /// 휴지통의 폴더 하나 (292).
+        case folder(TrashFolder)
 
         var id: String {
             switch self {
             case .all: return "*"
             case .one(let note): return note.id
+            case .folder(let folder): return "📁" + folder.folder
             }
         }
     }
@@ -1559,7 +1583,12 @@ final class LibraryModel: ObservableObject {
         if links == 0 {
             await finishMove(Move(note: note, folder: folder, links: 0), rebasesLinks: false)
         } else {
-            moveConfirm = Move(note: note, folder: folder, links: links)
+            // 291 — 이 노트만 쓰는 첨부는 같이 간다. 몇 개인지 먼저 센다 (지울 때와 같은 셈 · 색인 힌트로 읽을 노트를 줄인다).
+            let hint = await attachmentHint(for: note.relativePath)
+            let carried = await working(String(localized: "같이 옮길 첨부를 세는 중")) { _ in
+                await store.movingAttachments(of: note.relativePath, to: folder, hint: hint).count
+            }
+            moveConfirm = Move(note: note, folder: folder, links: links, attachments: carried)
         }
     }
 
@@ -1571,13 +1600,19 @@ final class LibraryModel: ObservableObject {
         movingNote = nil
         await save()
         do {
-            let moved = try await working(String(localized: "노트를 옮기는 중")) { _ in
+            let hint: CensusHint?
+            if rebasesLinks { hint = await attachmentHint(for: move.note.relativePath) } else { hint = nil }
+            let result = try await working(String(localized: "노트를 옮기는 중")) { _ in
                 try await store.moveNote(move.note.relativePath, to: move.folder,
-                                         rebasesLinks: rebasesLinks)
+                                         rebasesLinks: rebasesLinks, hint: hint)
             }
+            let moved = result.path
             pinned = await store.followPins(from: move.note.relativePath, to: moved)
             log("옮김: \(move.note.relativePath) → \(moved)"
-                + (rebasesLinks && move.links > 0 ? String(localized: " (링크 \(move.links)개 고침)") : ""))
+                + (rebasesLinks && move.links > 0 ? " (링크 \(move.links)개 고침 · 첨부 \(result.attachments)개 같이)" : ""))
+            if result.attachments > 0 {
+                notify(String(localized: "첨부 \(result.attachments)개를 노트와 함께 옮겼습니다."))
+            }
             if draftPath == move.note.relativePath { clearNote() }
             if selectedNoteID == move.note.relativePath { selectedNoteID = nil }
             await reloadFolders()
@@ -1780,6 +1815,146 @@ final class LibraryModel: ObservableObject {
         if !failed.isEmpty { report(String(localized: "첨부하지 못했습니다: \(failed.joined(separator: ", "))")) }
     }
 
+    // MARK: - 메모에서 내보낸 폴더 가져오기 (289)
+
+    /// **메모의 *마크다운으로 보내기* 를 앱의 꼴로 들여온다** (289, 2026-11-01 사용자 — *이런 파일이 많다고 생각할때*).
+    ///
+    /// 고른 폴더(메모가 내보낸 것 · 압축을 푼 것)를 **맨 위에 같은 이름의 새 폴더**로 들여온다. 노트는 그 폴더에 나란히,
+    /// 첨부는 그 폴더의 `assets/` 로, 링크는 새 자리에 맞춰 — 무엇을 어디로는 `NotesExport` 가 정한다.
+    /// **원본은 건드리지 않는다**(복사만). 줄바꿈 · 빈칸 글자도 들여오며 고친다(287) — 메모가 내보낸 글에 `U+2028` · 붙는 빈칸이 있다.
+    func importNotesExport(from picked: URL) async {
+        guard let store else { return }
+        await save()
+        // 앱이 쓰는 폴더 자신이나 그것을 품은 폴더를 고르면 금고를 금고 안에 한 벌 더 베낀다 — 막는다.
+        let vault = store.root.standardizedFileURL.resolvingSymlinksInPath().path
+        let chosen = picked.standardizedFileURL.resolvingSymlinksInPath().path
+        if Paths.normalized(vault) == Paths.normalized(chosen) || Paths.relative(of: vault, under: chosen) != nil {
+            report(String(localized: "앱이 쓰는 폴더는 가져올 수 없습니다. 내보낸 폴더를 골라 주세요."))
+            return
+        }
+        let scoped = picked.startAccessingSecurityScopedResource()
+        defer { if scoped { picked.stopAccessingSecurityScopedResource() } }
+        let entries = await Task.detached(priority: .userInitiated) { Self.exportEntries(in: picked) }.value
+        let byPath = Dictionary(entries.map { ($0.path, $0.url) }, uniquingKeysWith: { first, _ in first })
+        let wanted = NotesExport.plan(files: Array(byPath.keys), into: "")
+        guard !wanted.notes.isEmpty else {
+            report(String(localized: "고른 폴더에 노트(.md · .txt)가 없습니다. 압축 파일이면 파일 앱에서 먼저 눌러 풀어 주세요."))
+            return
+        }
+        let name = Paths.normalized(picked.lastPathComponent)
+        var imported = 0
+        var copied = 0
+        var failed: [String] = []
+        var folder = ""
+        do {
+            folder = try await store.createSubfolder(named: name)
+            let plan = NotesExport.plan(files: Array(byPath.keys), into: folder)
+            let moves = plan.moves
+            let total = plan.notes.count + plan.files.count
+            await working(String(localized: "노트를 가져오는 중"), total: total) { meter in
+                var done = 0
+                for move in plan.files {
+                    done += 1
+                    meter.tick(done, of: total, every: 5)
+                    guard let url = byPath[move.source], await Self.waitDownloaded(url) else {
+                        failed.append(move.source)
+                        continue
+                    }
+                    do {
+                        try await store.copyFile(from: url, to: move.destination)
+                        copied += 1
+                    } catch {
+                        failed.append(move.source)
+                    }
+                }
+                for move in plan.notes {
+                    done += 1
+                    meter.tick(done, of: total, every: 5)
+                    guard let url = byPath[move.source], await Self.waitDownloaded(url),
+                          let text = await Task.detached(priority: .userInitiated, operation: { Self.readExternalText(url) }).value
+                    else {
+                        failed.append(move.source)
+                        continue
+                    }
+                    let converted = NotesExport.converted(text, source: move.source, destination: move.destination,
+                                                          moves: moves)
+                    do {
+                        try await store.writeText(converted, to: move.destination)
+                        imported += 1
+                    } catch {
+                        failed.append(move.source)
+                    }
+                }
+            }
+        } catch {
+            report(String(localized: "가져오지 못했습니다: \(error.localizedDescription)"))
+            return
+        }
+        log("메모 가져오기: \(name) → \(folder) · 노트 \(imported)개 · 첨부 \(copied)개 · 건너뜀 \(wanted.skipped.count)개 · 실패 \(failed.count)개")
+        sheet = nil
+        selectedFolder = folder
+        await reloadFolders()
+        await reloadNotes()
+        if failed.isEmpty {
+            notify(String(localized: "노트 \(imported)개 · 첨부 \(copied)개를 \(folder) 폴더로 가져왔습니다. 고른 폴더는 그대로 있습니다."))
+        } else {
+            report(String(localized: "노트 \(imported)개 · 첨부 \(copied)개를 가져왔고, 가져오지 못한 것이 있습니다: \(failed.joined(separator: ", "))"))
+        }
+    }
+
+    /// 고른 폴더 안 파일 하나 — 고른 폴더 기준 경로(NFC)와 읽을 주소.
+    private struct ExportEntry: Sendable {
+        let path: String
+        let url: URL
+    }
+
+    /// 고른 폴더를 훑는다 — 파일만, 깊이 상관없이. 옛 iCloud 자리표시자(`.이름.icloud`)는 진짜 이름으로 돌려 적는다(내려받기는 읽기 전에).
+    /// 맥 압축 꼬리 · 숨김 파일도 그대로 넘긴다 — 거르는 것은 `NotesExport.isJunk` 한 곳이다.
+    nonisolated private static func exportEntries(in folder: URL) -> [ExportEntry] {
+        let base = folder.standardizedFileURL.resolvingSymlinksInPath().path
+        guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.isDirectoryKey],
+                                                          options: []) else { return [] }
+        var out: [ExportEntry] = []
+        for case let url as URL in walker {
+            if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true { continue }
+            guard var path = Paths.relative(of: url.standardizedFileURL.resolvingSymlinksInPath().path, under: base)
+            else { continue }
+            var file = url
+            let name = Paths.normalized(url.lastPathComponent)
+            if name.hasPrefix("."), name.hasSuffix(".icloud"), name.count > ".icloud".count + 1 {
+                let real = String(name.dropFirst().dropLast(".icloud".count))
+                file = url.deletingLastPathComponent().appendingPathComponent(real)
+                let parent = Paths.directory(of: path)
+                path = parent.isEmpty ? real : parent + "/" + real
+            }
+            out.append(ExportEntry(path: path, url: file))
+        }
+        return out
+    }
+
+    /// iCloud 에서 아직 안 내려온 파일이면 내려받기를 시키고 기다린다 — **다 안 내려온 파일을 읽으면 잘린 글이 온다**(`FolderStore.readText`).
+    /// 내려왔나는 `FolderStore.isCurrentNow` 로 본다(재는 자리 하나). 자리표시자만 있던 파일은 진짜 파일이 생길 때까지.
+    nonisolated private static func waitDownloaded(_ url: URL) async -> Bool {
+        func ready() -> Bool { FileManager.default.fileExists(atPath: url.path) && FolderStore.isCurrentNow(url) }
+        if ready() { return true }
+        try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+        for _ in 0..<240 {   // 0.5초씩 2분
+            try? await Task.sleep(for: .milliseconds(500))
+            if ready() { return true }
+        }
+        return false
+    }
+
+    /// 밖의 노트 하나를 글로 — 조정된 읽기 · 글자 인코딩은 금고 노트와 같은 셈(`FolderStore.decode`).
+    nonisolated private static func readExternalText(_ url: URL) -> String? {
+        var data: Data?
+        var error: NSError?
+        NSFileCoordinator().coordinate(readingItemAt: url, options: [], error: &error) { readURL in
+            data = try? Data(contentsOf: readURL)
+        }
+        return data.flatMap { FolderStore.decode($0)?.text }
+    }
+
     // MARK: - 공유 (설계서 §7.6)
 
     /// 노트 하나를 공유한다. 첨부가 없으면 `.md` 하나, 있으면 `.zip` 하나.
@@ -1862,11 +2037,59 @@ final class LibraryModel: ObservableObject {
     /// `.trash/` 안의 첨부(노트가 아닌 파일) — 휴지통 화면이 개수 · 용량과 함께 보여 준다 (173).
     @Published private(set) var trashedFiles: [TrashedFile] = []
 
+    /// **휴지통의 지운 폴더** (292) — 원래 폴더가 지금 없는 것끼리 묶은 줄. 묶는 셈은 Core `TrashGroups` 하나.
+    /// `trashed` · `trashedFiles` 는 그대로 **전부**다 (개수 · 비우기가 본다). 화면은 폴더 줄에 든 것을 낱개 목록에서 뺀다.
+    @Published private(set) var trashFolders: [TrashFolder] = []
+
+    struct TrashFolder: Identifiable {
+        /// 원래 폴더 (`.trash/` 없이).
+        let folder: String
+        let notes: [NoteSummary]
+        let files: [TrashedFile]
+        var paths: [String] { notes.map(\.relativePath) + files.map(\.relativePath) }
+        var id: String { folder }
+    }
+
+    /// 폴더 줄에 든 휴지통 경로 — 낱개 목록에서 뺀다.
+    var groupedTrashPaths: Set<String> {
+        Set(trashFolders.flatMap(\.paths))
+    }
+
     func reloadTrash() async {
         guard let store else { return }
         await working(String(localized: "휴지통을 읽는 중")) { _ in
-            trashed = await store.trashedNotes()
-            trashedFiles = await store.trashedAttachments()
+            let notes = await store.trashedNotes()
+            let files = await store.trashedAttachments()
+            let paths = notes.map(\.relativePath) + files.map(\.relativePath)
+            let existing = await store.existingPaths(among: TrashGroups.candidates(paths))
+            let grouping = TrashGroups.group(paths, existing: existing)
+            let noteByPath = Dictionary(notes.map { ($0.relativePath, $0) }, uniquingKeysWith: { first, _ in first })
+            let fileByPath = Dictionary(files.map { ($0.relativePath, $0) }, uniquingKeysWith: { first, _ in first })
+            trashed = notes
+            trashedFiles = files
+            trashFolders = grouping.folders.map { group in
+                TrashFolder(folder: group.folder,
+                            notes: group.paths.compactMap { noteByPath[$0] },
+                            files: group.paths.compactMap { fileByPath[$0] })
+            }
+        }
+    }
+
+    /// 휴지통의 폴더를 **통째로** 원래 자리로 (292).
+    func restoreTrashFolder(_ folder: TrashFolder) async {
+        guard let store else { return }
+        let total = folder.paths.count
+        let restored = await working(String(localized: "폴더를 되돌리는 중"), total: total) { meter in
+            await store.restoreTrashedFolder(folder.folder, paths: folder.paths, meter: meter)
+        }
+        log("폴더 되돌림: \(folder.folder) · \(restored)/\(total)")
+        await reloadTrash()
+        await reloadFolders()
+        await reloadNotes()
+        if restored == total {
+            notify(String(localized: "\(folder.folder) 폴더를 되돌렸습니다 — 노트 \(folder.notes.count)개 · 첨부 \(folder.files.count)개."))
+        } else {
+            report(String(localized: "\(folder.folder) 폴더에서 \(total - restored)개를 되돌리지 못했습니다. 휴지통에 남아 있습니다."))
         }
     }
 
@@ -2062,6 +2285,16 @@ final class LibraryModel: ObservableObject {
             case .one(let note):
                 let hint = await attachmentHint(for: note.relativePath)
                 try await working(String(localized: "영구 삭제하는 중")) { _ in try await store.deleteTrashed(note.relativePath, hint: hint) }
+            case .folder(let folder):
+                let result = try await working(String(localized: "영구 삭제하는 중")) { meter in
+                    try await store.purgeTrashedFolder(folder.folder, meter: meter)
+                }
+                log("휴지통 폴더 영구 삭제: \(folder.folder) · \(result.deleted)개 · 남김 \(result.kept)개")
+                if result.kept > 0 {
+                    await reloadTrash()
+                    notify(String(localized: "다른 노트가 쓰는 첨부 \(result.kept)개는 남겼습니다. 되돌리면 그 노트에서 다시 보입니다."))
+                    return
+                }
             }
             await reloadTrash()
             lastError = nil
@@ -2513,6 +2746,25 @@ final class LibraryModel: ObservableObject {
     /// **읽기 화면에서 체크상자를 눌렀다** (211). 그 줄의 `[ ]` · `[x]` 한 글자만 뒤집어
     /// 편집기와 **같은 문**(`noteEdited`)으로 넣고 바로 쓴다 — 본문을 고치는 길은 하나다 (CLAUDE.md §1).
     /// 저장이 읽기 화면을 다시 그린다 (`write` → `renderReading`). 체크상자 줄이 아니면 아무것도 안 한다.
+    /// **줄바꿈 고치기** (287) — ··· 메뉴. 고를 때만 파일을 고친다 (ADR-0001 — 몰래 고치지 않는다).
+    /// 쓰기 화면이면 **편집기가** 한 번의 바꾸기로 (되돌리기 한 번), 읽기 화면이면 체크상자와 **같은 문**(`noteEdited` → 저장)으로.
+    /// 본문을 고치는 길은 이 둘뿐이다 (CLAUDE.md §1).
+    func repairLineBreaks() async {
+        guard draftPath != nil else { return }
+        let text = isDirty ? draft : noteText
+        let found = LineBreaks.count(text)
+        guard !found.isEmpty else { return }
+        let message = String(localized: "보이지 않는 줄바꿈 · 빈칸 글자 \(found.breaks + found.spaces)개를 고쳤습니다")
+        if isReading {
+            noteEdited(LineBreaks.repaired(text))
+            await save()
+            notify(message + ".", aboutNote: true)
+        } else {
+            format(.repairLineBreaks)
+            notify(message + String(localized: ". 되돌리기로 무를 수 있습니다."), aboutNote: true)
+        }
+    }
+
     func toggleTask(line: Int) async {
         guard draftPath != nil else { return }
         let text = isDirty ? draft : noteText
