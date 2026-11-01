@@ -31,14 +31,15 @@ final class NotesExportGoldenTests: XCTestCase {
         let notesExportCases: [Case]
     }
 
-    static func load() throws -> [Golden.Case] {
+    /// `load` 라고 하면 맥에서 `NSObject.load()` 와 겹쳐 모호하다 (빌드 136 첫 바퀴 — 리눅스에는 오브젝티브-C 가 없어 통과했다).
+    static func cases() throws -> [Golden.Case] {
         let here = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         let url = here.appendingPathComponent("Golden/expected.json")
         return try JSONDecoder().decode(Golden.self, from: try Data(contentsOf: url)).notesExportCases
     }
 
     func testMatchesGolden() throws {
-        let cases = try Self.load()
+        let cases = try Self.cases()
         XCTAssertFalse(cases.isEmpty)
         for item in cases {
             let plan = NotesExport.plan(files: item.files, into: item.folder, taken: Set(item.taken))
