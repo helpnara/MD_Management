@@ -1,3 +1,9 @@
+• 다른 곳에서 옮겨 온 글의 보이지 않는 줄바꿈 · 빈칸 글자를 고칩니다. 붙여 넣을 때 저절로 고치고, 이미 들어온 노트는 더 보기 메뉴의 ‘줄바꿈 고치기’로 고칩니다. 제목과 목록이 제 모양으로 섭니다.
+• 다른 노트 앱이 마크다운으로 내보낸 폴더를 가져옵니다. 설정 → 폴더 → ‘마크다운으로 내보낸 폴더 가져오기’를 누르면 노트는 한 폴더에 나란히, 사진은 그 폴더의 assets 로 모으고 링크를 맞춥니다. 고른 폴더는 그대로 둡니다.
+• 노트를 다른 폴더로 옮길 때 그 노트만 쓰는 사진도 함께 옮깁니다. 옛 폴더를 지워도 사진이 깨지지 않습니다.
+• 휴지통에서 지운 폴더를 폴더째 되돌릴 수 있습니다.
+• 다른 기기에서 만든 글의 한글 낱말이 찾기에 걸리지 않던 것을 고쳤습니다.
+• 설정 화면을 정리했습니다. 폴더 · 노트 · 정리 · 도움 네 묶음으로 줄이고, 안내는 ‘사용법’ 한 화면에 모았습니다. 앱 판은 설정 맨 아래에 있습니다.
 • 외장 키보드로 글머리표 목록을 위아래 화살표로 오갈 때 커서가 글의 처음이나 끝으로 튀던 것을 고쳤습니다.
 • 노트에 사진처럼 넣은 PDF 는 첫 쪽이 보이고, 누르면 PDF 를 엽니다. 동영상 · 문서 같은 다른 첨부는 이름이 든 카드로 보이고 눌러서 엽니다. 빈칸으로 보이던 자리입니다.
 • 문서를 첨부할 때 고르기 창에서 폴더 안으로 들어갈 수 있습니다.
@@ -7,6 +13,12 @@
 
 — English (What’s New in This Version) —
 
+• Fixes hidden line breaks and spaces in text brought in from elsewhere. Pasting fixes them automatically; for notes already in your folder, choose Fix Line Breaks from the More menu. Headings and lists show up as they should.
+• Import a folder exported as Markdown from another notes app: Settings → Folder → Import an Exported Markdown Folder. Notes go side by side in one folder, photos into its assets folder, and links are updated. The chosen folder stays as it is.
+• Moving a note to another folder now moves the photos only that note uses along with it, so deleting the old folder no longer breaks them.
+• Restore a deleted folder from the Trash in one step.
+• Korean words in text made on other devices now show up in search.
+• A tidier Settings screen: four groups — Folder, Notes, Cleanup, Help — with the explanations gathered on a single Guide page. The app version is at the bottom of Settings.
 • Fixed the cursor jumping to the start or end of a note when moving through a bulleted list with the arrow keys on an external keyboard.
 • A PDF placed in a note like a photo now shows its first page, and tapping it opens the PDF. Other attachments such as videos and documents appear as a card with the file name — tap to open. These used to show as a blank space.
 • When attaching a document, you can now open folders in the file picker.
