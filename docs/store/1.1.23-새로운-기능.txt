@@ -1,0 +1,5 @@
+• 쓰기 화면에서 자판이 올라온 채 문서 · 사진을 첨부하면 고르기 창의 아래쪽이 가려 다른 폴더로 옮겨 가기 어렵던 것을 고쳤습니다. 이제 창을 열기 전에 자판을 내립니다.
+
+— English (What’s New in This Version) —
+
+• Fixed the keyboard covering the bottom of the file picker when attaching a document or photo while writing, which made it hard to move to other folders. The keyboard now closes before the picker opens.

@@ -1692,23 +1692,36 @@ private struct NoteDetail: View {
         }
     }
 
+    /// **자판을 내리는 길은 하나** (98 · 300) — 위 도구 줄의 *키보드 내리기* 와 넣기 메뉴의 창들이 같이 쓴다.
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+
     /// 넣기 — 사진첩 · 카메라 · 문서 (설계서 §2-4). 아이패드는 제 단추로, **아이폰은
     /// `…` 안에** 선다 (125).
+    ///
+    /// **창을 열기 전에 자판부터 내린다** (300, 2026-11-04 사용자 — *편집 모드에서 문서 첨부에서 다른 폴더로 이동이 안되는데*).
+    /// 쓰기 화면에서 자판이 올라온 채 고르기 창을 띄우면 **자판이 창 위에 그대로 남아** 창 아래의 *최근 항목 · 둘러보기* 띠와
+    /// 목록 아래쪽을 가렸다 — 다른 위치 · 위 폴더로 옮겨 갈 길이 막혔다. 읽기 화면(자판 없음)에서는 안 걸려 *편집 모드에서만* 이었다.
+    /// 296 은 폴더를 *들어갈 곳* 으로 돌려놓은 것이고 이것은 다른 자리다. 넣는 자리는 편집기가 기억한 커서(`selectedRange`)라 그대로다.
     @ViewBuilder
     private var insertItems: some View {
         Button {
+            dismissKeyboard()
             showsPhotoPicker = true
         } label: {
             Label("사진첩에서", systemImage: "photo.on.rectangle")
         }
         if CameraView.isAvailable {
             Button {
+                dismissKeyboard()
                 showsCamera = true
             } label: {
                 Label("카메라로 찍기", systemImage: "camera")
             }
         }
         Button {
+            dismissKeyboard()
             showsDocumentPicker = true
         } label: {
             Label("문서 첨부", systemImage: "doc.badge.plus")
@@ -1716,6 +1729,7 @@ private struct NoteDetail: View {
         // **이미 있는 파일은 사본을 만들지 않는다** (145). 제자리에 두고 링크만 넣는다 —
         // 사본이 늘면 내용이 갈라지고 어느 쪽이 진짜인지 아무도 모른다 (2026-09-18 사용자).
         Button {
+            dismissKeyboard()
             library.startLinkingExistingFile()
         } label: {
             Label("이미 있는 파일 연결", systemImage: "link")
@@ -1752,8 +1766,7 @@ private struct NoteDetail: View {
                 // 붙으면 키보드를 못 치웠다 — 그러면 편집이 끝나는 자리(92)에도 못 닿는다.
                 // **키보드 위에 도구를 달지 않는다** (CLAUDE.md) — 위 도구 줄에 세운다.
                 Button {
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
-                                                    to: nil, from: nil, for: nil)
+                    dismissKeyboard()
                 } label: {
                     Label("키보드 내리기", systemImage: "keyboard.chevron.compact.down")
                 }
