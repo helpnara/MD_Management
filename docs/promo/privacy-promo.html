@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>계정 없음 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B; --marker:#B9B2A7;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45; --red:#E5483C;
+  --screen:#FFFFFF; --grouped:#F2F2F7; --rule:#E4DED3;
+  --night:#1D1B19; --night2:#2B2825; --moon:#F4EFE6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+/* 밤 — 첫 장면만. 스탠드 불빛 아래 혼자 쓰는 시간 */
+#night{position:absolute;inset:0;background:radial-gradient(900px 760px at 50% 30%, #3A332B 0%, var(--night2) 45%, var(--night) 100%)}
+#lamp{position:absolute;left:50%;top:120px;width:1100px;height:1100px;margin-left:-550px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,214,140,.30) 0%, rgba(255,214,140,.10) 38%, rgba(255,214,140,0) 68%)}
+.scene{position:absolute;inset:0;opacity:0}
+.cap{position:absolute;left:80px;right:80px;top:170px;text-align:center}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:74px;line-height:1.28;letter-spacing:-1px}
+.cap p{margin-top:26px;font-size:38px;line-height:1.5;color:var(--faint);font-weight:500}
+.kicker{display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--leaf);margin-bottom:22px}
+
+/* 첫 장면 */
+.hook{position:absolute;left:0;right:0;top:520px;text-align:center;color:var(--moon)}
+.hook .kk{font-size:30px;font-weight:700;letter-spacing:8px;color:#C9B68F;margin-bottom:46px}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:108px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:56px;font-size:46px;color:#CFC6B8;font-weight:500}
+.hook p b{color:#FFD27A;font-weight:700}
+.nchip{position:absolute;height:84px;padding:0 34px;border-radius:42px;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.10);
+  display:flex;align-items:center;gap:16px;font-size:32px;color:#BDB3A4;white-space:nowrap}
+.nchip i{width:26px;height:32px;border-radius:5px;border:3px solid #8C8273;flex:none}
+
+/* 없는 것 */
+.bigcard{position:absolute;left:100px;right:100px;top:600px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:30px 50px}
+.nrow{display:flex;align-items:center;font-size:44px;padding:30px 0;border-bottom:1px solid #EEE9E0;font-weight:500}
+.nrow:last-child{border-bottom:none}
+.nrow .stamp{margin-left:auto;font-size:36px;font-weight:900;color:var(--leaf);border:5px solid var(--leaf);border-radius:18px;padding:4px 24px;letter-spacing:2px}
+.label2{position:absolute;left:0;right:0;top:1400px;text-align:center}
+.label2 span{display:inline-block;padding:24px 44px;border-radius:50px;background:var(--ink);color:#fff;font-size:34px;font-weight:700}
+.label2 small{display:block;margin-top:20px;font-size:28px;color:var(--faint)}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:640px;width:740px;height:1190px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.22), 0 6px 18px rgba(0,0,0,.12)}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--screen);overflow:hidden}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:9}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(10,122,255,.18);border:4px solid rgba(10,122,255,.45);pointer-events:none;z-index:12}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--accent);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+
+/* 홈 화면 — 다른 앱 자리는 이름 없는 회색 칸 */
+.home{position:absolute;inset:0;background:linear-gradient(170deg,#E9E2D4 0%,#D9CFBD 100%);z-index:1}
+.grid{position:absolute;top:150px;left:56px;right:56px;display:grid;grid-template-columns:repeat(4,1fr);row-gap:56px;justify-items:center}
+.grid i{display:block;width:118px;height:118px;border-radius:30px;background:rgba(255,255,255,.55)}
+.grid .me{display:flex;flex-direction:column;align-items:center;gap:12px}
+.grid .me img{width:118px;height:118px;border-radius:30px;box-shadow:0 8px 20px rgba(80,60,30,.2)}
+.grid .me span{font-size:22px;color:#3A3530;font-weight:500}
+
+/* 폴더 화면 */
+.fold{position:absolute;inset:0;background:var(--grouped);z-index:2;opacity:0}
+.fold .big{position:absolute;top:150px;left:48px;font-size:62px;font-weight:900}
+.sfield{position:absolute;top:262px;left:40px;right:40px;height:84px;border-radius:42px;background:#E4E4EA;display:flex;align-items:center;padding:0 28px;gap:16px;font-size:34px;color:#8A8A8E}
+.sfield svg{width:36px;height:36px;stroke:#8A8A8E;stroke-width:4;fill:none}
+.glist{position:absolute;top:380px;left:40px;right:40px}
+.glist .gb{background:#fff;border-radius:26px;padding:0 28px}
+.frow2{height:96px;display:flex;align-items:center;gap:22px;border-bottom:1px solid #EDEDF0;font-size:34px;border-radius:12px}
+.frow2:last-child{border-bottom:none}
+.frow2 .fi{width:46px;height:36px;border-radius:7px;background:#7FB6E8;flex:none}
+.frow2 .n{margin-left:auto;color:#8A8A8E;font-size:30px}
+
+/* 노트 목록 */
+.listv{position:absolute;inset:0;background:#fff;z-index:3;opacity:0}
+.bar{position:absolute;top:96px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 36px;gap:18px;z-index:3}
+.bar .back{color:var(--accent);font-size:34px;display:flex;align-items:center;gap:4px}
+.bar .back svg{width:34px;height:34px;stroke:var(--accent);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.bar .mid{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.bar .mid b{display:block;font-size:34px;font-weight:700}
+.bar .mid small{display:block;font-size:22px;color:#8A8A8E}
+.bar .right{margin-left:auto;display:flex;gap:30px}
+.bar .right svg{width:44px;height:44px;stroke:var(--accent);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.plain{position:absolute;top:206px;left:0;right:0;bottom:0;background:#fff}
+.lrow{height:150px;border-bottom:1px solid #EDEDF0;padding:22px 44px}
+.lrow b{display:block;font-size:34px;font-weight:500}
+.lrow span{display:block;font-size:28px;color:#8A8A8E;margin-top:4px}
+.lrow small{display:block;font-size:22px;color:#8A8A8E;margin-top:4px}
+
+/* 쓰기 화면 */
+.edit{position:absolute;inset:0;background:#fff;z-index:4;opacity:0}
+.body{position:absolute;top:230px;left:52px;right:52px;font-size:38px;line-height:1.62}
+.line{min-height:62px;white-space:pre}
+.line.h1{min-height:84px;font-size:62px;font-weight:900;line-height:1.35;letter-spacing:-.5px}
+.mkh{color:var(--marker);display:inline-block;overflow:hidden;vertical-align:bottom;white-space:pre}
+
+/* 글이 있는 곳 */
+.node{position:absolute;left:150px;right:150px;border-radius:40px;background:#fff;box-shadow:0 30px 70px rgba(80,60,30,.16);padding:30px 40px}
+.node .hd{display:flex;align-items:center;gap:22px;font-size:40px;font-weight:700}
+.node .hd svg{width:56px;height:56px;stroke:var(--ink);stroke-width:3.4;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.node .sub{font-size:28px;color:var(--faint);margin-top:8px;padding-left:78px}
+.node .files{margin-top:18px;padding-left:78px;display:flex;flex-wrap:wrap;gap:12px}
+.node .files span{font-family:'Noto Sans Mono','Noto Sans KR',monospace;font-size:26px;padding:10px 18px;border-radius:14px;background:#F4EFE6;color:#4A4640}
+.node.dev{left:250px;right:250px;background:#F1EDE6;box-shadow:none;border:3px dashed #CFC6B8}
+.node.dev .hd{color:#8C857B}
+.node.dev .hd svg{stroke:#8C857B}
+.wire{position:absolute;left:538px;width:5px;border-radius:3px;background:var(--leaf)}
+.wire.dash{background:repeating-linear-gradient(180deg,#B9B2A7 0 18px,transparent 18px 32px)}
+.cut{position:absolute;left:540px;width:110px;height:110px;margin-left:-55px;border-radius:55px;background:var(--red);
+  display:flex;align-items:center;justify-content:center;box-shadow:0 14px 30px rgba(229,72,60,.35)}
+.cut svg{width:56px;height:56px;stroke:#fff;stroke-width:7;stroke-linecap:round}
+.cutl{position:absolute;left:610px;font-size:36px;font-weight:700;color:var(--red);white-space:nowrap}
+
+/* 권한 */
+.pcard{position:absolute;left:90px;right:90px;top:640px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:30px 46px}
+.prow{display:flex;align-items:center;gap:26px;font-size:36px;padding:28px 0;border-bottom:1px solid #EEE9E0}
+.prow:last-child{border-bottom:none}
+.prow svg{width:54px;height:54px;stroke:var(--accent);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.prow b{min-width:200px;font-weight:700}
+.prow span{color:#4A4640}
+.facts{position:absolute;left:0;right:0;top:1330px;text-align:center}
+.facts span{display:inline-block;margin:10px 10px;padding:22px 40px;border-radius:50px;background:#fff;box-shadow:0 10px 30px rgba(80,60,30,.12);font-size:38px;font-weight:700}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:400px;text-align:center}
+.hero img{width:380px;height:380px;border-radius:88px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:130px;margin-top:64px;letter-spacing:2px}
+.hero .en{font-size:34px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:46px;margin-top:60px;font-weight:500;color:#4A4640;line-height:1.5}
+.hero .cta{display:inline-block;margin-top:70px;padding:30px 60px;border-radius:60px;background:var(--ink);color:#fff;font-size:40px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+  <div id="night"><div id="lamp"></div></div>
+
+  <!-- 1 · 질문 (썸네일) -->
+  <section class="scene" id="s1">
+    <div class="nchip" id="c11" style="left:110px;top:250px"><i></i>오늘 있었던 일</div>
+    <div class="nchip" id="c12" style="left:560px;top:380px"><i></i>아무에게도 못 한 말</div>
+    <div class="nchip" id="c13" style="left:140px;top:1360px"><i></i>다음 달 계획</div>
+    <div class="nchip" id="c14" style="left:600px;top:1500px"><i></i>병원 기록</div>
+    <div class="nchip" id="c15" style="left:300px;top:1650px"><i></i>가계부 메모</div>
+    <div class="hook">
+      <div class="kk" id="h10">느린 여백</div>
+      <h1 id="h11">당신의 일기,<br>누가 읽을 수<br>있나요?</h1>
+      <p id="h12">만든 사람도 <b>볼 수 없습니다</b></p>
+    </div>
+  </section>
+
+  <!-- 2 · 없는 것 -->
+  <section class="scene" id="s2">
+    <div class="cap"><div class="kicker">느린 여백에는</div><h2>없는 것이<br>많습니다</h2><p>그래서 처음부터 아무것도 묻지 않습니다</p></div>
+    <div class="bigcard" id="bc2">
+      <div class="nrow" id="n21">회원가입<span class="stamp">없음</span></div>
+      <div class="nrow" id="n22">로그인 · 비밀번호<span class="stamp">없음</span></div>
+      <div class="nrow" id="n23">서버<span class="stamp">없음</span></div>
+      <div class="nrow" id="n24">광고<span class="stamp">없음</span></div>
+      <div class="nrow" id="n25">추적<span class="stamp">없음</span></div>
+    </div>
+    <div class="label2" id="lb2"><span>수집하는 데이터 없음</span><small>앱스토어의 앱 개인정보 항목에도 그렇게 적었습니다</small></div>
+  </section>
+
+  <!-- 3 · 열면 바로 -->
+  <section class="scene" id="s3">
+    <div class="cap"><div class="kicker">열면 바로</div><h2>이메일도, 비밀번호도<br>묻지 않습니다</h2><p>앱을 열면 바로 내 폴더 · 바로 쓰기</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="home" id="home3">
+        <div class="grid">
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><div class="me" id="ic3"><img src="icon.png" alt=""><span>느린 여백</span></div><i></i>
+          <i></i><i></i><i></i><i></i>
+        </div>
+      </div>
+      <div class="fold" id="fold3">
+        <div class="big">폴더</div>
+        <div class="sfield"><svg viewBox="0 0 40 40"><circle cx="17" cy="17" r="10"/><path d="M25 25 L33 33"/></svg><span>모든 노트에서 찾기</span></div>
+        <div class="glist">
+          <div class="gb">
+            <div class="frow2"><div class="fi"></div>받은 글<span class="n">12</span></div>
+            <div class="frow2" id="f3d"><div class="fi"></div>일기<span class="n">48</span></div>
+            <div class="frow2"><div class="fi"></div>산책<span class="n">9</span></div>
+            <div class="frow2"><div class="fi"></div>읽을 책<span class="n">21</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="listv" id="list3">
+        <div class="bar"><span class="back"><svg viewBox="0 0 34 34"><path d="M21 6 L10 17 L21 28"/></svg>폴더</span><span class="mid"><b>일기</b><small>노트 48개</small></span>
+          <span class="right"><svg viewBox="0 0 44 44"><path d="M5 12 H17 L20 15 H39 V36 H5 Z"/><path d="M28 22 V30 M24 26 H32"/></svg><svg id="pen3" viewBox="0 0 44 44"><path d="M22 8 H8 V36 H36 V22"/><path d="M33 6 L38 11 L22 27 L16 28 L17 22 Z"/></svg></span></div>
+        <div class="plain">
+          <div class="lrow"><b>11월 1일</b><span>오랜만에 혼자 걸었다</span><small>2026. 11. 1. 오후 10:41</small></div>
+          <div class="lrow"><b>10월 31일</b><span>마음이 조금 가벼워진 날</span><small>2026. 10. 31. 오후 11:05</small></div>
+          <div class="lrow"><b>10월 30일</b><span>내일 할 말을 미리 적어 둔다</span><small>2026. 10. 30. 오후 9:58</small></div>
+          <div class="lrow"><b>10월 28일</b><span>비 오는 저녁</span><small>2026. 10. 28. 오후 10:12</small></div>
+        </div>
+      </div>
+      <div class="edit" id="edit3">
+        <div class="bar"><span class="back"><svg viewBox="0 0 34 34"><path d="M21 6 L10 17 L21 28"/></svg>일기</span></div>
+        <div class="body">
+          <div class="line h1"><span class="mkh" id="mk3"># </span>새 노트</div>
+          <div class="line"> </div>
+          <div class="line" id="ty3"></div>
+          <div class="line" id="ty3b"></div>
+        </div>
+      </div>
+      <div class="tap" id="tap3" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 글이 있는 곳 -->
+  <section class="scene" id="s4">
+    <div class="cap"><div class="kicker">글이 있는 곳</div><h2>기기와 당신의<br>아이클라우드에만</h2><p>마크다운(.md) 파일로 — 내 폴더 안에</p></div>
+    <div class="node" id="d41" style="top:640px">
+      <div class="hd"><svg viewBox="0 0 56 56"><rect x="15" y="5" width="26" height="46" rx="6"/><path d="M24 44 H32"/></svg>내 아이폰 · 아이패드</div>
+      <div class="sub">쓰는 곳</div>
+    </div>
+    <div class="wire" id="w41" style="top:820px;height:0"></div>
+    <div class="node" id="d42" style="top:900px">
+      <div class="hd"><svg viewBox="0 0 56 56"><path d="M16 40 H42 A10 10 0 0 0 40 20 A13 13 0 0 0 15 23 A9 9 0 0 0 16 40 Z"/></svg>내 아이클라우드</div>
+      <div class="sub">Slow Margin 폴더</div>
+      <div class="files" id="fl42"><span>새 노트.md</span><span>11월 1일.md</span><span>assets</span></div>
+    </div>
+    <div class="wire dash" id="w43" style="top:1180px;height:0"></div>
+    <div class="cut" id="x43" style="top:1235px"><svg viewBox="0 0 56 56"><path d="M15 15 L41 41 M41 15 L15 41"/></svg></div>
+    <div class="cutl" id="xl43" style="top:1262px">볼 수 없습니다</div>
+    <div class="node dev" id="d43" style="top:1420px">
+      <div class="hd"><svg viewBox="0 0 56 56"><circle cx="28" cy="19" r="9"/><path d="M11 48 C13 36 43 36 45 48"/></svg>만든 사람</div>
+      <div class="sub">서버가 없어서, 받을 길이 없습니다</div>
+    </div>
+  </section>
+
+  <!-- 5 · 권한 -->
+  <section class="scene" id="s5">
+    <div class="cap"><div class="kicker">권한도 필요한 만큼</div><h2>사진은<br>고르신 것만 읽습니다</h2><p>거부하셔도 나머지는 그대로입니다</p></div>
+    <div class="pcard" id="pc5">
+      <div class="prow" id="p51"><svg viewBox="0 0 54 54"><rect x="7" y="11" width="40" height="32" rx="6"/><path d="M12 38 L22 27 L29 33 L34 28 L42 38"/><circle cx="35" cy="20" r="3.5"/></svg><b>사진</b><span>노트에 넣을 때 · 고른 것만</span></div>
+      <div class="prow" id="p52"><svg viewBox="0 0 54 54"><path d="M7 18 H17 L21 12 H33 L37 18 H47 V43 H7 Z"/><circle cx="27" cy="30" r="8"/></svg><b>카메라</b><span>바로 찍어 넣을 때만</span></div>
+      <div class="prow" id="p53"><svg viewBox="0 0 54 54"><path d="M27 6 L45 13 V27 C45 38 37 45 27 48 C17 45 9 38 9 27 V13 Z"/><path d="M19 27 L25 33 L36 21"/></svg><b>둘 다 거부</b><span>쓰기 · 읽기 · 찾기는 그대로</span></div>
+    </div>
+    <div class="facts" id="ft5"><span>계정 없음</span><span>서버 없음</span><span>광고 · 추적 없음</span></div>
+  </section>
+
+  <!-- 6 · 끝 -->
+  <section class="scene" id="s6">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="en">SLOW MARGIN</div>
+      <div class="tl" id="tl6">내 글은<br>내 곳에</div>
+      <div class="cta" id="cta6">앱스토어에서 ‘느린 여백’</div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const back = x => { const c=1.70158, d=c+1; return 1+d*Math.pow(x-1,3)+c*Math.pow(x-1,2); };
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const SC = { s1:[0,4.2], s2:[4.2,11.4], s3:[11.4,19.4], s4:[19.4,26.4], s5:[26.4,30.8], s6:[30.8,34.0] };
+const DURATION = 34.0;
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+function capIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .cap'); if(!el) return;
+  const p=out(seg(t,a,a+0.8));
+  el.style.transform=`translateY(${(1-p)*40}px)`; el.style.opacity=p;
+}
+function riseIn(el,t,a,dur=0.7,dist=60){ const p=out(seg(t,a,a+dur)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dist}px)`; }
+function tapXY(tapEl, x, y, t, at, dur=0.7){
+  const sr=tapEl.parentElement.getBoundingClientRect();
+  const p=seg(t,at-0.3,at-0.3+dur);
+  tapEl.style.left=(x-sr.left-60)+'px'; tapEl.style.top=(y-sr.top-60)+'px';
+  tapEl.style.opacity=p>0&&p<1?Math.sin(p*Math.PI):0; tapEl.style.transform=`scale(${0.6+p*0.6})`;
+}
+function tapAt(tapEl, target, t, at){ const r=target.getBoundingClientRect(); tapXY(tapEl, r.left+r.width/2, r.top+r.height/2, t, at); }
+function glowRow(el,t,a,b){ el.style.background = t>a && t<b ? `rgba(111,165,58,${0.18*(1-seg(t,b-1.0,b))})` : ''; }
+
+// ── 1 · 질문 — 밤, 스탠드 불빛 아래 ──
+function renderS1(t){
+  ['c11','c12','c13','c14','c15'].forEach((id,i)=>{
+    const el=$(id); const p=out(seg(t,0.1+i*0.14,0.8+i*0.14));
+    const drift=Math.sin(t*0.8+i*1.7)*10;
+    el.style.opacity=p*0.9; el.style.transform=`translateY(${(1-p)*50+drift}px) rotate(${(i%2?1:-1)*(2+i)}deg)`;
+  });
+  $('h10').style.opacity=out(seg(t,0,0.6));
+  const hp=out(seg(t,0,1.2)); $('h11').style.transform=`scale(${1.04-0.04*hp})`; $('h11').style.opacity=1;
+  riseIn($('h12'),t,0.2,0.8,30);
+}
+// ── 2 · 없는 것 — 줄마다 ‘없음’ 도장 ──
+function renderS2(t){
+  const s=SC.s2[0];
+  riseIn($('bc2'),t,s+0.3,0.7,80);
+  ['n21','n22','n23','n24','n25'].forEach((id,i)=>{
+    const a=s+0.9+i*0.62;
+    const row=$(id); const p=out(seg(t,a,a+0.4));
+    row.style.opacity=p; row.style.transform=`translateX(${(1-p)*-40}px)`;
+    const st=row.querySelector('.stamp'); const q=seg(t,a+0.35,a+0.6);
+    st.style.opacity=q>0?1:0; st.style.transform=`scale(${q>0?1.7-0.7*back(q):1.7}) rotate(-6deg)`;
+  });
+  riseIn($('lb2'),t,s+4.4,0.7,40);
+}
+// ── 3 · 열면 바로 — 아이콘 → 폴더 화면 → 일기 → 새 노트 → 쓰기 (RootView 의 새 노트 단추 · createNote 의 ‘# 새 노트’) ──
+function renderS3(t){
+  const s=SC.s3[0], tapIc=s+1.4, open=s+1.7, tapD=s+3.0, toList=s+3.3, tapPen=s+4.3, toEdit=s+4.6, typeAt=s+5.0;
+  const op=out(seg(t,open,open+0.45));
+  $('fold3').style.opacity=op; $('fold3').style.transform=`scale(${0.6+0.4*op})`;
+  $('home3').style.opacity=1-op;
+  glowRow($('f3d'),t,tapD-0.1,tapD+0.5);
+  const lp=out(seg(t,toList,toList+0.4));
+  $('list3').style.opacity=lp; $('list3').style.transform=`translateX(${(1-lp)*200}px)`;
+  const ep=out(seg(t,toEdit,toEdit+0.4));
+  $('edit3').style.opacity=ep; $('edit3').style.transform=`translateY(${(1-ep)*120}px)`;
+  // 커서가 첫 줄을 떠나면 ‘# ’ 가 접힌다 (ADR-0005 — 커서 줄에서만 표시가 보인다)
+  const fold=ease(seg(t,typeAt-0.3,typeAt));
+  $('mk3').style.maxWidth=(1-fold)*80+'px';
+  const a='오늘은 아무에게도', b='보여 주지 않을 글.';
+  const qa=typed(a,t,typeAt,10), qb=typed(b,t,typeAt+[...a].length/10+0.15,10);
+  const car=`<span class="caret" style="opacity:${blink(t)}"></span>`;
+  $('ty3').innerHTML = qa + (qb.length===0 && t>=typeAt-0.3 ? car : '');
+  $('ty3b').innerHTML = qb.length>0 ? qb+car : '';
+  const tap=$('tap3');
+  if(t<open) tapAt(tap,document.querySelector('#ic3 img'),t,tapIc);
+  else if(t<toList+0.2) tapAt(tap,$('f3d'),t,tapD);
+  else tapAt(tap,$('pen3'),t,tapPen);
+}
+// ── 4 · 글이 있는 곳 — 기기 → 내 아이클라우드, 만든 사람 쪽 길은 끊겨 있다 ──
+function renderS4(t){
+  const s=SC.s4[0];
+  riseIn($('d41'),t,s+0.4,0.7,60);
+  $('w41').style.height=(80*ease(seg(t,s+1.0,s+1.6)))+'px';
+  riseIn($('d42'),t,s+1.5,0.7,60);
+  [...$('fl42').children].forEach((el,i)=>{ const p=out(seg(t,s+2.1+i*0.25,s+2.5+i*0.25)); el.style.opacity=p; el.style.transform=`scale(${0.8+0.2*p})`; });
+  $('w43').style.height=(240*ease(seg(t,s+3.1,s+3.9)))+'px';
+  riseIn($('d43'),t,s+3.6,0.7,60);
+  const q=seg(t,s+4.4,s+4.8);
+  $('x43').style.opacity=q>0?1:0; $('x43').style.transform=`scale(${q>0?back(q):0})`;
+  riseIn($('xl43'),t,s+4.7,0.6,20);
+}
+// ── 5 · 권한 ──
+function renderS5(t){
+  const s=SC.s5[0];
+  riseIn($('pc5'),t,s+0.2,0.7,80);
+  ['p51','p52','p53'].forEach((id,i)=>{ const el=$(id); const p=out(seg(t,s+0.6+i*0.3,s+1.0+i*0.3)); el.style.opacity=p; el.style.transform=`translateX(${(1-p)*-40}px)`; });
+  riseIn($('ft5'),t,s+1.9,0.7,40);
+}
+function renderS6(t){
+  const s=SC.s6[0];
+  const h=document.querySelector('#s6 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  riseIn($('tl6'),t,s+0.6,0.7,30); riseIn($('cta6'),t,s+1.2,0.7,30);
+}
+function renderPhone(sid,t){ const ph=document.querySelector('#'+sid+' .phone'); if(ph) riseIn(ph,t,SC[sid][0]+0.15,0.8,90); }
+const R = {s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6};
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001){ capIn(k,t,a+0.05); renderPhone(k,t); R[k](t); }
+  });
+  // 밤이 걷히고 종이로 — 첫 장면이 끝날 때
+  $('night').style.opacity = 1-ease(seg(t,3.7,4.6));
+  $('lamp').style.transform=`scale(${1+0.04*Math.sin(t*1.3)})`;
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>

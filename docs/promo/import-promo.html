@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>이사 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B; --marker:#B9B2A7;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45; --red:#E5483C;
+  --screen:#FFFFFF; --grouped:#F2F2F7; --rule:#E4DED3;
+  --box:#D9B27C; --box2:#C99A5E; --tape:#EFDDBF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+.cap{position:absolute;left:80px;right:80px;top:170px;text-align:center}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:74px;line-height:1.28;letter-spacing:-1px}
+.cap p{margin-top:26px;font-size:38px;line-height:1.5;color:var(--faint);font-weight:500}
+.kicker{display:inline-block;font-size:28px;font-weight:700;letter-spacing:4px;color:var(--leaf);margin-bottom:22px}
+.kicker.old{color:var(--box2)}
+
+/* 이삿짐 상자 */
+.box{position:absolute;width:300px;height:230px}
+.box .b{position:absolute;left:0;right:0;bottom:0;height:180px;border-radius:14px;background:linear-gradient(180deg,var(--box) 0%,var(--box2) 100%);
+  box-shadow:0 24px 50px rgba(120,80,30,.22)}
+.box .lid{position:absolute;left:-8px;right:-8px;top:24px;height:46px;border-radius:10px;background:linear-gradient(180deg,#E3BF8C,var(--box))}
+.box .tp{position:absolute;left:50%;margin-left:-28px;top:24px;width:56px;height:206px;background:var(--tape);opacity:.75}
+.box .lb{position:absolute;left:34px;right:34px;bottom:44px;height:64px;border-radius:8px;background:#FFF9EE;display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:700;color:#6B5A44}
+
+/* 첫 장면 */
+.hook{position:absolute;left:0;right:0;top:560px;text-align:center}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:110px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:44px;font-size:44px;color:#4A4640;font-weight:500;line-height:1.5}
+.hook p b{color:var(--leaf);font-weight:700}
+
+/* 파일 나무 */
+.tree{position:absolute;left:90px;right:90px;top:640px;border-radius:40px;background:#2A2724;color:#F4EFE6;padding:44px 48px;
+  box-shadow:0 40px 80px rgba(0,0,0,.25);font-family:'Noto Sans Mono','Noto Sans KR',monospace;font-size:34px;line-height:1.72}
+.tree .hd{font-family:'Noto Sans KR';font-size:28px;color:#BFB6A8;margin-bottom:16px;letter-spacing:1px}
+.tree .ln{white-space:pre}
+.tree .m{color:#8C8273}
+.tree .d{color:#FFD27A}
+.tree .a{color:#9ED36A}
+.tree .x{color:#E9A39C}
+.badge{position:absolute;left:0;right:0;text-align:center}
+.badge span{display:inline-block;padding:22px 40px;border-radius:50px;background:#fff;box-shadow:0 10px 30px rgba(80,60,30,.12);font-size:34px;font-weight:700}
+.badge span.o{color:var(--box2)}
+.badge span.g{color:var(--leaf)}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:640px;width:740px;height:1190px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.22), 0 6px 18px rgba(0,0,0,.12)}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--grouped);overflow:hidden}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:9}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(10,122,255,.18);border:4px solid rgba(10,122,255,.45);pointer-events:none;z-index:12}
+.bar{position:absolute;top:96px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 36px;gap:18px;z-index:3}
+.bar .back{color:var(--accent);font-size:34px;display:flex;align-items:center;gap:4px}
+.bar .back svg{width:34px;height:34px;stroke:var(--accent);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.bar .mid{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.bar .mid b{display:block;font-size:34px;font-weight:700}
+.bar .mid small{display:block;font-size:22px;color:#8A8A8E}
+.bar .right{margin-left:auto;color:var(--accent);font-size:34px;font-weight:700}
+.grouped{position:absolute;top:206px;left:0;right:0;bottom:0;padding:10px 34px}
+.gh{font-size:24px;color:#8A8A8E;margin:24px 22px 10px}
+.gb{background:#fff;border-radius:26px;padding:0 26px}
+.gf{font-size:22px;color:#8A8A8E;margin:12px 22px;line-height:1.5}
+.gf b{color:#55555A}
+.srow{min-height:92px;display:flex;align-items:center;gap:20px;border-bottom:1px solid #EDEDF0;font-size:31px;border-radius:12px}
+.srow:last-child{border-bottom:none}
+.srow .v{margin-left:auto;color:#8A8A8E}
+.srow svg{width:38px;height:38px;stroke:var(--accent);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.srow.btn{color:var(--accent)}
+.frow{height:96px;display:flex;align-items:center;gap:22px;border-bottom:1px solid #EDEDF0;font-size:33px;border-radius:12px}
+.frow:last-child{border-bottom:none}
+.frow .fi{width:46px;height:36px;border-radius:7px;background:#7FB6E8;flex:none}
+.frow .fd{width:34px;height:44px;border-radius:5px;background:#fff;border:3px solid #C9C4BB;flex:none}
+.frow .n{margin-left:auto;color:#8A8A8E;font-size:28px}
+.frow .ck{margin-left:auto;width:40px;height:40px;border-radius:20px;background:var(--accent);display:none}
+.layer{position:absolute;inset:0;background:var(--grouped);z-index:1}
+.plain{position:absolute;top:206px;left:0;right:0;bottom:0;background:#fff}
+.lrow{height:150px;border-bottom:1px solid #EDEDF0;padding:22px 44px}
+.lrow b{display:block;font-size:34px;font-weight:500}
+.lrow span{display:block;font-size:28px;color:#8A8A8E;margin-top:4px}
+/* 아래 띠 — 진행 · 알림 (WorkBand · StatusBanner) */
+.band{position:absolute;left:0;right:0;bottom:0;padding:26px 40px 64px;font-size:26px;font-weight:700;z-index:8;border-top:1px solid #E4DED3;opacity:0}
+.band.work{background:#FFFDF8}
+.band.work .row{display:flex;align-items:center}
+.band.work .row span{margin-left:auto;color:#8A8A8E;font-variant-numeric:tabular-nums}
+.band.work .bar2{margin-top:14px;height:8px;border-radius:4px;background:#E6E1D8;overflow:hidden}
+.band.work .bar2 i{display:block;height:100%;width:0;background:var(--accent);border-radius:4px}
+.band.note{background:#E7F0FE;display:flex;gap:16px;align-items:flex-start;line-height:1.45}
+.band.note .ic{flex:none;width:34px;height:34px;border-radius:17px;background:var(--accent);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;margin-top:2px;font-family:serif}
+.band.note .xx{margin-left:auto;color:#8A8A8E;flex:none}
+
+/* 정리 */
+.bigcard{position:absolute;left:90px;right:90px;top:640px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:30px 46px}
+.bigcard .row{display:flex;align-items:center;gap:26px;font-size:35px;padding:26px 0;border-bottom:1px solid #EEE9E0}
+.bigcard .row:last-child{border-bottom:none}
+.bigcard .row b{min-width:210px;font-weight:700}
+.bigcard .row span{color:#4A4640}
+.path{position:absolute;left:0;right:0;top:1330px;text-align:center}
+.path span{display:inline-block;padding:24px 44px;border-radius:50px;background:var(--ink);color:#fff;font-size:34px;font-weight:700}
+.path small{display:block;margin-top:20px;font-size:28px;color:var(--faint)}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:400px;text-align:center}
+.hero img{width:380px;height:380px;border-radius:88px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:130px;margin-top:64px;letter-spacing:2px}
+.hero .en{font-size:34px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:46px;margin-top:60px;font-weight:500;color:#4A4640;line-height:1.5}
+.hero .cta{display:inline-block;margin-top:70px;padding:30px 60px;border-radius:60px;background:var(--ink);color:#fff;font-size:40px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 1 · 질문 (썸네일) -->
+  <section class="scene" id="s1">
+    <div class="box" id="x11" style="left:80px;top:180px"><div class="b"></div><div class="lid"></div><div class="tp"></div><div class="lb">일기 3년치</div></div>
+    <div class="box" id="x12" style="left:640px;top:250px;transform:scale(.85)"><div class="b"></div><div class="lid"></div><div class="tp"></div><div class="lb">회의록</div></div>
+    <div class="box" id="x13" style="left:110px;top:1320px;transform:scale(.9)"><div class="b"></div><div class="lid"></div><div class="tp"></div><div class="lb">여행 기록</div></div>
+    <div class="box" id="x14" style="left:650px;top:1400px"><div class="b"></div><div class="lid"></div><div class="tp"></div><div class="lb">읽은 책</div></div>
+    <div class="hook">
+      <h1 id="h11">노트 이사,<br>폴더째 오세요</h1>
+      <p id="h12">다른 노트 앱에서<br><b>마크다운으로 내보낸 폴더</b> 그대로</p>
+    </div>
+  </section>
+
+  <!-- 2 · 이사 전 -->
+  <section class="scene" id="s2">
+    <div class="cap"><div class="kicker old">이사 전</div><h2>노트마다 폴더 하나,<br>사진은 따로따로</h2><p>노트 앱이 마크다운으로 내보내면 흔히 이렇습니다</p></div>
+    <div class="tree" id="t2">
+      <div class="hd">내보낸 폴더</div>
+      <div class="ln" id="l20"><span class="d">여행 기록/</span></div>
+      <div class="ln" id="l21"><span class="m">├ </span><span class="d">교토 산책/</span></div>
+      <div class="ln" id="l22"><span class="m">│  ├ </span>교토 산책.md</div>
+      <div class="ln" id="l23"><span class="m">│  └ </span><span class="d">Attachments/</span><span class="m">3F2A….jpeg</span></div>
+      <div class="ln" id="l24"><span class="m">├ </span><span class="d">식당 메모/</span></div>
+      <div class="ln" id="l25"><span class="m">│  ├ </span>식당 메모.md</div>
+      <div class="ln" id="l26"><span class="m">│  └ </span><span class="d">Attachments/</span><span class="m">7B1E….jpeg</span></div>
+      <div class="ln" id="l27"><span class="m">└ </span><span class="d">짐 목록/</span></div>
+      <div class="ln" id="l28"><span class="m">   └ </span>짐 목록.md</div>
+    </div>
+    <div class="badge" id="bd2" style="top:1490px"><span class="o">폴더 넷 · 노트 셋 · 사진 둘</span></div>
+  </section>
+
+  <!-- 3 · 가져오기 -->
+  <section class="scene" id="s3">
+    <div class="cap"><div class="kicker">가져오기</div><h2>설정에서 한 번,<br>폴더를 고르면 끝</h2><p>설정 → 폴더 → 마크다운으로 내보낸 폴더 가져오기</p></div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div>
+      <div class="layer" id="set3">
+        <div class="bar"><span class="mid"><b>설정</b></span><span class="right">완료</span></div>
+        <div class="grouped">
+          <div class="gh">폴더</div>
+          <div class="gb">
+            <div class="srow">쓰는 곳<span class="v">iCloud</span></div>
+            <div class="srow">폴더 이름<span class="v">Slow Margin</span></div>
+            <div class="srow">노트<span class="v">412개</span></div>
+            <div class="srow btn"><svg viewBox="0 0 38 38"><path d="M5 10 H15 L18 13 H33 V30 H5 Z"/><circle cx="26" cy="22" r="4"/></svg>다른 폴더 고르기</div>
+            <div class="srow btn" id="im3"><svg viewBox="0 0 38 38"><path d="M19 5 V22 M12 15 L19 22 L26 15"/><path d="M7 20 V32 H31 V20"/></svg>마크다운으로 내보낸 폴더 가져오기</div>
+          </div>
+          <div class="gf"><b>이미 마크다운을 모아 둔 폴더</b>를 그대로 열 수 있습니다. 내보낸 폴더 가져오기는 같은 이름의 새 폴더로 들여옵니다.</div>
+        </div>
+      </div>
+      <div class="layer" id="pick3" style="background:#fff;opacity:0">
+        <div class="bar"><span class="back" style="font-size:32px">취소</span><span class="mid"><b>폴더 고르기</b></span><span class="right" id="op3">열기</span></div>
+        <div class="grouped" style="background:#fff">
+          <div class="gh">내 기기 · iCloud Drive</div>
+          <div class="gb" style="background:#F6F6F8">
+            <div class="frow"><div class="fi"></div>다운로드</div>
+            <div class="frow" id="fk3"><div class="fi"></div>여행 기록<span class="n">폴더 3개</span></div>
+            <div class="frow"><div class="fi"></div>문서</div>
+            <div class="frow"><div class="fi"></div>Slow Margin</div>
+          </div>
+        </div>
+      </div>
+      <div class="layer" id="list3" style="background:#fff;opacity:0">
+        <div class="bar"><span class="back"><svg viewBox="0 0 34 34"><path d="M21 6 L10 17 L21 28"/></svg>폴더</span><span class="mid"><b>여행 기록</b><small>노트 3개</small></span></div>
+        <div class="plain">
+          <div class="lrow"><b>교토 산책</b><span>아침 일찍 강을 따라 걸었다.</span></div>
+          <div class="lrow"><b>식당 메모</b><span>골목 끝 두 번째 집</span></div>
+          <div class="lrow"><b>짐 목록</b><span>우산 · 충전기 · 여권</span></div>
+        </div>
+      </div>
+      <div class="band work" id="wk3"><div class="row">노트를 가져오는 중<span id="wn3">0 / 5</span></div><div class="bar2"><i id="wb3"></i></div></div>
+      <div class="band note" id="nt3"><span class="ic">i</span><span>노트 3개 · 첨부 2개를 여행 기록 폴더로 가져왔습니다. 고른 폴더는 그대로 있습니다.</span><span class="xx">✕</span></div>
+      <div class="tap" id="tap3" style="opacity:0"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 이사 후 -->
+  <section class="scene" id="s4">
+    <div class="cap"><div class="kicker">이사 후</div><h2>한 폴더에 나란히,<br>사진은 assets 로</h2><p>링크도 새 자리에 맞춰 고칩니다</p></div>
+    <div class="tree" id="t4">
+      <div class="hd">내 아이클라우드 · Slow Margin</div>
+      <div class="ln" id="l40"><span class="d">여행 기록/</span></div>
+      <div class="ln" id="l41"><span class="m">├ </span>교토 산책.md</div>
+      <div class="ln" id="l42"><span class="m">├ </span>식당 메모.md</div>
+      <div class="ln" id="l43"><span class="m">├ </span>짐 목록.md</div>
+      <div class="ln" id="l44"><span class="m">└ </span><span class="a">assets/</span></div>
+      <div class="ln" id="l45"><span class="m">   ├ </span><span class="m">3F2A….jpeg</span></div>
+      <div class="ln" id="l46"><span class="m">   └ </span><span class="m">7B1E….jpeg</span></div>
+      <div style="height:26px"></div>
+      <div class="hd" id="l4h">교토 산책.md 속 링크</div>
+      <div class="ln" id="l47"><span class="x">![](Attachments/3F2A….jpeg)</span></div>
+      <div class="ln" id="l48"><span class="a">![](assets/3F2A….jpeg)</span></div>
+      <div class="ln" id="l49"><span class="x">[짐 목록](&lt;../짐 목록/짐 목록.md&gt;)</span></div>
+      <div class="ln" id="l4a"><span class="a">[짐 목록](&lt;짐 목록.md&gt;)</span></div>
+    </div>
+  </section>
+
+  <!-- 5 · 정리 -->
+  <section class="scene" id="s5">
+    <div class="cap"><div class="kicker">짐 정리까지</div><h2>원래 폴더는<br>건드리지 않습니다</h2><p>복사해서 들여오고, 고른 폴더는 그대로</p></div>
+    <div class="bigcard" id="bc5">
+      <div class="row" id="b51"><b>노트</b><span>한 폴더에 나란히</span></div>
+      <div class="row" id="b52"><b>사진 · 첨부</b><span>그 폴더의 assets 로</span></div>
+      <div class="row" id="b53"><b>링크</b><span>새 자리에 맞춰 고침</span></div>
+      <div class="row" id="b54"><b>고른 폴더</b><span>그대로 둠</span></div>
+    </div>
+    <div class="path" id="pa5"><span>설정 → 폴더 → 마크다운으로 내보낸 폴더 가져오기</span><small>압축 파일이면 파일 앱에서 먼저 눌러 풀어 주세요</small></div>
+  </section>
+
+  <!-- 6 · 끝 -->
+  <section class="scene" id="s6">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="en">SLOW MARGIN</div>
+      <div class="tl" id="tl6">노트 이사,<br>폴더째 오세요</div>
+      <div class="cta" id="cta6">앱스토어에서 ‘느린 여백’</div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const SC = { s1:[0,4.0], s2:[4.0,10.6], s3:[10.6,19.4], s4:[19.4,26.6], s5:[26.6,30.8], s6:[30.8,34.0] };
+const DURATION = 34.0;
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+function capIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .cap'); if(!el) return;
+  const p=out(seg(t,a,a+0.8));
+  el.style.transform=`translateY(${(1-p)*40}px)`; el.style.opacity=p;
+}
+function riseIn(el,t,a,dur=0.7,dist=60){ const p=out(seg(t,a,a+dur)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dist}px)`; }
+function tapXY(tapEl, x, y, t, at, dur=0.7){
+  const sr=tapEl.parentElement.getBoundingClientRect();
+  const p=seg(t,at-0.3,at-0.3+dur);
+  tapEl.style.left=(x-sr.left-60)+'px'; tapEl.style.top=(y-sr.top-60)+'px';
+  tapEl.style.opacity=p>0&&p<1?Math.sin(p*Math.PI):0; tapEl.style.transform=`scale(${0.6+p*0.6})`;
+}
+function tapAt(tapEl, target, t, at){ const r=target.getBoundingClientRect(); tapXY(tapEl, r.left+r.width/2, r.top+r.height/2, t, at); }
+function glowRow(el,t,a,b){ el.style.background = t>a && t<b ? `rgba(10,122,255,${0.12*(1-seg(t,b-0.6,b))})` : ''; }
+function lines(ids,t,a,step){ ids.forEach((id,i)=>{ const el=$(id); const p=out(seg(t,a+i*step,a+i*step+0.35)); el.style.opacity=p; el.style.transform=`translateX(${(1-p)*-30}px)`; }); }
+
+// ── 1 · 이삿짐 상자 ──
+function renderS1(t){
+  ['x11','x12','x13','x14'].forEach((id,i)=>{
+    // 0초 프레임이 썸네일이다 — 처음부터 다 보인다
+    const el=$(id); const base=[1,.85,.9,1][i]; const bob=Math.sin(t*1.1+i*1.4)*8;
+    el.style.opacity=1; el.style.transform=`translateY(${bob}px) rotate(${(i%2?1:-1)*(3+i)}deg) scale(${base})`;
+  });
+  const hp=out(seg(t,0,1.2)); $('h11').style.transform=`scale(${1.04-0.04*hp})`;
+  $('h12').style.opacity=1;
+}
+// ── 2 · 이사 전 — 내보낸 꼴 (NotesExport 의 머리 설명 · 289) ──
+function renderS2(t){
+  const s=SC.s2[0];
+  riseIn($('t2'),t,s+0.3,0.7,80);
+  lines(['l20','l21','l22','l23','l24','l25','l26','l27','l28'],t,s+0.8,0.32);
+  riseIn($('bd2'),t,s+4.2,0.6,30);
+}
+// ── 3 · 가져오기 — 설정 → 단추 → 폴더 고르기 → 열기 → 진행 띠 → 알림 → 그 폴더 (SettingsView · LibraryModel.importNotesExport) ──
+function renderS3(t){
+  const s=SC.s3[0], tapIm=s+1.5, toPick=s+1.8, tapF=s+3.0, tapOp=s+3.9, work=s+4.2, done=s+5.6;
+  glowRow($('im3'),t,tapIm-0.1,tapIm+0.4);
+  const pp=out(seg(t,toPick,toPick+0.4))*(1-out(seg(t,work,work+0.35)));
+  $('pick3').style.opacity=pp; $('pick3').style.transform=`translateY(${(1-out(seg(t,toPick,toPick+0.4)))*300}px)`;
+  const picked = t>=tapF;
+  glowRow($('fk3'),t,tapF-0.1,tapOp+0.3);
+  if(picked && t<work) $('fk3').style.background='rgba(10,122,255,.12)';
+  const lp=out(seg(t,work,work+0.35));
+  $('list3').style.opacity = t>=done ? out(seg(t,done,done+0.4)) : 0;
+  $('set3').style.opacity = t>=done ? 1-out(seg(t,done,done+0.4)) : 1;
+  // 진행 띠 — 첨부 먼저, 노트 다음 (5개)
+  const wp=seg(t,work,done);
+  const n=Math.min(5,Math.floor(wp*5.999));
+  $('wk3').style.opacity = t>=work && t<done+0.1 ? out(seg(t,work,work+0.25)) : 0;
+  $('wn3').textContent = `${n} / 5`; $('wb3').style.width=(n/5*100)+'%';
+  $('nt3').style.opacity = t>=done ? out(seg(t,done,done+0.3)) : 0;
+  const tap=$('tap3');
+  if(t<toPick+0.2) tapAt(tap,$('im3'),t,tapIm);
+  else if(t<tapF+0.5) tapAt(tap,$('fk3'),t,tapF);
+  else tapAt(tap,$('op3'),t,tapOp);
+}
+// ── 4 · 이사 후 — 파이썬 쌍둥이(notes_export_plan · converted)로 계산한 자리 그대로 ──
+function renderS4(t){
+  const s=SC.s4[0];
+  riseIn($('t4'),t,s+0.3,0.7,80);
+  lines(['l40','l41','l42','l43','l44','l45','l46'],t,s+0.8,0.28);
+  riseIn($('l4h'),t,s+3.0,0.5,20);
+  lines(['l47'],t,s+3.3,0); lines(['l48'],t,s+3.9,0); lines(['l49'],t,s+4.6,0); lines(['l4a'],t,s+5.2,0);
+  // 옛 링크는 그어 지운다
+  [['l47',s+3.8],['l49',s+5.1]].forEach(([id,a])=>{ const sp=$(id).firstElementChild; const p=seg(t,a,a+0.3); sp.style.textDecoration = p>0 ? 'line-through' : 'none'; sp.style.opacity = 1-0.45*p; });
+}
+// ── 5 · 정리 ──
+function renderS5(t){
+  const s=SC.s5[0];
+  riseIn($('bc5'),t,s+0.2,0.7,80);
+  ['b51','b52','b53','b54'].forEach((id,i)=>{ const el=$(id); const p=out(seg(t,s+0.6+i*0.25,s+1.0+i*0.25)); el.style.opacity=p; el.style.transform=`translateX(${(1-p)*-40}px)`; });
+  riseIn($('pa5'),t,s+1.9,0.7,40);
+}
+function renderS6(t){
+  const s=SC.s6[0];
+  const h=document.querySelector('#s6 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  riseIn($('tl6'),t,s+0.6,0.7,30); riseIn($('cta6'),t,s+1.2,0.7,30);
+}
+function renderPhone(sid,t){ const ph=document.querySelector('#'+sid+' .phone'); if(ph) riseIn(ph,t,SC[sid][0]+0.15,0.8,90); }
+const R = {s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6};
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001){ capIn(k,t,a+0.05); renderPhone(k,t); R[k](t); }
+  });
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>

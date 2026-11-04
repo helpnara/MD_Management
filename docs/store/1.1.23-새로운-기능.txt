@@ -1,0 +1,5 @@
+• 문서를 첨부할 때 고르기 창이 지난번에 쓰던 폴더에서 열려, 그 폴더가 지워졌으면 다른 폴더로 옮겨 갈 수 없던 것을 고쳤습니다. 이제 지금 노트가 든 폴더에서 열고, 자판도 먼저 내립니다.
+
+— English (What’s New in This Version) —
+
+• Fixed the file picker for attachments opening in the last-used folder, which left you stuck if that folder had been deleted. It now opens in the current note’s folder and closes the keyboard first.
