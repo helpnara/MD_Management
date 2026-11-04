@@ -1513,6 +1513,11 @@ private struct NoteDetail: View {
                 library.report(String(localized: "문서를 고르지 못했습니다: \(error.localizedDescription)"))
             }
         }
+        // **늘 지금 노트의 폴더에서 연다** (300 셋째, 2026-11-04 사용자 화면 — 제목 옆 ⌄ 메뉴에 위 폴더 대신 *최근 삭제된 항목* 하나뿐).
+        // 시작 자리를 안 정하면 iOS 는 **지난번에 쓰던 폴더**에서 창을 연다. 그 폴더가 그사이 지워져 *최근 삭제된 항목* 에 있으면
+        // 안의 폴더는 열리지 않고(지운 것은 되살리거나 지우기만 된다), 지나온 기록도 없어 `<` 가 꺼져 **밖으로도 못 나갔다.**
+        // 그 자리를 기억하니 문서 첨부를 누를 때마다 같은 곳에 갇혔다. 노트 폴더는 앱이 늘 열 수 있는 자리다.
+        .fileDialogDefaultDirectory(documentPickerStart)
         .fullScreenCover(isPresented: $showsCamera) {
             CameraView { data in Task { await library.insertPhoto(data) } }
                 .ignoresSafeArea()
@@ -1690,6 +1695,13 @@ private struct NoteDetail: View {
             // 빈 경로만 띄우면 오류처럼 보인다 — 무엇이 없는지 말한다 (빌드 20 · 10번).
             alert = String(localized: "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다.")
         }
+    }
+
+    /// 문서 첨부 창의 시작 자리 — 지금 노트가 든 폴더 (300 셋째). 노트가 없으면 iOS 에 맡긴다.
+    private var documentPickerStart: URL? {
+        guard let note = library.selectedNote,
+              let url = library.fileURL(Paths.directory(of: note.relativePath)) else { return nil }
+        return URL(fileURLWithPath: url.path, isDirectory: true)
     }
 
     /// **자판을 내리는 길은 하나** (98 · 300) — 위 도구 줄의 *키보드 내리기* 와 넣기 메뉴의 창들이 같이 쓴다.
