@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>묻고 답하기 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B;
+  --accent:#0A7AFF; --leaf:#6FA53A; --leafd:#5B8F2C; --wood:#D6A266; --gold:#C49A45;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--paper) 55%, var(--paper2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.55) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+
+/* 첫 장면 */
+.hook{position:absolute;left:0;right:0;top:640px;text-align:center}
+.hook .kk{font-size:30px;font-weight:700;letter-spacing:8px;color:var(--leaf);margin-bottom:40px}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:104px;line-height:1.25;letter-spacing:-2px}
+.hook p{margin-top:46px;font-size:42px;color:#4A4640;font-weight:500;line-height:1.5}
+.qchip{position:absolute;padding:24px 36px;border-radius:44px 44px 44px 12px;background:#fff;box-shadow:0 14px 34px rgba(80,60,30,.14);font-size:40px;font-weight:700;color:#55514B;white-space:nowrap}
+
+/* 대화창 */
+.head{position:absolute;left:0;right:0;top:0;height:250px;display:flex;align-items:flex-end;justify-content:center;gap:22px;padding-bottom:34px;
+  background:linear-gradient(180deg,rgba(251,247,239,1) 70%,rgba(251,247,239,0));z-index:5}
+.head img{width:84px;height:84px;border-radius:22px;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.head b{display:block;font-size:40px;font-weight:900}
+.head small{display:block;font-size:26px;color:var(--faint);margin-top:2px}
+.count{position:absolute;right:56px;top:150px;z-index:6;padding:12px 24px;border-radius:30px;background:var(--ink);color:#fff;font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.chat{position:absolute;left:0;right:0;top:250px;bottom:120px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 140px)}
+.thread{position:absolute;left:0;right:0;bottom:0;padding:0 56px;display:flex;flex-direction:column}
+.msg{overflow:hidden;max-height:0;opacity:0}
+.row{display:flex;align-items:flex-end;gap:18px;padding-top:30px}
+.row.me{justify-content:flex-end}
+.av{width:76px;height:76px;border-radius:38px;flex:none;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900}
+.av.q{background:#E9E3D8;color:#8C857B}
+.av.a{background:#fff;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.av.a img{width:76px;height:76px}
+.bub{max-width:720px;padding:28px 36px;font-size:42px;line-height:1.45;font-weight:500}
+.bub.q{background:#fff;border-radius:44px 44px 44px 12px;box-shadow:0 10px 26px rgba(80,60,30,.10)}
+.bub.a{background:var(--leaf);color:#fff;border-radius:44px 44px 12px 44px;box-shadow:0 10px 26px rgba(91,143,44,.25)}
+.bub.a b{font-weight:900}
+.bub .att{margin-top:18px;padding:18px 22px;border-radius:22px;background:rgba(255,255,255,.18);font-size:30px;line-height:1.45;font-weight:700}
+.bub .att .k{display:inline-block;margin:4px 6px 4px 0;padding:6px 16px;border-radius:14px;background:rgba(255,255,255,.25)}
+.dots{display:flex;gap:12px;padding:30px 36px;background:var(--leaf);border-radius:44px 44px 12px 44px}
+.dots i{display:block;width:18px;height:18px;border-radius:9px;background:#fff}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:360px;text-align:center}
+.hero img{width:320px;height:320px;border-radius:74px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:120px;margin-top:56px;letter-spacing:2px}
+.hero .en{font-size:32px;letter-spacing:12px;color:var(--faint);margin-top:6px;font-weight:500}
+.hero .tl{font-size:44px;margin-top:56px;font-weight:500;color:#4A4640;line-height:1.5}
+.bigsearch{display:flex;align-items:center;gap:22px;margin:40px auto 0;width:760px;height:120px;border-radius:36px;background:#fff;box-shadow:0 20px 50px rgba(80,60,30,.16);
+  padding:0 40px;font-size:52px;font-weight:700;text-align:left}
+.bigsearch svg{width:56px;height:56px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.caret{display:inline-block;width:4px;height:1em;background:var(--accent);vertical-align:-0.12em;margin-left:2px;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 1 · 질문들 (썸네일) -->
+  <section class="scene" id="s1">
+    <div class="qchip" style="left:90px;top:300px">무료예요?</div>
+    <div class="qchip" style="left:600px;top:400px">가입해야 해요?</div>
+    <div class="qchip" style="left:110px;top:1400px">앱 지우면 글은?</div>
+    <div class="qchip" style="left:560px;top:1520px">옮겨 올 수 있어요?</div>
+    <div class="hook">
+      <div class="kk">느린 여백에게 물어보기</div>
+      <h1>노트 앱 바꾸기 전,<br>다들 이걸 물어요</h1>
+      <p>여섯 가지, 짧게 답합니다</p>
+    </div>
+  </section>
+
+  <!-- 2 · 묻고 답하기 -->
+  <section class="scene" id="s2">
+    <div class="head"><img src="icon.png" alt=""><div><b>느린 여백</b><small>마크다운 노트 · 메모</small></div></div>
+    <div class="count" id="cnt">질문 1 / 6</div>
+    <div class="chat"><div class="thread" id="th"></div></div>
+  </section>
+
+  <!-- 3 · 끝 -->
+  <section class="scene" id="s3">
+    <div class="hero">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="en">SLOW MARGIN</div>
+      <div class="tl" id="tl3">남은 질문은 댓글로 —<br>앱스토어 검색창에</div>
+      <div class="bigsearch" id="bs3"><svg viewBox="0 0 56 56"><circle cx="24" cy="24" r="14"/><path d="M35 35 L46 46"/></svg><span id="bq3"></span></div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const SC = { s1:[0,3.6], s2:[3.6,30.2], s3:[30.2,34.0] };
+const DURATION = 34.0;
+
+// ── 묻고 답하기 — 답은 모두 스토어 설명 · 코드로 확인한 것 (youtube-shorts.md 의 근거 줄) ──
+const QA = [
+  { q:'무료예요?', a:'네, <b>무료</b>예요.<br>앱 안 결제도 없어요.' },
+  { q:'회원가입 해야 해요?', a:'아니요. 열면 바로<br><b>내 폴더</b>예요. 이메일도 안 물어요.' },
+  { q:'앱을 지우면 쓴 글은요?', a:'<b>그대로 남아요.</b><br>내 아이클라우드의<br>.md 파일이라서요.',
+    att:'iCloud Drive › Slow Margin › 일기.md' },
+  { q:'마크다운 몰라도 돼요?', a:'돼요. 쓰기 화면 아래 띠의<br><b>단추</b>로 씁니다.',
+    keys:['굵게','기울임','링크','인용','표'] },
+  { q:'쓰던 노트 앱에서 옮겨 올 수 있어요?', a:'마크다운으로 내보낸 폴더면<br><b>폴더째 가져와요.</b>',
+    att:'설정 → 폴더 →<br>마크다운으로 내보낸 폴더 가져오기' },
+  { q:'광고는요?', a:'<b>없어요.</b> 추적도 없어요.' },
+];
+const STEP = 4.3, Q0 = SC.s2[0]+0.5;
+function build(){
+  const th=$('th'); let html='';
+  QA.forEach((x,i)=>{
+    html+=`<div class="msg" id="mq${i}"><div class="row"><div class="av q">?</div><div class="bub q" id="tq${i}"></div></div></div>`;
+    html+=`<div class="msg" id="md${i}"><div class="row me"><div class="dots" id="dd${i}"><i></i><i></i><i></i></div><div class="av a"><img src="icon.png" alt=""></div></div></div>`;
+    let att = x.att ? `<div class="att">${x.att}</div>` : x.keys ? `<div class="att">${x.keys.map(k=>`<span class="k">${k}</span>`).join('')}</div>` : '';
+    html+=`<div class="msg" id="ma${i}"><div class="row me"><div class="bub a">${x.a}${att}</div><div class="av a"><img src="icon.png" alt=""></div></div></div>`;
+  });
+  th.innerHTML=html;
+}
+build();
+function grow(el,p){ el.style.maxHeight=(p*520)+'px'; el.style.opacity=p; }
+function renderS1(t){
+  document.querySelectorAll('#s1 .qchip').forEach((el,i)=>{ el.style.transform=`translateY(${Math.sin(t*1.2+i*1.4)*8}px) rotate(${(i%2?1:-1)*2}deg)`; });
+  const hp=out(seg(t,0,1.2)); document.querySelector('#s1 h1').style.transform=`scale(${1.04-0.04*hp})`;
+}
+function renderS2(t){
+  let cur=0;
+  QA.forEach((x,i)=>{
+    const a=Q0+i*STEP;               // 질문이 뜨는 때
+    const qIn=a, typeAt=a+0.25, dotsIn=a+1.2, ansIn=a+2.0;
+    if(t>=qIn) cur=i;
+    grow($('mq'+i), out(seg(t,qIn,qIn+0.35)));
+    const qtxt=typed(x.q,t,typeAt,14);
+    $('tq'+i).innerHTML = qtxt + (t<dotsIn ? `<span class="caret" style="opacity:${blink(t)}"></span>` : '');
+    // 답을 쓰는 중 — 점 셋, 답이 오면 접힌다
+    const dp=out(seg(t,dotsIn,dotsIn+0.25))*(1-out(seg(t,ansIn,ansIn+0.2)));
+    grow($('md'+i), dp);
+    $('dd'+i).querySelectorAll('i').forEach((d,k)=>{ d.style.opacity = 0.35+0.65*Math.max(0,Math.sin(t*9-k*0.9)); });
+    grow($('ma'+i), out(seg(t,ansIn,ansIn+0.4)));
+  });
+  $('cnt').textContent=`질문 ${cur+1} / ${QA.length}`;
+}
+function renderS3(t){
+  const s=SC.s3[0];
+  const h=document.querySelector('#s3 .hero'); const p=out(seg(t,s,s+0.9));
+  h.style.transform=`scale(${0.96+0.04*p})`;
+  const r=(el,a)=>{ const q=out(seg(t,a,a+0.6)); el.style.opacity=q; el.style.transform=`translateY(${(1-q)*30}px)`; };
+  r($('tl3'),s+0.5); r($('bs3'),s+0.8);
+  $('bq3').innerHTML = typed('느린 여백',t,s+1.2,6)+`<span class="caret" style="opacity:${blink(t)}"></span>`;
+}
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.42));
+  const o = last ? 1 : 1-ease(seg(t,b-0.36,b-0.02));
+  return Math.min(i,o);
+}
+const R = {s1:renderS1,s2:renderS2,s3:renderS3};
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001) R[k](t);
+  });
+  $('glow').style.transform=`scale(${1+0.06*Math.sin(t*0.6)})`;
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
