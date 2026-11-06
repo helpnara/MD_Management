@@ -7,7 +7,7 @@
 — English (What’s New in This Version) —
 
 • Tap a #tag in Read mode to find every note with that tag.
-• Turn on “Open the last note” in Settings to jump straight back to the note you were on.
+• Turn on “Open the Last Note” in Settings to jump straight back to the note you were on.
 • Sort the note list by name (Settings → Notes).
 • A Date & Time button on the writing toolbar inserts a timestamp (⌘⇧D on an external keyboard).
 • External keyboard: previous/next note (⌥⌘↑↓), indent/outdent (⌘] ⌘[), new folder (⌘⇧N). Every shortcut is listed under Settings → Help → Shortcuts.
