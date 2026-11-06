@@ -121,8 +121,9 @@
 | 그래도 보내기 | Send Anyway |
 | 글 안에서 `[[` 를 치고 제목을 이어 치면 노트 목록이 뜹니다. 고르면 그 노트로 가는 링크가 들어갑니다. 읽기 화면에서 그 링크를 누르면 그 노트로 갑니다. | Type `[[` in your text and keep typing a title to see a list of notes. Pick one to insert a link to it. In reading mode, tapping the link takes you to that note. |
 | 글 안의 `#태그` 는 색이 붙고, 읽기 화면에서 누르면 그 태그가 든 노트를 찾습니다. 찾기 칸에 `#태그` 를 쳐도 같습니다. | A `#tag` in your text is colored, and tapping it in Read mode finds every note with that tag. Typing `#tag` in the search field does the same. |
-| 글 칸이면 어느 앱에서나 같은 글쇠입니다. 아이패드에서 ⌘ 를 누르고 있으면 그 화면에서 쓸 수 있는 단축키가 뜹니다. | These work in any text field, in any app. On iPad, hold ⌘ to see the shortcuts available on the current screen. |
+| 글 칸이면 어느 앱에서나 같은 글쇠입니다. 아이패드는 화면 맨 위를 아래로 쓸어내려 메뉴 막대를 열면 **노트** · **글쓰기** 메뉴에 단축키가 함께 적혀 있습니다. | These work in any text field, in any app. On iPad, swipe down from the top of the screen to open the menu bar — the **Notes** and **Writing** menus list each shortcut. |
 | 글머리표 | Bulleted List |
+| 글쓰기 | Writing |
 | 금고 파일 | Files in folder |
 | 기록 | Notes |
 | 기본 iCloud 폴더로 돌아가기 | Back to Default iCloud Folder |
@@ -247,7 +248,7 @@
 | 쓰기 화면 | While Editing |
 | 쓰는 곳 | Storage |
 | 쓰는 중 | Saving… |
-| 쓸 수 있는 단축키는 설정 → 도움 → **단축키**에 모두 있습니다. 아이패드에서 ⌘ 를 누르고 있어도 그 화면에서 쓸 수 있는 것이 뜹니다. | Every available shortcut is listed under Settings → Help → **Shortcuts**. On iPad, holding ⌘ also shows the ones available on the current screen. |
+| 쓸 수 있는 단축키는 설정 → 도움 → **단축키**에 모두 있습니다. 아이패드는 화면 맨 위의 메뉴 막대에서 **노트** · **글쓰기** 메뉴를 열어도 보입니다. | Every available shortcut is listed under Settings → Help → **Shortcuts**. On iPad, you can also see them in the **Notes** and **Writing** menus of the menu bar at the top of the screen. |
 | 아니오 | No |
 | 아직 받지 않은 노트 %lld개 모두 받기 | Download All %lld Notes Not on This Device |
 | 아직 받지 않은 노트 %lld개는 확인하지 못했습니다 | one: Couldn't check %lld note that hasn't been downloaded yet / other: Couldn't check %lld notes that haven't been downloaded yet |

@@ -1215,12 +1215,12 @@
         }
       }
     },
-    "글 칸이면 어느 앱에서나 같은 글쇠입니다. 아이패드에서 ⌘ 를 누르고 있으면 그 화면에서 쓸 수 있는 단축키가 뜹니다." : {
+    "글 칸이면 어느 앱에서나 같은 글쇠입니다. 아이패드는 화면 맨 위를 아래로 쓸어내려 메뉴 막대를 열면 **노트** · **글쓰기** 메뉴에 단축키가 함께 적혀 있습니다." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "These work in any text field, in any app. On iPad, hold ⌘ to see the shortcuts available on the current screen."
+            "value" : "These work in any text field, in any app. On iPad, swipe down from the top of the screen to open the menu bar — the **Notes** and **Writing** menus list each shortcut."
           }
         }
       }
@@ -1231,6 +1231,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bulleted List"
+          }
+        }
+      }
+    },
+    "글쓰기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Writing"
           }
         }
       }
@@ -2571,12 +2581,12 @@
         }
       }
     },
-    "쓸 수 있는 단축키는 설정 → 도움 → **단축키**에 모두 있습니다. 아이패드에서 ⌘ 를 누르고 있어도 그 화면에서 쓸 수 있는 것이 뜹니다." : {
+    "쓸 수 있는 단축키는 설정 → 도움 → **단축키**에 모두 있습니다. 아이패드는 화면 맨 위의 메뉴 막대에서 **노트** · **글쓰기** 메뉴를 열어도 보입니다." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Every available shortcut is listed under Settings → Help → **Shortcuts**. On iPad, holding ⌘ also shows the ones available on the current screen."
+            "value" : "Every available shortcut is listed under Settings → Help → **Shortcuts**. On iPad, you can also see them in the **Notes** and **Writing** menus of the menu bar at the top of the screen."
           }
         }
       }
