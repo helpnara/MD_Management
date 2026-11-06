@@ -73,6 +73,7 @@
 | iCloud 폴더를 쓰지 못하고 있습니다 · 눌러서 보기 | Can't access the iCloud folder · Tap for details |
 | iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.↵↵느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.↵↵평소 쓰는 노트는 **Slow Margin 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다. | iOS **doesn't let you choose a default app for each file type.** Settings → Apps → Default Apps only covers things like browsers, mail and messaging, and apps can't set themselves as the default.↵↵Slow Margin tells iOS that it can open Markdown, so it appears in the **Share** and **Open In** lists. If the Files app offers Open In, you can choose it there too.↵↵For everyday notes, it's best to keep them **inside the Slow Margin folder**, where the app edits and saves files in place. |
 | table.header | Header |
+| ⌘N 새 노트 · ⌘⇧N 새 폴더 · ⌘F 찾기 · ⌘E 읽기와 쓰기 · ⌥⌘↑ ⌥⌘↓ 이전 · 다음 노트. 쓰기 화면에서 ⌘B 굵게 · ⌘I 기울임 · ⌘K 링크 · ⌘⇧D 날짜 · 시각 · Tab Shift+Tab ⌘] ⌘[ 들여 · 내어쓰기. ⌘ 를 누르고 있으면 쓸 수 있는 단축키 목록이 뜹니다. | ⌘N new note · ⌘⇧N new folder · ⌘F find · ⌘E switch between Read and Write · ⌥⌘↑ ⌥⌘↓ previous / next note. While writing: ⌘B bold · ⌘I italic · ⌘K link · ⌘⇧D date & time · Tab, Shift+Tab, ⌘] ⌘[ indent / outdent. Hold ⌘ to see every shortcut. |
 | 가져오기 | Import |
 | 가져오면 **복사본**이 내 폴더에 생깁니다. 원본은 그대로 둡니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | Importing adds a **copy** to your folder and leaves the original as is. If the name is taken, a number is added. |
 | 가져오지 못했습니다: %@ | Couldn't import: %@ |
@@ -118,11 +119,13 @@
 | 그냥 옮기기 | Just Move |
 | 그래도 보내기 | Send Anyway |
 | 글 안에서 `[[` 를 치고 제목을 이어 치면 노트 목록이 뜹니다. 고르면 그 노트로 가는 링크가 들어갑니다. 읽기 화면에서 그 링크를 누르면 그 노트로 갑니다. | Type `[[` in your text and keep typing a title to see a list of notes. Pick one to insert a link to it. In reading mode, tapping the link takes you to that note. |
+| 글 안의 `#태그` 는 색이 붙고, 읽기 화면에서 누르면 그 태그가 든 노트를 찾습니다. 찾기 칸에 `#태그` 를 쳐도 같습니다. | A `#tag` in your text is colored, and tapping it in Read mode finds every note with that tag. Typing `#tag` in the search field does the same. |
 | 글머리표 | Bulleted List |
 | 금고 파일 | Files in folder |
 | 기록 | Notes |
 | 기본 iCloud 폴더로 돌아가기 | Back to Default iCloud Folder |
 | 기울임 | Italic |
+| 날짜 · 시각 | Date & Time |
 | 내어쓰기 | Decrease Indent |
 | 넣기 | Insert |
 | 노트 | Notes |
@@ -134,6 +137,7 @@
 | 노트 %lld개는 그 사이 바뀌어 고치지 못했습니다 | one: %lld note had changed in the meantime and couldn't be updated / other: %lld notes had changed in the meantime and couldn't be updated |
 | 노트 %lld개를 만들까요? | Create %lld notes? |
 | 노트 300개 만들기 (약 20MB) | Create 300 Notes (about 20 MB) |
+| 노트 목록 차례 | Note List Order |
 | 노트 옮기기 | Moving Notes |
 | 노트 잇기 | Linking Notes |
 | 노트 줄을 왼쪽으로 밀어 **이동**(아이패드는 폴더로 끌어다 놓기). 폴더 안을 가리키는 링크가 있으면 묻습니다 — **고치고 옮기기**는 이 노트만 쓰는 사진을 새 폴더로 함께 옮기고 링크를 맞춥니다. **그냥 옮기기**는 본문도 파일도 그대로 둡니다. | Swipe a note row left and tap **Move** (on iPad, drag it onto a folder). If the note links to files in its folder, you're asked: **Update and Move** moves the photos only this note uses into the new folder and updates the links; **Just Move** leaves both the text and the files as they are. |
@@ -154,6 +158,7 @@
 | 다른 노트가 쓰는 첨부 %lld개는 남겼습니다. 되돌리면 그 노트에서 다시 보입니다. | one: Kept %lld attachment that another note uses. Restore it and it shows in that note again. / other: Kept %lld attachments that other notes use. Restore them and they show in those notes again. |
 | 다른 폴더 고르기 | Choose Another Folder |
 | 다른 폴더로 옮기기 | Move to Another Folder |
+| 다음 노트 | Next Note |
 | 닫기 | Close |
 | 더 보기 | More |
 | 더 보기 (%lld줄) | Show More (%lld Lines) |
@@ -251,6 +256,7 @@
 | 안내 띠 띄워 보기 | Show Test Banner |
 | 안에 폴더 만들기 | New Folder Inside |
 | 알 수 없음 | Unknown |
+| 앱을 열면 마지막 노트로 | Open the Last Note |
 | 앱이 스스로 잰 값입니다. 규모 시험을 만든 뒤 여기서 어디가 느린지 봅니다. | Measured by the app itself. After creating a scale test, look here to see what's slow. |
 | 앱이 쓰는 폴더는 가져올 수 없습니다. 내보낸 폴더를 골라 주세요. | You can't import the folder the app is using. Choose the exported folder. |
 | 어느 폴더 안으로 | Move Folder Into |
@@ -265,6 +271,7 @@
 | 옮겨 넣을 폴더가 없습니다. 먼저 폴더 화면 위의 새 폴더 단추로 담을 폴더를 만드세요. | There's no folder to move it into. First create one with the New Folder button at the top of the folder list. |
 | 옮기지 못했습니다: %@ | Couldn't move: %@ |
 | 왔던 노트 | Previous Note |
+| 외장 자판 | External Keyboard |
 | 위 도구 줄의 책 단추로 읽기와 편집을 오갑니다. 설정의 **노트를 열 때 읽기 모드로**를 켜면 노트를 고를 때마다 읽기 모드로 시작합니다. 새 노트를 만들 때는 그대로 편집 모드입니다. | The book button in the top toolbar switches between reading and editing. Turn on **Open Notes in Reading Mode** in Settings to start in reading mode whenever you pick a note. New notes still open in editing mode. |
 | 이 기기 | On this device |
 | 이 노트 | This note |
@@ -281,10 +288,12 @@
 | 이동 | Move |
 | 이름 | Name |
 | 이름 바꾸기 | Rename |
+| 이름순 | By Name |
 | 이름을 바꾸지 못했습니다: %@ | Couldn't rename: %@ |
 | 이름의 일부를 적어 보세요. | Type part of the name. |
 | 이미 마크다운을 모아 둔 폴더를 그대로 열 수 있습니다. 점으로 시작하는 숨김 폴더는 목록에 보이지 않습니다. 고른 폴더는 다른 앱과 같이 쓰는 곳이므로 **첫 줄을 파일명으로**를 끄는 편이 안전합니다. 앱을 지워도 그 폴더는 그대로 남고, 기본 폴더로 돌아가도 파일은 지워지지 않습니다. | You can open a folder where you already keep Markdown as it is. Hidden folders starting with a dot aren't listed. A chosen folder is shared with other apps, so it's safer to turn off **First Line as File Name**. The folder stays even if you delete the app, and going back to the default folder doesn't delete any files. |
 | 이미 있는 파일 연결 | Link an Existing File |
+| 이전 노트 | Previous Note |
 | 인용 | Quote |
 | 읽기 | Read |
 | 읽기 → 쓰기 | Read → Write |
@@ -339,6 +348,7 @@
 | 첫 줄을 파일명으로 | First Line as File Name |
 | 체크상자 | Checklist |
 | 최근 고친 노트 | Recently Edited |
+| 최근 고친 순 | Recently Edited |
 | 최근 일 | Recent Events |
 | 최근 일 지우기 | Clear Recent Events |
 | 충돌 · 저장 실패 · 다른 기기의 변경이 여기 쌓입니다. 빨간 띠가 떴는데 이유를 모르겠으면 이것을 복사해 보내 주세요. **복사 단추는 접혀 있어도 갖고 있는 전부를 복사합니다.** | Conflicts, save failures and changes from other devices are logged here. If a red banner appeared and you're not sure why, copy this and send it to us. **The copy button copies everything, even when the list is collapsed.** |
@@ -355,6 +365,7 @@
 | 큰 노트 시험 | Large Note Test |
 | 큰 노트를 만들지 못했습니다: %@ | Couldn't create the large note: %@ |
 | 키보드 내리기 | Hide Keyboard |
+| 태그 | Tags |
 | 파일 이름 | File Name |
 | 파일을 넣는 중 | Adding files |
 | 파일을 읽지 못했습니다: %@ | Couldn't read the file: %@ |

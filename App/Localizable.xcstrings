@@ -723,6 +723,16 @@
         }
       }
     },
+    "⌘N 새 노트 · ⌘⇧N 새 폴더 · ⌘F 찾기 · ⌘E 읽기와 쓰기 · ⌥⌘↑ ⌥⌘↓ 이전 · 다음 노트. 쓰기 화면에서 ⌘B 굵게 · ⌘I 기울임 · ⌘K 링크 · ⌘⇧D 날짜 · 시각 · Tab Shift+Tab ⌘] ⌘[ 들여 · 내어쓰기. ⌘ 를 누르고 있으면 쓸 수 있는 단축키 목록이 뜹니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⌘N new note · ⌘⇧N new folder · ⌘F find · ⌘E switch between Read and Write · ⌥⌘↑ ⌥⌘↓ previous / next note. While writing: ⌘B bold · ⌘I italic · ⌘K link · ⌘⇧D date & time · Tab, Shift+Tab, ⌘] ⌘[ indent / outdent. Hold ⌘ to see every shortcut."
+          }
+        }
+      }
+    },
     "가져오기" : {
       "localizations" : {
         "en" : {
@@ -1185,6 +1195,16 @@
         }
       }
     },
+    "글 안의 `#태그` 는 색이 붙고, 읽기 화면에서 누르면 그 태그가 든 노트를 찾습니다. 찾기 칸에 `#태그` 를 쳐도 같습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A `#tag` in your text is colored, and tapping it in Read mode finds every note with that tag. Typing `#tag` in the search field does the same."
+          }
+        }
+      }
+    },
     "글머리표" : {
       "localizations" : {
         "en" : {
@@ -1231,6 +1251,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Italic"
+          }
+        }
+      }
+    },
+    "날짜 · 시각" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date & Time"
           }
         }
       }
@@ -1365,6 +1395,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create 300 Notes (about 20 MB)"
+          }
+        }
+      }
+    },
+    "노트 목록 차례" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note List Order"
           }
         }
       }
@@ -1577,6 +1617,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Move to Another Folder"
+          }
+        }
+      }
+    },
+    "다음 노트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Note"
           }
         }
       }
@@ -2635,6 +2685,16 @@
         }
       }
     },
+    "앱을 열면 마지막 노트로" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Last Note"
+          }
+        }
+      }
+    },
     "앱이 스스로 잰 값입니다. 규모 시험을 만든 뒤 여기서 어디가 느린지 봅니다." : {
       "localizations" : {
         "en" : {
@@ -2771,6 +2831,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Previous Note"
+          }
+        }
+      }
+    },
+    "외장 자판" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "External Keyboard"
           }
         }
       }
@@ -2947,6 +3017,16 @@
         }
       }
     },
+    "이름순" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By Name"
+          }
+        }
+      }
+    },
     "이름을 바꾸지 못했습니다: %@" : {
       "localizations" : {
         "en" : {
@@ -2983,6 +3063,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Link an Existing File"
+          }
+        }
+      }
+    },
+    "이전 노트" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous Note"
           }
         }
       }
@@ -3575,6 +3665,16 @@
         }
       }
     },
+    "최근 고친 순" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Edited"
+          }
+        }
+      }
+    },
     "최근 일" : {
       "localizations" : {
         "en" : {
@@ -3731,6 +3831,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide Keyboard"
+          }
+        }
+      }
+    },
+    "태그" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tags"
           }
         }
       }
