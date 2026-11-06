@@ -1,0 +1,13 @@
+• 읽기 화면에서 #태그를 누르면 그 태그가 든 노트를 찾습니다.
+• 설정에서 켜면 앱을 열 때 마지막으로 보던 노트로 바로 갑니다.
+• 노트 목록을 이름순으로도 볼 수 있습니다 (설정 → 노트).
+• 쓰기 화면 띠에 날짜 · 시각 넣기 단추가 생겼습니다 (외장 자판은 ⌘⇧D).
+• 외장 자판으로 이전 · 다음 노트(⌥⌘↑↓), 들여 · 내어쓰기(⌘] ⌘[), 새 폴더(⌘⇧N)를 할 수 있습니다. 사용법에 단축키 목록을 더했습니다.
+
+— English (What’s New in This Version) —
+
+• Tap a #tag in Read mode to find every note with that tag.
+• Turn on “Open the last note” in Settings to jump straight back to the note you were on.
+• Sort the note list by name (Settings → Notes).
+• A Date & Time button on the writing toolbar inserts a timestamp (⌘⇧D on an external keyboard).
+• External keyboard: previous/next note (⌥⌘↑↓), indent/outdent (⌘] ⌘[), new folder (⌘⇧N). The Guide now lists every shortcut.
