@@ -64,30 +64,9 @@ struct RootView: View {
         // 노트 목록 칸이 **폴더 칸이 안 보이는지** 알아야 돋보기를 세운다 (286).
         .environment(\.folderColumnHidden, columnVisibility != .all)
         .tint(Palette.accent)
-        // **⌘N · ⌘F 는 어느 화면에서나** (230, 2026-10-09 전수 조사). 예전에는 노트 목록에 걸려 있어 목록이 안 보이면
-        // (아이패드에서 노트만 크게 · 아이폰에서 노트를 연 채) 아무 일도 없었다. 바깥에 걸어 두고, 찾기는 목록부터 꺼낸다.
-        .background {
-            Group {
-                Button("새 노트") { Task { await library.createNote() } }
-                    .keyboardShortcut("n", modifiers: .command)
-                Button("찾기") { openSearch() }
-                    .keyboardShortcut("f", modifiers: .command)
-                // **외장 자판으로 노트 오가기** (309, 2026-11-06 사용자 — *100프로 외장 자판*). `⌘↑↓` 는 글의 처음 · 끝으로 가는
-                // 시스템 글쇠라 비워 두고 **⌥⌘↑↓** 로. 들여 · 내어쓰기는 띠 · 탭과 같은 길(`format(.shift)`). 새 폴더는 ⌘⇧N.
-                Button("이전 노트") { Task { await library.selectNeighborNote(step: -1) } }
-                    .keyboardShortcut(.upArrow, modifiers: [.command, .option])
-                Button("다음 노트") { Task { await library.selectNeighborNote(step: 1) } }
-                    .keyboardShortcut(.downArrow, modifiers: [.command, .option])
-                Button("들여쓰기") { if !library.isReading { library.format(.shift(deeper: true)) } }
-                    .keyboardShortcut("]", modifiers: .command)
-                Button("내어쓰기") { if !library.isReading { library.format(.shift(deeper: false)) } }
-                    .keyboardShortcut("[", modifiers: .command)
-                Button("새 폴더") { library.beginCreateFolderHere() }
-                    .keyboardShortcut("n", modifiers: [.command, .shift])
-            }
-            .hidden()
-        }
-        // 태그를 눌러 찾기 (301) — 찾기 칸을 여는 길은 ⌘F 와 하나다.
+        // **⌘ 단축키는 앱의 주 메뉴에** (`NotebookApp` 의 `.commands` — 309 · 빌드 148 · 9번). 230 부터 여기 숨은 단추로 걸어
+        // 두었는데, 아이패드에서 ⌘ 를 누르고 있을 때 뜨는 목록은 주 메뉴만 본다. ⌘F 는 `searchJumpRequestedAt` 으로 아래에 온다.
+        // 태그를 눌러 찾기 (301) · ⌘F — 찾기 칸을 여는 길은 하나다.
         .onChange(of: library.searchJumpRequestedAt) { _, at in
             guard at != nil else { return }
             openSearch()
@@ -1651,8 +1630,7 @@ private struct NoteDetail: View {
                     onSpot: library.reportSpot,
                     restore: library.spotToRestore,
                     onRestored: library.spotRestored,
-                    onLog: library.log,
-                    onShortcut: library.shortcut)
+                    onLog: library.log)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
                 // **`>>` · `[[` 를 치면 노트 목록이 여기 뜬다** (147).
@@ -1896,7 +1874,6 @@ private struct NoteDetail: View {
                 Label(library.isReading ? String(localized: "쓰기") : String(localized: "읽기"),
                       systemImage: library.isReading ? "pencil" : "book")
             }
-            .keyboardShortcut("e", modifiers: .command)
         }
     }
 
