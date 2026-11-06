@@ -75,6 +75,14 @@ struct SettingsView: View {
                     // **노트를 열 때 읽기 모드로** (124, 사용자 — 평소에는 읽기 모드로 보고 편집은 회의 뒤나 자료를 쓸 때만). 기본은 꺼짐.
                     Toggle("노트를 열 때 읽기 모드로", isOn: $library.opensInReadingMode)
                         .font(.scaled(.body))
+                    // **앱을 열면 마지막 노트로** (302) · **목록 차례** (305) — 2026-11-06 사용자 브레인스토밍.
+                    Toggle("앱을 열면 마지막 노트로", isOn: $library.opensLastNote)
+                        .font(.scaled(.body))
+                    Picker("노트 목록 차례", selection: $library.sortsByName) {
+                        Text("최근 고친 순").tag(false)
+                        Text("이름순").tag(true)
+                    }
+                    .font(.scaled(.body))
                     Toggle("첫 줄을 파일명으로", isOn: Binding(
                         get: { library.syncsFileName },
                         set: { wants in
@@ -252,6 +260,13 @@ struct HelpView: View {
             // 인용 표시라 목록이 안 뜬다 — 160). `>>` 는 그대로 동작한다.
             topic(String(localized: "노트 잇기"),
                   String(localized: "글 안에서 `[[` 를 치고 제목을 이어 치면 노트 목록이 뜹니다. 고르면 그 노트로 가는 링크가 들어갑니다. 읽기 화면에서 그 링크를 누르면 그 노트로 갑니다."))
+
+            // 외장 자판 (309 · 2026-11-06 사용자 — *100프로 외장 자판*). 아이패드에서 ⌘ 를 누르고 있으면 뜨는 목록과 같다.
+            topic(String(localized: "외장 자판"),
+                  String(localized: "⌘N 새 노트 · ⌘⇧N 새 폴더 · ⌘F 찾기 · ⌘E 읽기와 쓰기 · ⌥⌘↑ ⌥⌘↓ 이전 · 다음 노트. 쓰기 화면에서 ⌘B 굵게 · ⌘I 기울임 · ⌘K 링크 · ⌘⇧D 날짜 · 시각 · Tab Shift+Tab ⌘] ⌘[ 들여 · 내어쓰기. ⌘ 를 누르고 있으면 쓸 수 있는 단축키 목록이 뜹니다."))
+
+            topic(String(localized: "태그"),
+                  String(localized: "글 안의 `#태그` 는 색이 붙고, 읽기 화면에서 누르면 그 태그가 든 노트를 찾습니다. 찾기 칸에 `#태그` 를 쳐도 같습니다."))
 
             topic(String(localized: "읽기 모드"),
                   String(localized: "위 도구 줄의 책 단추로 읽기와 편집을 오갑니다. 설정의 **노트를 열 때 읽기 모드로**를 켜면 노트를 고를 때마다 읽기 모드로 시작합니다. 새 노트를 만들 때는 그대로 편집 모드입니다."))

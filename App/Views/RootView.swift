@@ -72,8 +72,26 @@ struct RootView: View {
                     .keyboardShortcut("n", modifiers: .command)
                 Button("찾기") { openSearch() }
                     .keyboardShortcut("f", modifiers: .command)
+                // **외장 자판으로 노트 오가기** (309, 2026-11-06 사용자 — *100프로 외장 자판*). `⌘↑↓` 는 글의 처음 · 끝으로 가는
+                // 시스템 글쇠라 비워 두고 **⌥⌘↑↓** 로. 들여 · 내어쓰기는 띠 · 탭과 같은 길(`format(.shift)`). 새 폴더는 ⌘⇧N.
+                Button("이전 노트") { Task { await library.selectNeighborNote(step: -1) } }
+                    .keyboardShortcut(.upArrow, modifiers: [.command, .option])
+                Button("다음 노트") { Task { await library.selectNeighborNote(step: 1) } }
+                    .keyboardShortcut(.downArrow, modifiers: [.command, .option])
+                Button("들여쓰기") { if !library.isReading { library.format(.shift(deeper: true)) } }
+                    .keyboardShortcut("]", modifiers: .command)
+                Button("내어쓰기") { if !library.isReading { library.format(.shift(deeper: false)) } }
+                    .keyboardShortcut("[", modifiers: .command)
+                Button("새 폴더") { library.beginCreateFolderHere() }
+                    .keyboardShortcut("n", modifiers: [.command, .shift])
             }
             .hidden()
+        }
+        // 태그를 눌러 찾기 (301) — 찾기 칸을 여는 길은 ⌘F 와 하나다.
+        .onChange(of: library.searchJumpRequestedAt) { _, at in
+            guard at != nil else { return }
+            openSearch()
+            library.searchJumpRequestedAt = nil
         }
         .task {
             library.autoSelectsFirstNote = prefersPreselectedNote
@@ -83,6 +101,12 @@ struct RootView: View {
             if library.launch.attachmentTest { await library.makeAttachmentTest() }
             if library.launch.newNote { await library.createNote() }
             if let term = library.launch.searchTerm { library.searchText = term }
+            // **앱을 열면 마지막으로 보던 노트로** (302, 2026-11-06 사용자 — *같은 노트에 계속 업데이트가 많아*). 폴더 화면이
+            // 연다 — 아이폰은 목록 칸을 세우고 넘어가야 해서 (`openFromFolders` 와 같은 길). CI 인자가 있으면 그쪽이 먼저다.
+            if library.opensLastNote, library.lastNotePath != nil, library.launch.searchTerm == nil,
+               !library.launch.newNote, !library.launch.openFirstNote {
+                library.lastNoteRequestedAt = Date()
+            }
         }
         // CI — **어디서나 찾기 시트** (`-searchSheet` · 286). 앱이 자리를 잡은 뒤에 · `-search` 와 같이 주면 결과가 든 시트를 찍는다.
         .task {
@@ -537,6 +561,18 @@ private struct FolderSidebar: View {
             searchPresented = true
             searchFocused = true
             library.searchRequestedAt = nil
+        }
+        // **마지막으로 보던 노트로** (302) — 앱이 선 뒤 한 번. 그 폴더의 목록을 먼저 읽어야 *링크를 따라온 노트* 줄이 안 선다.
+        .task(id: library.lastNoteRequestedAt) {
+            guard let at = library.lastNoteRequestedAt, Date().timeIntervalSince(at) < 10,
+                  let path = library.lastNotePath else { return }
+            library.lastNoteRequestedAt = nil
+            let folder = Paths.directory(of: path)
+            if library.selectedFolder != folder {
+                library.selectedFolder = folder
+                await library.reloadNotes(switchingFolder: true)
+            }
+            await openFromFolders(path)
         }
         // CI — 폴더 화면에서 찾기 칸을 연 모습 (`-folderSearch`). 앱이 자리를 잡은 뒤에.
         .task {
@@ -1691,6 +1727,9 @@ private struct NoteDetail: View {
             }
         case .showCode(let index):
             library.showCode(at: index)
+        case .search(let text):
+            // **태그를 누르면 그 태그로 찾기** (301). 찾기 칸은 하나(`searchText`) — 어디서 열지는 ⌘F 와 같은 길(`openSearch`).
+            library.requestSearch(text)
         case .missing(let path):
             // 빈 경로만 띄우면 오류처럼 보인다 — 무엇이 없는지 말한다 (빌드 20 · 10번).
             alert = String(localized: "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다.")
@@ -2201,6 +2240,8 @@ private struct FormatBar: View {
                 button(String(localized: "링크"), "link") { library.startLinkingExistingFile() }
                 button(String(localized: "인용"), "text.quote", .quote, on: library.activeFormats.quote)
                 button(String(localized: "표 넣기"), "tablecells", .table)
+                // **날짜 · 시각 넣기** (308, 2026-11-06 사용자 — 주간 이슈처럼 한 노트에 덧붙일 때 머리표). 외장 자판은 ⌘⇧D.
+                button(String(localized: "날짜 · 시각"), "calendar") { library.insertDateStamp() }
                 rule
                 listButton
                 button(String(localized: "내어쓰기"), "decrease.indent", .shift(deeper: false))

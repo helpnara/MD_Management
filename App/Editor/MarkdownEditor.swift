@@ -207,7 +207,7 @@ final class MarkdownTextView: UITextView {
     }
 
     /// 하드웨어 키보드의 서식 단축키 (230) — 도구 띠의 단추와 **같은 길**로 간다 (`LibraryModel.shortcut`).
-    enum Shortcut { case bold, italic, link }
+    enum Shortcut { case bold, italic, link, stamp }
     var onShortcut: (@MainActor (Shortcut) -> Void)?
 
     override var keyCommands: [UIKeyCommand]? {
@@ -222,10 +222,13 @@ final class MarkdownTextView: UITextView {
                                   input: "i", modifierFlags: .command)
         let link = UIKeyCommand(title: String(localized: "링크"), action: #selector(linkPressed),
                                 input: "k", modifierFlags: .command)
+        // **날짜 · 시각 넣기** (308) — 띠의 단추와 같은 길 (`LibraryModel.insertDateStamp`).
+        let stamp = UIKeyCommand(title: String(localized: "날짜 · 시각"), action: #selector(stampPressed),
+                                 input: "d", modifierFlags: [.command, .shift])
         // **↑↓ 는 우리가 옮긴다** (294 — 아래 `moveCaretVertically`). 수정 키가 붙은 것(⇧ 고르기 · ⌥ · ⌘)은 UIKit 그대로.
         let up = UIKeyCommand(input: UIKeyCommand.inputUpArrow, modifierFlags: [], action: #selector(upPressed))
         let down = UIKeyCommand(input: UIKeyCommand.inputDownArrow, modifierFlags: [], action: #selector(downPressed))
-        let all = [deeper, shallower, bold, italic, link, up, down]
+        let all = [deeper, shallower, bold, italic, link, stamp, up, down]
         for command in all { command.wantsPriorityOverSystemBehavior = true }
         return all
     }
@@ -235,6 +238,7 @@ final class MarkdownTextView: UITextView {
     @objc private func boldPressed() { onShortcut?(.bold) }
     @objc private func italicPressed() { onShortcut?(.italic) }
     @objc private func linkPressed() { onShortcut?(.link) }
+    @objc private func stampPressed() { onShortcut?(.stamp) }
     @objc private func upPressed() { moveCaretVertically(up: true) }
     @objc private func downPressed() { moveCaretVertically(up: false) }
 
