@@ -816,7 +816,12 @@ final class LibraryModel: ObservableObject {
         didSet { UserDefaults.standard.set(opensLastNote, forKey: "open.last") }
     }
     /// 마지막으로 고른 노트의 경로 — `selectedNoteID` 가 바뀔 때마다 적는다. 폴더를 바꿔도 남는다.
-    var lastNotePath: String? { UserDefaults.standard.string(forKey: "last.note") }
+    ///
+    /// **앱이 켜질 때 한 번 읽어 둔다** (빌드 149, 2026-11-07 사용자 — *아이패드에서 앱을 열면 마지막 노트로가 동작하지 않아*). 아이패드는
+    /// `start` 가 목록을 읽으며 **첫 노트를 저절로 고른다**(`autoSelectsFirstNote` — 상세 칸이 비지 않게). 그 고르기가 `selectedNoteID` 의
+    /// `didSet` 으로 `last.note` 를 첫 노트로 **덮어써**, 그 뒤에 읽으면 이미 첫 노트였다 — 열 것이 없었다. 아이폰은 저절로 고르지 않아 안 걸렸다.
+    /// 모델이 생길 때(어떤 노트도 고르기 전) 읽은 값을 쓴다.
+    let lastNotePath: String? = UserDefaults.standard.string(forKey: "last.note")
     /// **마지막으로 보던 노트를 연다** (302) — 앱이 선 직후 바깥 화면(`RootView`)이 한 번 부른다.
     ///
     /// 빌드 148 은 이 일을 **폴더 목록 화면**의 `.task(id:)` 에 걸었다 — 아이폰은 앱이 열릴 때 그 위에 노트 목록이 덮여 있어

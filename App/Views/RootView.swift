@@ -65,7 +65,7 @@ struct RootView: View {
         .environment(\.folderColumnHidden, columnVisibility != .all)
         .tint(Palette.accent)
         // **⌘ 단축키는 앱의 주 메뉴에** (`NotebookApp` 의 `.commands` — 309 · 빌드 148 · 9번). 230 부터 여기 숨은 단추로 걸어
-        // 두었는데, 아이패드에서 ⌘ 를 누르고 있을 때 뜨는 목록은 주 메뉴만 본다. ⌘F 는 `searchJumpRequestedAt` 으로 아래에 온다.
+        // 두었는데, 아이패드의 단축키 목록(iPadOS 26 부터는 메뉴 막대)은 주 메뉴만 본다. ⌘F 는 `searchJumpRequestedAt` 으로 아래에 온다.
         // 태그를 눌러 찾기 (301) · ⌘F — 찾기 칸을 여는 길은 하나다.
         .onChange(of: library.searchJumpRequestedAt) { _, at in
             guard at != nil else { return }
