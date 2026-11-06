@@ -42,7 +42,8 @@ struct NotebookApp: App {
                     .keyboardShortcut(.downArrow, modifiers: [.command, .option])
             }
             // 쓰기 화면에서만 — 읽기 화면이나 노트가 없을 때는 흐리게 (목록에서 그렇게 보인다).
-            CommandMenu("쓰기") {
+            // 이름은 **글쓰기** — *쓰기* 는 영어로 `Edit` 이라 메뉴 막대에 시스템의 `Edit` 메뉴와 같은 이름이 둘 선다 (빌드 150).
+            CommandMenu("글쓰기") {
                 Button("굵게") { library.shortcut(.bold) }
                     .keyboardShortcut("b", modifiers: .command)
                     .disabled(!editing)
