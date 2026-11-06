@@ -101,11 +101,11 @@ struct RootView: View {
             if library.launch.attachmentTest { await library.makeAttachmentTest() }
             if library.launch.newNote { await library.createNote() }
             if let term = library.launch.searchTerm { library.searchText = term }
-            // **앱을 열면 마지막으로 보던 노트로** (302, 2026-11-06 사용자 — *같은 노트에 계속 업데이트가 많아*). 폴더 화면이
-            // 연다 — 아이폰은 목록 칸을 세우고 넘어가야 해서 (`openFromFolders` 와 같은 길). CI 인자가 있으면 그쪽이 먼저다.
-            if library.opensLastNote, library.lastNotePath != nil, library.launch.searchTerm == nil,
-               !library.launch.newNote, !library.launch.openFirstNote {
-                library.lastNoteRequestedAt = Date()
+            // **앱을 열면 마지막으로 보던 노트로** (302, 2026-11-06 사용자 — *같은 노트에 계속 업데이트가 많아*). **여기서 바로 연다** —
+            // 빌드 148 은 폴더 목록 화면에 맡겼는데 아이폰은 그 화면이 덮여 있어 뒤로 가기를 눌러야 돌았다 (`LibraryModel.openLastNote`).
+            // 아이폰은 모델이 폴더 · 노트를 고르면 칸이 저절로 선다 (`-openFirstNote` 와 같다). CI 인자가 있으면 그쪽이 먼저다.
+            if library.launch.searchTerm == nil, !library.launch.newNote, !library.launch.openFirstNote {
+                await library.openLastNote()
             }
         }
         // CI — **어디서나 찾기 시트** (`-searchSheet` · 286). 앱이 자리를 잡은 뒤에 · `-search` 와 같이 주면 결과가 든 시트를 찍는다.
@@ -561,18 +561,6 @@ private struct FolderSidebar: View {
             searchPresented = true
             searchFocused = true
             library.searchRequestedAt = nil
-        }
-        // **마지막으로 보던 노트로** (302) — 앱이 선 뒤 한 번. 그 폴더의 목록을 먼저 읽어야 *링크를 따라온 노트* 줄이 안 선다.
-        .task(id: library.lastNoteRequestedAt) {
-            guard let at = library.lastNoteRequestedAt, Date().timeIntervalSince(at) < 10,
-                  let path = library.lastNotePath else { return }
-            library.lastNoteRequestedAt = nil
-            let folder = Paths.directory(of: path)
-            if library.selectedFolder != folder {
-                library.selectedFolder = folder
-                await library.reloadNotes(switchingFolder: true)
-            }
-            await openFromFolders(path)
         }
         // CI — 폴더 화면에서 찾기 칸을 연 모습 (`-folderSearch`). 앱이 자리를 잡은 뒤에.
         .task {

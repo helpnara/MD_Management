@@ -134,6 +134,12 @@ struct SettingsView: View {
                     } label: {
                         Label("사용법", systemImage: "book")
                     }
+                    // **단축키 한곳에** (313, 2026-11-07 사용자 — *전수조사 후 한곳에 모아서 도움말 같은 곳에*).
+                    NavigationLink {
+                        ShortcutsView()
+                    } label: {
+                        Label("단축키", systemImage: "keyboard")
+                    }
                     // **시트를 갈아 끼우지 않고 밀어 넣는다.** 떠 있는 시트의 item 을 바꾸면 SwiftUI 가 닫았다 여는 사이에 화면이 튄다.
                     NavigationLink {
                         DiagnosticsView(isPushed: true).environmentObject(library)
@@ -262,8 +268,9 @@ struct HelpView: View {
                   String(localized: "글 안에서 `[[` 를 치고 제목을 이어 치면 노트 목록이 뜹니다. 고르면 그 노트로 가는 링크가 들어갑니다. 읽기 화면에서 그 링크를 누르면 그 노트로 갑니다."))
 
             // 외장 자판 (309 · 2026-11-06 사용자 — *100프로 외장 자판*). 아이패드에서 ⌘ 를 누르고 있으면 뜨는 목록과 같다.
+            // 313 — 목록은 **단축키** 화면 하나에만 둔다 (같은 목록이 둘이면 갈린다 · CLAUDE.md §1). 여기서는 길만 알린다.
             topic(String(localized: "외장 자판"),
-                  String(localized: "⌘N 새 노트 · ⌘⇧N 새 폴더 · ⌘F 찾기 · ⌘E 읽기와 쓰기 · ⌥⌘↑ ⌥⌘↓ 이전 · 다음 노트. 쓰기 화면에서 ⌘B 굵게 · ⌘I 기울임 · ⌘K 링크 · ⌘⇧D 날짜 · 시각 · Tab Shift+Tab ⌘] ⌘[ 들여 · 내어쓰기. ⌘ 를 누르고 있으면 쓸 수 있는 단축키 목록이 뜹니다."))
+                  String(localized: "쓸 수 있는 단축키는 설정 → 도움 → **단축키**에 모두 있습니다. 아이패드에서 ⌘ 를 누르고 있어도 그 화면에서 쓸 수 있는 것이 뜹니다."))
 
             topic(String(localized: "태그"),
                   String(localized: "글 안의 `#태그` 는 색이 붙고, 읽기 화면에서 누르면 그 태그가 든 노트를 찾습니다. 찾기 칸에 `#태그` 를 쳐도 같습니다."))
@@ -711,3 +718,72 @@ struct UnusedAttachmentsView: View {
     }
 }
 
+
+/// **단축키** (313, 2026-11-07 사용자 — *6-9번 단축키에 대해서 전수조사 후 한곳에 모아서 도움말 같은 곳에*).
+///
+/// **전수 조사한 자리** — 바꾸거나 더할 때 여기도 같이 고친다. 이 화면이 목록의 **유일한** 자리다 (사용법의 *외장 자판* 은 길만 알린다).
+/// - 어디서나: `RootView.splitView` 의 숨은 단추들 (⌘N · ⌘F · ⌥⌘↑ · ⌥⌘↓ · ⌘] · ⌘[ · ⌘⇧N) · 노트 도구 줄의 읽기 · 쓰기 (⌘E) · 찾기 시트의 닫기 (Esc).
+/// - 쓰기 화면: `MarkdownEditor.keyCommands` (Tab · ⇧Tab · ⌘B · ⌘I · ⌘K · ⌘⇧D).
+/// - iOS 가 글 칸에 주는 기본 것(실행 취소 · 선택 · 줄 처음과 끝)은 **앱이 만든 것이 아니다** — 쓸 수 있다는 것만 적는다.
+///
+/// 글쇠 표기는 번역하지 않는다 — 자판에 찍힌 기호 그대로다.
+struct ShortcutsView: View {
+    var body: some View {
+        List {
+            Section {
+                row("⌘N", String(localized: "새 노트"))
+                row("⌘⇧N", String(localized: "새 폴더"))
+                row("⌘F", String(localized: "찾기"))
+                row("⌘E", String(localized: "읽기와 쓰기 오가기"))
+                row("⌥⌘↑", String(localized: "이전 노트"))
+                row("⌥⌘↓", String(localized: "다음 노트"))
+                row("Esc", String(localized: "찾기 창 닫기"))
+            } header: {
+                Text("어디서나")
+            } footer: {
+                Text("이전 · 다음 노트는 지금 보는 폴더의 목록 차례를 따릅니다. ⌘↑ ⌘↓ 는 글의 처음 · 끝으로 갑니다.")
+            }
+
+            Section {
+                row("⌘B", String(localized: "굵게"))
+                row("⌘I", String(localized: "기울임"))
+                row("⌘K", String(localized: "링크"))
+                row("⌘⇧D", String(localized: "날짜 · 시각"))
+                row("Tab  ⌘]", String(localized: "들여쓰기"))
+                row("⇧Tab  ⌘[", String(localized: "내어쓰기"))
+            } header: {
+                Text("쓰기 화면")
+            } footer: {
+                Text("굵게 · 기울임 · 링크는 고른 글자를 감싸고, 고른 것이 없으면 표시만 넣습니다. 날짜 · 시각은 커서 자리에 제 줄로 들어갑니다.")
+            }
+
+            Section {
+                row("⌘Z  ⌘⇧Z", String(localized: "실행 취소 · 다시 실행"))
+                row("⌘A", String(localized: "모두 고르기"))
+                row("⌘X  ⌘C  ⌘V", String(localized: "오려 두기 · 복사 · 붙여넣기"))
+                row("⌘←  ⌘→", String(localized: "줄의 처음 · 끝으로"))
+                row("⌥←  ⌥→", String(localized: "한 낱말씩"))
+            } header: {
+                Text("iOS 가 주는 것")
+            } footer: {
+                Text("글 칸이면 어느 앱에서나 같은 글쇠입니다. 아이패드에서 ⌘ 를 누르고 있으면 그 화면에서 쓸 수 있는 단축키가 뜹니다.")
+            }
+        }
+        .navigationTitle("단축키")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// 글쇠 한 줄 — 왼쪽은 글쇠, 오른쪽은 하는 일.
+    private func row(_ keys: String, _ what: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: Metrics.rowSpacing) {
+            Text(keys)
+                .font(.scaled(.body, weight: .semibold))
+                .foregroundStyle(Palette.ink)
+                .frame(minWidth: Metrics.scaledLength(96), alignment: .leading)
+            Text(what)
+                .font(.scaled(.callout))
+                .foregroundStyle(Palette.ink)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}

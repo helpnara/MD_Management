@@ -817,8 +817,29 @@ final class LibraryModel: ObservableObject {
     }
     /// 마지막으로 고른 노트의 경로 — `selectedNoteID` 가 바뀔 때마다 적는다. 폴더를 바꿔도 남는다.
     var lastNotePath: String? { UserDefaults.standard.string(forKey: "last.note") }
-    /// 폴더 화면에게 *마지막 노트를 열어라* (302) — 앱이 선 뒤 화면이 한 번 받는다.
-    @Published var lastNoteRequestedAt: Date?
+    /// **마지막으로 보던 노트를 연다** (302) — 앱이 선 직후 바깥 화면(`RootView`)이 한 번 부른다.
+    ///
+    /// 빌드 148 은 이 일을 **폴더 목록 화면**의 `.task(id:)` 에 걸었다 — 아이폰은 앱이 열릴 때 그 위에 노트 목록이 덮여 있어
+    /// 화면이 *사라진* 상태고, 사라진 화면의 `.task` 는 돌지 않는다. 사용자가 뒤로 가기를 눌러 폴더 목록이 다시 나타나야 그제야
+    /// 돌았다 (2026-11-07 사용자 화면 녹화 — *좌측 상단의 뒤로 가기를 눌러야 한다는 것이 문제야*). 어느 칸이 보이든 사는 곳은
+    /// 모델뿐이다 — `파일` 앱에서 열기(`open(fileURL:)`)와 같은 자리에서 폴더를 바꾸고, 노트는 찾기 결과와 같은 길(`prepareOpen`)로 연다.
+    /// 그 폴더의 목록을 **먼저 읽는다** — 목록에 없는 채로 고르면 *링크를 따라온 노트* 줄이 선다.
+    func openLastNote() async {
+        guard opensLastNote, let store, let path = lastNotePath else { return }
+        // 지웠거나 옮긴 노트면 **조용히** 폴더 화면으로 — `prepareOpen` 의 *링크가 가리키는 노트가 없습니다* 띠를 앱이 켜지자마자 띄우지 않는다.
+        guard await store.existingPaths(among: [path]).contains(path) else {
+            log("마지막 노트가 없어 폴더 화면으로: \(path)")
+            return
+        }
+        let folder = Paths.directory(of: path)
+        if folder != selectedFolder {
+            selectedFolder = folder
+            await reloadNotes(switchingFolder: true)
+        }
+        guard let commit = await prepareOpen(relativePath: path) else { return }
+        commit()
+        log("마지막 노트로 엶: \(path)")
+    }
 
     /// **노트 목록의 차례** (305) — 최근 고친 순(기본) · 이름순. 차례를 정하는 자리는 `splitNotes` 하나다 (CLAUDE §1).
     @Published var sortsByName: Bool = UserDefaults.standard.bool(forKey: "list.byName") {
