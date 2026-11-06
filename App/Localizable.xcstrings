@@ -703,6 +703,16 @@
         }
       }
     },
+    "iOS 가 주는 것" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provided by iOS"
+          }
+        }
+      }
+    },
     "iOS 에는 **확장자마다 기본 앱을 정하는 설정이 없습니다.** `설정 → 앱 → 기본 앱` 은 브라우저 · 메일 · 메시지 같은 것만 다룹니다. 앱이 스스로를 기본으로 만드는 방법도 없습니다.\n\n느린 여백 은 자기가 마크다운을 다룰 수 있다고 iOS 에 알려 둡니다. 그래서 **공유** 와 **다음으로 열기** 목록에 뜹니다. `파일` 앱이 `다음으로 열기` 를 보여 준다면 거기서도 고를 수 있습니다.\n\n평소 쓰는 노트는 **Slow Margin 폴더 안**에 두시는 편이 낫습니다. 그 안의 파일은 앱이 그대로 고치고 저장합니다." : {
       "localizations" : {
         "en" : {
@@ -719,16 +729,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Header"
-          }
-        }
-      }
-    },
-    "⌘N 새 노트 · ⌘⇧N 새 폴더 · ⌘F 찾기 · ⌘E 읽기와 쓰기 · ⌥⌘↑ ⌥⌘↓ 이전 · 다음 노트. 쓰기 화면에서 ⌘B 굵게 · ⌘I 기울임 · ⌘K 링크 · ⌘⇧D 날짜 · 시각 · Tab Shift+Tab ⌘] ⌘[ 들여 · 내어쓰기. ⌘ 를 누르고 있으면 쓸 수 있는 단축키 목록이 뜹니다." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "⌘N new note · ⌘⇧N new folder · ⌘F find · ⌘E switch between Read and Write · ⌥⌘↑ ⌥⌘↓ previous / next note. While writing: ⌘B bold · ⌘I italic · ⌘K link · ⌘⇧D date & time · Tab, Shift+Tab, ⌘] ⌘[ indent / outdent. Hold ⌘ to see every shortcut."
           }
         }
       }
@@ -1065,6 +1065,16 @@
         }
       }
     },
+    "굵게 · 기울임 · 링크는 고른 글자를 감싸고, 고른 것이 없으면 표시만 넣습니다. 날짜 · 시각은 커서 자리에 제 줄로 들어갑니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bold, Italic and Link wrap the selected text, or insert just the markers when nothing is selected. Date & Time goes in on its own line at the cursor."
+          }
+        }
+      }
+    },
     "규모 시험" : {
       "localizations" : {
         "en" : {
@@ -1201,6 +1211,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A `#tag` in your text is colored, and tapping it in Read mode finds every note with that tag. Typing `#tag` in the search field does the same."
+          }
+        }
+      }
+    },
+    "글 칸이면 어느 앱에서나 같은 글쇠입니다. 아이패드에서 ⌘ 를 누르고 있으면 그 화면에서 쓸 수 있는 단축키가 뜹니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These work in any text field, in any app. On iPad, hold ⌘ to see the shortcuts available on the current screen."
           }
         }
       }
@@ -1631,6 +1651,16 @@
         }
       }
     },
+    "단축키" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcuts"
+          }
+        }
+      }
+    },
     "닫기" : {
       "localizations" : {
         "en" : {
@@ -1899,6 +1929,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The folder will be created at the top level. If the name is taken, a number is added."
+          }
+        }
+      }
+    },
+    "모두 고르기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select All"
           }
         }
       }
@@ -2471,6 +2511,16 @@
         }
       }
     },
+    "실행 취소 · 다시 실행" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo · Redo"
+          }
+        }
+      }
+    },
     "쓰기" : {
       "localizations" : {
         "en" : {
@@ -2491,6 +2541,16 @@
         }
       }
     },
+    "쓰기 화면" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While Editing"
+          }
+        }
+      }
+    },
     "쓰는 곳" : {
       "localizations" : {
         "en" : {
@@ -2507,6 +2567,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Saving…"
+          }
+        }
+      }
+    },
+    "쓸 수 있는 단축키는 설정 → 도움 → **단축키**에 모두 있습니다. 아이패드에서 ⌘ 를 누르고 있어도 그 화면에서 쓸 수 있는 것이 뜹니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every available shortcut is listed under Settings → Help → **Shortcuts**. On iPad, holding ⌘ also shows the ones available on the current screen."
           }
         }
       }
@@ -2735,6 +2805,16 @@
         }
       }
     },
+    "어디서나" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anywhere"
+          }
+        }
+      }
+    },
     "없음" : {
       "localizations" : {
         "en" : {
@@ -2801,6 +2881,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Yes"
+          }
+        }
+      }
+    },
+    "오려 두기 · 복사 · 붙여넣기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cut · Copy · Paste"
           }
         }
       }
@@ -3067,6 +3157,16 @@
         }
       }
     },
+    "이전 · 다음 노트는 지금 보는 폴더의 목록 차례를 따릅니다. ⌘↑ ⌘↓ 는 글의 처음 · 끝으로 갑니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous and Next Note follow the order of the list in the current folder. ⌘↑ and ⌘↓ jump to the start and end of the text."
+          }
+        }
+      }
+    },
     "이전 노트" : {
       "localizations" : {
         "en" : {
@@ -3113,6 +3213,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reading Mode"
+          }
+        }
+      }
+    },
+    "읽기와 쓰기 오가기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch Between Read and Edit"
           }
         }
       }
@@ -3299,6 +3409,16 @@
         }
       }
     },
+    "줄의 처음 · 끝으로" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start · End of Line"
+          }
+        }
+      }
+    },
     "지금 목록에 없는 노트입니다 — **%@** 의 파일" : {
       "localizations" : {
         "en" : {
@@ -3435,6 +3555,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Search"
+          }
+        }
+      }
+    },
+    "찾기 창 닫기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close Search"
           }
         }
       }
@@ -4113,6 +4243,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Subfolders"
+          }
+        }
+      }
+    },
+    "한 낱말씩" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One Word at a Time"
           }
         }
       }
