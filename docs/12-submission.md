@@ -12,7 +12,7 @@ updated: 2026-10-22
 
 ---
 
-## 0. 지금 상태 (2026-11-04 — **1.1.23 (빌드 147) 승인 · 배포** · 1.1.22 (빌드 145) 배포 (1.1.21 거둠) · 1.1.19 (빌드 134) 배포 · 1.1.18 (빌드 133) 배포 · 1.1.21 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.23)
+## 0. 지금 상태 (2026-11-07 — **1.1.24 (빌드 150) 제출 준비 · 설명 보강** · **1.1.23 (빌드 147) 승인 · 배포** · 1.1.22 (빌드 145) 배포 (1.1.21 거둠) · 1.1.19 (빌드 134) 배포 · 1.1.18 (빌드 133) 배포 · 1.1.21 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.23)
 
 | | |
 |---|---|
@@ -60,6 +60,9 @@ markdown,md,메모장,기록,일기,글쓰기,아이클라우드,icloud,에디�
 
 ### 설명
 
+> **1.1.24 에서 보강했다** (2026-11-07 사용자 — 아래 *다음 판 보강 후보* 를 물었더니 *모두 넣기*). 쓰는 동안 절에 날짜 · 시각 단추(308) · 마지막 노트로(302) ·
+> 새 절 *옮겨 오기*(289) · 찾기 절에 태그 누르기(301) · 새 절 *지워도 돌아옵니다*(292) · 아이패드 절의 *하드웨어 키보드 단축키* 를 외장 자판 · 단축키 화면(309 · 313)으로.
+> PDF 첫 쪽 카드(295)는 다른 앱에서 옮겨 온 `![](…pdf)` 에만 해당하는 드문 경우라 뺐다. 영어 설명도 같이.
 > **1.1.12 에서 보강했다** (2026-10-22 — 찾기 문단에 최근 고친 노트(261) 한 줄 · 영어 설명도). 그 앞:
 > **1.1.10 에서 보강했다** (2026-10-19 — 1.1.6 의 제목 초성 찾기(246) · 1.1.10 의 지도 장소 붙여넣기(252) 한 줄씩). 그 앞:
 > **1.0.7 에서 보강했다** (2026-10-06 · 2026-10-03 사용자 — *누락된 추가 기능 설명은 다음 버전할때 포함시키자*): 1.0.6 의 새 기능 셋 —
@@ -83,6 +86,9 @@ markdown,md,메모장,기록,일기,글쓰기,아이클라우드,icloud,에디�
 
 아래 띠에 굵게 · 기울임 · 취소선 · 링크 · 인용 · 표 · 들여쓰기가 있습니다.
 목록에서 줄바꿈을 하면 다음 항목이 따라오고, 탭으로 단계를 넣고 뺍니다.
+띠의 달력 단추는 지금 날짜와 시각을 한 줄 넣습니다.
+
+설정에서 켜 두면 앱을 열 때 마지막으로 보던 노트로 바로 갑니다.
 
 읽기 화면에서는 체크상자를 눌러 바로 켜고 끕니다. 쓰기 화면으로 넘어가지 않아도
 노트 파일에 저장됩니다.
@@ -112,11 +118,23 @@ PDF 같은 문서도 붙일 수 있고, 눌러서 바로 봅니다.
 다른 앱의 공유 메뉴에서 느린 여백을 고르면 글 · 웹 주소 · 사진을 보낼 수 있습니다.
 앱을 열면 받은 글 폴더에 새 노트로 들어갑니다.
 
+— 옮겨 오기
+
+다른 노트 앱이 마크다운으로 내보낸 폴더를 설정 → 폴더에서 가져옵니다.
+노트는 한 폴더에 나란히, 사진은 그 폴더의 assets 로 모으고 링크를 맞춥니다.
+고른 폴더는 그대로 둡니다.
+
 — 찾기
 
 본문과 제목을 한 번에 찾습니다. 두 글자부터 됩니다.
 제목은 초성으로도 찾습니다. ㅎㅇㄹ 만 쳐도 회의록이 나옵니다.
 폴더 화면의 찾기 칸을 누르면 최근에 고친 노트 열 개가 먼저 보입니다.
+읽기 화면의 #태그를 누르면 그 태그가 든 노트를 찾습니다.
+
+— 지워도 돌아옵니다
+
+지운 노트와 폴더는 폴더 안 휴지통으로 옮겨져 설정에서 되돌릴 수 있습니다.
+영구 삭제는 한 번 더 묻습니다.
 
 — 계정이 없습니다
 
@@ -125,11 +143,11 @@ PDF 같은 문서도 붙일 수 있고, 눌러서 바로 봅니다.
 
 — 아이폰과 아이패드
 
-같은 앱 하나입니다. 아이패드에서는 폴더 · 목록 · 노트가 한 화면에 나란히 서고,
-하드웨어 키보드 단축키를 씁니다.
+같은 앱 하나입니다. 아이패드에서는 폴더 · 목록 · 노트가 한 화면에 나란히 섭니다.
+외장 자판으로 노트를 오가고 서식을 넣습니다. 단축키는 설정 → 도움 → 단축키에 모여 있습니다.
 ```
 
-> **설명에 아직 없는 기능 — 다음 판 보강 후보** (2026-11-05 전수 조사). 설명은 판을 낼 때만 바뀐다 — 다음 제출 때 아래 절 둘을 *찾기* 앞에 넣을지 사용자에게 묻는다. 다른 앱 이름은 쓰지 않는다 (CLAUDE §6).
+> ✅ **1.1.24 에 넣었다** (2026-11-07 — PDF 카드만 뺌). **설명에 아직 없는 기능 — 다음 판 보강 후보** (2026-11-05 전수 조사). 설명은 판을 낼 때만 바뀐다 — 다음 제출 때 아래 절 둘을 *찾기* 앞에 넣을지 사용자에게 묻는다. 다른 앱 이름은 쓰지 않는다 (CLAUDE §6).
 >
 > - **내보낸 폴더 가져오기** (289 · 1.1.21~22) — `— 옮겨 오기` / *다른 노트 앱이 마크다운으로 내보낸 폴더를 설정 → 폴더에서 가져옵니다. 노트는 한 폴더에 나란히, 사진은 그 폴더의 assets 로 모으고 링크를 맞춥니다. 고른 폴더는 그대로 둡니다.*
 > - **지운 것은 휴지통에서 되돌리기 · 폴더째도** (292 · 휴지통 편) · **노트를 옮기면 그 노트만 쓰는 사진도 같이** (291) — `— 지워도 돌아옵니다` / *지운 노트와 폴더는 폴더 안 휴지통으로 옮겨져 설정에서 되돌릴 수 있습니다. 영구 삭제는 한 번 더 묻습니다.*
@@ -181,6 +199,35 @@ https://helpnara.github.io/MD_Management/privacy/
 4. **영어 스크린샷.** 영어 칸에 안 올리면 **한국어 스크린샷이 그대로 보인다.** 영어 견본 노트 `docs/samples/en/` 으로 한국어 때와 같은 차례로 찍는다
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
+
+### 1.1.24 제출 순서 — 빌드 150 (2026-11-07 준비 · 빌드 150 확인 끝 — 사용자 *0-5번 확인 완료.* · *심사 제출 준비하자*)
+
+> 편의성 첫 묶음 — 301 태그 찾기 · 302 마지막 노트로 · 305 목록 차례 · 308 날짜 · 시각 · 309 외장 자판 · 313 단축키 화면 (빌드 148 · 149 · 150).
+> **설명을 바꾼다** — 위 §1 *설명* · §1-영어 *Description* (2026-11-07 사용자 — *모두 넣기*). 그림 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로.
+> 프로모션 텍스트는 11월 홍보 글 그대로 (12-01 에 되돌림 — 알림 예약됨). 글자 수는 `python3 Tools/store/count.py`.
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.24` → **빌드** 칸에서 **150** (`1.1.24 (150)`) — 148 · 149 가 아니다 (302 아이패드 · 메뉴 막대 안내가 150 에만)
+2. 한국어 칸 *이 버전의 새로운 기능* — 아래 다섯 줄 (`docs/store/1.1.24-새로운-기능.txt`)
+3. 한국어 칸 *설명* — §1 *설명* 울타리 **전체**를 지우고 다시 붙인다
+4. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — 아래 영어 다섯 줄 → *Description* — §1-영어 *Description* 울타리 전체 → **저장**
+5. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+6. 제출 → `main` 병합 (= 1.1.24) → 승인 · 배포 기다림
+
+```
+• 읽기 화면에서 #태그를 누르면 그 태그가 든 노트를 찾습니다.
+• 설정에서 켜면 앱을 열 때 마지막으로 보던 노트로 바로 갑니다.
+• 노트 목록을 이름순으로도 볼 수 있습니다 (설정 → 노트).
+• 쓰기 화면 띠에 날짜 · 시각 넣기 단추가 생겼습니다 (외장 자판은 ⌘⇧D).
+• 외장 자판으로 이전 · 다음 노트(⌥⌘↑↓), 들여 · 내어쓰기(⌘] ⌘[), 새 폴더(⌘⇧N)를 할 수 있습니다. 모든 단축키는 설정 → 도움 → 단축키에 있습니다.
+```
+
+```
+• Tap a #tag in Read mode to find every note with that tag.
+• Turn on “Open the Last Note” in Settings to jump straight back to the note you were on.
+• Sort the note list by name (Settings → Notes).
+• A Date & Time button on the writing toolbar inserts a timestamp (⌘⇧D on an external keyboard).
+• External keyboard: previous/next note (⌥⌘↑↓), indent/outdent (⌘] ⌘[), new folder (⌘⇧N). Every shortcut is listed under Settings → Help → Shortcuts.
+```
 
 ### 1.1.23 제출 순서 — 빌드 147 (2026-11-04 준비 · 빌드 147 확인 끝 · **제출함 2026-11-04**)
 
@@ -528,7 +575,9 @@ The same files show up in the Files app and on your Mac. If you already keep a f
 
 Only the line with the cursor shows its Markdown. Everything else looks the way it reads, so there’s no switching between edit and preview.
 
-The toolbar above the keyboard has bold, italic, strikethrough, links, quotes, tables, and indent. Press Return in a list and the next item follows; use Tab to indent and outdent.
+The toolbar above the keyboard has bold, italic, strikethrough, links, quotes, tables, and indent. Press Return in a list and the next item follows; use Tab to indent and outdent. The calendar button inserts the current date and time on its own line.
+
+Turn it on in Settings, and the app opens straight to the note you were last on.
 
 In Read mode, tap a checkbox to check it off. It’s saved to the note file without switching to editing.
 
@@ -552,11 +601,19 @@ Paste a web address and it becomes a link. Copy a table and it becomes a Markdow
 
 Choose Slow Margin in another app’s share menu to send text, web links, or photos. Open the app and they arrive as new notes in your Inbox folder.
 
+— Bring your notes over
+
+Import a folder that another notes app exported as Markdown from Settings → Folders. Notes land side by side in one folder, photos go into its assets folder, and links are updated to match. The folder you picked is left as it was.
+
 — Search
 
 Search titles and text at once, starting from two characters.
 
-Tap the search field on the folders screen and your ten most recently edited notes show up first.
+Tap the search field on the folders screen and your ten most recently edited notes show up first. In Read mode, tap a #tag to find every note with that tag.
+
+— Deleted, not gone
+
+Deleted notes and folders move to a trash inside your folder, and you can restore them from Settings. Deleting for good asks once more.
 
 — No account
 
@@ -564,7 +621,7 @@ No sign-up. No server. No ads or tracking. Your writing lives only on your devic
 
 — iPhone and iPad
 
-One app for both. On iPad, folders, notes, and the editor sit side by side, with keyboard shortcuts for a hardware keyboard.
+One app for both. On iPad, folders, notes, and the editor sit side by side. With an external keyboard you can move between notes and format text; every shortcut is listed under Settings → Help → Shortcuts.
 ```
 
 > **영어 판의 받은 글 폴더 이름은 `Inbox`** (ADR-0009) — 설명의 *Inbox folder* 와 같다. 한국어 기기와 함께 써서 `받은 글` 이 이미 있으면 그리로 간다 —
