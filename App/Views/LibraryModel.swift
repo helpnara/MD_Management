@@ -94,6 +94,8 @@ final class LibraryModel: ObservableObject {
         didSet {
             // 마지막으로 본 노트 (302) — 다음에 앱을 열 때 돌아갈 자리. 고른 것이 없어질 때(nil)는 안 지운다.
             if let id = selectedNoteID { UserDefaults.standard.set(id, forKey: "last.note") }
+            // 공유로 새로 온 노트를 열었다 — *새로 옴* 표시를 뗀다 (311).
+            if let id = selectedNoteID, freshShared.contains(id) { freshShared.remove(id) }
             // 목록에서 다른 노트를 고르면 링크 자취를 접는다 (T7). 링크로 가는 길은
             // `openLinked` 가 **먼저** `linkedNote` 를 세우므로 여기서 안 접힌다.
             guard selectedNoteID != linkedNote?.relativePath else { return }
@@ -846,6 +848,90 @@ final class LibraryModel: ObservableObject {
         log("마지막 노트로 엶: \(path)")
     }
 
+    // MARK: - 노트 안에서 찾기 (304 · 314)
+
+    /// 읽기 · 쓰기 화면의 **iOS 찾기 막대**(`UIFindInteraction`)에게 하는 말. 보이는 화면 하나가 받아 처리하고 `nil` 로 되돌린다
+    /// (`findHandled`) — 남겨 두면 읽기 ↔ 쓰기를 오갈 때 새로 선 화면이 같은 말을 또 받는다.
+    struct FindRequest: Equatable {
+        enum Kind: Equatable {
+            /// 찾기 막대를 연다. 낱말이 있으면 채우고 첫 자리로 (314).
+            case open(String?)
+            case next
+            case previous
+        }
+        let id = UUID()
+        let kind: Kind
+    }
+    @Published var findRequest: FindRequest?
+
+    /// ⌘⇧F · ··· 메뉴 (304). 쓰기 화면에서는 막대에서 **바꾸기**도 된다 (2026-11-07 사용자 — *바꾸기도 넣자*).
+    func findInNote(_ text: String? = nil) {
+        guard selectedNoteID != nil else { return }
+        findRequest = FindRequest(kind: .open(text))
+    }
+
+    /// ⌘G · ⌘⇧G — 다음 · 이전 찾은 곳.
+    func findAgain(forward: Bool) {
+        guard selectedNoteID != nil else { return }
+        findRequest = FindRequest(kind: forward ? .next : .previous)
+    }
+
+    func findHandled() { findRequest = nil }
+
+    /// **찾기로 연 노트에서 미리 찾을 낱말** (314). 모든 노트에서 찾기의 말에서 `tag:` · `path:` 거르개를 빼고 **맨 앞 낱말** 하나 —
+    /// 낱말 가르기는 색인이 쓰는 것(`SearchQueryParser`) 하나다 (CLAUDE §1). 찾을 낱말이 없으면 `nil`.
+    static func inNoteTerm(_ query: String) -> String? {
+        let parsed = SearchQueryParser.parse(query)
+        let terms = parsed.ftsTerms + parsed.likeTerms
+        let raw = Paths.normalized(query)
+        return terms.min { a, b in
+            (raw.range(of: a)?.lowerBound ?? raw.endIndex) < (raw.range(of: b)?.lowerBound ?? raw.endIndex)
+        }
+    }
+
+    /// 찾기 결과로 노트를 연 **뒤에** 부른다 (314) — 결과를 고른 그 말로 노트 안 찾기를 연다.
+    func findAfterSearch(_ query: String) {
+        guard let term = Self.inNoteTerm(query) else { return }
+        findInNote(term)
+    }
+
+    // MARK: - 노트 정보 (315)
+
+    /// ··· 메뉴 · ⌘⇧I. 셈은 Core `NoteStats` (파이썬 쌍둥이 · 정답표) — 지금 글(`draft`)로 센다. 쓰는 중이면 저장 전 글도 들어간다.
+    func showNoteInfo() {
+        guard selectedNoteID != nil, sheet == nil else { return }
+        sheet = .noteInfo
+    }
+
+    /// 노트 정보 시트가 보는 글 — 쓰는 중인 것까지.
+    var currentNoteText: String { draft }
+
+    // MARK: - 새 노트 이름을 오늘 날짜로 (303)
+
+    /// **새 노트 이름을 오늘 날짜로** (303 · 설정 → 노트 · 꺼짐 기본). 일기 · 회의록처럼 날짜로 이름 짓는 노트 — `# 새 노트` 를 지우고
+    /// 날짜를 치던 일을 없앤다. 같은 날 둘째 노트는 저장소가 `2026-11-07 2` 로 비켜 간다 (`createNote`).
+    @Published var namesNewNotesByDate: Bool = UserDefaults.standard.bool(forKey: "new.dated") {
+        didSet { UserDefaults.standard.set(namesNewNotesByDate, forKey: "new.dated") }
+    }
+
+    static func todayNoteName(_ date: Date = Date()) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
+    // MARK: - 공유로 새로 온 노트 (311)
+
+    /// **공유로 받아 아직 안 연 노트** (311) — 목록에 *새로 옴* 이 선다. 새 노트로 넣었거나 끝에 덧붙인 노트. 열면 뗀다
+    /// (`selectedNoteID` 의 `didSet`). 앱 설정에만 둔다 — 파일은 건드리지 않는다 (ADR-0001). 이름을 바꾸거나 옮기면 표시가 없어진다.
+    @Published private(set) var freshShared: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "share.fresh") ?? []) {
+        didSet { UserDefaults.standard.set(Array(freshShared), forKey: "share.fresh") }
+    }
+
+    func isFreshShared(_ path: String) -> Bool { freshShared.contains(path) }
+
     /// **노트 목록의 차례** (305) — 최근 고친 순(기본) · 이름순. 차례를 정하는 자리는 `splitNotes` 하나다 (CLAUDE §1).
     @Published var sortsByName: Bool = UserDefaults.standard.bool(forKey: "list.byName") {
         didSet {
@@ -965,6 +1051,8 @@ final class LibraryModel: ObservableObject {
         case code(index: Int, block: CodeBlockText)
         /// **어디서나 찾기** (286). 노트를 연 채 · 폴더 칸을 접은 채 · ⌘F 로 칸이 안 보일 때.
         case search
+        /// **노트 정보** (315) — 글자 · 낱말 · 문단 · 할 일 · 읽는 시간 · 파일.
+        case noteInfo
 
         var id: String {
             switch self {
@@ -976,6 +1064,7 @@ final class LibraryModel: ObservableObject {
             case .linkFile: return "linkFile"
             case .brokenLinks: return "brokenLinks"
             case .search: return "search"
+            case .noteInfo: return "noteInfo"
             case .code(let index, _): return "code-\(index)"
             }
         }
@@ -1443,7 +1532,7 @@ final class LibraryModel: ObservableObject {
         await save()
         do {
             // 파일 이름이 되는 말도 기기 언어를 따른다 (219 · ADR-0009) — 한 번 만들면 파일이 원본이고 다시 바꾸지 않는다.
-            let name = String(localized: "새 노트")
+            let name = namesNewNotesByDate ? Self.todayNoteName() : String(localized: "새 노트")
             let path = try await store.createNote(named: name, in: selectedFolder, text: "# \(name)\n\n")
             await reloadNotes()
             modeAlreadyChosen = true      // 쓰려고 만든 노트다 (124)
@@ -2313,11 +2402,27 @@ final class LibraryModel: ObservableObject {
     }
 
     @Published private(set) var unusedAttachments: UnusedAttachments = .counting
+    /// 마지막으로 센 때 (310). 설정 줄의 수는 **앱이 켜진 뒤 한 번 · 1분 지난 뒤** 다시 센다 — 폴더 전체를 읽는 셈이라 설정을 열 때마다 세지 않는다.
+    /// 치우기 · 화면 열기는 언제나 다시 센다.
+    private var unusedCountedAt: Date?
+
+    /// 설정이 열릴 때 (310). 센 지 1분이 안 됐으면 그대로 둔다.
+    func countUnusedAttachmentsIfStale() async {
+        if let at = unusedCountedAt, Date().timeIntervalSince(at) < 60 { return }
+        await countUnusedAttachments()
+    }
+
+    /// 설정 줄에 쓸 수 — 셀 수 있을 때만. 세는 중이거나 아직 안 내려온 노트가 있으면 `nil` (*0개* 로 보이면 거짓말이다).
+    var unusedAttachmentCount: Int? {
+        if case .ready(let files) = unusedAttachments { return files.count }
+        return nil
+    }
 
     /// 폴더 전체를 읽어 **어느 노트도 쓰지 않는 첨부**를 센다. 셈은 노트 지우기(172)와 같은 것 —
     /// `AttachmentLedger` 하나다.
     func countUnusedAttachments() async {
         guard let store else { return }
+        unusedCountedAt = Date()
         unusedAttachments = .counting
         let census = await store.attachmentCensus()
         guard let paths = AttachmentLedger.unused(notes: census.notes, trashed: census.trashed,
@@ -3189,6 +3294,7 @@ final class LibraryModel: ObservableObject {
                         await inbox.remove(entry)
                         log("공유로 받은 것을 노트 끝에 덧붙임: \(target)")
                         appended.append(target)
+                        freshShared.insert(target)
                         continue
                     }
                     log("덧붙일 노트가 없어 새 노트로: \(target)")
@@ -3199,6 +3305,7 @@ final class LibraryModel: ObservableObject {
                                               pageTitle: entry.item.pageTitle, images: images,
                                               fallback: String(localized: "받은 글 \(Self.shareClock.string(from: entry.item.created))"))
                 let path = try await store.createNote(named: note.title, in: folder, text: note.markdown)
+                freshShared.insert(path)
                 await inbox.remove(entry)
                 log("공유로 받은 글을 노트로: \(path) · 사진 \(images.count)장")
                 made += 1

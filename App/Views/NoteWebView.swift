@@ -23,6 +23,9 @@ struct NoteWebView: UIViewRepresentable {
     /// 쓰기에서 넘어왔을 때 **가야 할 자리.** 페이지가 다 뜬 뒤에 간다.
     var restore: LibraryModel.SpotRestore? = nil
     var onRestored: @MainActor () -> Void = {}
+    /// **노트 안에서 찾기** (304 · 314). 페이지가 다 뜬 뒤에 iOS 찾기 막대를 연다.
+    var findRequest: LibraryModel.FindRequest? = nil
+    var onFindHandled: @MainActor () -> Void = {}
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onOpen: onOpen)
@@ -47,6 +50,8 @@ struct NoteWebView: UIViewRepresentable {
         webView.scrollView.maximumZoomScale = 4
         // 늘 보이는 스크롤 막대 (202) — 쓰기 화면과 같은 것.
         ScrollGaugeView.attach(to: webView.scrollView)
+        // **iOS 찾기 막대** (304) — 보이는 글에서 찾아 모두 칠하고 하나씩 오간다. 읽기 화면이라 바꾸기는 없다.
+        webView.isFindInteractionEnabled = true
         return webView
     }
 
@@ -65,6 +70,13 @@ struct NoteWebView: UIViewRepresentable {
             coordinator.answered = spotRequest
             coordinator.reportSpot(webView)
         }
+        if let findRequest, coordinator.answeredFind != findRequest.id {
+            coordinator.answeredFind = findRequest.id
+            coordinator.pendingFind = findRequest.kind
+            let handled = onFindHandled
+            DispatchQueue.main.async { handled() }   // 받아 두었다 — 모델의 말은 거둔다
+        }
+        defer { coordinator.findIfReady(webView) }
         guard coordinator.loadedHTML != html else { return }
         // 같은 노트를 다시 그리는 것이면 지금 높이를 붙들어 둔다 — 다 뜬 뒤 그리로 간다.
         if coordinator.loadedHTML != nil, pageID != nil, coordinator.loadedPageID == pageID {
@@ -95,6 +107,28 @@ struct NoteWebView: UIViewRepresentable {
         var restoring: LibraryModel.SpotRestore?
         var restoredID: UUID?
         var isLoaded = false
+        /// 찾기 (304 · 314) — 받은 말 · 페이지가 뜨면 할 일.
+        var answeredFind: UUID?
+        var pendingFind: LibraryModel.FindRequest.Kind?
+
+        /// 페이지가 다 떴고 **빈 페이지가 아니면** 찾기를 한다. 노트를 열 때는 빈 페이지를 먼저 그리므로(`prepareOpen`) 그것은 건너뛴다.
+        func findIfReady(_ webView: WKWebView) {
+            guard let kind = pendingFind, isLoaded, !(loadedHTML ?? "").isEmpty,
+                  let interaction = webView.findInteraction else { return }
+            pendingFind = nil
+            switch kind {
+            case .open(let text):
+                if let text { interaction.searchText = text }
+                interaction.presentFindNavigator(showingReplace: false)
+                if text != nil {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { interaction.findNext() }
+                }
+            case .next:
+                interaction.findNext()
+            case .previous:
+                interaction.findPrevious()
+            }
+        }
 
         init(onOpen: @escaping (NoteLinkAction) -> Void) {
             self.onOpen = onOpen
@@ -177,6 +211,7 @@ struct NoteWebView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             isLoaded = true
+            findIfReady(webView)
             // 쓰기에서 넘어온 자리가 있으면 그것이 먼저다.
             if restoring != nil {
                 keptOffset = nil

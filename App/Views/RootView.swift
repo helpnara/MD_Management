@@ -161,6 +161,8 @@ struct RootView: View {
                 BrokenLinkList().environmentObject(library)
             case .search:
                 SearchSheet().environmentObject(library)
+            case .noteInfo:
+                NoteInfoSheet().environmentObject(library)
             case .code(_, let block):
                 CodeViewer(block: block)
             }
@@ -511,7 +513,12 @@ private struct FolderSidebar: View {
             // **아이패드 폴더 칸도** (286, 2026-10-29 사용자 — *검색하면서 위로 검색어 입력칸이 올라간다*). 266 때는 목록의 첫 줄로 두었다 —
             // 떠 있는 옆 칸이라 띠의 바탕이 칸의 바탕과 안 맞아서. 띠의 바탕을 **막대와 같은 재질**(`.bar`)로 칠하면 칸의 바탕 위에 섞인다.
             if !query.isEmpty {
-                SearchHitRows { path in await openFromFolders(path) }
+                // 314 — 결과로 연 노트는 그 말로 노트 안 찾기를 연다 (태그 찾기 301 의 `#태그` 도 같다).
+                SearchHitRows { path in
+                    let asked = query
+                    await openFromFolders(path)
+                    library.findAfterSearch(asked)
+                }
             } else if searchPresented {
                 recentSection
             } else {
@@ -842,7 +849,9 @@ private struct NoteList: View {
             } else {
                 SearchHitRows { path in
                     searchFocused = false   // 글쇠판을 내린다 — 시스템 칸은 넘어갈 때 저절로 내렸다 (266)
+                    let asked = library.searchText
                     await library.open(relativePath: path)
+                    library.findAfterSearch(asked)    // 314
                 }
             }
         }
@@ -1015,6 +1024,12 @@ private struct NoteList: View {
                         Text(note.title)
                             .font(.scaled(.body, weight: .medium))
                             .foregroundStyle(Palette.ink)
+                        if library.isFreshShared(note.relativePath) {
+                            // **공유로 새로 온 노트** (311) — 열면 사라진다. 글자로 둔다 (점 하나는 눈에 안 띈다 — 90 과 같은 까닭).
+                            Text("새로 옴")
+                                .font(.scaled(.caption, weight: .semibold))
+                                .foregroundStyle(Palette.accent)
+                        }
                         if library.isPinned(note.relativePath) {
                             // 고정된 줄 (T10). 고정 구역 밖(검색 결과)에서도 알아볼 수 있게.
                             Image(systemName: "pin.fill")
@@ -1256,10 +1271,12 @@ private struct SearchSheet: View {
     /// 기다리는 일(있는지 · 쓰던 글 저장 · 요약)을 먼저 끝내고(`prepareOpen` · 263), 시트를 닫은 뒤 **한 번에** 연다.
     /// 찾기로 연 것은 링크가 아니다 — 왔던 노트 길(`linkTrail`)에 쌓이지 않는다 (결과 줄과 같다).
     private func open(_ path: String) async {
+        let asked = library.searchText
         let commit = await library.prepareOpen(relativePath: path)
         searchFocused = false
         library.sheet = nil
         commit?()
+        library.findAfterSearch(asked)    // 314 — 시트가 닫히며 찾는 말을 지우기 전에 받아 두었다
     }
 }
 
@@ -1600,7 +1617,9 @@ private struct NoteDetail: View {
                 spotRequest: library.spotRequest,
                 onSpot: library.reportSpot,
                 restore: library.spotToRestore,
-                onRestored: library.spotRestored)
+                onRestored: library.spotRestored,
+                findRequest: library.findRequest,
+                onFindHandled: library.findHandled)
         } else {
             // 쓰기 — 라이브 편집기 L1 (ADR-0005). 원문은 그대로 두고 속성만 바뀐다.
             //
@@ -1630,7 +1649,9 @@ private struct NoteDetail: View {
                     onSpot: library.reportSpot,
                     restore: library.spotToRestore,
                     onRestored: library.spotRestored,
-                    onLog: library.log)
+                    onLog: library.log,
+                    findRequest: library.findRequest,
+                    onFindHandled: library.findHandled)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
                 // **`>>` · `[[` 를 치면 노트 목록이 여기 뜬다** (147).
@@ -1824,6 +1845,18 @@ private struct NoteDetail: View {
                         library.sheet = .search
                     } label: {
                         Label("모든 노트에서 찾기", systemImage: "magnifyingglass")
+                    }
+                    // **노트 안에서 찾기** (304) — iOS 찾기 막대. 쓰기 화면에서는 바꾸기도 (⌘⇧F 와 같다).
+                    Button {
+                        library.findInNote()
+                    } label: {
+                        Label("노트 안에서 찾기", systemImage: "text.magnifyingglass")
+                    }
+                    // **노트 정보** (315) — 글자 · 낱말 · 문단 · 할 일 · 읽는 시간 (⌘⇧I 와 같다).
+                    Button {
+                        library.showNoteInfo()
+                    } label: {
+                        Label("노트 정보", systemImage: "info.circle")
                     }
                     Button {
                         library.showBrokenLinks()
@@ -2124,6 +2157,87 @@ private struct LinkFilePicker: View {
         guard !needle.isEmpty else { return library.linkableFiles }
         return library.linkableFiles.filter {
             $0.relativePath.localizedCaseInsensitiveContains(needle)
+        }
+    }
+}
+
+/// **노트 정보** (315, 2026-11-07 사용자 — *노트에 대한 기초 통계량을 편집모드와 읽기모드에서 볼 수 있도록 어딘가에*).
+///
+/// **자리는 ··· 메뉴 · ⌘⇧I** — 읽기 · 쓰기 두 화면 모두에 같은 메뉴가 있다. 늘 보이는 숫자는 두지 않는다: 아이폰 쓰기 화면의 막대 · 띠는 이미
+/// 꽉 찼고(125), 글을 쓰는 동안 바뀌는 숫자는 눈을 끈다. 셈은 Core `NoteStats` (파이썬 쌍둥이 · 정답표) — **보이는 글**로 센다.
+/// 지금 글(`draft` — 저장 전 것까지)로 시트를 여는 순간 한 번 센다.
+private struct NoteInfoSheet: View {
+    @EnvironmentObject private var library: LibraryModel
+
+    var body: some View {
+        let stats = NoteStats.of(library.currentNoteText)
+        let bytes = library.currentNoteText.utf8.count
+        NavigationStack {
+            List {
+                Section {
+                    row(String(localized: "글자 (공백 포함)"), stats.characters)
+                    row(String(localized: "글자 (공백 빼고)"), stats.charactersNoSpaces)
+                    row(String(localized: "낱말"), stats.words)
+                    row(String(localized: "문단"), stats.paragraphs)
+                    row(String(localized: "줄"), stats.lines)
+                    LabeledContent(String(localized: "읽는 시간")) {
+                        Text(stats.readingMinutes == 0 ? String(localized: "없음")
+                             : String(localized: "약 \(stats.readingMinutes)분"))
+                    }
+                } header: {
+                    Text("글")
+                } footer: {
+                    Text("굵게 · 제목 같은 마크다운 표시와 링크 주소는 세지 않고, 읽는 사람이 보는 글만 셉니다. 읽는 시간은 공백을 뺀 500자에 1분으로 셉니다.")
+                }
+                if stats.tasks > 0 {
+                    Section {
+                        LabeledContent(String(localized: "끝낸 일")) {
+                            Text(verbatim: "\(stats.tasksDone) / \(stats.tasks)")
+                        }
+                    } header: {
+                        Text("할 일")
+                    }
+                }
+                Section {
+                    row(String(localized: "링크"), stats.links)
+                    row(String(localized: "사진 · 첨부"), stats.images)
+                } header: {
+                    Text("링크 · 사진")
+                }
+                Section {
+                    if let note = library.selectedNote {
+                        LabeledContent(String(localized: "고친 때")) {
+                            Text(note.modifiedAt, format: .dateTime.year().month().day().hour().minute())
+                        }
+                        LabeledContent(String(localized: "자리")) {
+                            Text(note.relativePath)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
+                    LabeledContent(String(localized: "크기")) {
+                        Text(ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file))
+                    }
+                } header: {
+                    Text("파일")
+                }
+            }
+            .font(.scaled(.body))
+            .navigationTitle("노트 정보")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("닫기") { library.sheet = nil }
+                        .keyboardShortcut(.cancelAction)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func row(_ title: String, _ value: Int) -> some View {
+        LabeledContent(title) {
+            Text(value, format: .number)
         }
     }
 }

@@ -63,6 +63,8 @@ ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "attachment-cases.json"
 MOVE_ATTACHMENT_CASES = ROOT / "Tools" / "golden" / "move-attachment-cases.json"
 TRASH_GROUP_CASES = ROOT / "Tools" / "golden" / "trash-group-cases.json"
 IMAGE_FIT_CASES = ROOT / "Tools" / "golden" / "image-fit-cases.json"
+# 315 — 노트 통계 (Swift `NoteStats`). 셈은 `note_stats.py` (쌍둥이).
+NOTE_STATS_CASES = ROOT / "Tools" / "golden" / "note-stats-cases.json"
 RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
 NESTING_CASES = ROOT / "Tools" / "golden" / "nesting-cases.json"
 EMPHASIS_CASES = ROOT / "Tools" / "golden" / "emphasis-cases.json"
@@ -2862,6 +2864,7 @@ def build() -> dict:
         "moveAttachmentCases": build_move_attachment_cases(),
         "trashGroupCases": build_trash_group_cases(),
         "imageFitCases": build_image_fit_cases(),
+        "noteStatsCases": build_note_stats_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
         "pasteCases": build_paste_cases(),
         "brokenCases": build_broken_cases(),
@@ -4174,6 +4177,34 @@ def build_image_fit_cases() -> list:
     return out
 
 
+def build_note_stats_cases() -> list:
+    """315 — 뜻과 셈이 같고, 공백 뺀 글자 ≤ 글자 · 끝낸 일 ≤ 할 일 · 문단 ≤ 줄. 뒤섞기는 random() 만 쓴다."""
+    sys.path.insert(0, str(ROOT / "Tools" / "golden"))
+    import note_stats as ns
+    import random
+    spec = json.loads(NOTE_STATS_CASES.read_text(encoding="utf-8"))
+    texts = [(c["name"], c["text"], c.get("expect")) for c in spec["cases"]]
+    fuzz = spec["fuzz"]
+    rng = random.Random(fuzz["seed"])
+    pieces = fuzz["pieces"]
+    for k in range(fuzz["count"]):
+        rows = []
+        for _ in range(1 + int(rng.random() * fuzz["maxLines"])):
+            n = int(rng.random() * 4)
+            rows.append("".join(pieces[int(rng.random() * len(pieces))] for _ in range(n)))
+        texts.append((f"뒤섞기 {k + 1:03d}", "\n".join(rows), None))
+    out = []
+    for name, text, expect in texts:
+        got = ns.stats(text)
+        if expect is not None and got != expect:
+            raise SystemExit(f"::error::[{name}] 노트 통계: 뜻 {expect} · 셈 {got}")
+        if got["charactersNoSpaces"] > got["characters"] or got["tasksDone"] > got["tasks"] \
+                or got["paragraphs"] > got["lines"]:
+            raise SystemExit(f"::error::[{name}] 노트 통계가 앞뒤가 안 맞는다: {got}")
+        out.append({"name": name, "text": text, "stats": got})
+    return out
+
+
 def build_trash_group_cases() -> dict:
     """292 — 묶기: 뜻과 셈이 같고, 모든 휴지통 것이 한 번씩(폴더 하나 또는 낱개) 나오며, 폴더 줄의 원래 폴더는 지금 없다.
     폴더째 영구 삭제: 뜻과 셈이 같고, 지우는 것은 모두 그 폴더 안이다."""
@@ -4801,6 +4832,9 @@ def tally(loaded: dict) -> str:
     maps = loaded.get("mapCases")
     if maps:
         counted.append(f"지도 장소 {len(maps)}건")
+    stats_cases = loaded.get("noteStatsCases")
+    if stats_cases:
+        counted.append(f"노트 통계 {len(stats_cases)}건")
     fit = loaded.get("imageFitCases")
     if fit:
         counted.append(f"사진 줄이기 {len(fit)}건")

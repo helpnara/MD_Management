@@ -401,6 +401,9 @@ struct MarkdownEditor: UIViewRepresentable {
     var onRestored: @MainActor () -> Void = {}
     /// 최근 일에 한 줄 남긴다 (216 — 화면이 저절로 크게 움직이면 그 직전에 무엇이 돌았는지).
     var onLog: @MainActor (String) -> Void = { _ in }
+    /// **노트 안에서 찾기** (304 · 314). 받으면 iOS 찾기 막대를 열거나 다음 · 이전으로 가고 `onFindHandled` 로 알린다.
+    var findRequest: LibraryModel.FindRequest? = nil
+    var onFindHandled: @MainActor () -> Void = {}
     func makeCoordinator() -> Coordinator {
         Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
                     onFocus: onFocusChanged, onImageLine: onImageLineChanged,
@@ -438,6 +441,9 @@ struct MarkdownEditor: UIViewRepresentable {
         view.textContainerInset = UIEdgeInsets(top: gutter, left: gutter,
                                                bottom: gutter * 3, right: gutter)
 
+        // **iOS 찾기 막대** (304, 2026-11-07 사용자 — *바꾸기도 넣자*). 원문(마크다운)에서 찾고, 쓰기 화면이라 바꾸기 · 모두 바꾸기도 준다.
+        // 바꾼 글은 편집기의 글이다 — 저장 쪽에 알리는 길은 `reportEdit` 와 그 안전망(`checkUnreportedEdit`)이 맡는다.
+        view.isFindInteractionEnabled = true
         context.coordinator.view = view
         context.coordinator.sheet = EditorStyleSheet()
         // 늘 보이는 스크롤 막대 (202) — 읽기 화면과 같은 것.
@@ -473,6 +479,12 @@ struct MarkdownEditor: UIViewRepresentable {
         if let spotRequest, coordinator.answeredSpot != spotRequest {
             coordinator.answeredSpot = spotRequest
             onSpot(coordinator.spot(of: view))
+        }
+        if let findRequest, coordinator.answeredFind != findRequest.id {
+            coordinator.answeredFind = findRequest.id
+            coordinator.find(findRequest.kind, in: view)
+            let handled = onFindHandled
+            DispatchQueue.main.async { handled() }   // 그리는 중에 모델을 바꾸지 않는다
         }
     }
 
@@ -538,6 +550,59 @@ struct MarkdownEditor: UIViewRepresentable {
 
         private var loadedNoteID: String?
         private var loadedText = ""
+        /// 받은 찾기 요청 (304).
+        var answeredFind: UUID?
+        /// 저장 쪽에 마지막으로 알린 글 (304 — 안전망이 견준다).
+        private var reportedText: String?
+        private var editCheckPending = false
+
+        /// **저장 쪽에 알리는 문은 하나** — 편집기의 모든 고침이 여기로 간다 (CLAUDE §1).
+        func reportEdit(_ text: String) {
+            reportedText = text
+            onEdit(text)
+        }
+
+        /// **안전망** (304). iOS 찾기 막대의 바꾸기 · 모두 바꾸기가 `textViewDidChange` 를 거치는지 애플 문서에 없다 — 안 거치면
+        /// 바뀐 글이 저장되지 않고, 파일 쪽 글이 그것을 덮을 수 있다(`load` 는 *손대지 않았을 때만* 갈아 끼운다). 글자가 바뀐 뒤 한 박자
+        /// 늦게 견주어, 불러온 글과도 마지막으로 알린 글과도 다르면 알린다. 보통 입력은 이미 알렸으므로 아무 일도 없다.
+        func checkUnreportedEdit() {
+            guard !editCheckPending else { return }
+            editCheckPending = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.editCheckPending = false
+                guard let view = self.view, view.markedTextRange == nil else { return }
+                let text = view.text ?? ""
+                guard text != self.loadedText, text != self.reportedText else { return }
+                self.lastPath = "찾기 막대 바꾸기"
+                self.reportEdit(text)
+            }
+        }
+
+        /// 찾기 막대를 연다 · 다음 · 이전 (304 · 314). 낱말이 오면 채우고 첫 자리로 간다 — 화면이 창에 서기 전이면 조금 뒤에.
+        func find(_ kind: LibraryModel.FindRequest.Kind, in view: UITextView, attempt: Int = 0) {
+            guard view.window != nil else {
+                guard attempt < 8 else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self, weak view] in
+                    guard let self, let view else { return }
+                    self.find(kind, in: view, attempt: attempt + 1)
+                }
+                return
+            }
+            guard let interaction = view.findInteraction else { return }
+            switch kind {
+            case .open(let text):
+                if let text { interaction.searchText = text }
+                interaction.presentFindNavigator(showingReplace: false)
+                if text != nil {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { interaction.findNext() }
+                }
+            case .next:
+                interaction.findNext()
+            case .previous:
+                interaction.findPrevious()
+            }
+        }
         private var isStyling = false
         /// 지난번 머리말 길이. 바뀌면 그 구간을 통째로 다시 칠한다 (`MarkdownStyler.restyle`).
         private var headerLength = 0
@@ -855,7 +920,7 @@ struct MarkdownEditor: UIViewRepresentable {
             guard let target = textRange(view, range) else { return false }
             view.replace(target, withText: piece)
             view.selectedRange = NSRange(location: range.location + (piece as NSString).length, length: 0)
-            onEdit(view.text)
+            reportEdit(view.text)
             return true
         }
 
@@ -936,7 +1001,7 @@ struct MarkdownEditor: UIViewRepresentable {
                 view.selectedRange = NSRange(location: picked.location + (piece as NSString).length, length: 0)
                 renumberList(around: view.selectedRange.location, in: view)
                 reportActiveFormats(view)
-                onEdit(view.text)
+                reportEdit(view.text)
                 return
             }
 
@@ -996,7 +1061,7 @@ struct MarkdownEditor: UIViewRepresentable {
                          seedMayContinue: lostNumber != nil)
             keepCaretVisible(view)
             reportActiveFormats(view)
-            onEdit(view.text)
+            reportEdit(view.text)
         }
 
         private func apply(_ edit: Formatting.Edit, in view: UITextView) -> Bool {
@@ -1007,7 +1072,7 @@ struct MarkdownEditor: UIViewRepresentable {
             keepCaretVisible(view)
             reportActiveFormats(view)
             reportLinkQuery(view)
-            onEdit(view.text)
+            reportEdit(view.text)
             return true
         }
 
@@ -1049,6 +1114,7 @@ struct MarkdownEditor: UIViewRepresentable {
             // 주 스레드가 아니면 칠하지 않는다 — 가정이 틀리면 앱이 꺼진다 (184). 칠하기는 다음 편집이 갚는다.
             guard Thread.isMainThread else { return }
             MainActor.assumeIsolated {
+                if mask.contains(.editedCharacters), !isComposing { checkUnreportedEdit() }
                 guard mask.contains(.editedCharacters),
                       !isComposing, !isStyling,
                       let sheet, let storage = view?.textStorage else { return }
@@ -1244,14 +1310,14 @@ struct MarkdownEditor: UIViewRepresentable {
                     renumberAfterUnlist(in: textView, lineWidth: here, number: number)
                     lostStart = nil
                     keepCaretVisible(textView)
-                    onEdit(textView.text)
+                    reportEdit(textView.text)
                     return true
                 }
             }
             // 가운데에 끼워 넣었으면 아래 번호들이 어긋난다 — 여기서 맞춘다 (104).
             renumberList(around: textView.selectedRange.location, in: textView)
             keepCaretVisible(textView)
-            onEdit(textView.text)
+            reportEdit(textView.text)
             return true
         }
 
@@ -1283,7 +1349,7 @@ struct MarkdownEditor: UIViewRepresentable {
             renumberAfterUnlist(in: textView, lineWidth: here, number: number)
             lostStart = nil
             keepCaretVisible(textView)
-            onEdit(textView.text)
+            reportEdit(textView.text)
             return true
         }
 
@@ -1586,7 +1652,7 @@ struct MarkdownEditor: UIViewRepresentable {
             // 변경**이라 그 자리에서 맞추는 것이 맞다.
             renumberList(around: view.selectedRange.location, in: view)
             keepCaretVisible(view)
-            onEdit(view.text)
+            reportEdit(view.text)
         }
 
         /// **목록이 아닌 줄의 들여쓰기 — 줄 맨 앞에 빈칸 둘** (190). 목록 들여쓰기와 같은 자리다.
@@ -1618,7 +1684,7 @@ struct MarkdownEditor: UIViewRepresentable {
             textView.replace(target, withText: pad)
             let shift = (pad as NSString).length
             textView.selectedRange = NSRange(location: safe + shift, length: 0)
-            onEdit(textView.text)
+            reportEdit(textView.text)
         }
 
         /// **커서를 눈에 보이는 자리로** (131, 사용자 — *엔터를 빠르게 치면 커서가 키보드
@@ -1890,7 +1956,7 @@ struct MarkdownEditor: UIViewRepresentable {
             // **여기서 `loadedText` 를 갱신하지 않는다.** 갱신하면 "사용자가
             // 손대지 않았나" 가 늘 참이 되어, 뒤늦게 온 파일 글이 방금 친 것을
             // 덮는다. 파일과 편집기가 같아지는 것은 저장 뒤 `load` 가 판정한다.
-            onEdit(textView.text)
+            reportEdit(textView.text)
         }
     }
 }

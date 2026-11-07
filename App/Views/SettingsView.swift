@@ -78,6 +78,9 @@ struct SettingsView: View {
                     // **앱을 열면 마지막 노트로** (302) · **목록 차례** (305) — 2026-11-06 사용자 브레인스토밍.
                     Toggle("앱을 열면 마지막 노트로", isOn: $library.opensLastNote)
                         .font(.scaled(.body))
+                    // 303 — 일기 · 회의록처럼 날짜로 이름 짓는 노트. 같은 날 둘째는 `2026-11-07 2`.
+                    Toggle("새 노트 이름을 오늘 날짜로", isOn: $library.namesNewNotesByDate)
+                        .font(.scaled(.body))
                     Picker("노트 목록 차례", selection: $library.sortsByName) {
                         Text("최근 고친 순").tag(false)
                         Text("이름순").tag(true)
@@ -118,7 +121,19 @@ struct SettingsView: View {
                     NavigationLink {
                         UnusedAttachmentsView().environmentObject(library)
                     } label: {
-                        Label("안 쓰는 첨부", systemImage: "photo.stack")
+                        // **수를 미리 보인다** (310 — 휴지통 줄과 같은 모양). 세는 중이거나 아직 안 내려온 노트가 있어 셀 수 없으면 비워 둔다.
+                        Label {
+                            HStack {
+                                Text("안 쓰는 첨부")
+                                Spacer(minLength: Metrics.rowSpacing)
+                                if let count = library.unusedAttachmentCount {
+                                    Text("\(count)개")
+                                        .foregroundStyle(Palette.inkFaint)
+                                }
+                            }
+                        } icon: {
+                            Image(systemName: "photo.stack")
+                        }
                     }
                 } header: {
                     Text("정리")
@@ -191,6 +206,8 @@ struct SettingsView: View {
             .task {
                 await library.reloadTrash()
                 if library.launch.showTrash { showsTrash = true }
+                // 310 — 안 쓰는 첨부 줄의 수. 폴더 전체를 읽는 셈이라 1분 안에 센 것이 있으면 그대로 쓴다.
+                await library.countUnusedAttachmentsIfStale()
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -272,6 +289,14 @@ struct HelpView: View {
             // 313 — 목록은 **단축키** 화면 하나에만 둔다 (같은 목록이 둘이면 갈린다 · CLAUDE.md §1). 여기서는 길만 알린다.
             topic(String(localized: "외장 자판"),
                   String(localized: "쓸 수 있는 단축키는 설정 → 도움 → **단축키**에 모두 있습니다. 아이패드는 화면 맨 위의 메뉴 막대에서 **노트** · **글쓰기** 메뉴를 열어도 보입니다."))
+
+            // 304 · 314.
+            topic(String(localized: "노트 안에서 찾기"),
+                  String(localized: "오른쪽 위 **···** 의 **노트 안에서 찾기**(외장 자판 ⌘⇧F)는 지금 노트에서 낱말을 찾아 모두 칠하고 하나씩 오갑니다. 쓰기 화면에서는 찾기 막대에서 **바꾸기**도 됩니다. 모든 노트에서 찾기로 고른 노트는 그 낱말이 채워진 채 열립니다."))
+
+            // 315.
+            topic(String(localized: "노트 정보"),
+                  String(localized: "**···** 의 **노트 정보**(⌘⇧I)에 글자 · 낱말 · 문단 · 할 일 · 읽는 시간이 있습니다. 마크다운 표시는 세지 않고 보이는 글만 셉니다."))
 
             topic(String(localized: "태그"),
                   String(localized: "글 안의 `#태그` 는 색이 붙고, 읽기 화면에서 누르면 그 태그가 든 노트를 찾습니다. 찾기 칸에 `#태그` 를 쳐도 같습니다."))
@@ -723,7 +748,8 @@ struct UnusedAttachmentsView: View {
 /// **단축키** (313, 2026-11-07 사용자 — *6-9번 단축키에 대해서 전수조사 후 한곳에 모아서 도움말 같은 곳에*).
 ///
 /// **전수 조사한 자리** — 바꾸거나 더할 때 여기도 같이 고친다. 이 화면이 목록의 **유일한** 자리다 (사용법의 *외장 자판* 은 길만 알린다).
-/// - ⌘ 가 붙은 것 전부: `NotebookApp` 의 `.commands` (노트 메뉴 ⌘N · ⌘⇧N · ⌘F · ⌘E · ⌥⌘↑ · ⌥⌘↓ · 쓰기 메뉴 ⌘B · ⌘I · ⌘K · ⌘⇧D · ⌘] · ⌘[).
+/// - ⌘ 가 붙은 것 전부: `NotebookApp` 의 `.commands` (노트 메뉴 ⌘N · ⌘⇧N · ⌘F · ⌘⇧F · ⌘G · ⌘⇧G · ⌘⇧I · ⌘E · ⌥⌘↑ · ⌥⌘↓ · 글쓰기 메뉴 ⌘B · ⌘I · ⌘K · ⌘⇧D · ⌘] · ⌘[).
+///   시스템 *찾기* 메뉴(⌘F · ⌘E · ⌘G)는 `AppDelegate.buildMenu` 가 뺀다 (304).
 /// - 편집기 `MarkdownEditor.keyCommands`: Tab · ⇧Tab (↑↓ 는 커서 옮기기라 단축키가 아니다) · 찾기 시트의 닫기 (Esc).
 /// - iOS 가 글 칸에 주는 기본 것(실행 취소 · 선택 · 줄 처음과 끝)은 **앱이 만든 것이 아니다** — 쓸 수 있다는 것만 적는다.
 ///
@@ -735,6 +761,9 @@ struct ShortcutsView: View {
                 row("⌘N", String(localized: "새 노트"))
                 row("⌘⇧N", String(localized: "새 폴더"))
                 row("⌘F", String(localized: "찾기"))
+                row("⌘⇧F", String(localized: "노트 안에서 찾기"))
+                row("⌘G  ⌘⇧G", String(localized: "다음 · 이전 찾은 곳"))
+                row("⌘⇧I", String(localized: "노트 정보"))
                 row("⌘E", String(localized: "읽기와 쓰기 오가기"))
                 row("⌥⌘↑", String(localized: "이전 노트"))
                 row("⌥⌘↓", String(localized: "다음 노트"))
@@ -742,7 +771,7 @@ struct ShortcutsView: View {
             } header: {
                 Text("어디서나")
             } footer: {
-                Text("이전 · 다음 노트는 지금 보는 폴더의 목록 차례를 따릅니다. ⌘↑ ⌘↓ 는 글의 처음 · 끝으로 갑니다.")
+                Text("찾기(⌘F)는 모든 노트에서, 노트 안에서 찾기(⌘⇧F)는 지금 노트에서 찾습니다. 쓰기 화면에서는 찾기 막대에서 바꾸기도 됩니다. 이전 · 다음 노트는 지금 보는 폴더의 목록 차례를 따릅니다. ⌘↑ ⌘↓ 는 글의 처음 · 끝으로 갑니다.")
             }
 
             Section {

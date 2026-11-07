@@ -1,7 +1,21 @@
 import SwiftUI
+import UIKit
+
+/// **시스템 *찾기* 메뉴를 뺀다** (304, 2026-11-07 — 노트 안에서 찾기를 켜면서). 읽기 · 쓰기 화면에 iOS 의 찾기 막대(`UIFindInteraction`)를
+/// 켜면 메뉴 막대의 시스템 *편집* 메뉴에 *찾기 ⌘F* · *선택 항목으로 찾기 ⌘E* · *다음 찾기 ⌘G* 가 저절로 선다. 우리 ⌘F(모든 노트에서 찾기 —
+/// 사용자 *지금처럼*) · ⌘E(읽기와 쓰기 오가기)와 같은 글쇠라 어느 쪽이 받을지 모른다. 시스템 것을 빼고 같은 일을 *노트* 메뉴에
+/// 우리 글쇠로 둔다 — 노트 안에서 찾기 ⌘⇧F · 다음 · 이전 찾은 곳 ⌘G · ⌘⇧G. 찾기 막대 자체는 그대로 뜬다.
+final class AppDelegate: UIResponder, UIApplicationDelegate {
+    override func buildMenu(with builder: UIMenuBuilder) {
+        super.buildMenu(with: builder)
+        guard builder.system == .main else { return }
+        builder.remove(menu: .find)
+    }
+}
 
 @main
 struct NotebookApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var library = LibraryModel()
 
     var body: some Scene {
@@ -30,7 +44,21 @@ struct NotebookApp: App {
                 // 찾기 칸을 어디에 열지는 화면이 정한다 (`RootView.openSearch` — 태그 찾기 301 과 같은 길).
                 Button("찾기") { library.searchJumpRequestedAt = Date() }
                     .keyboardShortcut("f", modifiers: .command)
+                // **노트 안에서 찾기** (304) — 읽기 · 쓰기 화면의 iOS 찾기 막대. 쓰기 화면에서는 바꾸기도 된다.
+                Button("노트 안에서 찾기") { library.findInNote() }
+                    .keyboardShortcut("f", modifiers: [.command, .shift])
+                    .disabled(library.selectedNoteID == nil)
+                Button("다음 찾은 곳") { library.findAgain(forward: true) }
+                    .keyboardShortcut("g", modifiers: .command)
+                    .disabled(library.selectedNoteID == nil)
+                Button("이전 찾은 곳") { library.findAgain(forward: false) }
+                    .keyboardShortcut("g", modifiers: [.command, .shift])
+                    .disabled(library.selectedNoteID == nil)
                 Divider()
+                // **노트 정보** (315) — 글자 · 낱말 · 문단 · 할 일 · 읽는 시간. ··· 메뉴와 같은 시트.
+                Button("노트 정보") { library.showNoteInfo() }
+                    .keyboardShortcut("i", modifiers: [.command, .shift])
+                    .disabled(library.selectedNoteID == nil)
                 // 보던 자리를 물은 뒤 바꾼다 (176). 저장도 거기서 한다.
                 Button("읽기와 쓰기 오가기") { library.toggleReading() }
                     .keyboardShortcut("e", modifiers: .command)

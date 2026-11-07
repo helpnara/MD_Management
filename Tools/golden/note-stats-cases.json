@@ -1,0 +1,267 @@
+{
+  "_doc": "315 노트 통계 — 뜻을 적은 사례(expect 는 손으로 따진 것만 · 셈과 다르면 생성기가 멈춘다) + 같은 씨앗으로 뒤섞은 노트. 셈은 note_stats.py, Swift 는 NoteStats.",
+  "cases": [
+    {
+      "name": "빈 노트",
+      "text": "",
+      "expect": {
+        "characters": 0,
+        "charactersNoSpaces": 0,
+        "words": 0,
+        "lines": 0,
+        "paragraphs": 0,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 0
+      }
+    },
+    {
+      "name": "제목 한 줄",
+      "text": "# 주간 회의",
+      "expect": {
+        "characters": 5,
+        "charactersNoSpaces": 4,
+        "words": 2,
+        "lines": 1,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "굵게 · 링크 표시는 안 센다",
+      "text": "**첫** 일 [링크](a.md)",
+      "expect": {
+        "characters": 6,
+        "charactersNoSpaces": 4,
+        "words": 3,
+        "lines": 1,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 1,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "할 일 상자",
+      "text": "- [ ] 가\n- [x] 나\n- [X] 다",
+      "expect": {
+        "characters": 3,
+        "charactersNoSpaces": 3,
+        "words": 3,
+        "lines": 3,
+        "paragraphs": 1,
+        "tasks": 3,
+        "tasksDone": 2,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "사진은 대체 글만",
+      "text": "![사진](assets/a.jpg)",
+      "expect": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "words": 1,
+        "lines": 1,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 1,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "머리말은 뺀다",
+      "text": "---\ntags: [회의]\n---\n본문",
+      "expect": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "words": 1,
+        "lines": 1,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "닫히지 않은 머리말은 글이다",
+      "text": "---\n본문",
+      "expect": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "words": 1,
+        "lines": 1,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "코드 울타리 안은 그대로",
+      "text": "```\n**a** [b](c)\n```",
+      "expect": {
+        "characters": 12,
+        "charactersNoSpaces": 11,
+        "words": 2,
+        "lines": 1,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "표는 칸 글만 · 구분 줄은 문단을 안 끊는다",
+      "text": "| 가 | 나 |\n|---|:-:|\n| 1 | 2 |",
+      "expect": {
+        "characters": 6,
+        "charactersNoSpaces": 4,
+        "words": 4,
+        "lines": 2,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "가로줄은 문단을 끊는다",
+      "text": "가\n---\n나",
+      "expect": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "words": 2,
+        "lines": 2,
+        "paragraphs": 2,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "빈 줄이 문단을 가른다",
+      "text": "가 나\n다\n\n라",
+      "expect": {
+        "characters": 5,
+        "charactersNoSpaces": 4,
+        "words": 4,
+        "lines": 3,
+        "paragraphs": 2,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "자모가 갈린 한글은 한 글자로 (NFC)",
+      "text": "한",
+      "expect": {
+        "characters": 1,
+        "charactersNoSpaces": 1,
+        "words": 1,
+        "lines": 1,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "전각 빈칸 · 줄 끝 CR",
+      "text": "가　나\r\n다",
+      "expect": {
+        "characters": 4,
+        "charactersNoSpaces": 3,
+        "words": 3,
+        "lines": 2,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 1
+      }
+    },
+    {
+      "name": "500자 넘으면 2분",
+      "text": "가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가",
+      "expect": {
+        "characters": 501,
+        "charactersNoSpaces": 501,
+        "words": 1,
+        "lines": 1,
+        "paragraphs": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "links": 0,
+        "images": 0,
+        "readingMinutes": 2
+      }
+    }
+  ],
+  "fuzz": {
+    "seed": 315,
+    "count": 120,
+    "maxLines": 12,
+    "pieces": [
+      "# ",
+      "## ",
+      "- ",
+      "1. ",
+      "> ",
+      "- [ ] ",
+      "- [x] ",
+      "**굵게**",
+      "*기울임*",
+      "~~지움~~",
+      "`코드`",
+      "[링크](a.md)",
+      "![사진](assets/b.png)",
+      "가나다",
+      "회의 메모",
+      "hello world",
+      "  ",
+      "\t",
+      "|",
+      " | ",
+      "---",
+      "```",
+      "~~~",
+      "***",
+      "　",
+      "\\*",
+      "&amp;",
+      "<b>",
+      "ㅎㅇㄹ",
+      "#태그",
+      ":-:"
+    ]
+  }
+}
