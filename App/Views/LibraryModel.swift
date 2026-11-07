@@ -92,6 +92,8 @@ final class LibraryModel: ObservableObject {
     @Published var selectedFolder = ""
     @Published var selectedNoteID: String? {
         didSet {
+            // 마지막으로 본 노트 (302) — 다음에 앱을 열 때 돌아갈 자리. 고른 것이 없어질 때(nil)는 안 지운다.
+            if let id = selectedNoteID { UserDefaults.standard.set(id, forKey: "last.note") }
             // 목록에서 다른 노트를 고르면 링크 자취를 접는다 (T7). 링크로 가는 길은
             // `openLinked` 가 **먼저** `linkedNote` 를 세우므로 여기서 안 접힌다.
             guard selectedNoteID != linkedNote?.relativePath else { return }
@@ -133,6 +135,12 @@ final class LibraryModel: ObservableObject {
         for note in notes {
             if pinnedSet.contains(note.relativePath) { pinnedOnes.append(note) } else { looseOnes.append(note) }
             byPath[note.relativePath] = note
+        }
+        // **이름순** (305) — `notes` 는 늘 최근 고친 순이고(읽을 때 · 저장할 때), 보여 줄 차례만 여기서 한 번 바꾼다.
+        if sortsByName {
+            let byName: (NoteSummary, NoteSummary) -> Bool = { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+            pinnedOnes.sort(by: byName)
+            looseOnes.sort(by: byName)
         }
         pinnedNotes = pinnedOnes
         looseNotes = looseOnes
@@ -761,6 +769,88 @@ final class LibraryModel: ObservableObject {
         case .bold: format(.wrap(.bold))
         case .italic: format(.wrap(.italic))
         case .link: startLinkingExistingFile()
+        case .stamp: insertDateStamp()
+        }
+    }
+
+    /// **날짜 · 시각 넣기** (308, 2026-11-06 사용자 — *같은 노트에 계속 업데이트가 많아. 주간이슈 같은 것.*). 커서 자리에 제 줄로
+    /// `2026-11-06 (금) 14:20` 한 줄 — 띠의 단추와 ⌘⇧D 가 같은 길. 읽기 화면에서는 아무 일도 없다 (넣을 편집기가 없다).
+    func insertDateStamp() {
+        guard !isReading, selectedNoteID != nil else { return }
+        insertion = Insertion(text: Self.dateStamp())
+    }
+
+    /// `2026-11-06 (금) 14:20` — 요일은 기기 언어로 (영어면 `Fri`).
+    static func dateStamp(_ date: Date = Date()) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale.current
+        formatter.dateFormat = "yyyy-MM-dd (EEE) HH:mm"
+        return formatter.string(from: date)
+    }
+
+    /// **외장 자판으로 이전 · 다음 노트** (309) — 목록의 차례(고정 → 나머지) 그대로. 보던 노트가 없으면 첫 노트.
+    /// 여는 길은 찾기 · 링크와 같은 `open(relativePath:)` (쓰던 글 저장 · 모드).
+    func selectNeighborNote(step: Int) async {
+        let ordered = pinnedNotes + looseNotes
+        guard !ordered.isEmpty else { return }
+        let target: NoteSummary
+        if let current = selectedNoteID, let index = ordered.firstIndex(where: { $0.relativePath == current }) {
+            let next = index + step
+            guard ordered.indices.contains(next) else { return }
+            target = ordered[next]
+        } else {
+            target = step < 0 ? ordered[ordered.count - 1] : ordered[0]
+        }
+        await open(relativePath: target.relativePath)
+    }
+
+    /// **태그로 찾기** (301) — 읽기 화면의 `#태그` 를 누르면. 찾기 칸은 하나(`searchText`)고, 어디서 열지는 화면이 ⌘F 와 같은 길로 정한다.
+    @Published var searchJumpRequestedAt: Date?
+    func requestSearch(_ text: String) {
+        searchText = text
+        searchJumpRequestedAt = Date()
+    }
+
+    /// **앱을 열면 마지막으로 보던 노트로** (302). **꺼짐이 기본** — 지금까지처럼 폴더 화면으로 연다.
+    @Published var opensLastNote: Bool = UserDefaults.standard.bool(forKey: "open.last") {
+        didSet { UserDefaults.standard.set(opensLastNote, forKey: "open.last") }
+    }
+    /// 마지막으로 고른 노트의 경로 — `selectedNoteID` 가 바뀔 때마다 적는다. 폴더를 바꿔도 남는다.
+    ///
+    /// **앱이 켜질 때 한 번 읽어 둔다** (빌드 149, 2026-11-07 사용자 — *아이패드에서 앱을 열면 마지막 노트로가 동작하지 않아*). 아이패드는
+    /// `start` 가 목록을 읽으며 **첫 노트를 저절로 고른다**(`autoSelectsFirstNote` — 상세 칸이 비지 않게). 그 고르기가 `selectedNoteID` 의
+    /// `didSet` 으로 `last.note` 를 첫 노트로 **덮어써**, 그 뒤에 읽으면 이미 첫 노트였다 — 열 것이 없었다. 아이폰은 저절로 고르지 않아 안 걸렸다.
+    /// 모델이 생길 때(어떤 노트도 고르기 전) 읽은 값을 쓴다.
+    let lastNotePath: String? = UserDefaults.standard.string(forKey: "last.note")
+    /// **마지막으로 보던 노트를 연다** (302) — 앱이 선 직후 바깥 화면(`RootView`)이 한 번 부른다.
+    ///
+    /// 빌드 148 은 이 일을 **폴더 목록 화면**의 `.task(id:)` 에 걸었다 — 아이폰은 앱이 열릴 때 그 위에 노트 목록이 덮여 있어
+    /// 화면이 *사라진* 상태고, 사라진 화면의 `.task` 는 돌지 않는다. 사용자가 뒤로 가기를 눌러 폴더 목록이 다시 나타나야 그제야
+    /// 돌았다 (2026-11-07 사용자 화면 녹화 — *좌측 상단의 뒤로 가기를 눌러야 한다는 것이 문제야*). 어느 칸이 보이든 사는 곳은
+    /// 모델뿐이다 — `파일` 앱에서 열기(`open(fileURL:)`)와 같은 자리에서 폴더를 바꾸고, 노트는 찾기 결과와 같은 길(`prepareOpen`)로 연다.
+    /// 그 폴더의 목록을 **먼저 읽는다** — 목록에 없는 채로 고르면 *링크를 따라온 노트* 줄이 선다.
+    func openLastNote() async {
+        guard opensLastNote, let store, let path = lastNotePath else { return }
+        // 지웠거나 옮긴 노트면 **조용히** 폴더 화면으로 — `prepareOpen` 의 *링크가 가리키는 노트가 없습니다* 띠를 앱이 켜지자마자 띄우지 않는다.
+        guard await store.existingPaths(among: [path]).contains(path) else {
+            log("마지막 노트가 없어 폴더 화면으로: \(path)")
+            return
+        }
+        let folder = Paths.directory(of: path)
+        if folder != selectedFolder {
+            selectedFolder = folder
+            await reloadNotes(switchingFolder: true)
+        }
+        guard let commit = await prepareOpen(relativePath: path) else { return }
+        commit()
+        log("마지막 노트로 엶: \(path)")
+    }
+
+    /// **노트 목록의 차례** (305) — 최근 고친 순(기본) · 이름순. 차례를 정하는 자리는 `splitNotes` 하나다 (CLAUDE §1).
+    @Published var sortsByName: Bool = UserDefaults.standard.bool(forKey: "list.byName") {
+        didSet {
+            UserDefaults.standard.set(sortsByName, forKey: "list.byName")
+            splitNotes()
         }
     }
 

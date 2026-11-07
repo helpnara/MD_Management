@@ -303,6 +303,11 @@ public enum MarkdownHTML {
         "\(scheme)://note/" + encode(path: relativePath)
     }
 
+    /// **태그로 찾기** (301) — 읽기 화면의 `#태그` 가 이 주소를 갖는다. 앱이 `search` 호스트를 받아 찾기 칸에 넣는다.
+    public static func searchURL(_ text: String) -> String {
+        "\(scheme)://search/" + encode(path: text)
+    }
+
     /// 참조했는데 없는 파일. 앱이 탭을 받아 "찾을 수 없습니다" 를 알린다.
     public static func missingURL(_ relativePath: String) -> String {
         "\(scheme)://missing/" + encode(path: relativePath)
@@ -338,10 +343,12 @@ public enum MarkdownHTML {
         return out
     }
 
-    /// 글자를 이스케이프하면서 `#태그` 만 `<span class="yb-tag">` 으로 감싼다 (T2).
+    /// 글자를 이스케이프하면서 `#태그` 만 `<a class="yb-tag" href="yb://search/…">` 으로 감싼다 (T2 · 301).
     ///
     /// **감싸는 껍데기는 우리가 쓴 것이고, 안의 글자는 이스케이프한 것이다.** 사용자 글이
-    /// HTML 이 되는 길은 열리지 않는다 (§안전 1겹).
+    /// HTML 이 되는 길은 열리지 않는다 (§안전 1겹). 주소의 태그는 경로와 같은 퍼센트 인코딩이다.
+    /// **누르면 그 태그로 찾기** (301, 2026-11-06 사용자 브레인스토밍) — 예전에는 색만 입혔다. 앱이 `search` 호스트를 받아
+    /// 찾기 칸에 `#태그` 를 넣는다 (색인의 `tag:` 칸은 머리말 태그만이라 글자 그대로 찾는다).
     public static func escapeMarkingTags(_ text: String) -> String {
         let spans = Tags.scan(text)
         guard !spans.isEmpty else { return escape(text) }
@@ -352,7 +359,7 @@ public enum MarkdownHTML {
             guard span.start >= cursor, span.start + span.length <= utf16.count else { continue }
             out += escape(String(decoding: utf16[cursor..<span.start], as: UTF16.self))
             let tag = String(decoding: utf16[span.start..<(span.start + span.length)], as: UTF16.self)
-            out += "<span class=\"yb-tag\">" + escape(tag) + "</span>"
+            out += "<a class=\"yb-tag\" href=\"" + searchURL(tag) + "\">" + escape(tag) + "</a>"
             cursor = span.start + span.length
         }
         out += escape(String(decoding: utf16[cursor...], as: UTF16.self))
@@ -444,6 +451,7 @@ public enum MarkdownHTML {
     .yb-tag {
       color: var(--yb-tag, #8F6700);  /* 232 — 대비 4.5 넘게. 앱은 늘 토큰을 넘긴다 */
       font-weight: 600;
+      text-decoration: none;  /* 301 — 링크지만 태그 모양 그대로 */
     }
     blockquote {
       margin: 1em 0;

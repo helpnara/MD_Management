@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>숫자 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+#bg{position:absolute;inset:0}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+
+/* 첫 장면 */
+.hook{position:absolute;left:0;right:0;top:620px;text-align:center}
+.hook .kk{font-size:30px;font-weight:700;letter-spacing:8px;color:var(--leaf);margin-bottom:40px}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:112px;line-height:1.22;letter-spacing:-2px}
+.hook p{margin-top:46px;font-size:42px;color:#4A4640;font-weight:500}
+.fl{position:absolute;font-family:'Noto Serif KR',serif;font-weight:900;color:rgba(42,39,36,.10)}
+
+/* 숫자 장면 */
+.idx{position:absolute;left:0;right:0;top:250px;text-align:center;font-size:30px;font-weight:700;letter-spacing:6px;color:var(--faint)}
+.num{position:absolute;left:0;right:0;top:340px;height:520px;display:flex;justify-content:center;align-items:flex-end;overflow:hidden}
+.num .d{font-family:'Noto Serif KR',serif;font-weight:900;font-size:470px;line-height:1;letter-spacing:-12px;display:inline-block}
+.num .u{font-family:'Noto Serif KR',serif;font-weight:900;font-size:150px;line-height:1;margin:0 0 60px 18px}
+.lab{position:absolute;left:80px;right:80px;top:900px;text-align:center}
+.lab h2{font-family:'Noto Serif KR',serif;font-weight:700;font-size:76px;line-height:1.28;letter-spacing:-1px}
+.lab p{margin-top:22px;font-size:38px;line-height:1.5;color:#55514B;font-weight:500}
+.vis{position:absolute;left:0;right:0;top:1290px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap;padding:0 90px}
+.chip{padding:24px 38px;border-radius:50px;background:#fff;box-shadow:0 12px 30px rgba(80,60,30,.13);font-size:36px;font-weight:700;white-space:nowrap}
+.chip s{color:#C9C4BB}
+.chip.mono{font-family:'Noto Sans Mono','Noto Sans KR',monospace;font-weight:600}
+.zeros{display:flex;gap:30px}
+.zeros div{width:250px;padding:30px 0;border-radius:36px;background:#fff;box-shadow:0 12px 30px rgba(80,60,30,.13);text-align:center}
+.zeros b{display:block;font-family:'Noto Serif KR',serif;font-weight:900;font-size:110px;line-height:1}
+.zeros span{display:block;margin-top:10px;font-size:34px;font-weight:700;color:#55514B}
+.sf{width:820px;height:110px;border-radius:55px;background:#fff;box-shadow:0 12px 30px rgba(80,60,30,.13);display:flex;align-items:center;padding:0 40px;gap:22px;font-size:44px;font-weight:700}
+.sf svg{width:50px;height:50px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.sf small{margin-left:auto;font-size:30px;color:var(--faint);font-weight:500}
+.rows{width:820px;border-radius:36px;background:#fff;box-shadow:0 12px 30px rgba(80,60,30,.13);padding:14px 36px}
+.rows i{display:flex;align-items:center;gap:18px;height:40px;font-style:normal;font-size:26px;color:#55514B;border-bottom:1px solid #EEE9E0}
+.rows i:last-child{border-bottom:none}
+.rows i b{display:inline-block;height:14px;border-radius:7px;background:#E7E1D6}
+.rows i em{font-style:normal;margin-left:auto;font-size:22px;color:var(--faint)}
+.devs{display:flex;align-items:flex-end;gap:50px}
+.dev{border:12px solid var(--ink);border-radius:46px;background:#fff;display:flex;align-items:center;justify-content:center}
+.dev span{font-family:'Noto Sans Mono','Noto Sans KR',monospace;font-size:26px;font-weight:600;color:#55514B;text-align:center;line-height:1.5}
+
+/* 정리 · 끝 */
+.grid{position:absolute;left:90px;right:90px;top:300px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.grid div{background:#fff;border-radius:34px;box-shadow:0 12px 30px rgba(80,60,30,.12);padding:26px 10px;text-align:center}
+.grid b{display:block;font-family:'Noto Serif KR',serif;font-weight:900;font-size:96px;line-height:1.05}
+.grid span{display:block;margin-top:6px;font-size:28px;font-weight:700;color:#55514B;line-height:1.35}
+.hero{position:absolute;left:0;right:0;top:960px;text-align:center}
+.hero .row{display:flex;align-items:center;justify-content:center;gap:34px}
+.hero img{width:170px;height:170px;border-radius:40px;box-shadow:0 20px 40px rgba(120,80,30,.25)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:110px;letter-spacing:2px}
+.hero .tl{font-size:42px;margin-top:40px;font-weight:500;color:#4A4640}
+.bigsearch{display:flex;align-items:center;gap:22px;margin:30px auto 0;width:760px;height:120px;border-radius:36px;background:#fff;box-shadow:0 20px 50px rgba(80,60,30,.16);
+  padding:0 40px;font-size:52px;font-weight:700;text-align:left}
+.bigsearch svg{width:56px;height:56px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.caret{display:inline-block;width:4px;height:1em;background:var(--accent);vertical-align:-0.12em;margin-left:2px;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+
+  <!-- 0 · 숫자로 보는 (썸네일) -->
+  <section class="scene" id="s0">
+    <div class="fl" style="left:60px;top:150px;font-size:300px">0</div>
+    <div class="fl" style="left:760px;top:260px;font-size:260px">1</div>
+    <div class="fl" style="left:80px;top:1300px;font-size:280px">2</div>
+    <div class="fl" style="left:640px;top:1360px;font-size:300px">10</div>
+    <div class="hook">
+      <div class="kk">느린 여백</div>
+      <h1>숫자로 보는<br>노트 앱 하나</h1>
+      <p>여섯 숫자면 다 압니다</p>
+    </div>
+  </section>
+
+  <!-- 1 · 0원 -->
+  <section class="scene" id="s1">
+    <div class="idx">1 / 6</div>
+    <div class="num"><span class="d" id="n1">0</span><span class="u">원</span></div>
+    <div class="lab"><h2>값은 0원</h2><p>무료입니다. 앱 안 결제도 없습니다</p></div>
+    <div class="vis" id="v1"><div class="chip">받기 한 번이면 끝</div></div>
+  </section>
+
+  <!-- 2 · 0 0 0 -->
+  <section class="scene" id="s2">
+    <div class="idx">2 / 6</div>
+    <div class="num"><span class="d" id="n2">0</span></div>
+    <div class="lab"><h2>없는 것이 셋</h2><p>이메일도 비밀번호도 묻지 않습니다</p></div>
+    <div class="vis" id="v2"><div class="zeros"><div><b>0</b><span>회원가입</span></div><div><b>0</b><span>광고</span></div><div><b>0</b><span>추적</span></div></div></div>
+  </section>
+
+  <!-- 3 · 1 -->
+  <section class="scene" id="s3">
+    <div class="idx">3 / 6</div>
+    <div class="num"><span class="d" id="n3">1</span></div>
+    <div class="lab"><h2>노트 하나 =<br>파일 하나</h2><p>내 아이클라우드 폴더의 .md 파일로 남습니다</p></div>
+    <div class="vis" id="v3"><div class="chip mono">오늘 할 일.md</div><div class="chip mono">회의록.md</div><div class="chip mono">여행 기록.md</div></div>
+  </section>
+
+  <!-- 4 · 2 글자 -->
+  <section class="scene" id="s4">
+    <div class="idx">4 / 6</div>
+    <div class="num"><span class="d" id="n4">2</span><span class="u">글자</span></div>
+    <div class="lab"><h2>두 글자부터 찾습니다</h2><p>제목은 자음만 쳐도 — ㅎㅇㄹ → 회의록</p></div>
+    <div class="vis" id="v4"><div class="sf"><svg viewBox="0 0 56 56"><circle cx="24" cy="24" r="14"/><path d="M35 35 L46 46"/></svg><span id="q4"></span><small id="r4"></small></div></div>
+  </section>
+
+  <!-- 5 · 10 -->
+  <section class="scene" id="s5">
+    <div class="idx">5 / 6</div>
+    <div class="num"><span class="d" id="n5">10</span></div>
+    <div class="lab"><h2>찾기 칸을 누르면<br>최근 고친 노트 열 개</h2><p>쓰던 노트로 바로 돌아갑니다</p></div>
+    <div class="vis" id="v5"><div class="rows" id="rw5"></div></div>
+  </section>
+
+  <!-- 6 · 2 기기 -->
+  <section class="scene" id="s6">
+    <div class="idx">6 / 6</div>
+    <div class="num"><span class="d" id="n6">2</span></div>
+    <div class="lab"><h2>아이폰 · 아이패드,<br>같은 앱 하나</h2><p>같은 아이클라우드 폴더라 양쪽에 같은 노트</p></div>
+    <div class="vis" id="v6"><div class="devs">
+      <div class="dev" style="width:200px;height:380px"><span>일기.md</span></div>
+      <div class="dev" style="width:470px;height:340px"><span>일기.md</span></div>
+    </div></div>
+  </section>
+
+  <!-- 7 · 정리 · 끝 -->
+  <section class="scene" id="s7">
+    <div class="grid" id="g7">
+      <div><b>0원</b><span>무료</span></div>
+      <div><b>0</b><span>가입 · 광고 · 추적</span></div>
+      <div><b>1</b><span>노트 하나<br>= 파일 하나</span></div>
+      <div><b>2</b><span>글자부터<br>찾기</span></div>
+      <div><b>10</b><span>최근 고친<br>노트</span></div>
+      <div><b>2</b><span>아이폰<br>· 아이패드</span></div>
+    </div>
+    <div class="hero" id="h7">
+      <div class="row"><img src="icon.png" alt=""><h1>느린 여백</h1></div>
+      <div class="tl">앱스토어 검색창에</div>
+      <div class="bigsearch"><svg viewBox="0 0 56 56"><circle cx="24" cy="24" r="14"/><path d="M35 35 L46 46"/></svg><span id="bq7"></span></div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const back = x => { const c=1.70158, d=c+1; return 1+d*Math.pow(x-1,3)+c*Math.pow(x-1,2); };
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const SC = { s0:[0,3.4], s1:[3.4,7.6], s2:[7.6,11.8], s3:[11.8,16.0], s4:[16.0,20.2], s5:[20.2,24.4], s6:[24.4,28.6], s7:[28.6,34.0] };
+const DURATION = 34.0;
+const BG = { s0:'#FBF7EF', s1:'#FFF1D6', s2:'#EEF2E4', s3:'#F6EEE3', s4:'#E9F1FB', s5:'#F8ECE6', s6:'#EEEBF6', s7:'#FBF7EF' };
+function hex(c){ return [1,3,5].map(i=>parseInt(c.slice(i,i+2),16)); }
+function mix(a,b,k){ const A=hex(a),B=hex(b); return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')})`; }
+function renderBg(t){
+  const keys=Object.keys(SC); let i=keys.findIndex(k=>t>=SC[k][0]&&t<SC[k][1]); if(i<0) i=keys.length-1;
+  const prev=BG[keys[Math.max(0,i-1)]], cur=BG[keys[i]];
+  const k=ease(seg(t,SC[keys[i]][0]-0.1,SC[keys[i]][0]+0.5));
+  $('bg').style.background=`radial-gradient(1300px 1000px at 50% 30%, #FFFFFF 0%, ${mix(prev,cur,k)} 60%)`;
+}
+// 숫자가 굴러 멈춘다 — 목표까지 세어 올라가거나(1 · 2 · 10), 9 에서 내려와 0 에 멈춘다(0)
+function roll(el,t,a,target){
+  const p=ease(seg(t,a,a+1.1));
+  let v;
+  if(target===0) v=Math.round(9*(1-p));
+  else v=Math.round(target*p);
+  el.textContent=String(v);
+  const land=seg(t,a+1.1,a+1.45);
+  el.style.transform = land>0 && land<1 ? `scale(${1+0.06*Math.sin(land*Math.PI)})` : 'scale(1)';
+  el.style.opacity = out(seg(t,a,a+0.3));
+}
+function labIn(sid,t,a){
+  const el=document.querySelector('#'+sid+' .lab'); const p=out(seg(t,a,a+0.6));
+  el.style.opacity=p; el.style.transform=`translateY(${(1-p)*40}px)`;
+  const ix=document.querySelector('#'+sid+' .idx'); if(ix) ix.style.opacity=out(seg(t,a-1.2,a-0.8));
+}
+function visIn(id,t,a){ const el=$(id); const p=out(seg(t,a,a+0.6)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*50}px)`; }
+
+function renderS0(t){
+  document.querySelectorAll('#s0 .fl').forEach((el,i)=>{ el.style.transform=`translateY(${Math.sin(t*1.0+i*1.5)*14}px)`; });
+  const hp=out(seg(t,0,1.2)); document.querySelector('#s0 h1').style.transform=`scale(${1.04-0.04*hp})`;
+}
+function numScene(sid,nid,target,vid,t){
+  const s=SC[sid][0];
+  roll($(nid),t,s+0.3,target);
+  labIn(sid,t,s+1.4);
+  visIn(vid,t,s+1.9);
+}
+function renderS1(t){ numScene('s1','n1',0,'v1',t); }
+function renderS2(t){
+  numScene('s2','n2',0,'v2',t);
+  const s=SC.s2[0];
+  document.querySelectorAll('#v2 .zeros div').forEach((el,i)=>{ const q=seg(t,s+2.0+i*0.2,s+2.4+i*0.2); el.style.transform=`scale(${q>0?back(q):0.6})`; el.style.opacity=q>0?1:0; });
+}
+function renderS3(t){
+  numScene('s3','n3',1,'v3',t);
+  const s=SC.s3[0];
+  document.querySelectorAll('#v3 .chip').forEach((el,i)=>{ const q=out(seg(t,s+2.0+i*0.2,s+2.5+i*0.2)); el.style.opacity=q; el.style.transform=`translateY(${(1-q)*30}px)`; });
+}
+// 4 · 본문 두 글자 · 제목 자음 — 스토어 설명 *찾기* 절 그대로
+function renderS4(t){
+  numScene('s4','n4',2,'v4',t);
+  const s=SC.s4[0], ty=s+2.2;
+  const q=typed('ㅎㅇㄹ',t,ty,4);
+  $('q4').innerHTML=q+`<span class="caret" style="opacity:${blink(t)}"></span>`;
+  $('r4').textContent = t>=ty+0.9 ? '회의록 · 한여름 일기' : '';
+}
+// 5 · 찾기 칸을 누르면 최근 고친 노트 열 개 (스토어 설명) — 줄 열 개가 차례로 선다
+function renderS5(t){
+  numScene('s5','n5',10,'v5',t);
+  const s=SC.s5[0];
+  const names=['오늘 할 일','회의록 11-06','읽을거리','11월 5일','주간 계획','장보기','산책 일지','여행 기록','책 메모','아이디어'];
+  const ws=[46,58,40,50,44,36,52,48,42,38];
+  $('rw5').innerHTML = names.map((n,i)=>{ const q=out(seg(t,s+1.9+i*0.12,s+2.2+i*0.12)); return `<i style="opacity:${q}">${n}<b style="width:${ws[i]*3}px"></b><em>${i+1}</em></i>`; }).join('');
+}
+function renderS6(t){ numScene('s6','n6',2,'v6',t); }
+function renderS7(t){
+  const s=SC.s7[0];
+  document.querySelectorAll('#g7 div').forEach((el,i)=>{ const q=seg(t,s+0.2+i*0.12,s+0.6+i*0.12); el.style.opacity=q>0?1:0; el.style.transform=`scale(${q>0?back(q):0.7})`; });
+  const h=$('h7'); const p=out(seg(t,s+1.6,s+2.2)); h.style.opacity=p; h.style.transform=`translateY(${(1-p)*40}px)`;
+  $('bq7').innerHTML = typed('느린 여백',t,s+2.4,6)+`<span class="caret" style="opacity:${blink(t)}"></span>`;
+}
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.36));
+  const o = last ? 1 : 1-ease(seg(t,b-0.3,b-0.02));
+  return Math.min(i,o);
+}
+const R = {s0:renderS0,s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6,s7:renderS7};
+window.render = function(t){
+  renderBg(t);
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001) R[k](t);
+  });
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>

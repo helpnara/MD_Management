@@ -58,11 +58,13 @@ final class TagGoldenTests: XCTestCase {
 
     /// 읽기 모드도 같은 규칙으로 감싼다 — 편집기와 다르게 그리면 그것이 버그 자리다 (93).
     func testReadingModeWrapsTheSameTags() {
+        // 301 — 태그는 누르면 찾기로 가는 링크다. 주소의 태그는 경로와 같은 퍼센트 인코딩.
         XCTAssertEqual(MarkdownHTML.escapeMarkingTags("오늘 #회의 다"),
-                       "오늘 <span class=\"yb-tag\">#회의</span> 다")
+                       "오늘 <a class=\"yb-tag\" href=\"" + MarkdownHTML.searchURL("#회의") + "\">#회의</a> 다")
+        XCTAssertTrue(MarkdownHTML.searchURL("#회의").hasPrefix("yb://search/%23"), "`#` 도 인코딩한다 — 주소의 조각 표시가 아니다")
         XCTAssertEqual(MarkdownHTML.escapeMarkingTags("# 제목"), "# 제목", "제목은 안 감싼다")
         XCTAssertEqual(MarkdownHTML.escapeMarkingTags("<b>글</b> #태그"),
-                       "&lt;b&gt;글&lt;/b&gt; <span class=\"yb-tag\">#태그</span>",
+                       "&lt;b&gt;글&lt;/b&gt; <a class=\"yb-tag\" href=\"" + MarkdownHTML.searchURL("#태그") + "\">#태그</a>",
                        "감싸면서도 이스케이프는 그대로다")
     }
 }

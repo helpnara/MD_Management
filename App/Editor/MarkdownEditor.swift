@@ -206,35 +206,24 @@ final class MarkdownTextView: UITextView {
         return nil
     }
 
-    /// 하드웨어 키보드의 서식 단축키 (230) — 도구 띠의 단추와 **같은 길**로 간다 (`LibraryModel.shortcut`).
-    enum Shortcut { case bold, italic, link }
-    var onShortcut: (@MainActor (Shortcut) -> Void)?
+    /// 서식 단축키의 이름 (230) — 주 메뉴(`NotebookApp` 의 `.commands`)가 `LibraryModel.shortcut` 으로 부른다. 도구 띠의 단추와 **같은 길**이다.
+    /// 빌드 148 까지는 여기 `keyCommands` 에 ⌘B · ⌘I · ⌘K · ⌘⇧D 를 걸었다 — 눌리긴 했지만 아이패드의 단축키 목록에 안 섰다 (309 · 9번).
+    enum Shortcut { case bold, italic, link, stamp }
 
     override var keyCommands: [UIKeyCommand]? {
+        // ⌘ 가 없는 것만 여기 — 주 메뉴에는 못 거는 글쇠다. Tab · ⇧Tab 은 띠 · ⌘] ⌘[ 과 같은 길(`onTab` → `format(.shift)`).
         let deeper = UIKeyCommand(input: "\t", modifierFlags: [], action: #selector(indentPressed))
         let shallower = UIKeyCommand(input: "\t", modifierFlags: .shift, action: #selector(outdentPressed))
-        // **⌘B · ⌘I · ⌘K** (230, 2026-10-09 전수 조사). 아이패드에서 ⌘ 를 누르고 있으면 뜨는 목록에 이름이 선다.
-        // `UITextView` 는 글자 속성을 고치는 편집기가 아니라(`allowsEditingTextAttributes` 꺼짐) ⌘B 를 제가 쓰지 않는다 —
-        // 그래도 먼저 받는다고 적어 둔다. 원문에 `**` 를 넣는 것은 띠의 굵게와 같다.
-        let bold = UIKeyCommand(title: String(localized: "굵게"), action: #selector(boldPressed),
-                                input: "b", modifierFlags: .command)
-        let italic = UIKeyCommand(title: String(localized: "기울임"), action: #selector(italicPressed),
-                                  input: "i", modifierFlags: .command)
-        let link = UIKeyCommand(title: String(localized: "링크"), action: #selector(linkPressed),
-                                input: "k", modifierFlags: .command)
         // **↑↓ 는 우리가 옮긴다** (294 — 아래 `moveCaretVertically`). 수정 키가 붙은 것(⇧ 고르기 · ⌥ · ⌘)은 UIKit 그대로.
         let up = UIKeyCommand(input: UIKeyCommand.inputUpArrow, modifierFlags: [], action: #selector(upPressed))
         let down = UIKeyCommand(input: UIKeyCommand.inputDownArrow, modifierFlags: [], action: #selector(downPressed))
-        let all = [deeper, shallower, bold, italic, link, up, down]
+        let all = [deeper, shallower, up, down]
         for command in all { command.wantsPriorityOverSystemBehavior = true }
         return all
     }
 
     @objc private func indentPressed() { onTab?(true) }
     @objc private func outdentPressed() { onTab?(false) }
-    @objc private func boldPressed() { onShortcut?(.bold) }
-    @objc private func italicPressed() { onShortcut?(.italic) }
-    @objc private func linkPressed() { onShortcut?(.link) }
     @objc private func upPressed() { moveCaretVertically(up: true) }
     @objc private func downPressed() { moveCaretVertically(up: false) }
 
@@ -412,9 +401,6 @@ struct MarkdownEditor: UIViewRepresentable {
     var onRestored: @MainActor () -> Void = {}
     /// 최근 일에 한 줄 남긴다 (216 — 화면이 저절로 크게 움직이면 그 직전에 무엇이 돌았는지).
     var onLog: @MainActor (String) -> Void = { _ in }
-    /// ⌘B · ⌘I · ⌘K (230).
-    var onShortcut: @MainActor (MarkdownTextView.Shortcut) -> Void = { _ in }
-
     func makeCoordinator() -> Coordinator {
         Coordinator(onEdit: onEdit, onTitleLine: onTitleLineChanged,
                     onFocus: onFocusChanged, onImageLine: onImageLineChanged,
@@ -477,7 +463,6 @@ struct MarkdownEditor: UIViewRepresentable {
         coordinator.onLinkQuery = onLinkQueryChanged
         coordinator.onPasteLinks = onPasteLinks
         (view as? MarkdownTextView)?.notePath = notePath
-        (view as? MarkdownTextView)?.onShortcut = onShortcut
         coordinator.refreshStyleIfNeeded(for: view.traitCollection)
         coordinator.load(noteID: noteID, text: text)
         if let insertion, coordinator.insert(insertion) { onInserted() }

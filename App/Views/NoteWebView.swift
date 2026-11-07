@@ -235,6 +235,8 @@ enum NoteLinkAction {
     case copyCode(Int)
     /// 코드 상자의 **크게 보기** (237).
     case showCode(Int)
+    /// **태그로 찾기** (301) — `yb://search/<글>`. 찾기 칸에 그 글을 넣는다.
+    case search(String)
 
     init(url: URL) {
         guard url.scheme == MarkdownHTML.scheme else {
@@ -243,6 +245,8 @@ enum NoteLinkAction {
         }
         let path = MarkdownHTML.relativePath(fromURLPath: url.path)
         switch url.host {
+        case "search":
+            self = .search(path)
         case "missing":
             self = .missing(path)
         case "task":

@@ -64,16 +64,13 @@ struct RootView: View {
         // 노트 목록 칸이 **폴더 칸이 안 보이는지** 알아야 돋보기를 세운다 (286).
         .environment(\.folderColumnHidden, columnVisibility != .all)
         .tint(Palette.accent)
-        // **⌘N · ⌘F 는 어느 화면에서나** (230, 2026-10-09 전수 조사). 예전에는 노트 목록에 걸려 있어 목록이 안 보이면
-        // (아이패드에서 노트만 크게 · 아이폰에서 노트를 연 채) 아무 일도 없었다. 바깥에 걸어 두고, 찾기는 목록부터 꺼낸다.
-        .background {
-            Group {
-                Button("새 노트") { Task { await library.createNote() } }
-                    .keyboardShortcut("n", modifiers: .command)
-                Button("찾기") { openSearch() }
-                    .keyboardShortcut("f", modifiers: .command)
-            }
-            .hidden()
+        // **⌘ 단축키는 앱의 주 메뉴에** (`NotebookApp` 의 `.commands` — 309 · 빌드 148 · 9번). 230 부터 여기 숨은 단추로 걸어
+        // 두었는데, 아이패드의 단축키 목록(iPadOS 26 부터는 메뉴 막대)은 주 메뉴만 본다. ⌘F 는 `searchJumpRequestedAt` 으로 아래에 온다.
+        // 태그를 눌러 찾기 (301) · ⌘F — 찾기 칸을 여는 길은 하나다.
+        .onChange(of: library.searchJumpRequestedAt) { _, at in
+            guard at != nil else { return }
+            openSearch()
+            library.searchJumpRequestedAt = nil
         }
         .task {
             library.autoSelectsFirstNote = prefersPreselectedNote
@@ -83,6 +80,12 @@ struct RootView: View {
             if library.launch.attachmentTest { await library.makeAttachmentTest() }
             if library.launch.newNote { await library.createNote() }
             if let term = library.launch.searchTerm { library.searchText = term }
+            // **앱을 열면 마지막으로 보던 노트로** (302, 2026-11-06 사용자 — *같은 노트에 계속 업데이트가 많아*). **여기서 바로 연다** —
+            // 빌드 148 은 폴더 목록 화면에 맡겼는데 아이폰은 그 화면이 덮여 있어 뒤로 가기를 눌러야 돌았다 (`LibraryModel.openLastNote`).
+            // 아이폰은 모델이 폴더 · 노트를 고르면 칸이 저절로 선다 (`-openFirstNote` 와 같다). CI 인자가 있으면 그쪽이 먼저다.
+            if library.launch.searchTerm == nil, !library.launch.newNote, !library.launch.openFirstNote {
+                await library.openLastNote()
+            }
         }
         // CI — **어디서나 찾기 시트** (`-searchSheet` · 286). 앱이 자리를 잡은 뒤에 · `-search` 와 같이 주면 결과가 든 시트를 찍는다.
         .task {
@@ -1627,8 +1630,7 @@ private struct NoteDetail: View {
                     onSpot: library.reportSpot,
                     restore: library.spotToRestore,
                     onRestored: library.spotRestored,
-                    onLog: library.log,
-                    onShortcut: library.shortcut)
+                    onLog: library.log)
                 // **커서가 사진 줄에 있으면 아래에 작게 띄운다** (ADR-0005 L3 후퇴판).
                 cursorImageBar
                 // **`>>` · `[[` 를 치면 노트 목록이 여기 뜬다** (147).
@@ -1691,6 +1693,9 @@ private struct NoteDetail: View {
             }
         case .showCode(let index):
             library.showCode(at: index)
+        case .search(let text):
+            // **태그를 누르면 그 태그로 찾기** (301). 찾기 칸은 하나(`searchText`) — 어디서 열지는 ⌘F 와 같은 길(`openSearch`).
+            library.requestSearch(text)
         case .missing(let path):
             // 빈 경로만 띄우면 오류처럼 보인다 — 무엇이 없는지 말한다 (빌드 20 · 10번).
             alert = String(localized: "이 링크가 가리키는 파일이 폴더에 없습니다.\n\(path)\n\n링크의 경로는 노트가 있는 폴더 기준입니다.")
@@ -1869,7 +1874,6 @@ private struct NoteDetail: View {
                 Label(library.isReading ? String(localized: "쓰기") : String(localized: "읽기"),
                       systemImage: library.isReading ? "pencil" : "book")
             }
-            .keyboardShortcut("e", modifiers: .command)
         }
     }
 
@@ -2201,6 +2205,8 @@ private struct FormatBar: View {
                 button(String(localized: "링크"), "link") { library.startLinkingExistingFile() }
                 button(String(localized: "인용"), "text.quote", .quote, on: library.activeFormats.quote)
                 button(String(localized: "표 넣기"), "tablecells", .table)
+                // **날짜 · 시각 넣기** (308, 2026-11-06 사용자 — 주간 이슈처럼 한 노트에 덧붙일 때 머리표). 외장 자판은 ⌘⇧D.
+                button(String(localized: "날짜 · 시각"), "calendar") { library.insertDateStamp() }
                 rule
                 listButton
                 button(String(localized: "내어쓰기"), "decrease.indent", .shift(deeper: false))
