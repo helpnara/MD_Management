@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>재촉하지 않는 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+:root{
+  --paper:#FBF7EF; --paper2:#F3ECDF; --ink:#2A2724; --faint:#8C857B;
+  --accent:#0A7AFF; --leaf:#6FA53A; --wood:#D6A266; --gold:#C49A45;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--paper)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+#bg{position:absolute;inset:0}
+/* 여백 — 공책의 세로 여백 줄 */
+#margin{position:absolute;top:0;bottom:0;left:150px;width:3px;background:rgba(214,162,102,.35)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+
+/* 0 · 썸네일 */
+.hook{position:absolute;left:210px;right:80px;top:560px}
+.hook .kk{font-size:32px;font-weight:700;letter-spacing:10px;color:var(--leaf);margin-bottom:56px}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:124px;line-height:1.24;letter-spacing:-2px}
+.hook p{margin-top:64px;font-size:44px;color:#55514B;font-weight:500;line-height:1.5}
+
+/* 장면 머리 */
+.head{position:absolute;left:210px;right:80px;top:230px}
+.head small{display:block;font-size:30px;font-weight:700;letter-spacing:6px;color:var(--faint);margin-bottom:26px}
+.head h2{font-family:'Noto Serif KR',serif;font-weight:900;font-size:88px;line-height:1.25;letter-spacing:-1px}
+
+/* 1 · 부르는 알림 */
+.bell{position:absolute;left:110px;width:860px;padding:30px 34px;border-radius:40px;background:rgba(255,255,255,.96);
+  box-shadow:0 18px 44px rgba(40,40,60,.16);display:flex;gap:26px;align-items:flex-start}
+.bell .ic{width:84px;height:84px;border-radius:22px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:40px;color:#fff}
+.bell .tx{flex:1}
+.bell .top{display:flex;justify-content:space-between;font-size:28px;color:#8E8E93;font-weight:500}
+.bell .top b{color:#1C1C1E;font-weight:700}
+.bell .msg{margin-top:8px;font-size:36px;line-height:1.38;font-weight:500;color:#1C1C1E}
+
+/* 2 · 없는 것 */
+.nolist{position:absolute;left:210px;right:90px;top:760px}
+.no{display:flex;align-items:baseline;justify-content:space-between;padding:40px 0;border-bottom:2px solid rgba(42,39,36,.10)}
+.no:last-child{border-bottom:none}
+.no b{font-family:'Noto Serif KR',serif;font-weight:700;font-size:62px;letter-spacing:-1px}
+.no span{font-size:40px;font-weight:500;color:#6B665F}
+.no span em{font-style:normal;color:var(--leaf);font-weight:700}
+
+/* 3 · 남는 글 */
+.phone{position:absolute;left:190px;top:640px;width:700px;height:900px;border:16px solid var(--ink);border-radius:84px;background:#fff;overflow:hidden;
+  box-shadow:0 30px 70px rgba(80,60,30,.20)}
+.phone .bar{height:120px;display:flex;align-items:flex-end;padding:0 44px 18px;font-size:32px;color:var(--accent);font-weight:500;gap:14px}
+.phone .bar b{color:var(--ink);font-weight:700;margin:0 auto 0 0}
+.phone .page{padding:26px 54px}
+.phone h3{font-size:58px;font-weight:900;letter-spacing:-1px;margin-bottom:30px}
+.phone .body{font-size:38px;line-height:1.72;color:#33302C;white-space:pre-wrap}
+.file{position:absolute;left:0;right:0;top:1620px;display:flex;justify-content:center}
+.file div{padding:26px 44px;border-radius:50px;background:#fff;box-shadow:0 12px 30px rgba(80,60,30,.13);font-size:36px;font-weight:700;white-space:nowrap}
+.file code{font-family:'Noto Sans Mono','Noto Sans KR',monospace;font-weight:600}
+.file span{color:var(--faint);font-weight:500}
+
+/* 4 · 끝 */
+.hero{position:absolute;left:0;right:0;top:640px;text-align:center}
+.hero .row{display:flex;align-items:center;justify-content:center;gap:34px}
+.hero img{width:170px;height:170px;border-radius:40px;box-shadow:0 20px 40px rgba(120,80,30,.25)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:110px;letter-spacing:2px}
+.hero .tag{margin-top:46px;font-family:'Noto Serif KR',serif;font-weight:700;font-size:54px;color:#4A4640}
+.hero .tl{font-size:40px;margin-top:120px;font-weight:500;color:#55514B}
+.bigsearch{display:flex;align-items:center;gap:22px;margin:30px auto 0;width:760px;height:120px;border-radius:36px;background:#fff;box-shadow:0 20px 50px rgba(80,60,30,.16);
+  padding:0 40px;font-size:52px;font-weight:700;text-align:left}
+.bigsearch svg{width:56px;height:56px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.hero .foot{margin-top:60px;font-size:36px;color:var(--faint);font-weight:500;letter-spacing:2px}
+.caret{display:inline-block;width:4px;height:1em;background:var(--accent);vertical-align:-0.12em;margin-left:2px;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+  <div id="margin"></div>
+
+  <!-- 0 · 재촉하지 않는 (썸네일 — 0초에 다 보인다) -->
+  <section class="scene" id="s0">
+    <div class="hook">
+      <div class="kk">느린 여백</div>
+      <h1>재촉하지<br>않는<br>노트 앱</h1>
+      <p>알림도, 연속 기록도 없이<br>글만 천천히</p>
+    </div>
+  </section>
+
+  <!-- 1 · 요즘 앱은 자꾸 부릅니다 (남의 앱 이름은 쓰지 않는다 — CLAUDE §6) -->
+  <section class="scene" id="s1">
+    <div class="head" id="hd1"><small>요즘 앱은</small><h2>자꾸 부릅니다</h2></div>
+    <div class="bell" id="b1"><div class="ic" style="background:#F2994A">7</div><div class="tx"><div class="top"><b>어느 앱</b><span>지금</span></div><div class="msg">7일째 연속 기록 중! 오늘도 놓치지 마세요</div></div></div>
+    <div class="bell" id="b2"><div class="ic" style="background:#9B8AFB">N</div><div class="tx"><div class="top"><b>어느 앱</b><span>1분 전</span></div><div class="msg">새 기능을 확인해 보세요</div></div></div>
+    <div class="bell" id="b3"><div class="ic" style="background:#EB5757">P</div><div class="tx"><div class="top"><b>어느 앱</b><span>3분 전</span></div><div class="msg">프리미엄으로 바꾸면 노트 무제한</div></div></div>
+    <div class="bell" id="b4"><div class="ic" style="background:#56A0D3">!</div><div class="tx"><div class="top"><b>어느 앱</b><span>5분 전</span></div><div class="msg">계속하려면 로그인이 필요합니다</div></div></div>
+    <div class="bell" id="b5"><div class="ic" style="background:#6FCF97">%</div><div class="tx"><div class="top"><b>어느 앱</b><span>8분 전</span></div><div class="msg">지금 가입하면 첫 달 무료</div></div></div>
+  </section>
+
+  <!-- 2 · 느린 여백은 부르지 않습니다 — 코드로 확인한 것만 (알림 코드 없음 · 배지 없음 · 계정 없음 · 결제 없음) -->
+  <section class="scene" id="s2">
+    <div class="head" id="hd2"><small>느린 여백은</small><h2>부르지 않습니다</h2></div>
+    <div class="nolist">
+      <div class="no" id="n1"><b>알림</b><span>보내지 <em>않습니다</em></span></div>
+      <div class="no" id="n2"><b>연속 기록 · 배지</b><span><em>없습니다</em></span></div>
+      <div class="no" id="n3"><b>회원가입 · 로그인</b><span><em>없습니다</em></span></div>
+      <div class="no" id="n4"><b>광고 · 구독</b><span><em>없습니다</em></span></div>
+    </div>
+  </section>
+
+  <!-- 3 · 대신, 글이 남습니다 -->
+  <section class="scene" id="s3">
+    <div class="head" id="hd3"><small>대신</small><h2>글이 남습니다</h2></div>
+    <div class="phone" id="ph3">
+      <div class="bar"><span>‹</span><b>산책</b><span>읽기</span></div>
+      <div class="page"><h3>산책</h3><div class="body" id="bd3"></div></div>
+    </div>
+    <div class="file" id="f3"><div><code>산책.md</code> <span>— 내 아이클라우드 폴더에</span></div></div>
+  </section>
+
+  <!-- 4 · 끝 -->
+  <section class="scene" id="s4">
+    <div class="hero" id="h4">
+      <div class="row"><img src="icon.png" alt=""><h1>느린 여백</h1></div>
+      <div class="tag">재촉하지 않는 노트</div>
+      <div class="tl">앱스토어 검색창에</div>
+      <div class="bigsearch"><svg viewBox="0 0 56 56"><circle cx="24" cy="24" r="14"/><path d="M35 35 L46 46"/></svg><span id="bq4"></span></div>
+      <div class="foot">아이폰 · 아이패드 · 무료</div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const SC = { s0:[0,3.6], s1:[3.6,10.6], s2:[10.6,20.8], s3:[20.8,28.6], s4:[28.6,34.0] };
+const DURATION = 34.0;
+const BG = { s0:'#FBF7EF', s1:'#E9EAEE', s2:'#FBF7EF', s3:'#F6EEE3', s4:'#FBF7EF' };
+function hex(c){ return [1,3,5].map(i=>parseInt(c.slice(i,i+2),16)); }
+function mix(a,b,k){ const A=hex(a),B=hex(b); return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*k)).join(',')})`; }
+function renderBg(t){
+  const keys=Object.keys(SC); let i=keys.findIndex(k=>t>=SC[k][0]&&t<SC[k][1]); if(i<0) i=keys.length-1;
+  const prev=BG[keys[Math.max(0,i-1)]], cur=BG[keys[i]];
+  const k=ease(seg(t,SC[keys[i]][0]-0.1,SC[keys[i]][0]+0.6));
+  $('bg').style.background=`radial-gradient(1300px 1000px at 50% 30%, #FFFFFF 0%, ${mix(prev,cur,k)} 62%)`;
+  // 여백 줄 — 부르는 장면에서는 흐려졌다가 돌아온다
+  const busy = seg(t,SC.s1[0],SC.s1[0]+0.6) * (1-seg(t,SC.s1[1]-0.6,SC.s1[1]));
+  $('margin').style.opacity = 1-0.8*busy;
+}
+function headIn(id,t,a){ const el=$(id); const p=out(seg(t,a,a+0.9)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*30}px)`; }
+
+function renderS0(t){
+  // 0초에 모두 보인다 (썸네일). 아주 천천히 숨쉬듯.
+  document.querySelector('#s0 h1').style.transform=`translateY(${Math.sin(t*0.9)*4}px)`;
+}
+// 1 · 알림이 하나씩 떨어져 쌓이고, 끝에 흩어진다
+function renderS1(t){
+  const s=SC.s1[0];
+  headIn('hd1',t,s+0.1);
+  const tops=[600,800,1000,1200,1400];
+  for(let i=0;i<5;i++){
+    const el=$('b'+(i+1)); const a=s+0.8+i*0.75;
+    const p=out(seg(t,a,a+0.45));
+    const shake = (t>a+0.45 && t<a+0.75) ? Math.sin((t-a)*60)*3 : 0;
+    const gone = ease(seg(t,s+5.3+i*0.08,s+6.3+i*0.08));
+    el.style.top = (tops[i] - (1-p)*120) + 'px';
+    el.style.opacity = p*(1-gone);
+    el.style.filter = `blur(${gone*14}px)`;
+    el.style.transform = `translateX(${shake + gone*(i%2?160:-160)}px) scale(${1-gone*0.08})`;
+  }
+  const hp=1-ease(seg(t,s+5.6,s+6.6)); $('hd1').style.opacity=Math.min(out(seg(t,s+0.1,s+1.0)),hp);
+}
+// 2 · 네 줄이 천천히
+function renderS2(t){
+  const s=SC.s2[0];
+  headIn('hd2',t,s+0.3);
+  for(let i=0;i<4;i++){
+    const el=$('n'+(i+1)); const a=s+1.8+i*1.7;
+    const p=out(seg(t,a,a+1.1));
+    el.style.opacity=p; el.style.transform=`translateX(${(1-p)*-40}px)`;
+  }
+}
+// 3 · 글이 천천히 써지고 파일로 남는다
+const BODY = '오늘은 강가를 오래 걸었다.\n바람이 차가워졌고\n은행잎이 발밑에 쌓였다.\n\n서두를 일은 없었다.';
+function renderS3(t){
+  const s=SC.s3[0];
+  headIn('hd3',t,s+0.2);
+  const ph=$('ph3'); const p=out(seg(t,s+0.6,s+1.4)); ph.style.opacity=p; ph.style.transform=`translateY(${(1-p)*60}px)`;
+  const txt = typed(BODY,t,s+1.4,11);
+  const done = [...txt].length >= [...BODY].length;
+  $('bd3').innerHTML = txt.replace(/&/g,'&amp;').replace(/</g,'&lt;') + (done && t>s+6.2 ? '' : `<span class="caret" style="opacity:${blink(t)}"></span>`);
+  const f=$('f3'); const q=out(seg(t,s+6.0,s+6.8)); f.style.opacity=q; f.style.transform=`translateY(${(1-q)*30}px)`;
+}
+function renderS4(t){
+  const s=SC.s4[0];
+  const h=$('h4'); const p=out(seg(t,s+0.2,s+1.0)); h.style.opacity=p; h.style.transform=`translateY(${(1-p)*40}px)`;
+  $('bq4').innerHTML = typed('느린 여백',t,s+1.6,5)+`<span class="caret" style="opacity:${blink(t)}"></span>`;
+}
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.5));
+  const o = last ? 1 : 1-ease(seg(t,b-0.45,b-0.02));
+  return Math.min(i,o);
+}
+const R = {s0:renderS0,s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4};
+window.render = function(t){
+  renderBg(t);
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001) R[k](t);
+  });
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
