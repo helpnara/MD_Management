@@ -409,6 +409,16 @@
         }
       }
     },
+    "**···** 의 **노트 정보**(⌘⇧I)에 글자 · 낱말 · 문단 · 할 일 · 읽는 시간이 있습니다. 마크다운 표시는 세지 않고 보이는 글만 셉니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Note Info** in the **···** menu (⌘⇧I) shows characters, words, paragraphs, tasks, and reading time. Markdown markup isn’t counted — only the text you see."
+          }
+        }
+      }
+    },
     "**공유** → 목록에서 **느린 여백** 을 고릅니다." : {
       "localizations" : {
         "en" : {
@@ -943,6 +953,16 @@
         }
       }
     },
+    "고친 때" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modified"
+          }
+        }
+      }
+    },
     "공유" : {
       "localizations" : {
         "en" : {
@@ -1075,6 +1095,16 @@
         }
       }
     },
+    "굵게 · 제목 같은 마크다운 표시와 링크 주소는 세지 않고, 읽는 사람이 보는 글만 셉니다. 읽는 시간은 공백을 뺀 500자에 1분으로 셉니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markdown markup such as bold or headings and link addresses aren’t counted — only the text a reader sees. Reading time assumes 500 characters per minute, not counting spaces."
+          }
+        }
+      }
+    },
     "규모 시험" : {
       "localizations" : {
         "en" : {
@@ -1195,6 +1225,16 @@
         }
       }
     },
+    "글" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text"
+          }
+        }
+      }
+    },
     "글 안에서 `[[` 를 치고 제목을 이어 치면 노트 목록이 뜹니다. 고르면 그 노트로 가는 링크가 들어갑니다. 읽기 화면에서 그 링크를 누르면 그 노트로 갑니다." : {
       "localizations" : {
         "en" : {
@@ -1245,6 +1285,26 @@
         }
       }
     },
+    "글자 (공백 빼고)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Characters (No Spaces)"
+          }
+        }
+      }
+    },
+    "글자 (공백 포함)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Characters (With Spaces)"
+          }
+        }
+      }
+    },
     "금고 파일" : {
       "localizations" : {
         "en" : {
@@ -1285,12 +1345,32 @@
         }
       }
     },
+    "끝낸 일" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
     "날짜 · 시각" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Date & Time"
+          }
+        }
+      }
+    },
+    "낱말" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Words"
           }
         }
       }
@@ -1439,6 +1519,16 @@
         }
       }
     },
+    "노트 안에서 찾기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find in Note"
+          }
+        }
+      }
+    },
     "노트 옮기기" : {
       "localizations" : {
         "en" : {
@@ -1455,6 +1545,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Linking Notes"
+          }
+        }
+      }
+    },
+    "노트 정보" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note Info"
           }
         }
       }
@@ -1651,12 +1751,32 @@
         }
       }
     },
+    "다음 · 이전 찾은 곳" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next · Previous Match"
+          }
+        }
+      }
+    },
     "다음 노트" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Next Note"
+          }
+        }
+      }
+    },
+    "다음 찾은 곳" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Match"
           }
         }
       }
@@ -1819,6 +1939,16 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "링크 · 사진" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links · Photos"
           }
         }
       }
@@ -2009,6 +2139,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove List"
+          }
+        }
+      }
+    },
+    "문단" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paragraphs"
           }
         }
       }
@@ -2249,6 +2389,16 @@
         }
       }
     },
+    "사진 · 첨부" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos · Attachments"
+          }
+        }
+      }
+    },
     "사진 · 파일 %lld개를 노트 옆 assets 폴더에 넣었습니다" : {
       "localizations" : {
         "en" : {
@@ -2331,6 +2481,16 @@
         }
       }
     },
+    "새 노트 이름을 오늘 날짜로" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name New Notes with Today’s Date"
+          }
+        }
+      }
+    },
     "새 노트를 만들지 못했습니다. " : {
       "localizations" : {
         "en" : {
@@ -2367,6 +2527,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Folder"
+          }
+        }
+      }
+    },
+    "새로 옴" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
           }
         }
       }
@@ -2795,6 +2965,28 @@
         }
       }
     },
+    "약 %lld분" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "About %lld minute"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "About %lld minutes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "어느 폴더 안으로" : {
       "localizations" : {
         "en" : {
@@ -2901,6 +3093,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cut · Copy · Paste"
+          }
+        }
+      }
+    },
+    "오른쪽 위 **···** 의 **노트 안에서 찾기**(외장 자판 ⌘⇧F)는 지금 노트에서 낱말을 찾아 모두 칠하고 하나씩 오갑니다. 쓰기 화면에서는 찾기 막대에서 **바꾸기**도 됩니다. 모든 노트에서 찾기로 고른 노트는 그 낱말이 채워진 채 열립니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**Find in Note** in the **···** menu at the top right (⌘⇧F on an external keyboard) highlights every match in the current note and steps through them. While editing, the find bar can **replace** too. A note you open from a search opens with that word already in the find bar."
           }
         }
       }
@@ -3167,22 +3369,22 @@
         }
       }
     },
-    "이전 · 다음 노트는 지금 보는 폴더의 목록 차례를 따릅니다. ⌘↑ ⌘↓ 는 글의 처음 · 끝으로 갑니다." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Previous and Next Note follow the order of the list in the current folder. ⌘↑ and ⌘↓ jump to the start and end of the text."
-          }
-        }
-      }
-    },
     "이전 노트" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Previous Note"
+          }
+        }
+      }
+    },
+    "이전 찾은 곳" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous Match"
           }
         }
       }
@@ -3237,6 +3439,16 @@
         }
       }
     },
+    "읽는 시간" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading Time"
+          }
+        }
+      }
+    },
     "임시 폴더" : {
       "localizations" : {
         "en" : {
@@ -3253,6 +3465,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Yes"
+          }
+        }
+      }
+    },
+    "자리" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         }
       }
@@ -3385,6 +3607,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turned the URL into a link. You can undo this."
+          }
+        }
+      }
+    },
+    "줄" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lines"
           }
         }
       }
@@ -3575,6 +3807,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Close Search"
+          }
+        }
+      }
+    },
+    "찾기(⌘F)는 모든 노트에서, 노트 안에서 찾기(⌘⇧F)는 지금 노트에서 찾습니다. 쓰기 화면에서는 찾기 막대에서 바꾸기도 됩니다. 이전 · 다음 노트는 지금 보는 폴더의 목록 차례를 따릅니다. ⌘↑ ⌘↓ 는 글의 처음 · 끝으로 갑니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search (⌘F) looks through all notes; Find in Note (⌘⇧F) looks in the current note, and while editing it can replace too. Previous and Next Note follow the order of the list in the current folder. ⌘↑ and ⌘↓ jump to the start and end of the text."
           }
         }
       }
@@ -3935,6 +4177,16 @@
         }
       }
     },
+    "크기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size"
+          }
+        }
+      }
+    },
     "큰 노트 만들기 (300줄)" : {
       "localizations" : {
         "en" : {
@@ -3981,6 +4233,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tags"
+          }
+        }
+      }
+    },
+    "파일" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
           }
         }
       }
@@ -4263,6 +4525,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "One Word at a Time"
+          }
+        }
+      }
+    },
+    "할 일" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasks"
           }
         }
       }
