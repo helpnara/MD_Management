@@ -1,0 +1,13 @@
+• 노트 안에서 찾기 — ··· 메뉴의 노트 안에서 찾기(외장 자판 ⌘⇧F)로 지금 노트의 낱말을 모두 칠하고 하나씩 오갑니다. 쓰기 화면에서는 바꾸기도 됩니다.
+• 모든 노트에서 찾기로 고른 노트는 그 낱말이 채워진 채 열립니다.
+• 노트 정보 — 글자 · 낱말 · 문단 · 할 일 · 읽는 시간을 ··· 메뉴에서 봅니다.
+• 설정에서 켜면 새 노트 이름이 오늘 날짜가 됩니다.
+• 공유로 받아 아직 안 연 노트에 ‘새로 옴’이 붙습니다. 안 쓰는 첨부 수는 설정에서 바로 보입니다.
+
+— English (What’s New in This Version) —
+
+• Find in Note — use Find in Note in the ··· menu (⌘⇧F on an external keyboard) to highlight every match in the current note and step through them. While editing, you can replace too.
+• Notes opened from a search now open with your search word already in the find bar.
+• Note Info — see characters, words, paragraphs, tasks, and reading time from the ··· menu.
+• Turn it on in Settings, and new notes are named with today’s date.
+• Notes you shared in and haven’t opened yet are marked “New”. Settings now shows how many unused attachments you have.

@@ -8415,6 +8415,2152 @@
       "tooDeep": true
     }
   ],
+  "noteStatsCases": [
+    {
+      "name": "빈 노트",
+      "stats": {
+        "characters": 0,
+        "charactersNoSpaces": 0,
+        "images": 0,
+        "lines": 0,
+        "links": 0,
+        "paragraphs": 0,
+        "readingMinutes": 0,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 0
+      },
+      "text": ""
+    },
+    {
+      "name": "제목 한 줄",
+      "stats": {
+        "characters": 5,
+        "charactersNoSpaces": 4,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "# 주간 회의"
+    },
+    {
+      "name": "굵게 · 링크 표시는 안 센다",
+      "stats": {
+        "characters": 6,
+        "charactersNoSpaces": 4,
+        "images": 0,
+        "lines": 1,
+        "links": 1,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "**첫** 일 [링크](a.md)"
+    },
+    {
+      "name": "할 일 상자",
+      "stats": {
+        "characters": 3,
+        "charactersNoSpaces": 3,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 3,
+        "tasksDone": 2,
+        "words": 3
+      },
+      "text": "- [ ] 가\n- [x] 나\n- [X] 다"
+    },
+    {
+      "name": "사진은 대체 글만",
+      "stats": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "images": 1,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "![사진](assets/a.jpg)"
+    },
+    {
+      "name": "머리말은 뺀다",
+      "stats": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "---\ntags: [회의]\n---\n본문"
+    },
+    {
+      "name": "닫히지 않은 머리말은 글이다",
+      "stats": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "---\n본문"
+    },
+    {
+      "name": "코드 울타리 안은 그대로",
+      "stats": {
+        "characters": 12,
+        "charactersNoSpaces": 11,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "```\n**a** [b](c)\n```"
+    },
+    {
+      "name": "표는 칸 글만 · 구분 줄은 문단을 안 끊는다",
+      "stats": {
+        "characters": 6,
+        "charactersNoSpaces": 4,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "| 가 | 나 |\n|---|:-:|\n| 1 | 2 |"
+    },
+    {
+      "name": "가로줄은 문단을 끊는다",
+      "stats": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "가\n---\n나"
+    },
+    {
+      "name": "빈 줄이 문단을 가른다",
+      "stats": {
+        "characters": 5,
+        "charactersNoSpaces": 4,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "가 나\n다\n\n라"
+    },
+    {
+      "name": "자모가 갈린 한글은 한 글자로 (NFC)",
+      "stats": {
+        "characters": 1,
+        "charactersNoSpaces": 1,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "한"
+    },
+    {
+      "name": "전각 빈칸 · 줄 끝 CR",
+      "stats": {
+        "characters": 4,
+        "charactersNoSpaces": 3,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "가　나\r\n다"
+    },
+    {
+      "name": "500자 넘으면 2분",
+      "stats": {
+        "characters": 501,
+        "charactersNoSpaces": 501,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 2,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가"
+    },
+    {
+      "name": "뒤섞기 001",
+      "stats": {
+        "characters": 0,
+        "charactersNoSpaces": 0,
+        "images": 0,
+        "lines": 0,
+        "links": 0,
+        "paragraphs": 0,
+        "readingMinutes": 0,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 0
+      },
+      "text": "# \n## > \n---\n\n"
+    },
+    {
+      "name": "뒤섞기 002",
+      "stats": {
+        "characters": 5,
+        "charactersNoSpaces": 5,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "\nㅎㅇㄹ1. "
+    },
+    {
+      "name": "뒤섞기 003",
+      "stats": {
+        "characters": 12,
+        "charactersNoSpaces": 12,
+        "images": 2,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "![사진](assets/b.png)![사진](assets/b.png)## \n | \n## &amp;\n1. - [x] \n\n> \n\n# `코드`"
+    },
+    {
+      "name": "뒤섞기 004",
+      "stats": {
+        "characters": 37,
+        "charactersNoSpaces": 30,
+        "images": 0,
+        "lines": 8,
+        "links": 0,
+        "paragraphs": 4,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 12
+      },
+      "text": "*기울임*# 　\n\t***회의 메모\n회의 메모- ***\n\n- [ ] \n\n　`코드`\n\\*\n\n&amp;\n#태그**굵게**\n"
+    },
+    {
+      "name": "뒤섞기 005",
+      "stats": {
+        "characters": 57,
+        "charactersNoSpaces": 51,
+        "images": 1,
+        "lines": 8,
+        "links": 1,
+        "paragraphs": 4,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 14
+      },
+      "text": "# &amp;`코드`\n|hello world\n\n## \n***---~~지움~~\n[링크](a.md)1. - [ ] \n\n가나다회의 메모- \n&amp;*기울임*![사진](assets/b.png)\n\n**굵게**\n<b>회의 메모"
+    },
+    {
+      "name": "뒤섞기 006",
+      "stats": {
+        "characters": 39,
+        "charactersNoSpaces": 36,
+        "images": 1,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": " | \n**굵게**hello world1. \n　|\nhello worldhello world![사진](assets/b.png)"
+    },
+    {
+      "name": "뒤섞기 007",
+      "stats": {
+        "characters": 3,
+        "charactersNoSpaces": 3,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "# \n---\n- [x] "
+    },
+    {
+      "name": "뒤섞기 008",
+      "stats": {
+        "characters": 8,
+        "charactersNoSpaces": 7,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "ㅎㅇㄹ\n\n회의 메모\n\n```\n"
+    },
+    {
+      "name": "뒤섞기 009",
+      "stats": {
+        "characters": 9,
+        "charactersNoSpaces": 7,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "\\*<b>- [ ] "
+    },
+    {
+      "name": "뒤섞기 010",
+      "stats": {
+        "characters": 27,
+        "charactersNoSpaces": 22,
+        "images": 0,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "\n~~~\n\nㅎㅇㄹ<b>\n1. \n- [ ] 1. &amp;\n\n\n- [x] "
+    },
+    {
+      "name": "뒤섞기 011",
+      "stats": {
+        "characters": 33,
+        "charactersNoSpaces": 29,
+        "images": 0,
+        "lines": 7,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 2,
+        "tasksDone": 2,
+        "words": 11
+      },
+      "text": ":-:\\*\n- [x] > `코드`\n# \n\n1. \n- [x] ## ---\n\n- - [ ] \n**굵게**\nhello world> \n# "
+    },
+    {
+      "name": "뒤섞기 012",
+      "stats": {
+        "characters": 38,
+        "charactersNoSpaces": 33,
+        "images": 0,
+        "lines": 5,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 10
+      },
+      "text": "\n\n<b>\n```> \n　*기울임*\n  \n- [ ] :-:회의 메모\n`코드`\t\n가나다`코드`회의 메모\n\n"
+    },
+    {
+      "name": "뒤섞기 013",
+      "stats": {
+        "characters": 31,
+        "charactersNoSpaces": 26,
+        "images": 1,
+        "lines": 7,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 12
+      },
+      "text": "    \n# # ***\n\\*![사진](assets/b.png)- [ ] \n- [ ] \n<b>　가나다\n**굵게**\n**굵게**:-: | \n- \n---"
+    },
+    {
+      "name": "뒤섞기 014",
+      "stats": {
+        "characters": 14,
+        "charactersNoSpaces": 14,
+        "images": 1,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": " | `코드`\n**굵게**\n~~지움~~![사진](assets/b.png)*기울임*\n<b>\n| | \n"
+    },
+    {
+      "name": "뒤섞기 015",
+      "stats": {
+        "characters": 0,
+        "charactersNoSpaces": 0,
+        "images": 0,
+        "lines": 0,
+        "links": 0,
+        "paragraphs": 0,
+        "readingMinutes": 0,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 0
+      },
+      "text": "　***"
+    },
+    {
+      "name": "뒤섞기 016",
+      "stats": {
+        "characters": 9,
+        "charactersNoSpaces": 8,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "회의 메모\n## &amp;\n- [x] "
+    },
+    {
+      "name": "뒤섞기 017",
+      "stats": {
+        "characters": 53,
+        "charactersNoSpaces": 51,
+        "images": 0,
+        "lines": 8,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 10
+      },
+      "text": "|ㅎㅇㄹ## \n`코드`# \n## ---***\n가나다**굵게**\nhello world<b>`코드`\n***[링크](a.md)\n가나다\\*\n~~~가나다  \n`코드`회의 메모"
+    },
+    {
+      "name": "뒤섞기 018",
+      "stats": {
+        "characters": 13,
+        "charactersNoSpaces": 11,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "\n## *기울임*ㅎㅇㄹ\n`코드`  ---"
+    },
+    {
+      "name": "뒤섞기 019",
+      "stats": {
+        "characters": 17,
+        "charactersNoSpaces": 13,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 6
+      },
+      "text": "***\n~~지움~~- [x] # \n\n가나다- [ ] "
+    },
+    {
+      "name": "뒤섞기 020",
+      "stats": {
+        "characters": 12,
+        "charactersNoSpaces": 12,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "\\*```\nㅎㅇㄹ\n\n\n`코드`***\n\n|\t"
+    },
+    {
+      "name": "뒤섞기 021",
+      "stats": {
+        "characters": 25,
+        "charactersNoSpaces": 23,
+        "images": 0,
+        "lines": 7,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "가나다\n*기울임*\n\n가나다\n:-:\n가나다\nㅎㅇㄹ\t\n|**굵게**- [ ] "
+    },
+    {
+      "name": "뒤섞기 022",
+      "stats": {
+        "characters": 8,
+        "charactersNoSpaces": 7,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": ":-:> <b>\n"
+    },
+    {
+      "name": "뒤섞기 023",
+      "stats": {
+        "characters": 23,
+        "charactersNoSpaces": 19,
+        "images": 0,
+        "lines": 3,
+        "links": 1,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 7
+      },
+      "text": "1.  | 가나다\nㅎㅇㄹ- [ ] &amp;\n가나다[링크](a.md)#태그\n## "
+    },
+    {
+      "name": "뒤섞기 024",
+      "stats": {
+        "characters": 10,
+        "charactersNoSpaces": 10,
+        "images": 0,
+        "lines": 2,
+        "links": 1,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": ":-:[링크](a.md)가나다\n1. "
+    },
+    {
+      "name": "뒤섞기 025",
+      "stats": {
+        "characters": 22,
+        "charactersNoSpaces": 20,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": "\n<b>> \n\n1. **굵게**\n\nhello world> :-:"
+    },
+    {
+      "name": "뒤섞기 026",
+      "stats": {
+        "characters": 55,
+        "charactersNoSpaces": 51,
+        "images": 1,
+        "lines": 7,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 0,
+        "words": 11
+      },
+      "text": "- [ ] ~~지움~~\n가나다`코드`- [x] \n- [ ] \t\n:-:가나다가나다\n![사진](assets/b.png)hello world\\*\n<b>\nhello world---\n"
+    },
+    {
+      "name": "뒤섞기 027",
+      "stats": {
+        "characters": 19,
+        "charactersNoSpaces": 16,
+        "images": 0,
+        "lines": 3,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 6
+      },
+      "text": "1. \\*- [ ] \n\n[링크](a.md)#태그\n***1. **굵게**\n"
+    },
+    {
+      "name": "뒤섞기 028",
+      "stats": {
+        "characters": 15,
+        "charactersNoSpaces": 13,
+        "images": 0,
+        "lines": 3,
+        "links": 1,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": "- # 회의 메모\n\n<b>- :-:\n\n[링크](a.md)"
+    },
+    {
+      "name": "뒤섞기 029",
+      "stats": {
+        "characters": 27,
+        "charactersNoSpaces": 26,
+        "images": 2,
+        "lines": 7,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 8
+      },
+      "text": "\\*\n회의 메모![사진](assets/b.png)\n|#태그\n![사진](assets/b.png)\\*\n:-:---\n\t\n\n~~지움~~> \n~~~ | ![사진](assets/b.png)\n`코드`"
+    },
+    {
+      "name": "뒤섞기 030",
+      "stats": {
+        "characters": 111,
+        "charactersNoSpaces": 104,
+        "images": 0,
+        "lines": 10,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 17
+      },
+      "text": "~~~\nhello world&amp;---\n회의 메모~~~　\n`코드` | &amp;\n`코드`~~지움~~```\n![사진](assets/b.png)\n# 가나다```\n | `코드`\n![사진](assets/b.png)\n- [x] \n1. "
+    },
+    {
+      "name": "뒤섞기 031",
+      "stats": {
+        "characters": 3,
+        "charactersNoSpaces": 3,
+        "images": 0,
+        "lines": 2,
+        "links": 1,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "\n\n- ---  \n\t[링크](a.md)\n- "
+    },
+    {
+      "name": "뒤섞기 032",
+      "stats": {
+        "characters": 22,
+        "charactersNoSpaces": 20,
+        "images": 0,
+        "lines": 6,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 6
+      },
+      "text": "\t<b>\n\n|\n<b>　\n:-:\n\n가나다~~지움~~\n- 　*기울임*\n- [x] \n"
+    },
+    {
+      "name": "뒤섞기 033",
+      "stats": {
+        "characters": 14,
+        "charactersNoSpaces": 13,
+        "images": 0,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": "\n\n|#태그ㅎㅇㄹ\n~~~#태그\n\n## - \n---\n- "
+    },
+    {
+      "name": "뒤섞기 034",
+      "stats": {
+        "characters": 15,
+        "charactersNoSpaces": 14,
+        "images": 1,
+        "lines": 5,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 6
+      },
+      "text": "\n\n\n가나다\n&amp;![사진](assets/b.png)\n\\*> \n\n회의 메모\n[링크](a.md)\n\n\n"
+    },
+    {
+      "name": "뒤섞기 035",
+      "stats": {
+        "characters": 32,
+        "charactersNoSpaces": 30,
+        "images": 1,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 6
+      },
+      "text": "\n~~지움~~|ㅎㅇㄹ\n`코드`\nhello world회의 메모\n:-:가나다![사진](assets/b.png)"
+    },
+    {
+      "name": "뒤섞기 036",
+      "stats": {
+        "characters": 71,
+        "charactersNoSpaces": 70,
+        "images": 0,
+        "lines": 8,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "**굵게***기울임*\n\n```~~지움~~\n\\*#태그\n<b>\n&amp;\n# `코드`![사진](assets/b.png)\n[링크](a.md)---**굵게**\n```---\n:-:"
+    },
+    {
+      "name": "뒤섞기 037",
+      "stats": {
+        "characters": 20,
+        "charactersNoSpaces": 16,
+        "images": 0,
+        "lines": 5,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "\n\t- [ ] \n회의 메모\t- \n~~~|\n\n\n:-:\n\n\\*\\*  \n# > "
+    },
+    {
+      "name": "뒤섞기 038",
+      "stats": {
+        "characters": 31,
+        "charactersNoSpaces": 26,
+        "images": 1,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "|  \n\\*\t<b>\n  &amp;---\n\n![사진](assets/b.png)***#태그\n회의 메모- [ ] ~~~"
+    },
+    {
+      "name": "뒤섞기 039",
+      "stats": {
+        "characters": 52,
+        "charactersNoSpaces": 46,
+        "images": 0,
+        "lines": 10,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 3,
+        "tasksDone": 2,
+        "words": 16
+      },
+      "text": "- [x] - [x] \n#태그[링크](a.md)## \n- [x] 1. `코드`\n*기울임*\n---*기울임*- \n`코드` | \n`코드`# |\n | \n<b>- [ ] \n- [ ] ```\nㅎㅇㄹ**굵게**\n|"
+    },
+    {
+      "name": "뒤섞기 040",
+      "stats": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "images": 1,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "![사진](assets/b.png)"
+    },
+    {
+      "name": "뒤섞기 041",
+      "stats": {
+        "characters": 0,
+        "charactersNoSpaces": 0,
+        "images": 0,
+        "lines": 0,
+        "links": 0,
+        "paragraphs": 0,
+        "readingMinutes": 0,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 0
+      },
+      "text": "|"
+    },
+    {
+      "name": "뒤섞기 042",
+      "stats": {
+        "characters": 5,
+        "charactersNoSpaces": 5,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "1. \n가나다"
+    },
+    {
+      "name": "뒤섞기 043",
+      "stats": {
+        "characters": 45,
+        "charactersNoSpaces": 41,
+        "images": 0,
+        "lines": 7,
+        "links": 1,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 11
+      },
+      "text": "가나다\n\n\n\\*~~~ | \n\n\n\t\n**굵게**회의 메모```\n|~~지움~~---\n[링크](a.md)\n`코드`# \nhello world> ---"
+    },
+    {
+      "name": "뒤섞기 044",
+      "stats": {
+        "characters": 18,
+        "charactersNoSpaces": 16,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": "*기울임*\n\n~~~- [ ] ~~~\n`코드`\n~~지움~~- [ ] \t"
+    },
+    {
+      "name": "뒤섞기 045",
+      "stats": {
+        "characters": 0,
+        "charactersNoSpaces": 0,
+        "images": 0,
+        "lines": 0,
+        "links": 0,
+        "paragraphs": 0,
+        "readingMinutes": 0,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 0
+      },
+      "text": ""
+    },
+    {
+      "name": "뒤섞기 046",
+      "stats": {
+        "characters": 42,
+        "charactersNoSpaces": 39,
+        "images": 0,
+        "lines": 6,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "  \n\\*1. ---\nhello world\n~~~\\*ㅎㅇㄹ\nhello world***\n  가나다\n&amp;\n1. \n\n\t"
+    },
+    {
+      "name": "뒤섞기 047",
+      "stats": {
+        "characters": 17,
+        "charactersNoSpaces": 15,
+        "images": 1,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "![사진](assets/b.png) | #태그\n|- \n*기울임*#태그*기울임*\n```\\*\n"
+    },
+    {
+      "name": "뒤섞기 048",
+      "stats": {
+        "characters": 44,
+        "charactersNoSpaces": 38,
+        "images": 1,
+        "lines": 8,
+        "links": 0,
+        "paragraphs": 4,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 13
+      },
+      "text": "　hello world  \n# ![사진](assets/b.png)- [ ] \n가나다회의 메모\n  \n1. ***가나다\n#   ~~~\n\n\\*\nㅎㅇㄹ | \n\n\n`코드`"
+    },
+    {
+      "name": "뒤섞기 049",
+      "stats": {
+        "characters": 0,
+        "charactersNoSpaces": 0,
+        "images": 0,
+        "lines": 0,
+        "links": 0,
+        "paragraphs": 0,
+        "readingMinutes": 0,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 0
+      },
+      "text": "## "
+    },
+    {
+      "name": "뒤섞기 050",
+      "stats": {
+        "characters": 14,
+        "charactersNoSpaces": 12,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "\n회의 메모\n:-:1. ~~~\n\n"
+    },
+    {
+      "name": "뒤섞기 051",
+      "stats": {
+        "characters": 13,
+        "charactersNoSpaces": 12,
+        "images": 0,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": ":-:\n&amp;　  \n\n가나다&amp;\n\n&amp;:-:\n"
+    },
+    {
+      "name": "뒤섞기 052",
+      "stats": {
+        "characters": 11,
+        "charactersNoSpaces": 10,
+        "images": 1,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "\t\n\n![사진](assets/b.png)`코드` | \n:-:\n***\n1. "
+    },
+    {
+      "name": "뒤섞기 053",
+      "stats": {
+        "characters": 24,
+        "charactersNoSpaces": 23,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "```  \n# ---![사진](assets/b.png)\n"
+    },
+    {
+      "name": "뒤섞기 054",
+      "stats": {
+        "characters": 8,
+        "charactersNoSpaces": 7,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "<b>회의 메모"
+    },
+    {
+      "name": "뒤섞기 055",
+      "stats": {
+        "characters": 44,
+        "charactersNoSpaces": 39,
+        "images": 0,
+        "lines": 9,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 12
+      },
+      "text": "\\*가나다 | \n*기울임*1. \n[링크](a.md)\n***|## \n*기울임*- [ ] \n　\t\n\n회의 메모#태그\n~~지움~~*기울임*\n&amp;1. "
+    },
+    {
+      "name": "뒤섞기 056",
+      "stats": {
+        "characters": 39,
+        "charactersNoSpaces": 37,
+        "images": 1,
+        "lines": 9,
+        "links": 2,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 0,
+        "words": 10
+      },
+      "text": "&amp;|#태그\n  　가나다\n![사진](assets/b.png)\n\n  - :-:\n[링크](a.md)\nㅎㅇㄹ\n> - [ ] ---\n[링크](a.md)\\*\n\thello world~~~\n\n\t"
+    },
+    {
+      "name": "뒤섞기 057",
+      "stats": {
+        "characters": 60,
+        "charactersNoSpaces": 52,
+        "images": 0,
+        "lines": 8,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 15
+      },
+      "text": "```\n- \t1. \n---- |\n![사진](assets/b.png)　*기울임*\n\n# \n## 회의 메모ㅎㅇㄹ\n> 1. \n---\n\t회의 메모"
+    },
+    {
+      "name": "뒤섞기 058",
+      "stats": {
+        "characters": 14,
+        "charactersNoSpaces": 12,
+        "images": 1,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": "회의 메모\n|***\n\n*기울임*\n> \n![사진](assets/b.png)　\n"
+    },
+    {
+      "name": "뒤섞기 059",
+      "stats": {
+        "characters": 20,
+        "charactersNoSpaces": 19,
+        "images": 0,
+        "lines": 5,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 6
+      },
+      "text": "\n&amp;\n회의 메모~~~\n\n1. \n\n&amp;ㅎㅇㄹ#태그\n1. \n\t"
+    },
+    {
+      "name": "뒤섞기 060",
+      "stats": {
+        "characters": 18,
+        "charactersNoSpaces": 17,
+        "images": 1,
+        "lines": 4,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": "\n[링크](a.md)\n---#태그\n\n#태그# :-:\n![사진](assets/b.png)\n"
+    },
+    {
+      "name": "뒤섞기 061",
+      "stats": {
+        "characters": 62,
+        "charactersNoSpaces": 58,
+        "images": 1,
+        "lines": 10,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 14
+      },
+      "text": "hello world## ***\nㅎㅇㄹ\n- [x] \n1. **굵게**\nㅎㅇㄹ`코드`회의 메모\n#태그\\*\\*\n- [x] \n\n[링크](a.md)- [x] \n![사진](assets/b.png)~~~~~지움~~\n\\*"
+    },
+    {
+      "name": "뒤섞기 062",
+      "stats": {
+        "characters": 4,
+        "charactersNoSpaces": 3,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "\n```\n## - "
+    },
+    {
+      "name": "뒤섞기 063",
+      "stats": {
+        "characters": 12,
+        "charactersNoSpaces": 10,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": "> # \n　||\n가나다- \n- [ ] \n\\*## # "
+    },
+    {
+      "name": "뒤섞기 064",
+      "stats": {
+        "characters": 5,
+        "charactersNoSpaces": 5,
+        "images": 1,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "\n![사진](assets/b.png)***\n"
+    },
+    {
+      "name": "뒤섞기 065",
+      "stats": {
+        "characters": 13,
+        "charactersNoSpaces": 12,
+        "images": 1,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "## ~~~## \n# \n\t---\n- > \nㅎㅇㄹ1. ![사진](assets/b.png)"
+    },
+    {
+      "name": "뒤섞기 066",
+      "stats": {
+        "characters": 65,
+        "charactersNoSpaces": 60,
+        "images": 0,
+        "lines": 7,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 12
+      },
+      "text": "```<b>\n\n\n*기울임*~~~***\n***가나다```\n- [ ] \n\n가나다ㅎㅇㄹ\n~~~\n- [x] #태그\n[링크](a.md)hello world> "
+    },
+    {
+      "name": "뒤섞기 067",
+      "stats": {
+        "characters": 31,
+        "charactersNoSpaces": 29,
+        "images": 1,
+        "lines": 6,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 8
+      },
+      "text": "ㅎㅇㄹ\n:-:\n가나다회의 메모\n  **굵게**\nhello world![사진](assets/b.png)\n1. \n | "
+    },
+    {
+      "name": "뒤섞기 068",
+      "stats": {
+        "characters": 61,
+        "charactersNoSpaces": 57,
+        "images": 0,
+        "lines": 9,
+        "links": 1,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 0,
+        "words": 13
+      },
+      "text": "- [ ]  | \n\nhello world\n\n | \n---> \nㅎㅇㄹhello world<b>\n회의 메모`코드`\n\\*> \n|**굵게**\t\n[링크](a.md)hello world1. \n**굵게**"
+    },
+    {
+      "name": "뒤섞기 069",
+      "stats": {
+        "characters": 11,
+        "charactersNoSpaces": 11,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "## \n---<b>\n\n- `코드`\n\n<b>"
+    },
+    {
+      "name": "뒤섞기 070",
+      "stats": {
+        "characters": 16,
+        "charactersNoSpaces": 15,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "~~지움~~hello world\n  \t\n*기울임*"
+    },
+    {
+      "name": "뒤섞기 071",
+      "stats": {
+        "characters": 48,
+        "charactersNoSpaces": 43,
+        "images": 0,
+        "lines": 6,
+        "links": 0,
+        "paragraphs": 4,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 10
+      },
+      "text": ":-:  # \n\n\\*　---\n\n\n\n\n~~지움~~가나다hello world\n~~지움~~~~지움~~\n회의 메모가나다~~~\n\n~~지움~~"
+    },
+    {
+      "name": "뒤섞기 072",
+      "stats": {
+        "characters": 28,
+        "charactersNoSpaces": 24,
+        "images": 1,
+        "lines": 5,
+        "links": 2,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "\n\n- [ ] ![사진](assets/b.png)- [x] \n**굵게**> 1. \n- [ ] \n\n[링크](a.md)\n회의 메모---[링크](a.md)"
+    },
+    {
+      "name": "뒤섞기 073",
+      "stats": {
+        "characters": 12,
+        "charactersNoSpaces": 12,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "가나다ㅎㅇㄹ\n<b>  \n\t```"
+    },
+    {
+      "name": "뒤섞기 074",
+      "stats": {
+        "characters": 58,
+        "charactersNoSpaces": 50,
+        "images": 0,
+        "lines": 5,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 13
+      },
+      "text": "\n~~~\n~~~&amp;\n|# > \n## - [ ] [링크](a.md)\n\n[링크](a.md) | *기울임*\n```회의 메모- "
+    },
+    {
+      "name": "뒤섞기 075",
+      "stats": {
+        "characters": 17,
+        "charactersNoSpaces": 16,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "# ---\n  가나다hello world"
+    },
+    {
+      "name": "뒤섞기 076",
+      "stats": {
+        "characters": 21,
+        "charactersNoSpaces": 21,
+        "images": 2,
+        "lines": 6,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 6
+      },
+      "text": " | \\*`코드`\n\n|![사진](assets/b.png)---\n*기울임*#태그\n![사진](assets/b.png)\n\n&amp;\n*기울임*|"
+    },
+    {
+      "name": "뒤섞기 077",
+      "stats": {
+        "characters": 21,
+        "charactersNoSpaces": 19,
+        "images": 1,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": "![사진](assets/b.png)\n~~~\nhello world\n---> 가나다"
+    },
+    {
+      "name": "뒤섞기 078",
+      "stats": {
+        "characters": 20,
+        "charactersNoSpaces": 17,
+        "images": 0,
+        "lines": 5,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 1,
+        "words": 8
+      },
+      "text": "  - \n\t- [x] ## \n\n\n회의 메모 | [링크](a.md)\n  \t- \n***#태그\n"
+    },
+    {
+      "name": "뒤섞기 079",
+      "stats": {
+        "characters": 31,
+        "charactersNoSpaces": 25,
+        "images": 0,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "````코드`\n- [ ] 　~~지움~~\n- [x] \n- [x] \n*기울임*---"
+    },
+    {
+      "name": "뒤섞기 080",
+      "stats": {
+        "characters": 17,
+        "charactersNoSpaces": 17,
+        "images": 0,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "  \n\nㅎㅇㄹ\n- [ ] *기울임**기울임*\n- [x] \n\t가나다"
+    },
+    {
+      "name": "뒤섞기 081",
+      "stats": {
+        "characters": 24,
+        "charactersNoSpaces": 22,
+        "images": 0,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 6
+      },
+      "text": "# |\n<b>\nhello worldㅎㅇㄹ\n*기울임*> > "
+    },
+    {
+      "name": "뒤섞기 082",
+      "stats": {
+        "characters": 5,
+        "charactersNoSpaces": 4,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "회의 메모"
+    },
+    {
+      "name": "뒤섞기 083",
+      "stats": {
+        "characters": 14,
+        "charactersNoSpaces": 13,
+        "images": 1,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "# \n\n\\*\\*\n　``````\n![사진](assets/b.png)```  "
+    },
+    {
+      "name": "뒤섞기 084",
+      "stats": {
+        "characters": 23,
+        "charactersNoSpaces": 21,
+        "images": 0,
+        "lines": 6,
+        "links": 2,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 1,
+        "words": 6
+      },
+      "text": "~~지움~~:-:\n　[링크](a.md)ㅎㅇㄹ\n- > **굵게**\n가나다:-:　\n- \n- [x] [링크](a.md)"
+    },
+    {
+      "name": "뒤섞기 085",
+      "stats": {
+        "characters": 14,
+        "charactersNoSpaces": 11,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "회의 메모- [x] ***\n> "
+    },
+    {
+      "name": "뒤섞기 086",
+      "stats": {
+        "characters": 20,
+        "charactersNoSpaces": 17,
+        "images": 1,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 6
+      },
+      "text": " | 1. \n\n***회의 메모\n![사진](assets/b.png)*기울임*- [ ] \n"
+    },
+    {
+      "name": "뒤섞기 087",
+      "stats": {
+        "characters": 23,
+        "charactersNoSpaces": 19,
+        "images": 0,
+        "lines": 5,
+        "links": 0,
+        "paragraphs": 4,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 7
+      },
+      "text": "|- ***\n\n~~지움~~\n---\n　\n**굵게**　가나다\n\n***<b>- [ ] \n　***\n|"
+    },
+    {
+      "name": "뒤섞기 088",
+      "stats": {
+        "characters": 38,
+        "charactersNoSpaces": 36,
+        "images": 0,
+        "lines": 7,
+        "links": 1,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 0,
+        "words": 8
+      },
+      "text": "> \n# 1. `코드`\n- [ ] **굵게**가나다\n\n:-:　\n:-:[링크](a.md)\n*기울임*\n\n\nhello world***\n | :-:\n`코드`***"
+    },
+    {
+      "name": "뒤섞기 089",
+      "stats": {
+        "characters": 0,
+        "charactersNoSpaces": 0,
+        "images": 0,
+        "lines": 0,
+        "links": 0,
+        "paragraphs": 0,
+        "readingMinutes": 0,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 0
+      },
+      "text": "\n\n"
+    },
+    {
+      "name": "뒤섞기 090",
+      "stats": {
+        "characters": 20,
+        "charactersNoSpaces": 17,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "***  > \nhello world:-:"
+    },
+    {
+      "name": "뒤섞기 091",
+      "stats": {
+        "characters": 16,
+        "charactersNoSpaces": 15,
+        "images": 2,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 2,
+        "tasksDone": 1,
+        "words": 5
+      },
+      "text": "![사진](assets/b.png)~~지움~~\t\n\n- [x] ㅎㅇㄹ- [x] \n# `코드`\n- [ ] ![사진](assets/b.png)"
+    },
+    {
+      "name": "뒤섞기 092",
+      "stats": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "images": 1,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "![사진](assets/b.png)"
+    },
+    {
+      "name": "뒤섞기 093",
+      "stats": {
+        "characters": 53,
+        "charactersNoSpaces": 47,
+        "images": 0,
+        "lines": 6,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 12
+      },
+      "text": "> \n---|---\nhello world\n\n~~~\nhello world\n&amp;hello world\nㅎㅇㄹ\n- [x] 회의 메모\n- "
+    },
+    {
+      "name": "뒤섞기 094",
+      "stats": {
+        "characters": 2,
+        "charactersNoSpaces": 1,
+        "images": 0,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": " | &amp;　"
+    },
+    {
+      "name": "뒤섞기 095",
+      "stats": {
+        "characters": 47,
+        "charactersNoSpaces": 43,
+        "images": 0,
+        "lines": 6,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 10
+      },
+      "text": "\n#태그ㅎㅇㄹ\n\n~~~~~~\n  \n\n | > 회의 메모\n- 가나다**굵게**\n가나다:-:ㅎㅇㄹ\n~~지움~~  \n```***"
+    },
+    {
+      "name": "뒤섞기 096",
+      "stats": {
+        "characters": 12,
+        "charactersNoSpaces": 11,
+        "images": 0,
+        "lines": 2,
+        "links": 1,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "`코드`[링크](a.md)회의 메모\n가나다\n~~~```"
+    },
+    {
+      "name": "뒤섞기 097",
+      "stats": {
+        "characters": 10,
+        "charactersNoSpaces": 10,
+        "images": 0,
+        "lines": 3,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "&amp;\n- \n  \n***:-:[링크](a.md)\n\n\n\n"
+    },
+    {
+      "name": "뒤섞기 098",
+      "stats": {
+        "characters": 38,
+        "charactersNoSpaces": 34,
+        "images": 0,
+        "lines": 7,
+        "links": 1,
+        "paragraphs": 4,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 11
+      },
+      "text": "가나다\n회의 메모# **굵게**\n가나다- ~~지움~~\n   | \n#태그**굵게**\n\n\\*## ## \n~~지움~~[링크](a.md)1. \n\n**굵게**"
+    },
+    {
+      "name": "뒤섞기 099",
+      "stats": {
+        "characters": 7,
+        "charactersNoSpaces": 7,
+        "images": 0,
+        "lines": 1,
+        "links": 1,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "\n:-:**굵게**[링크](a.md)"
+    },
+    {
+      "name": "뒤섞기 100",
+      "stats": {
+        "characters": 28,
+        "charactersNoSpaces": 27,
+        "images": 2,
+        "lines": 8,
+        "links": 3,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "\n**굵게**## > \n> ~~~[링크](a.md)\n\\*[링크](a.md)\n\n![사진](assets/b.png)`코드`![사진](assets/b.png)\n- \n- [ ] #태그\\*\n\n## \n# - \n- [링크](a.md)"
+    },
+    {
+      "name": "뒤섞기 101",
+      "stats": {
+        "characters": 11,
+        "charactersNoSpaces": 10,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "- [ ] \n~~지움~~---\n- [ ] :-:\n"
+    },
+    {
+      "name": "뒤섞기 102",
+      "stats": {
+        "characters": 39,
+        "charactersNoSpaces": 36,
+        "images": 0,
+        "lines": 5,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 8
+      },
+      "text": "~~~\n**굵게**# \nㅎㅇㄹ가나다ㅎㅇㄹ\n# - [x] [링크](a.md)\n# \n\n\\*\\*"
+    },
+    {
+      "name": "뒤섞기 103",
+      "stats": {
+        "characters": 24,
+        "charactersNoSpaces": 22,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 5
+      },
+      "text": "hello world\n```\n`코드`회의 메모\n`코드`\n"
+    },
+    {
+      "name": "뒤섞기 104",
+      "stats": {
+        "characters": 20,
+        "charactersNoSpaces": 17,
+        "images": 0,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 7
+      },
+      "text": " | `코드``코드`\n\\**기울임* | \n# &amp;\n회의 메모 |   \n# "
+    },
+    {
+      "name": "뒤섞기 105",
+      "stats": {
+        "characters": 15,
+        "charactersNoSpaces": 13,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "회의 메모:-:\n가나다> ~~지움~~"
+    },
+    {
+      "name": "뒤섞기 106",
+      "stats": {
+        "characters": 22,
+        "charactersNoSpaces": 20,
+        "images": 0,
+        "lines": 4,
+        "links": 2,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 1,
+        "words": 5
+      },
+      "text": "- [x] [링크](a.md)<b>\n\n\n|회의 메모\n\n\n**굵게**[링크](a.md)\\*\n---```　\n"
+    },
+    {
+      "name": "뒤섞기 107",
+      "stats": {
+        "characters": 19,
+        "charactersNoSpaces": 15,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "　\n\nhello world\n\n---1. 　"
+    },
+    {
+      "name": "뒤섞기 108",
+      "stats": {
+        "characters": 53,
+        "charactersNoSpaces": 45,
+        "images": 0,
+        "lines": 7,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 15
+      },
+      "text": "\n1. \n`코드`\\*\nhello world- [ ] \n~~~&amp;|\n\t> - \n회의 메모hello world1. \n## 가나다\n- [x] "
+    },
+    {
+      "name": "뒤섞기 109",
+      "stats": {
+        "characters": 18,
+        "charactersNoSpaces": 18,
+        "images": 1,
+        "lines": 4,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 4
+      },
+      "text": "\n`코드`\n\n![사진](assets/b.png)~~지움~~**굵게**\n- **굵게**\n```~~~---\n\n---*기울임*"
+    },
+    {
+      "name": "뒤섞기 110",
+      "stats": {
+        "characters": 19,
+        "charactersNoSpaces": 17,
+        "images": 0,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 1,
+        "words": 4
+      },
+      "text": "<b>- hello world\n- [x] ***"
+    },
+    {
+      "name": "뒤섞기 111",
+      "stats": {
+        "characters": 5,
+        "charactersNoSpaces": 5,
+        "images": 0,
+        "lines": 2,
+        "links": 1,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 2
+      },
+      "text": "---\n\n<b>\n[링크](a.md)"
+    },
+    {
+      "name": "뒤섞기 112",
+      "stats": {
+        "characters": 0,
+        "charactersNoSpaces": 0,
+        "images": 0,
+        "lines": 0,
+        "links": 0,
+        "paragraphs": 0,
+        "readingMinutes": 0,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 0
+      },
+      "text": ""
+    },
+    {
+      "name": "뒤섞기 113",
+      "stats": {
+        "characters": 11,
+        "charactersNoSpaces": 11,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "---\n\n&amp;---\n\\*\n`코드``코드`"
+    },
+    {
+      "name": "뒤섞기 114",
+      "stats": {
+        "characters": 54,
+        "charactersNoSpaces": 51,
+        "images": 0,
+        "lines": 6,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 9
+      },
+      "text": "~~~\n\n---hello world\n[링크](a.md)- [x] \n~~~:-:\n---가나다\n\n**굵게**\n---\t```"
+    },
+    {
+      "name": "뒤섞기 115",
+      "stats": {
+        "characters": 66,
+        "charactersNoSpaces": 57,
+        "images": 1,
+        "lines": 9,
+        "links": 0,
+        "paragraphs": 3,
+        "readingMinutes": 1,
+        "tasks": 1,
+        "tasksDone": 1,
+        "words": 15
+      },
+      "text": "　  \n![사진](assets/b.png)회의 메모　\n#  | hello world\n\n- [x] 가나다\n:-:  \n~~~ | &amp;\n# *기울임*~~지움~~\n`코드`- [ ] \n`코드`가나다#태그\n | `코드`"
+    },
+    {
+      "name": "뒤섞기 116",
+      "stats": {
+        "characters": 10,
+        "charactersNoSpaces": 9,
+        "images": 1,
+        "lines": 2,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "`코드`![사진](assets/b.png)\n&amp;:-: | \n"
+    },
+    {
+      "name": "뒤섞기 117",
+      "stats": {
+        "characters": 37,
+        "charactersNoSpaces": 37,
+        "images": 0,
+        "lines": 7,
+        "links": 0,
+        "paragraphs": 5,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 7
+      },
+      "text": "\t<b>\n\n```hello world\nㅎㅇㄹ\n\n[링크](a.md)<b>\n\n　~~지움~~\n\n#태그\n<b>```## \n | "
+    },
+    {
+      "name": "뒤섞기 118",
+      "stats": {
+        "characters": 2,
+        "charactersNoSpaces": 2,
+        "images": 1,
+        "lines": 1,
+        "links": 0,
+        "paragraphs": 1,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 1
+      },
+      "text": "  ![사진](assets/b.png)\n"
+    },
+    {
+      "name": "뒤섞기 119",
+      "stats": {
+        "characters": 12,
+        "charactersNoSpaces": 12,
+        "images": 0,
+        "lines": 3,
+        "links": 0,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 3
+      },
+      "text": "> - [x] \n | \n## # 1. \n<b><b>|\n"
+    },
+    {
+      "name": "뒤섞기 120",
+      "stats": {
+        "characters": 42,
+        "charactersNoSpaces": 38,
+        "images": 0,
+        "lines": 7,
+        "links": 1,
+        "paragraphs": 2,
+        "readingMinutes": 1,
+        "tasks": 0,
+        "tasksDone": 0,
+        "words": 10
+      },
+      "text": "# `코드````\n[링크](a.md)　\nhello world- - [x] \n\n**굵게**\n가나다```\n*기울임*\n- [x] "
+    }
+  ],
   "notesExportCases": [
     {
       "files": [

@@ -12,12 +12,12 @@ updated: 2026-10-22
 
 ---
 
-## 0. 지금 상태 (2026-11-07 — **1.1.24 (빌드 150) 심사 제출 · 설명 보강** · **1.1.23 (빌드 147) 승인 · 배포** · 1.1.22 (빌드 145) 배포 (1.1.21 거둠) · 1.1.19 (빌드 134) 배포 · 1.1.18 (빌드 133) 배포 · 1.1.21 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.23)
+## 0. 지금 상태 (2026-11-07 — **1.1.25 (빌드 151) 심사 제출 · 설명 두 문장** · 1.1.24 (빌드 150) 승인 · 배포 · 1.1.23 (빌드 147) 배포 · 1.1.22 (빌드 145) 배포 (1.1.21 거둠) · 1.1.19 (빌드 134) 배포 · 1.1.18 (빌드 133) 배포 · 1.1.21 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.23)
 
 | | |
 |---|---|
 | 번들 ID | `com.helpnara.markdown` |
-| 출시된 판 | **1.1.23** (빌드 147 · 2026-11-04 배포) — 한국어 · 영어. 그 앞 1.1.22 (빌드 145) · 1.1.19 (빌드 134) · 1.1.18 (빌드 133) · 1.1.16 (빌드 123) · 1.1.15 (빌드 122). 1.1.13 · 1.1.17 · 1.1.21 은 내지 않고 건너뜀 (1.1.21 은 심사 중 거둠 — 1.1.22 에 합쳐 냈다) |
+| 출시된 판 | **1.1.24** (빌드 150 · 2026-11-07 배포) — 한국어 · 영어. 그 앞 1.1.23 (빌드 147) · 1.1.22 (빌드 145) · 1.1.19 (빌드 134) · 1.1.18 (빌드 133) · 1.1.16 (빌드 123) · 1.1.15 (빌드 122). 1.1.13 · 1.1.17 · 1.1.21 은 내지 않고 건너뜀 (1.1.21 은 심사 중 거둠 — 1.1.22 에 합쳐 냈다) |
 | 빌드 번호 | **CI 실행 번호와 같다** (`testflight.yml` 이 `github.run_number` 를 넣는다) — 심사에 낼 빌드를 확인 목록 0번의 판으로 고른다 |
 | 처리방침 · 지원 | 한국어 `/privacy/` · 영어 `/en/privacy/` (열리는 것 확인 — 2026-09-24 · 2026-10-07) |
 | 스크린샷 | 두 언어 같은 짜임 — 아이폰 6.1" · 6.5" · 6.9" 다섯 장씩 · 아이패드 13" 세로 다섯 장 (글귀 · CI 촬영 · `docs/store/screenshots/{ko,en}/`). 아이패드 5번(찾기)은 1.1.12 에서 갈았다 · 아이폰 미리보기 영상 두 언어 |
@@ -60,6 +60,7 @@ markdown,md,메모장,기록,일기,글쓰기,아이클라우드,icloud,에디�
 
 ### 설명
 
+> **1.1.25 에서 보강했다** (2026-11-07 사용자 — *두 문장 넣기*). 찾기 절에 노트 안에서 찾기(304) · 쓰는 동안 절에 노트 정보(315) 한 문장씩 · 영어도 같이. 그 앞:
 > **1.1.24 에서 보강했다** (2026-11-07 사용자 — 아래 *다음 판 보강 후보* 를 물었더니 *모두 넣기*). 쓰는 동안 절에 날짜 · 시각 단추(308) · 마지막 노트로(302) ·
 > 새 절 *옮겨 오기*(289) · 찾기 절에 태그 누르기(301) · 새 절 *지워도 돌아옵니다*(292) · 아이패드 절의 *하드웨어 키보드 단축키* 를 외장 자판 · 단축키 화면(309 · 313)으로.
 > PDF 첫 쪽 카드(295)는 다른 앱에서 옮겨 온 `![](…pdf)` 에만 해당하는 드문 경우라 뺐다. 영어 설명도 같이.
@@ -89,6 +90,7 @@ markdown,md,메모장,기록,일기,글쓰기,아이클라우드,icloud,에디�
 띠의 달력 단추는 지금 날짜와 시각을 한 줄 넣습니다.
 
 설정에서 켜 두면 앱을 열 때 마지막으로 보던 노트로 바로 갑니다.
+··· 메뉴의 노트 정보에서 글자 · 낱말 · 문단 · 할 일 · 읽는 시간을 봅니다.
 
 읽기 화면에서는 체크상자를 눌러 바로 켜고 끕니다. 쓰기 화면으로 넘어가지 않아도
 노트 파일에 저장됩니다.
@@ -130,6 +132,7 @@ PDF 같은 문서도 붙일 수 있고, 눌러서 바로 봅니다.
 제목은 초성으로도 찾습니다. ㅎㅇㄹ 만 쳐도 회의록이 나옵니다.
 폴더 화면의 찾기 칸을 누르면 최근에 고친 노트 열 개가 먼저 보입니다.
 읽기 화면의 #태그를 누르면 그 태그가 든 노트를 찾습니다.
+노트 안에서 찾기는 지금 노트의 낱말을 모두 칠해 하나씩 오가고, 쓰기 화면에서는 바꾸기도 합니다.
 
 — 지워도 돌아옵니다
 
@@ -200,7 +203,36 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
-### 1.1.24 제출 순서 — 빌드 150 (2026-11-07 준비 · 빌드 150 확인 끝 — 사용자 *0-5번 확인 완료.* · *심사 제출 준비하자* · **제출함 2026-11-07**)
+### 1.1.25 제출 순서 — 빌드 151 (2026-11-07 준비 · 빌드 151 확인 끝 — 사용자 *빌드 151 체크리스트 확인 완료* · 1.1.24 승인 뒤 · **제출함 2026-11-07**)
+
+> 둘째 묶음 — 304 노트 안에서 찾기(바꾸기) · 314 찾기로 연 노트 · 310 안 쓰는 첨부 수 · 303 새 노트 날짜 이름 · 311 새로 옴 · 315 노트 정보.
+> **설명을 바꾼다** — 위 §1 *설명* · §1-영어 *Description* 에 한 문장씩 (2026-11-07 사용자 — *두 문장 넣기*). 그림 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로.
+> 프로모션 텍스트는 11월 홍보 글 그대로 (12-01 에 되돌림 — 알림 예약됨). 글자 수는 `python3 Tools/store/count.py`.
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.25` → **빌드** 칸에서 **151** (`1.1.25 (151)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — 아래 다섯 줄 (`docs/store/1.1.25-새로운-기능.txt`)
+3. 한국어 칸 *설명* — §1 *설명* 울타리 **전체**를 지우고 다시 붙인다
+4. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — 아래 영어 다섯 줄 → *Description* — §1-영어 *Description* 울타리 전체 → **저장**
+5. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+6. 제출 → `main` 병합 (= 1.1.25) → 승인 · 배포 기다림
+
+```
+• 노트 안에서 찾기 — ··· 메뉴의 노트 안에서 찾기(외장 자판 ⌘⇧F)로 지금 노트의 낱말을 모두 칠하고 하나씩 오갑니다. 쓰기 화면에서는 바꾸기도 됩니다.
+• 모든 노트에서 찾기로 고른 노트는 그 낱말이 채워진 채 열립니다.
+• 노트 정보 — 글자 · 낱말 · 문단 · 할 일 · 읽는 시간을 ··· 메뉴에서 봅니다.
+• 설정에서 켜면 새 노트 이름이 오늘 날짜가 됩니다.
+• 공유로 받아 아직 안 연 노트에 ‘새로 옴’이 붙습니다. 안 쓰는 첨부 수는 설정에서 바로 보입니다.
+```
+
+```
+• Find in Note — use Find in Note in the ··· menu (⌘⇧F on an external keyboard) to highlight every match in the current note and step through them. While editing, you can replace too.
+• Notes opened from a search now open with your search word already in the find bar.
+• Note Info — see characters, words, paragraphs, tasks, and reading time from the ··· menu.
+• Turn it on in Settings, and new notes are named with today’s date.
+• Notes you shared in and haven’t opened yet are marked “New”. Settings now shows how many unused attachments you have.
+```
+
+### 1.1.24 제출 순서 — 빌드 150 (2026-11-07 준비 · 빌드 150 확인 끝 — 사용자 *0-5번 확인 완료.* · *심사 제출 준비하자* · **제출함 · 승인 · 배포 2026-11-07**)
 
 > 편의성 첫 묶음 — 301 태그 찾기 · 302 마지막 노트로 · 305 목록 차례 · 308 날짜 · 시각 · 309 외장 자판 · 313 단축키 화면 (빌드 148 · 149 · 150).
 > **설명을 바꾼다** — 위 §1 *설명* · §1-영어 *Description* (2026-11-07 사용자 — *모두 넣기*). 그림 · 키워드 · 부제 · 메모(Notes)는 1.1.16 그대로.
@@ -577,7 +609,7 @@ Only the line with the cursor shows its Markdown. Everything else looks the way 
 
 The toolbar above the keyboard has bold, italic, strikethrough, links, quotes, tables, and indent. Press Return in a list and the next item follows; use Tab to indent and outdent. The calendar button inserts the current date and time on its own line.
 
-Turn it on in Settings, and the app opens straight to the note you were last on.
+Turn it on in Settings, and the app opens straight to the note you were last on. Note Info in the ··· menu shows characters, words, paragraphs, tasks, and reading time.
 
 In Read mode, tap a checkbox to check it off. It’s saved to the note file without switching to editing.
 
@@ -609,7 +641,7 @@ Import a folder that another notes app exported as Markdown from Settings → Fo
 
 Search titles and text at once, starting from two characters.
 
-Tap the search field on the folders screen and your ten most recently edited notes show up first. In Read mode, tap a #tag to find every note with that tag.
+Tap the search field on the folders screen and your ten most recently edited notes show up first. In Read mode, tap a #tag to find every note with that tag. Find in Note highlights every match in the current note and steps through them; while editing, it can replace too.
 
 — Deleted, not gone
 
@@ -764,6 +796,8 @@ python3 Tools/store/count.py
 
 | 날 | 일 |
 |---|---|
+| 2026-11-07 | ✅ **1.1.25 (빌드 151) 제출** (사용자 — *1.1.25 심사 제출 완료.*). 둘째 묶음 304 · 314 · 310 · 303 · 311 · 315 · 설명 두 문장 (노트 안에서 찾기 · 노트 정보). `main` 병합 (= 1.1.25) |
+| 2026-11-07 | ✅ **1.1.24 (빌드 150) 승인 · 배포** (사용자 — *1.1.24 심사 및 배포 완료.*). 편의성 첫 묶음 · 설명 보강. `main` = 1.1.24 |
 | 2026-11-07 | ✅ **1.1.24 (빌드 150) 제출** (사용자 — *1.1.24 심사 제출 완료.*). 301 태그 찾기 · 302 마지막 노트로 · 305 목록 차례 · 308 날짜 · 시각 · 309 외장 자판 · 313 단축키 화면 · **설명 보강** (옮겨 오기 · 지워도 돌아옵니다 · 태그 · 마지막 노트 · 외장 자판). `main` 병합 (= 1.1.24) |
 | 2026-11-04 | ✅ **1.1.23 (빌드 147) 승인 · 배포** (사용자 — *1.1.23 심사 및 배포 완료*). 300 문서 첨부 창 |
 | 2026-11-04 | ✅ **1.1.23 (빌드 147) 제출** (사용자 — *1.1.23 심사 제출 완료*). 300 문서 첨부 창 — 늘 지금 노트의 폴더에서 · 자판 먼저 내림. `main` 병합 (= 1.1.23) |

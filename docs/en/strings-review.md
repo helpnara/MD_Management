@@ -44,6 +44,7 @@
 | **%@** 을 옮깁니다. 지금 있는 폴더는 고를 수 없습니다. | Moving **%@**. The folder it's in now can't be chosen. |
 | **%@** 폴더를 안의 노트 · 폴더와 함께 옮깁니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. 노트 안의 링크는 새 자리에 맞게 고칩니다. | Moves the folder **%@** with all its notes and folders. If the name is taken, a number is added. Links inside the notes are updated for the new location. |
 | **Slow Margin 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다. | **Files inside the Slow Margin folder open right away.** For files outside it, you'll be asked whether to import them. |
+| **···** 의 **노트 정보**(⌘⇧I)에 글자 · 낱말 · 문단 · 할 일 · 읽는 시간이 있습니다. 마크다운 표시는 세지 않고 보이는 글만 셉니다. | **Note Info** in the **···** menu (⌘⇧I) shows characters, words, paragraphs, tasks, and reading time. Markdown markup isn’t counted — only the text you see. |
 | **공유** → 목록에서 **느린 여백** 을 고릅니다. | Tap **Share**, then choose **Slow Margin**. |
 | **되돌리기**는 원래 있던 폴더로 돌려놓습니다. 줄을 왼쪽으로 밀면 **영구 삭제**할 수 있습니다. 영구 삭제는 되돌릴 수 없어 확인 문구를 입력해야 합니다. 노트를 영구 삭제하면 **그 노트만 쓰던 첨부**도 함께 지워집니다. | **Restore** puts a note back in its original folder. Swipe left on a row to **delete it permanently**. Because this can't be undone, you'll be asked to type a confirmation word. Permanently deleting a note also deletes **any attachments used only by that note**. |
 | **비우기**를 하면 첨부도 모두 지워집니다. | **Empty** also deletes all attachments. |
@@ -95,6 +96,7 @@
 | 고정된 노트 | Pinned Notes |
 | 고정됨 | Pinned |
 | 고치고 옮기기 | Update and Move |
+| 고친 때 | Modified |
 | 공유 | Share |
 | 공유로 받은 것 %lld개는 새 노트로, %lld개는 고른 노트 끝에 넣었습니다. | Added shared items: %lld as new notes, %lld to the end of the chosen note. |
 | 공유로 받은 것 %lld개를 %@ 노트 끝에 덧붙였습니다. | Added shared items to the end of %2$@ (%1$lld). |
@@ -107,6 +109,7 @@
 | 공유할 파일을 묶는 중 | Packing files to share |
 | 굵게 | Bold |
 | 굵게 · 기울임 · 링크는 고른 글자를 감싸고, 고른 것이 없으면 표시만 넣습니다. 날짜 · 시각은 커서 자리에 제 줄로 들어갑니다. | Bold, Italic and Link wrap the selected text, or insert just the markers when nothing is selected. Date & Time goes in on its own line at the cursor. |
+| 굵게 · 제목 같은 마크다운 표시와 링크 주소는 세지 않고, 읽는 사람이 보는 글만 셉니다. 읽는 시간은 공백을 뺀 500자에 1분으로 셉니다. | Markdown markup such as bold or headings and link addresses aren’t counted — only the text a reader sees. Reading time assumes 500 characters per minute, not counting spaces. |
 | 규모 시험 | Scale Test |
 | 규모 시험 노트를 기기에서 내리는 중 | Removing scale test notes from this device |
 | 규모 시험 노트를 만드는 중 | Creating scale test notes |
@@ -119,16 +122,21 @@
 | 그 폴더를 열지 못했습니다: %@ | Couldn't open that folder: %@ |
 | 그냥 옮기기 | Just Move |
 | 그래도 보내기 | Send Anyway |
+| 글 | Text |
 | 글 안에서 `[[` 를 치고 제목을 이어 치면 노트 목록이 뜹니다. 고르면 그 노트로 가는 링크가 들어갑니다. 읽기 화면에서 그 링크를 누르면 그 노트로 갑니다. | Type `[[` in your text and keep typing a title to see a list of notes. Pick one to insert a link to it. In reading mode, tapping the link takes you to that note. |
 | 글 안의 `#태그` 는 색이 붙고, 읽기 화면에서 누르면 그 태그가 든 노트를 찾습니다. 찾기 칸에 `#태그` 를 쳐도 같습니다. | A `#tag` in your text is colored, and tapping it in Read mode finds every note with that tag. Typing `#tag` in the search field does the same. |
 | 글 칸이면 어느 앱에서나 같은 글쇠입니다. 아이패드는 화면 맨 위를 아래로 쓸어내려 메뉴 막대를 열면 **노트** · **글쓰기** 메뉴에 단축키가 함께 적혀 있습니다. | These work in any text field, in any app. On iPad, swipe down from the top of the screen to open the menu bar — the **Notes** and **Writing** menus list each shortcut. |
 | 글머리표 | Bulleted List |
 | 글쓰기 | Writing |
+| 글자 (공백 빼고) | Characters (No Spaces) |
+| 글자 (공백 포함) | Characters (With Spaces) |
 | 금고 파일 | Files in folder |
 | 기록 | Notes |
 | 기본 iCloud 폴더로 돌아가기 | Back to Default iCloud Folder |
 | 기울임 | Italic |
+| 끝낸 일 | Done |
 | 날짜 · 시각 | Date & Time |
+| 낱말 | Words |
 | 내어쓰기 | Decrease Indent |
 | 넣기 | Insert |
 | 노트 | Notes |
@@ -141,8 +149,10 @@
 | 노트 %lld개를 만들까요? | Create %lld notes? |
 | 노트 300개 만들기 (약 20MB) | Create 300 Notes (about 20 MB) |
 | 노트 목록 차례 | Note List Order |
+| 노트 안에서 찾기 | Find in Note |
 | 노트 옮기기 | Moving Notes |
 | 노트 잇기 | Linking Notes |
+| 노트 정보 | Note Info |
 | 노트 줄을 왼쪽으로 밀어 **이동**(아이패드는 폴더로 끌어다 놓기). 폴더 안을 가리키는 링크가 있으면 묻습니다 — **고치고 옮기기**는 이 노트만 쓰는 사진을 새 폴더로 함께 옮기고 링크를 맞춥니다. **그냥 옮기기**는 본문도 파일도 그대로 둡니다. | Swipe a note row left and tap **Move** (on iPad, drag it onto a folder). If the note links to files in its folder, you're asked: **Update and Move** moves the photos only this note uses into the new folder and updates the links; **Just Move** leaves both the text and the files as they are. |
 | 노트가 없습니다 | No Notes |
 | 노트를 가져오는 중 | Importing notes |
@@ -161,7 +171,9 @@
 | 다른 노트가 쓰는 첨부 %lld개는 남겼습니다. 되돌리면 그 노트에서 다시 보입니다. | one: Kept %lld attachment that another note uses. Restore it and it shows in that note again. / other: Kept %lld attachments that other notes use. Restore them and they show in those notes again. |
 | 다른 폴더 고르기 | Choose Another Folder |
 | 다른 폴더로 옮기기 | Move to Another Folder |
+| 다음 · 이전 찾은 곳 | Next · Previous Match |
 | 다음 노트 | Next Note |
+| 다음 찾은 곳 | Next Match |
 | 단축키 | Shortcuts |
 | 닫기 | Close |
 | 더 보기 | More |
@@ -177,6 +189,7 @@
 | 링크 | Link |
 | 링크 %lld개를 %@ 고쳤습니다 | Links updated %2$@: %1$lld |
 | 링크 %lld개를 이 노트에서 열리도록 고쳤습니다 | one: Updated %lld link so it opens from this note / other: Updated %lld links so they open from this note |
+| 링크 · 사진 | Links · Photos |
 | 링크 살펴보기 | Review Links |
 | 링크가 가리키는 노트가 폴더에 없습니다: %@ | The note this link points to isn't in the folder: %@ |
 | 링크를 고칠까요? | Update Links? |
@@ -196,6 +209,7 @@
 | 목록 모양 | List Style |
 | 목록 읽기 | List Load Time |
 | 목록 해제 | Remove List |
+| 문단 | Paragraphs |
 | 문서 | Document |
 | 문서 첨부 | Attach Document |
 | 문서를 고르지 못했습니다: %@ | Couldn't pick the document: %@ |
@@ -216,6 +230,7 @@
 | 비우기 | Empty |
 | 사용법 | Guide |
 | 사진 %lld장을 넣지 못했습니다 | one: Couldn't add %lld photo / other: Couldn't add %lld photos |
+| 사진 · 첨부 | Photos · Attachments |
 | 사진 · 파일 %lld개를 노트 옆 assets 폴더에 넣었습니다 | one: Saved %lld photo or file to the assets folder next to the note / other: Saved %lld photos and files to the assets folder next to the note |
 | 사진을 넣는 중 | Adding photos |
 | 사진을 저장하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 사진은 %@ 옆 assets 폴더에 있습니다. | You moved to another note while the photos were being saved, so they were not added to the text. The photos are in the assets folder next to %@. |
@@ -223,10 +238,12 @@
 | 살펴보기 | Review |
 | 상태 | Status |
 | 새 노트 | New Note |
+| 새 노트 이름을 오늘 날짜로 | Name New Notes with Today’s Date |
 | 새 노트를 만들지 못했습니다.  | Couldn't create a new note.  |
 | 새 이름에 맞게 | to match the new name |
 | 새 자리에 맞게 | to match the new location |
 | 새 폴더 | New Folder |
+| 새로 옴 | New |
 | 색인 다시 만들기 | Rebuild Index |
 | 색인 크기 | Index Size |
 | 색인된 노트 | Indexed Notes |
@@ -267,6 +284,7 @@
 | 앱을 열면 마지막 노트로 | Open the Last Note |
 | 앱이 스스로 잰 값입니다. 규모 시험을 만든 뒤 여기서 어디가 느린지 봅니다. | Measured by the app itself. After creating a scale test, look here to see what's slow. |
 | 앱이 쓰는 폴더는 가져올 수 없습니다. 내보낸 폴더를 골라 주세요. | You can't import the folder the app is using. Choose the exported folder. |
+| 약 %lld분 | one: About %lld minute / other: About %lld minutes |
 | 어느 폴더 안으로 | Move Folder Into |
 | 어느 폴더로 | Move to Folder |
 | 어디서나 | Anywhere |
@@ -278,6 +296,7 @@
 | 영구 삭제하지 못했습니다: %@ | Couldn't delete permanently: %@ |
 | 예 | Yes |
 | 오려 두기 · 복사 · 붙여넣기 | Cut · Copy · Paste |
+| 오른쪽 위 **···** 의 **노트 안에서 찾기**(외장 자판 ⌘⇧F)는 지금 노트에서 낱말을 찾아 모두 칠하고 하나씩 오갑니다. 쓰기 화면에서는 찾기 막대에서 **바꾸기**도 됩니다. 모든 노트에서 찾기로 고른 노트는 그 낱말이 채워진 채 열립니다. | **Find in Note** in the **···** menu at the top right (⌘⇧F on an external keyboard) highlights every match in the current note and steps through them. While editing, the find bar can **replace** too. A note you open from a search opens with that word already in the find bar. |
 | 옮겨 넣을 폴더가 없습니다. 먼저 폴더 화면 위의 새 폴더 단추로 담을 폴더를 만드세요. | There's no folder to move it into. First create one with the New Folder button at the top of the folder list. |
 | 옮기지 못했습니다: %@ | Couldn't move: %@ |
 | 왔던 노트 | Previous Note |
@@ -303,15 +322,17 @@
 | 이름의 일부를 적어 보세요. | Type part of the name. |
 | 이미 마크다운을 모아 둔 폴더를 그대로 열 수 있습니다. 점으로 시작하는 숨김 폴더는 목록에 보이지 않습니다. 고른 폴더는 다른 앱과 같이 쓰는 곳이므로 **첫 줄을 파일명으로**를 끄는 편이 안전합니다. 앱을 지워도 그 폴더는 그대로 남고, 기본 폴더로 돌아가도 파일은 지워지지 않습니다. | You can open a folder where you already keep Markdown as it is. Hidden folders starting with a dot aren't listed. A chosen folder is shared with other apps, so it's safer to turn off **First Line as File Name**. The folder stays even if you delete the app, and going back to the default folder doesn't delete any files. |
 | 이미 있는 파일 연결 | Link an Existing File |
-| 이전 · 다음 노트는 지금 보는 폴더의 목록 차례를 따릅니다. ⌘↑ ⌘↓ 는 글의 처음 · 끝으로 갑니다. | Previous and Next Note follow the order of the list in the current folder. ⌘↑ and ⌘↓ jump to the start and end of the text. |
 | 이전 노트 | Previous Note |
+| 이전 찾은 곳 | Previous Match |
 | 인용 | Quote |
 | 읽기 | Read |
 | 읽기 → 쓰기 | Read → Write |
 | 읽기 모드 | Reading Mode |
 | 읽기와 쓰기 오가기 | Switch Between Read and Edit |
+| 읽는 시간 | Reading Time |
 | 임시 폴더 | Temporary folder |
 | 있음 | Yes |
+| 자리 | Location |
 | 저장 실패 | Save Failed |
 | 저장됨 | Saved |
 | 저장하지 못했습니다: %@ | Couldn't save: %@ |
@@ -324,6 +345,7 @@
 | 제목에서 찾음 | Found in title |
 | 제목을 따라 파일 이름이 바뀝니다 | File Names Will Follow Titles |
 | 주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다. | Turned the URL into a link. You can undo this. |
+| 줄 | Lines |
 | 줄바꿈 고치기 | Fix Line Breaks |
 | 줄바꿈 끄기 | Turn Off Line Wrap |
 | 줄바꿈 켜기 | Turn On Line Wrap |
@@ -343,6 +365,7 @@
 | 진단 정보 복사 | Copy Diagnostic Info |
 | 찾기 | Search |
 | 찾기 창 닫기 | Close Search |
+| 찾기(⌘F)는 모든 노트에서, 노트 안에서 찾기(⌘⇧F)는 지금 노트에서 찾습니다. 쓰기 화면에서는 찾기 막대에서 바꾸기도 됩니다. 이전 · 다음 노트는 지금 보는 폴더의 목록 차례를 따릅니다. ⌘↑ ⌘↓ 는 글의 처음 · 끝으로 갑니다. | Search (⌘F) looks through all notes; Find in Note (⌘⇧F) looks in the current note, and while editing it can replace too. Previous and Next Note follow the order of the list in the current folder. ⌘↑ and ⌘↓ jump to the start and end of the text. |
 | 찾는 말 지우기 | Clear Search |
 | 찾는 파일이 없습니다 | No Matching Files |
 | 찾은 노트가 많아 %lld개까지만 보여 줍니다. 낱말을 더 넣어 좁혀 보세요. | Showing the first %lld matches. Add more words to narrow it down. |
@@ -375,11 +398,13 @@
 | 코드 | Code |
 | 코드를 복사했습니다. | Copied the code. |
 | 크게 보기 | Expand |
+| 크기 | Size |
 | 큰 노트 만들기 (300줄) | Create Large Note (300 Lines) |
 | 큰 노트 시험 | Large Note Test |
 | 큰 노트를 만들지 못했습니다: %@ | Couldn't create the large note: %@ |
 | 키보드 내리기 | Hide Keyboard |
 | 태그 | Tags |
+| 파일 | File |
 | 파일 이름 | File Name |
 | 파일을 넣는 중 | Adding files |
 | 파일을 읽지 못했습니다: %@ | Couldn't read the file: %@ |
@@ -407,6 +432,7 @@
 | 표 넣기 | Insert Table |
 | 하위 폴더 | Subfolders |
 | 한 낱말씩 | One Word at a Time |
+| 할 일 | Tasks |
 | 화면 아래 **빨간 띠**를 띄웁니다. 편집 도구 띠와 겹치지 않는지, 큰 글씨에서 잘리지 않는지 볼 때 씁니다. 띠를 누르면 사라집니다. | Shows a **red banner** at the bottom of the screen, to check that it doesn't overlap the formatting bar or get cut off with large text. Tap the banner to dismiss it. |
 | 확인 | OK |
 | 확인 문구 | Confirmation Word |
