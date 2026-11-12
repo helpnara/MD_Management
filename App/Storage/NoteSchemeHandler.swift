@@ -31,6 +31,12 @@ final class NoteSchemeHandler: NSObject, WKURLSchemeHandler, @unchecked Sendable
         let identifier = ObjectIdentifier(task)
         running.insert(identifier)
 
+        // `yb://font/serif.ttf` — 읽기 화면의 명조 제목 (317). 앱 번들의 글꼴을 그대로 준다 — 사용자 폴더와 상관없다.
+        // **한 번만 읽는다** — 8MB 라 노트를 열 때마다 디스크에서 읽지 않는다. 웹 화면에는 오래 둬도 된다는 머리말을 붙여 건넨다.
+        if let url = task.request.url, url.host == "font" {
+            finishFont(task, identifier: identifier, url: url)
+            return
+        }
         guard let url = task.request.url, url.host == "note" || url.host == "thumb", let assets else {
             finish(task, identifier: identifier, with: Self.placeholderPNG, mimeType: "image/png")
             return
@@ -59,6 +65,25 @@ final class NoteSchemeHandler: NSObject, WKURLSchemeHandler, @unchecked Sendable
     func webView(_ webView: WKWebView, stop task: any WKURLSchemeTask) {
         // 끝난 작업에 응답하면 크래시한다. 멈춘 것을 지워 둔다.
         running.remove(ObjectIdentifier(task))
+    }
+
+    /// 명조 글꼴 (317) — 번들에서 한 번 읽어 둔다.
+    private static let serifFont: Data = {
+        guard let file = Bundle.main.url(forResource: AppFont.serifFile, withExtension: "ttf") else { return Data() }
+        return (try? Data(contentsOf: file, options: .mappedIfSafe)) ?? Data()
+    }()
+
+    private func finishFont(_ task: any WKURLSchemeTask, identifier: ObjectIdentifier, url: URL) {
+        guard running.contains(identifier) else { return }
+        running.remove(identifier)
+        let data = Self.serifFont
+        let headers = ["Content-Type": "font/ttf", "Content-Length": String(data.count),
+                       "Cache-Control": "public, max-age=31536000, immutable"]
+        let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: headers)
+            ?? URLResponse(url: url, mimeType: "font/ttf", expectedContentLength: data.count, textEncodingName: nil)
+        task.didReceive(response)
+        task.didReceive(data)
+        task.didFinish()
     }
 
     private func finish(_ task: any WKURLSchemeTask, identifier: ObjectIdentifier, with data: Data, mimeType: String) {

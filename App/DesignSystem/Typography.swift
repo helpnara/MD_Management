@@ -19,6 +19,47 @@ extension Font {
     static func scaledMono(_ style: Font.TextStyle, weight: Font.Weight = .regular) -> Font {
         .system(style, design: .monospaced, weight: weight)
     }
+
+    /// **명조 제목** (317, 2026-11-12 사용자 — *명조 넣기*). 노트 제목 · 읽기 화면의 제목 · 막대 제목에만 쓴다 — 본문은 시스템 글꼴 그대로(가독성).
+    /// 앱에 넣은 노토 명조 굵은 한 벌(`AppFont.serifName`). **글자 크기 설정을 따른다** — `relativeTo:` 가 Dynamic Type 으로 키운다.
+    /// 글꼴이 안 실렸으면 시스템의 명조 디자인(라틴은 명조 · 한글은 고딕)으로 물러선다.
+    static func scaledSerif(_ style: Font.TextStyle) -> Font {
+        guard AppFont.serifAvailable else { return .system(style, design: .serif, weight: .bold) }
+        return .custom(AppFont.serifName, size: AppFont.baseSize(style), relativeTo: style)
+    }
+}
+
+/// 앱에 넣은 글꼴 (317 · ADR-0010). `Info.plist` 의 `UIAppFonts` 가 싣는다 — 파일은 `App/Resources/Fonts/` (사용 허락서 `OFL.txt` 함께).
+enum AppFont {
+    /// PostScript 이름 — 글꼴 파일 안의 이름표(6번)와 같다.
+    static let serifName = "NotoSerifKR-Bold"
+    static let serifFile = "NotoSerifKR-Bold-Subset"
+
+    static var serifAvailable: Bool { UIFont(name: serifName, size: 12) != nil }
+
+    /// 글자 크기 설정이 *보통* 일 때의 크기 — `relativeTo:` · `UIFontMetrics` 가 여기서부터 키운다.
+    static func baseSize(_ style: Font.TextStyle) -> CGFloat {
+        switch style {
+        case .largeTitle: return 34
+        case .title: return 28
+        case .title2: return 22
+        case .title3: return 20
+        case .headline, .body: return 17
+        case .callout: return 16
+        case .subheadline: return 15
+        case .footnote: return 13
+        case .caption: return 12
+        case .caption2: return 11
+        @unknown default: return 17
+        }
+    }
+
+    /// UIKit 쪽(편집기 제목 · 막대 제목) — 같은 글꼴을 글자 크기 설정만큼 키워 준다. 없으면 시스템 굵은 글꼴.
+    @MainActor
+    static func serif(_ style: UIFont.TextStyle, size: CGFloat) -> UIFont {
+        guard let base = UIFont(name: serifName, size: size) else { return .systemFont(ofSize: size, weight: .bold) }
+        return UIFontMetrics(forTextStyle: style).scaledFont(for: base)
+    }
 }
 
 @MainActor

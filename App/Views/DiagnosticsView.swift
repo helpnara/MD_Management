@@ -33,7 +33,7 @@ struct DiagnosticsView: View {
 
     private var content: some View {
         Group {
-            List {
+            PaperList {
                 if library.isFallenBackFromICloud {
                     Section {
                         Label {
@@ -227,7 +227,7 @@ struct TestToolsView: View {
     @State private var scaleCount = LibraryModel.scaleCount
 
     var body: some View {
-        List {
+        PaperList {
             // **앱이 스스로 잰 값** — 사람이 초시계를 들 수는 없다 (S1 · A5c). 진단 정보 복사에도 담긴다.
             Section {
                 ValueRow(name: String(localized: "마지막 갱신"), value: String(format: String(localized: "%.2f초"), library.indexStatus.lastRefreshSeconds))

@@ -168,6 +168,7 @@ struct RootView: View {
             }
             }
             .environment(\.rootIsCompact, horizontalSizeClass == .compact)
+            .tint(Palette.accent)      // 316 — 시트는 따로 뜨는 화면이라 한 번 더 건다
         }
     }
 
@@ -216,6 +217,7 @@ private struct NoteActionAlerts: ViewModifier {
             .sheet(item: $library.movingNote) { note in
                 FolderPickerView(note: note)
                     .environmentObject(library)
+                    .tint(Palette.accent)      // 316
             }
     }
 
@@ -512,19 +514,26 @@ private struct FolderSidebar: View {
             // 노트 목록의 칸과 **같은 것**(`SearchField`)을 **같은 자리**(`safeAreaInset` — 막대 바로 아래 · 같은 여백)에. 목록을 밀어도 남는다.
             // **아이패드 폴더 칸도** (286, 2026-10-29 사용자 — *검색하면서 위로 검색어 입력칸이 올라간다*). 266 때는 목록의 첫 줄로 두었다 —
             // 떠 있는 옆 칸이라 띠의 바탕이 칸의 바탕과 안 맞아서. 띠의 바탕을 **막대와 같은 재질**(`.bar`)로 칠하면 칸의 바탕 위에 섞인다.
-            if !query.isEmpty {
-                // 314 — 결과로 연 노트는 그 말로 노트 안 찾기를 연다 (태그 찾기 301 의 `#태그` 도 같다).
-                SearchHitRows { path in
-                    let asked = query
-                    await openFromFolders(path)
-                    library.findAfterSearch(asked)
+            Group {
+                if !query.isEmpty {
+                    // 314 — 결과로 연 노트는 그 말로 노트 안 찾기를 연다 (태그 찾기 301 의 `#태그` 도 같다).
+                    SearchHitRows { path in
+                        let asked = query
+                        await openFromFolders(path)
+                        library.findAfterSearch(asked)
+                    }
+                } else if searchPresented {
+                    recentSection
+                } else {
+                    folderSection
                 }
-            } else if searchPresented {
-                recentSection
-            } else {
-                folderSection
             }
+            // **아이폰은 묶음 바탕 위 종이 칸** (320). 아이패드 폴더 칸은 떠 있는 유리 칸이라 시스템 그대로 둔다 —
+            // 우리 색을 깔면 유리 칸 안에 네모가 따로 선다 (286 의 띠와 같은 까닭).
+            .listRowBackground(rootIsCompact ? Palette.paper : nil)
         }
+        .scrollContentBackground(rootIsCompact ? .hidden : .automatic)
+        .background(rootIsCompact ? Palette.paperGrouped : Color.clear)
         .safeAreaInset(edge: .top, spacing: 0) {
             if rootIsCompact {
                 searchField.background(Palette.paperGrouped)
@@ -624,6 +633,7 @@ private struct FolderSidebar: View {
         .sheet(item: $library.movingFolder) { folder in
             FolderMoveView(folder: folder)
                 .environmentObject(library)
+                .tint(Palette.accent)      // 316
         }
     }
 
@@ -853,8 +863,12 @@ private struct NoteList: View {
                     await library.open(relativePath: path)
                     library.findAfterSearch(asked)    // 314
                 }
+                .listRowBackground(Palette.paper)
             }
         }
+        // **종이 바탕** (320). 줄 바탕은 줄마다 (`RowBackground` · 고른 줄은 우리가 칠한다).
+        .scrollContentBackground(.hidden)
+        .background(Palette.paper)
         // 검색 (ADR-0003). 150ms 디바운스는 모델이 한다. `⌘F` 로 칸을 연다 (S9). **아이폰만** (260 — 아이패드는 폴더 칸).
         // 안내 글은 폴더 화면의 칸과 같다 — 어디서 찾든 모든 노트를 찾는다 (2026-10-22 사용자 (가)).
         // **폴더 화면과 같은 칸 · 같은 자리** (266) — 예전 시스템 칸(`.searchable` · 당기면 나옴)은 폭 · 밝기 · 자리가 폴더 화면의 칸과 달랐다.
@@ -931,7 +945,7 @@ private struct NoteList: View {
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 0) {
                     Text(listTitle)
-                        .font(.scaled(.headline))
+                        .font(.scaledSerif(.headline))      // 317 — 막대 제목은 명조 (`NotebookApp` 의 막대 글꼴과 같다)
                         .foregroundStyle(Palette.ink)
                         .lineLimit(1)
                     Text("노트 \(library.noteCount(of: library.selectedFolder))개")
@@ -979,6 +993,7 @@ private struct NoteList: View {
                     }
                 }
             }
+            .listRowBackground(Palette.paper)     // 320
         }
     }
 
@@ -1021,8 +1036,9 @@ private struct NoteList: View {
                 // 아이패드에서 폴더로 끌어다 놓기 (T1). 싣는 것은 경로 하나다.
                 VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
                     HStack(spacing: Metrics.rowSpacing) {
+                        // **제목은 명조** (318) — 읽기 화면 · 편집기의 제목과 같은 글꼴.
                         Text(note.title)
-                            .font(.scaled(.body, weight: .medium))
+                            .font(.scaledSerif(.body))
                             .foregroundStyle(Palette.ink)
                         if library.isFreshShared(note.relativePath) {
                             // **공유로 새로 온 노트** (311) — 열면 사라진다. 글자로 둔다 (점 하나는 눈에 안 띈다 — 90 과 같은 까닭).
@@ -1060,12 +1076,14 @@ private struct NoteList: View {
                             .foregroundStyle(Palette.inkFaint)
                             .lineLimit(1)
                     }
-                    // 날짜만으로는 오늘 고친 여러 노트가 안 갈린다 — 시각까지 (50).
-                    Text(note.modifiedAt, format: .dateTime.year().month().day().hour().minute())
+                    // 날짜만으로는 오늘 고친 여러 노트가 안 갈린다 — 시각까지 (50). 올해 것은 연도를 뺀다 (318).
+                    Text(note.modifiedAt, format: ListDate.style(for: note.modifiedAt))
                         .font(.scaled(.caption))
                         .foregroundStyle(Palette.inkFaint)
                 }
                 .padding(.vertical, 2)
+                // 종이 바탕 · 고른 줄은 옅은 잎 초록 (318). 아이폰은 고르면 바로 넘어가므로 칠하지 않는다.
+                .listRowBackground(RowBackground(selected: !rootIsCompact && library.selectedNoteID == note.id))
                 // **구분선을 줄 맨 앞에 맞춘다** (121, 사용자 첨부 — 줄이 끊어져 보였다).
                 // SwiftUI 는 줄 안의 어느 요소를 기준으로 구분선을 들여쓸지 스스로 고르는데,
                 // `받는 중` 딱지가 붙은 줄에서는 **그 딱지 앞**을 골라 구분선이 화면 가운데서
@@ -1091,7 +1109,7 @@ private struct SearchHitRows: View {
                 VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
                     HStack(spacing: Metrics.rowSpacing) {
                         Text(hit.title)
-                            .font(.scaled(.body, weight: .medium))
+                            .font(.scaledSerif(.body))      // 318 — 노트 목록과 같은 명조 제목
                             .foregroundStyle(Palette.ink)
                         if hit.byTitle {
                             Image(systemName: "textformat")
@@ -1236,7 +1254,7 @@ private struct SearchSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            PaperList {
                 if query.isEmpty {
                     RecentNotesSection { path in await open(path) }
                 } else {
@@ -1287,10 +1305,10 @@ private struct RecentNoteRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
             Text(note.title)
-                .font(.scaled(.body, weight: .medium))
+                .font(.scaledSerif(.body))      // 318 — 노트 목록과 같은 명조 제목
                 .foregroundStyle(Palette.ink)
-            // 날짜만으로는 오늘 고친 여러 노트가 안 갈린다 — 시각까지 (50 · 노트 목록과 같다).
-            Text(note.modifiedAt, format: .dateTime.year().month().day().hour().minute())
+            // 날짜만으로는 오늘 고친 여러 노트가 안 갈린다 — 시각까지 (50 · 노트 목록과 같은 `ListDate`).
+            Text(note.modifiedAt, format: ListDate.style(for: note.modifiedAt))
                 .font(.scaled(.caption))
                 .foregroundStyle(Palette.inkFaint)
             // 어느 폴더의 노트인지 — 찾기 결과 줄과 같이 맨 위 폴더면 적지 않는다.
@@ -1355,7 +1373,7 @@ private struct FolderMoveView: View {
     var body: some View {
         let targets = library.moveTargets(for: folder)
         NavigationStack {
-            List {
+            PaperList {
                 Section {
                     ForEach(targets, id: \.self) { path in
                         Button {
@@ -1409,7 +1427,7 @@ private struct FolderPickerView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            PaperList {
                 Section {
                     row(name: library.folderName, path: "")
                     // 폴더 화면과 같은 두 단계 (203).
@@ -1485,7 +1503,7 @@ private struct NoteDetail: View {
                         ToolbarItem(placement: .principal) {
                             HStack(spacing: 0) {
                                 Text(note.title)
-                                    .font(.scaled(.headline))
+                                    .font(.scaledSerif(.headline))      // 317
                                     .foregroundStyle(Palette.ink)
                                     .lineLimit(1)
                                     .truncationMode(.tail)
@@ -2121,7 +2139,7 @@ private struct LinkFilePicker: View {
                     ContentUnavailableView("찾는 파일이 없습니다", systemImage: "doc.questionmark",
                                            description: Text("이름의 일부를 적어 보세요."))
                 } else {
-                    List(shown) { file in
+                    PaperList { ForEach(shown) { file in
                         Button {
                             library.linkExistingFile(file)
                         } label: {
@@ -2137,7 +2155,7 @@ private struct LinkFilePicker: View {
                             }
                         }
                         .buttonStyle(.plain)
-                    }
+                    } }
                 }
             }
             .navigationTitle("이미 있는 파일 연결")
@@ -2173,7 +2191,7 @@ private struct NoteInfoSheet: View {
         let stats = NoteStats.of(library.currentNoteText)
         let bytes = library.currentNoteText.utf8.count
         NavigationStack {
-            List {
+            PaperList {
                 Section {
                     row(String(localized: "글자 (공백 포함)"), stats.characters)
                     row(String(localized: "글자 (공백 빼고)"), stats.charactersNoSpaces)
@@ -2259,7 +2277,7 @@ private struct BrokenLinkList: View {
                     ContentUnavailableView("안 열리는 링크가 없습니다", systemImage: "checkmark.circle",
                                            description: Text("이 노트의 링크가 모두 제 파일을 가리킵니다."))
                 } else {
-                    List(Array(library.brokenLinks.enumerated()), id: \.offset) { _, broken in
+                    PaperList { ForEach(Array(library.brokenLinks.enumerated()), id: \.offset) { _, broken in
                         VStack(alignment: .leading, spacing: Metrics.rowSpacing / 3) {
                             Text("\(broken.line)째 줄")
                                 .font(Font.scaled(.caption))
@@ -2274,7 +2292,7 @@ private struct BrokenLinkList: View {
                                 .foregroundStyle(Palette.inkFaint)
                         }
                         .padding(.vertical, Metrics.rowSpacing / 3)
-                    }
+                    } }
                 }
             }
             .navigationTitle(library.brokenLinks.isEmpty
