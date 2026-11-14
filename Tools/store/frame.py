@@ -7,9 +7,10 @@
     python3 Tools/store/frame.py <원본.png> <칸> <글귀> <결과.png> [--font 글꼴]
 
 칸: `iphone-6.5` (1242 × 2688 · 한국어 칸) · `iphone-6.1` (1206 × 2622 · 영어 칸) · `ipad-13` (2064 × 2752 · 세로).
-글꼴: 맥 러너의 `AppleSDGothicNeo.ttc` 에서 굵은 것을 고른다 (한글 · 영문 둘 다). `--font` 로 바꿀 수 있다.
+글꼴: 앱에 실은 명조(`App/Resources/Fonts/` · 1.1.26 부터) — 없으면 맥 러너의 `AppleSDGothicNeo.ttc` 에서 굵은 것. `--font` 로 바꿀 수 있다.
 """
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -20,11 +21,25 @@ SLOTS = {
     "iphone-6.1": (1206, 2622),
     "ipad-13": (2064, 2752),
 }
-# 종이 같은 바탕 · 먹색 글 — 앱의 *여백* 과 같은 결.
-PAPER = (244, 239, 230)
-INK = (43, 42, 40)
+
+def palette_light(symbol: str) -> tuple[int, int, int]:
+    """**바탕 · 글 색은 앱의 `Palette.swift` 에서 읽는다** (1.1.26 · 316 — 앱이 종이 · 먹 색이 됐다). 예전에는 여기 숫자를 따로 적었다 —
+    같은 색을 적는 곳이 둘이면 갈린다 (CLAUDE §1). 스토어 그림은 밝은 판(두 번째 줄)만 쓴다. `Tools/contrast.py` 와 같은 읽기."""
+    text = Path(__file__).resolve().parents[2].joinpath("App/DesignSystem/Palette.swift").read_text(encoding="utf-8")
+    block = re.search(r"static let " + symbol + r" = UIColor \{(.*?)\n    \}", text, re.S)
+    colors = re.findall(r"red: ([0-9.]+), green: ([0-9.]+), blue: ([0-9.]+)", block.group(1)) if block else []
+    if len(colors) != 2:
+        raise SystemExit(f"::error::Palette.swift 에서 {symbol} 두 벌을 못 읽었다")
+    return tuple(round(float(c) * 255) for c in colors[1])
+
+
+# 종이 같은 바탕 · 먹색 글 — 앱의 묶음 바탕 · 먹과 같은 색.
+PAPER = palette_light("paperGroupedUIColor")
+INK = palette_light("inkUIColor")
+# **글귀는 앱의 명조** (1.1.26 · 317) — 앱 안 제목과 같은 글꼴 (한글 전체 · 라틴 · 문장 부호). 없으면 맥의 굵은 고딕.
 # 맥 판마다 자리가 다를 수 있어 차례로 찾는다 — 한글 · 영문이 둘 다 있는 굵은 고딕.
 MAC_FONTS = [
+    str(Path(__file__).resolve().parents[2] / "App/Resources/Fonts/NotoSerifKR-Bold-Subset.ttf"),
     "/System/Library/Fonts/AppleSDGothicNeo.ttc",
     "/System/Library/Fonts/Supplemental/AppleSDGothicNeo.ttc",
     "/System/Library/Fonts/Supplemental/AppleGothic.ttf",

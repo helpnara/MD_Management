@@ -24,7 +24,7 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            PaperList {
                 // **폴더** — 어디에 쓰나 · 무엇을 들여오나 (293, 2026-11-01 사용자 — *너무 덕지덕지 메뉴들이 붙어 있어서*).
                 // 가져오기(289)는 **새 폴더를 들여오는 일**이라 여기다 — 노트 구역에서 빠지면 그 구역은 스위치만 남는다.
                 //
@@ -262,7 +262,7 @@ struct SettingsView: View {
 /// **어디를 눌러야 하는지**를 적는다. 없는 스위치를 그려 두면 눌러도 아무 일이 없어 더 나쁘다.
 struct HelpView: View {
     var body: some View {
-        List {
+        PaperList {
             Section {
                 step(1, String(localized: "`파일` 앱에서 `.md` 파일을 **길게 누릅니다**."))
                 step(2, String(localized: "**공유** → 목록에서 **느린 여백** 을 고릅니다."))
@@ -369,7 +369,7 @@ struct IncomingFileSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            PaperList {
                 Section {
                     Label {
                         VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
@@ -419,7 +419,7 @@ struct TrashView: View {
     @EnvironmentObject private var library: LibraryModel
 
     var body: some View {
-        List {
+        PaperList {
             // **지운 폴더는 폴더째** (292, 2026-11-01 사용자 — *폴더가 목록에 나와서 복구 가능하게*). 원래 폴더가 지금 없는 것끼리
             // 한 줄로 — 되돌리기 한 번에 안의 노트 · 첨부가 모두 원래 자리로. 펼치면 안의 것을 하나씩 되돌릴 수도 있다.
             if !library.trashFolders.isEmpty {
@@ -660,7 +660,7 @@ struct UnusedAttachmentsView: View {
     @State private var previewing: URL?
 
     var body: some View {
-        List {
+        PaperList {
             switch library.unusedAttachments {
             case .counting:
                 HStack(spacing: Metrics.rowSpacing) {
@@ -756,7 +756,7 @@ struct UnusedAttachmentsView: View {
 /// 글쇠 표기는 번역하지 않는다 — 자판에 찍힌 기호 그대로다.
 struct ShortcutsView: View {
     var body: some View {
-        List {
+        PaperList {
             Section {
                 row("⌘N", String(localized: "새 노트"))
                 row("⌘⇧N", String(localized: "새 폴더"))

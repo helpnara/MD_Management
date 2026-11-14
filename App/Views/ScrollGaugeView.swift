@@ -24,8 +24,8 @@ final class ScrollGaugeView: UIView {
         let gauge = ScrollGaugeView(frame: .zero)
         gauge.isUserInteractionEnabled = false
         gauge.isAccessibilityElement = false
-        gauge.backgroundColor = UIColor.label.withAlphaComponent(0.08)
-        gauge.thumb.backgroundColor = .secondaryLabel
+        gauge.backgroundColor = Palette.ruleUIColor        // 316 — 먹을 옅게 (예전 시스템 회색)
+        gauge.thumb.backgroundColor = Palette.inkFaintUIColor
         gauge.addSubview(gauge.thumb)
         gauge.isHidden = true
         scrollView.showsVerticalScrollIndicator = false

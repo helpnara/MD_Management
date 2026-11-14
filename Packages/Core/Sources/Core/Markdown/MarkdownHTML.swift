@@ -395,40 +395,47 @@ public enum MarkdownHTML {
 
     /// **`px` 를 적지 않는다.** `font: -apple-system-body` 가 Dynamic Type 을
     /// 저절로 따라가고, 나머지 크기는 전부 그것에 상대적인 `em` 이다 (설계서 §8).
+    /// **명조 제목** (317 · ADR-0010) — 앱에 실은 노토 명조 굵은 한 벌을 `yb://font/serif.ttf` 로 받는다(앱의 스킴 핸들러가 번들에서 준다 —
+    /// 웹 화면은 앱과 다른 프로세스라 앱이 실은 글꼴을 이름만으로 못 쓴다). 못 받으면 `ui-serif` 로 물러선다. 본문은 시스템 글꼴 그대로.
     static let baseCSS = """
+    @font-face { font-family: "YBSerif"; src: url("yb://font/serif.ttf") format("truetype"); font-weight: 700; font-display: block; }
     html { -webkit-text-size-adjust: 100%; }
     body {
       font: -apple-system-body;
-      line-height: 1.65;
+      line-height: 1.72;
       color: var(--yb-ink);
       background: var(--yb-paper);
-      margin: 0;
-      padding: 0.8em 1.1em 4em;
+      margin: 0 auto;
+      /* 316 — 넓은 화면(아이패드)에서 글줄이 너무 길면 읽기 어렵다. 한 줄 40글자 남짓에서 멈추고 가운데에 둔다. */
+      max-width: 40em;
+      padding: 1em 1.3em 4em;
       word-break: break-word;
       -webkit-font-smoothing: antialiased;
     }
-    h1, h2, h3, h4, h5, h6 { line-height: 1.3; margin: 1.7em 0 0.6em; font-weight: 700; }
-    h1 { font-size: 1.55em; }
-    h2 { font-size: 1.3em; }
+    h1, h2, h3, h4, h5, h6 { line-height: 1.35; margin: 1.8em 0 0.6em; font-weight: 700; letter-spacing: -0.01em;
+      font-family: "YBSerif", ui-serif, serif; }
+    h1 { font-size: 1.7em; }
+    h2 { font-size: 1.32em; }
     h3 { font-size: 1.12em; }
     h4, h5, h6 { font-size: 1em; }
     p { margin: 0.9em 0; }
     /* **첫 줄은 `#` 이 없어도 제목이다** (133). 이 앱에서 첫 줄은 곧 파일명이므로(107)
        제목으로 보이는 편이 맞다. **파일은 한 글자도 안 바뀐다** — 보이는 모습만 그렇다.
        편집기도 같은 규칙으로 그린다 (`MarkdownStyler`) — 두 자리가 갈리면 93 이 된다. */
-    body > p:first-child { font-size: 1.55em; line-height: 1.3; font-weight: 700; }
+    body > p:first-child { font-size: 1.7em; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em;
+      font-family: "YBSerif", ui-serif, serif; }
     /* **첫 덩이 위에는 빈 자리를 두지 않는다** (136, 사용자 — `# 제목` 을 쓰면 읽기 모드에서
        제목 위로 한 줄이 비었다). 제목의 위 여백은 **글 사이**에서나 뜻이 있지 맨 처음에는
        군더더기다. `#` 이 있든 없든 같은 자리에서 시작한다. */
     body > :first-child { margin-top: 0; }
-    a { color: var(--yb-accent); text-decoration: underline; text-underline-offset: 0.15em; }
+    a { color: var(--yb-accent); text-decoration: underline; text-decoration-thickness: 0.06em; text-underline-offset: 0.2em; }
     ul, ol { margin: 0.9em 0; padding-left: 1.4em; }
     li { margin: 0.25em 0; }
     /* 빈 줄이 있는 목록은 항목마다 <p> 가 생긴다. 그대로 두면 항목 사이가
        문단만큼 벌어진다 (빌드 4 스크린샷). */
     li > p { margin: 0.3em 0; }
     li > p:last-child { margin-bottom: 0; }
-    li input[type="checkbox"] { margin-right: 0.35em; vertical-align: baseline; }
+    li input[type="checkbox"] { margin-right: 0.35em; vertical-align: baseline; accent-color: var(--yb-accent); }
     /* 작업 목록 — 점을 없애고 체크박스와 글을 **한 줄에** 둔다.
        빌드 4 에서 점 · 체크박스가 한 줄, 글이 다음 줄로 갈라졌다. */
     li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.15em; }
@@ -456,7 +463,7 @@ public enum MarkdownHTML {
     blockquote {
       margin: 1em 0;
       padding: 0.1em 0 0.1em 0.9em;
-      border-left: 0.2em solid var(--yb-quote, var(--yb-rule));
+      border-left: 0.18em solid var(--yb-accent, var(--yb-rule));  /* 316 — 세로선은 잎 초록, 글은 옅은 먹 */
       color: var(--yb-quote, var(--yb-ink-faint));
     }
     code {
@@ -492,8 +499,10 @@ public enum MarkdownHTML {
     .yb-code-btn:active { color: var(--yb-ink); }
     .yb-code-btn svg { width: 1.35em; height: 1.35em; fill: none; stroke: currentColor; stroke-width: 1.8;
       stroke-linecap: round; stroke-linejoin: round; }
-    hr { border: none; border-top: 1px solid var(--yb-rule); margin: 2em 0; }
-    img { max-width: 100%; height: auto; border-radius: 0.4em; display: block; margin: 1em auto; }
+    /* 316 — 가로줄은 짧게 가운데에 (쉼표처럼). 사진은 둥글게, 옅은 그림자. */
+    hr { border: none; border-top: 1px solid var(--yb-rule); width: 36%; margin: 2.4em auto; }
+    img { max-width: 100%; height: auto; border-radius: 0.6em; display: block; margin: 1.2em auto;
+      box-shadow: 0 0.15em 0.8em rgba(0, 0, 0, 0.08); }
     /* 사진이 아닌 첨부의 카드 (295) — PDF 는 첫 쪽 그림, 그 밖은 종류 · 이름. 누르면 미리보기 */
     .yb-file { display: inline-flex; flex-direction: column; align-items: center; gap: 0.5em; max-width: 100%;
       margin: 1em 0; padding: 0.7em; border: 1px solid var(--yb-rule); border-radius: 0.6em;

@@ -1,0 +1,15 @@
+• 새 옷을 입었습니다. 종이 같은 바탕, 먹빛 글자, 잎 초록 강조색 — 밝은 화면에서도 어두운 화면에서도 눈이 편한 따뜻한 색입니다.
+• 노트 제목은 명조로. 목록 · 쓰기 · 읽기 화면의 제목이 단정한 명조 글씨로 보입니다. 본문은 읽기 편한 고딕 그대로이고, 글자 크기 설정을 따라 함께 커집니다.
+• 노트 목록이 가벼워졌습니다. 올해 고친 노트는 날짜에서 연도를 뺐고, 아이패드에서는 고른 노트가 옅은 초록으로 표시됩니다.
+• 읽기 화면을 다듬었습니다. 줄 간격을 넉넉히 하고, 아이패드의 넓은 화면에서는 글줄이 너무 길어지지 않게 가운데에 모았습니다.
+• 설정과 도움말 화면도 같은 종이 바탕으로 맞췄습니다.
+• 바뀐 것은 보이는 모습뿐입니다. 노트 파일은 한 글자도 바뀌지 않습니다.
+
+— English (What’s New in This Version) —
+
+• A fresh look: paper-toned backgrounds, ink-colored text, and a leaf-green accent — warm and easy on the eyes in both light and dark mode.
+• Note titles now appear in an elegant serif typeface in the note list, the editor, and the reading view. Body text stays in the easy-to-read system font, and both grow with your text size setting.
+• A lighter note list: notes edited this year drop the year from their date, and on iPad the selected note is marked in soft green.
+• A refined reading view with more generous line spacing. On the wide iPad screen, lines stay centered at a comfortable length.
+• Settings and Help now share the same paper background.
+• Only the look has changed — your note files stay exactly as they were.

@@ -6,6 +6,17 @@ import UIKit
 /// 사용자 *지금처럼*) · ⌘E(읽기와 쓰기 오가기)와 같은 글쇠라 어느 쪽이 받을지 모른다. 시스템 것을 빼고 같은 일을 *노트* 메뉴에
 /// 우리 글쇠로 둔다 — 노트 안에서 찾기 ⌘⇧F · 다음 · 이전 찾은 곳 ⌘G · ⌘⇧G. 찾기 막대 자체는 그대로 뜬다.
 final class AppDelegate: UIResponder, UIApplicationDelegate {
+    /// **막대 제목 · 강조색** (316 · 317). SwiftUI 의 `navigationTitle` 은 글꼴을 고를 수 없어 UIKit 의 모양(appearance)으로 건다 —
+    /// 화면이 서기 전, 한 번. 강조색은 SwiftUI 쪽은 `.tint`, UIKit 쪽(경고창 단추 · 문서 고르기 창 등)은 창의 `tintColor` 가 맡는다.
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        let bar = UINavigationBar.appearance()
+        bar.titleTextAttributes = [.font: AppFont.serif(.headline, size: 17), .foregroundColor: Palette.inkUIColor]
+        bar.largeTitleTextAttributes = [.font: AppFont.serif(.largeTitle, size: 34), .foregroundColor: Palette.inkUIColor]
+        UIView.appearance(whenContainedInInstancesOf: [UIAlertController.self]).tintColor = Palette.accentUIColor
+        return true
+    }
+
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
         guard builder.system == .main else { return }
@@ -22,6 +33,8 @@ struct NotebookApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(library)
+                // 316 — 앱 전체의 강조색은 잎 초록 하나 (시트 · 설정까지 — 예전에는 노트 칸에만 걸려 있었다).
+                .tint(Palette.accent)
                 // `파일` 앱에서 `.md` 를 눌렀을 때 (`CFBundleDocumentTypes`).
                 // 폴더가 아직 안 섰으면 `LibraryModel` 이 붙들고 있다가 연다.
                 // 앱 주소 `slowmargin://` (248 — 인앱 이벤트 바로 가기)도 여기로 온다 — 앱만 연다.

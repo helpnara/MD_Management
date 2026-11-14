@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>고급스럽게 — 시안</title>
+<link rel="stylesheet" href="../promo/fonts/local.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:2000px;background:#E9E5DD;font-family:'Noto Sans KR',sans-serif;color:#24211E;padding:40px 40px 50px}
+h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:44px;margin-bottom:6px}
+.sub{font-size:20px;color:#6B655C;margin-bottom:26px}
+.row{display:flex;gap:28px;align-items:flex-start;margin-bottom:34px}
+.lab{writing-mode:vertical-rl;font-size:22px;font-weight:700;color:#6B655C;letter-spacing:4px;margin-top:330px}
+.col{display:flex;flex-direction:column;align-items:center;gap:10px}
+.col .t{font-size:20px;font-weight:700}
+.col .t.new{color:#4A7429}
+.shot{width:430px;height:auto;border-radius:44px;border:10px solid #111;display:block;background:#000}
+.ph{width:430px;height:930px;border-radius:44px;border:10px solid #111;overflow:hidden;position:relative}
+/* 제안 토큰 */
+.L{--paper:#FAF7F1;--raised:#F1ECE3;--ink:#24211E;--faint:#6B655C;--rule:rgba(36,33,30,.10);--accent:#4A7429;--chip:#EAE4D9;--code:#F1ECE3}
+.D{--paper:#1B1A18;--raised:#262420;--ink:#ECE7DF;--faint:#A59E93;--rule:rgba(236,231,223,.10);--accent:#9CCB6E;--chip:#2E2B27;--code:#262420}
+.ph{background:var(--paper);color:var(--ink)}
+.stat{height:50px;display:flex;justify-content:space-between;align-items:center;padding:0 30px;font-size:16px;font-weight:600}
+.isl{position:absolute;top:10px;left:50%;margin-left:-60px;width:120px;height:34px;border-radius:20px;background:#111}
+.nav{height:52px;display:flex;align-items:center;padding:0 18px;gap:10px}
+.nav .bk{width:38px;height:38px;border-radius:19px;background:var(--raised);display:flex;align-items:center;justify-content:center}
+.nav svg{width:20px;height:20px;stroke:var(--ink);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nav .ttl{flex:1;text-align:center;font-family:'Noto Serif KR',serif;font-weight:700;font-size:18px;line-height:1.1}
+.nav .ttl small{display:block;font-family:'Noto Sans KR';font-weight:500;font-size:11px;color:var(--faint);margin-top:3px}
+.nav .pill{height:38px;padding:0 12px;border-radius:19px;background:var(--raised);display:flex;align-items:center;gap:14px}
+.nav .pill svg{stroke:var(--accent)}
+.sf{margin:10px 16px 6px;height:40px;border-radius:12px;background:var(--raised);display:flex;align-items:center;gap:8px;padding:0 12px;font-size:16px;color:var(--faint)}
+.sf svg{width:18px;height:18px;stroke:var(--faint);stroke-width:2.2;fill:none}
+.sec{margin:20px 22px 8px;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--faint)}
+.item{margin:0 22px;padding:16px 0 15px;border-bottom:1px solid var(--rule)}
+.item b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:18px;letter-spacing:-.2px}
+.item p{font-size:14.5px;color:var(--faint);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item i{display:block;font-style:normal;font-size:12px;color:var(--faint);margin-top:6px;letter-spacing:.3px}
+.item i em{font-style:normal;color:var(--accent);font-weight:700;margin-right:6px}
+.rd{padding:6px 26px}
+.rd h2{font-family:'Noto Serif KR',serif;font-weight:900;font-size:28px;line-height:1.3;letter-spacing:-.5px;margin:6px 0 4px}
+.rd .meta{font-size:12px;color:var(--faint);letter-spacing:.3px;margin-bottom:16px}
+.rd .tag{color:#8F6700;font-size:14px;font-weight:600}
+.D .rd .tag{color:#FFD659}
+.rd .img{height:150px;border-radius:14px;background:var(--raised);margin:14px 0 20px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.rd .img svg{width:240px;height:90px;stroke:var(--faint);stroke-width:3;fill:none}
+.rd h3{font-family:'Noto Serif KR',serif;font-weight:700;font-size:20px;margin:18px 0 8px}
+.rd ol{padding-left:22px;font-size:16px;line-height:1.75}
+.rd ol li::marker{color:var(--faint)}
+.rd .tk{display:flex;align-items:center;gap:10px;font-size:16px;line-height:1.75}
+.rd .bx{width:18px;height:18px;border-radius:6px;border:1.6px solid var(--faint)}
+.rd .bx.on{background:var(--accent);border-color:var(--accent)}
+.rd .tk.done span{color:var(--faint);text-decoration:line-through}
+.rd blockquote{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:14px 0;color:var(--faint);font-family:'Noto Serif KR',serif;font-size:16px;line-height:1.7}
+.swatch{display:flex;gap:18px;margin-top:6px}
+.sw{display:flex;align-items:center;gap:10px;font-size:18px}
+.sw i{width:36px;height:36px;border-radius:10px;display:block;border:1px solid rgba(0,0,0,.1)}
+.notes{font-size:17px;line-height:1.7;color:#4A453F;max-width:1900px}
+.notes b{color:#24211E}
+</style></head><body>
+<h1>느린 여백 — 늘 고급스럽게 (시안)</h1>
+<div class="sub">왼쪽: 지금(빌드 151 자동 스크린샷) · 오른쪽: 제안. 제안의 제목 명조는 시안에서 Noto Serif KR 로 그렸다 — 앱에서 쓸 글꼴은 따로 정한다.</div>
+<div class="row">
+  <div class="lab">밝은 화면</div>
+  <div class="col"><div class="t">지금 · 목록</div><img class="shot" src="../../screenshots/01-list.png"></div>
+  <div class="col"><div class="t new">제안 · 목록</div><div class="ph L"><div class="isl"></div><div class="stat"><span>9:41</span><span>●●●</span></div><div class="nav"><div class="bk"><svg viewBox="0 0 20 20"><path d="M12 4 L6 10 L12 16"/></svg></div><div class="ttl">둘러보기<small>노트 2개</small></div><div class="pill"><svg viewBox="0 0 20 20"><path d="M3 6 h5 l2 2 h7 v8 h-14 z"/><path d="M13 11 v4 M11 13 h4"/></svg><svg viewBox="0 0 20 20"><path d="M4 16 L6 11 L13 4 L16 7 L9 14 Z"/></svg></div></div>
+<div class="sf"><svg viewBox="0 0 18 18"><circle cx="8" cy="8" r="5.5"/><path d="M12 12 L16 16"/></svg>모든 노트에서 찾기</div>
+<div class="sec">노트</div>
+<div class="item"><b>2026-09-13 회의</b><p>스케치 · 정한 것 — 파일이 원본이다</p><i><em>#회의</em>11월 7일 · 오전 12:59</i></div>
+<div class="item"><b>반가워요</b><p>이것은 둘러보기 자료입니다. 실제 폴더에는 아무것도 만…</p><i>11월 7일 · 오전 12:59</i></div>
+<div class="item"><b>주간 회의</b><p>2026-11-09 (월) 11:00 · 발표 자료 다듬기</p><i><em>#회의</em>11월 9일 · 오전 11:04</i></div>
+<div class="item"><b>읽을거리</b><p>느리게 읽는 법 · 비 오는 날의 책방</p><i>11월 3일 · 오후 9:12</i></div></div></div>
+  <div class="col"><div class="t">지금 · 읽기</div><img class="shot" src="../../screenshots/05-reading.png"></div>
+  <div class="col"><div class="t new">제안 · 읽기</div><div class="ph L"><div class="isl"></div><div class="stat"><span>9:41</span><span>●●●</span></div><div class="nav"><div class="bk"><svg viewBox="0 0 20 20"><path d="M12 4 L6 10 L12 16"/></svg></div><div class="ttl" style="font-family:Noto Sans KR;font-weight:600;font-size:16px">2026-09-13 회의</div><div class="pill"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><circle cx="7" cy="10" r=".8"/><circle cx="10" cy="10" r=".8"/><circle cx="13" cy="10" r=".8"/></svg><svg viewBox="0 0 20 20"><path d="M4 16 L6 11 L13 4 L16 7 L9 14 Z"/></svg></div></div>
+<div class="rd"><h2>2026-09-13 회의</h2><div class="meta"><span class="tag">#회의 #기획</span> · 11월 7일 고침</div>
+<div class="img"><svg viewBox="0 0 240 90"><path d="M10 80 C 60 10, 120 70, 230 12"/></svg></div>
+<h3>정한 것</h3><ol><li>파일이 원본이다 — 앱 안에 자료를 따로 두지 않는다</li><li>검색은 두 글자부터 된다</li><li>공유하면 파일 하나만 간다</li></ol>
+<blockquote>천천히 쓰고, 오래 남긴다.</blockquote>
+<h3>다음에 볼 것</h3><div class="tk done"><div class="bx on"></div><span>실기기에서 한글 조합 확인</span></div><div class="tk"><div class="bx"></div><span>아이패드 3단 화면</span></div></div></div></div>
+</div>
+<div class="row">
+  <div class="lab">어두운 화면</div>
+  <div class="col"><div class="t">지금 · 목록</div><img class="shot" src="../../screenshots/dark/01-list.png"></div>
+  <div class="col"><div class="t new">제안 · 목록</div><div class="ph D"><div class="isl"></div><div class="stat"><span>9:41</span><span>●●●</span></div><div class="nav"><div class="bk"><svg viewBox="0 0 20 20"><path d="M12 4 L6 10 L12 16"/></svg></div><div class="ttl">둘러보기<small>노트 2개</small></div><div class="pill"><svg viewBox="0 0 20 20"><path d="M3 6 h5 l2 2 h7 v8 h-14 z"/><path d="M13 11 v4 M11 13 h4"/></svg><svg viewBox="0 0 20 20"><path d="M4 16 L6 11 L13 4 L16 7 L9 14 Z"/></svg></div></div>
+<div class="sf"><svg viewBox="0 0 18 18"><circle cx="8" cy="8" r="5.5"/><path d="M12 12 L16 16"/></svg>모든 노트에서 찾기</div>
+<div class="sec">노트</div>
+<div class="item"><b>2026-09-13 회의</b><p>스케치 · 정한 것 — 파일이 원본이다</p><i><em>#회의</em>11월 7일 · 오전 12:59</i></div>
+<div class="item"><b>반가워요</b><p>이것은 둘러보기 자료입니다. 실제 폴더에는 아무것도 만…</p><i>11월 7일 · 오전 12:59</i></div>
+<div class="item"><b>주간 회의</b><p>2026-11-09 (월) 11:00 · 발표 자료 다듬기</p><i><em>#회의</em>11월 9일 · 오전 11:04</i></div>
+<div class="item"><b>읽을거리</b><p>느리게 읽는 법 · 비 오는 날의 책방</p><i>11월 3일 · 오후 9:12</i></div></div></div>
+  <div class="col"><div class="t">지금 · 읽기</div><img class="shot" src="../../screenshots/dark/03-reading.png"></div>
+  <div class="col"><div class="t new">제안 · 읽기</div><div class="ph D"><div class="isl"></div><div class="stat"><span>9:41</span><span>●●●</span></div><div class="nav"><div class="bk"><svg viewBox="0 0 20 20"><path d="M12 4 L6 10 L12 16"/></svg></div><div class="ttl" style="font-family:Noto Sans KR;font-weight:600;font-size:16px">2026-09-13 회의</div><div class="pill"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><circle cx="7" cy="10" r=".8"/><circle cx="10" cy="10" r=".8"/><circle cx="13" cy="10" r=".8"/></svg><svg viewBox="0 0 20 20"><path d="M4 16 L6 11 L13 4 L16 7 L9 14 Z"/></svg></div></div>
+<div class="rd"><h2>2026-09-13 회의</h2><div class="meta"><span class="tag">#회의 #기획</span> · 11월 7일 고침</div>
+<div class="img"><svg viewBox="0 0 240 90"><path d="M10 80 C 60 10, 120 70, 230 12"/></svg></div>
+<h3>정한 것</h3><ol><li>파일이 원본이다 — 앱 안에 자료를 따로 두지 않는다</li><li>검색은 두 글자부터 된다</li><li>공유하면 파일 하나만 간다</li></ol>
+<blockquote>천천히 쓰고, 오래 남긴다.</blockquote>
+<h3>다음에 볼 것</h3><div class="tk done"><div class="bx on"></div><span>실기기에서 한글 조합 확인</span></div><div class="tk"><div class="bx"></div><span>아이패드 3단 화면</span></div></div></div></div>
+</div>
+<div class="notes">
+<b>강조색 후보</b> — 시안은 ① 잎 초록.
+<div class="swatch"><div class="sw"><i style="background:#4A7429"></i>① 잎 초록 #4A7429 · 어두운 #9CCB6E (아이콘의 새싹 · 홍보 영상의 잎색)</div><div class="sw"><i style="background:#2E5585"></i>② 먹 남색 #2E5585 · 어두운 #8FB6EA</div><div class="sw"><i style="background:#007AFF"></i>지금 시스템 파랑 (밝은 바탕 대비 3.8 — 기준 4.5 미달)</div></div>
+</div>
+</body></html>

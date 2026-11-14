@@ -43,8 +43,8 @@ struct NoteWebView: UIViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.isOpaque = false
-        webView.backgroundColor = .systemBackground
-        webView.scrollView.backgroundColor = .systemBackground
+        webView.backgroundColor = Palette.paperUIColor     // 316 — 종이 (페이지가 뜨기 전에도 흰 화면이 번쩍이지 않게)
+        webView.scrollView.backgroundColor = Palette.paperUIColor
         // 핀치 줌은 웹뷰가 한다.
         webView.scrollView.minimumZoomScale = 1
         webView.scrollView.maximumZoomScale = 4

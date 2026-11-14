@@ -426,7 +426,7 @@ struct MarkdownEditor: UIViewRepresentable {
             layout.delegate = context.coordinator.codeBoxes
         }
 
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = Palette.paperUIColor     // 316 — 종이
         view.alwaysBounceVertical = true
         view.keyboardDismissMode = .interactive
         // **곧은 따옴표를 곡선으로 바꾸지 않는다.** 마크다운에서 `"` 는 글자 그대로다.
@@ -435,7 +435,7 @@ struct MarkdownEditor: UIViewRepresentable {
         view.smartInsertDeleteType = .no
         // 빈 노트에 첫 글자를 칠 때 쓸 기본값. 없으면 12pt 로 찍힌다.
         view.font = .preferredFont(forTextStyle: .body)
-        view.textColor = .label
+        view.textColor = Palette.inkUIColor
 
         let gutter = Metrics.gutter
         view.textContainerInset = UIEdgeInsets(top: gutter, left: gutter,
