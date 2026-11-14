@@ -12,7 +12,7 @@ updated: 2026-10-22
 
 ---
 
-## 0. 지금 상태 (2026-11-09 — **1.1.25 (빌드 151) 승인 · 배포 · 설명 두 문장** · 1.1.24 (빌드 150) 배포 · 1.1.23 (빌드 147) 배포 · 1.1.22 (빌드 145) 배포 (1.1.21 거둠) · 1.1.19 (빌드 134) 배포 · 1.1.18 (빌드 133) 배포 · 1.1.21 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.23)
+## 0. 지금 상태 (2026-11-14 — **1.1.26 (빌드 152 · 디자인 묶음) 제출 준비 · 스토어 그림 모두 새로** · **1.1.25 (빌드 151) 승인 · 배포 · 설명 두 문장** · 1.1.24 (빌드 150) 배포 · 1.1.23 (빌드 147) 배포 · 1.1.22 (빌드 145) 배포 (1.1.21 거둠) · 1.1.19 (빌드 134) 배포 · 1.1.18 (빌드 133) 배포 · 1.1.21 · 1.1.17 · 1.1.13 건너뜀 · 한국어 + 영어(Slow Margin) · `main` = 1.1.23)
 
 | | |
 |---|---|
@@ -202,6 +202,40 @@ https://helpnara.github.io/MD_Management/privacy/
 4. **영어 스크린샷.** 영어 칸에 안 올리면 **한국어 스크린샷이 그대로 보인다.** 영어 견본 노트 `docs/samples/en/` 으로 한국어 때와 같은 차례로 찍는다
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
+
+### 1.1.26 제출 순서 — 빌드 152 (2026-11-14 준비 · 빌드 152 확인 끝 — 사용자 *0-10번 확인 완료.* · *1.1.26 심사 제출 준비하자*)
+
+> 디자인 묶음 — 316 종이 · 먹 · 잎 초록 팔레트 · 317 명조 제목 · 318 목록 줄 · 319 읽기 화면 글맵시 · 320 묶음 목록 종이 칸 (ADR-0010 · `docs/84-build-152.md`).
+> **스토어 그림을 모두 간다** — 앱이 흰 바탕 · 파란 링크에서 종이 · 먹 · 잎 초록이 됐으므로 옛 그림은 앱과 다르다. 자동 촬영(`store-shots.yml`)이 새 앱으로 다시 찍고,
+> 글귀 틀도 앱과 같은 색(`Palette.swift` 에서 읽음) · 같은 명조 글꼴로 바꿨다 (`Tools/store/frame.py`). 칸은 지난번과 같다 — 아이폰 6.1" · 6.5" · 6.9" · 아이패드 13" × 한국어 · 영어 × 다섯 장.
+> 설명 · 키워드 · 부제 · 메모(Notes)는 1.1.25 그대로 (설명에 색 · 글꼴을 말한 문장이 없다). 프로모션 텍스트는 11월 홍보 글 그대로 (12-01 에 되돌림 — 알림 예약됨).
+> 앱 크기가 8.4MB 남짓 커진다 (명조 글꼴) — 콘솔에서 할 일은 없다. 글자 수는 `python3 Tools/store/count.py`.
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.26` → **빌드** 칸에서 **152** (`1.1.26 (152)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — 아래 여섯 줄 (`docs/store/1.1.26-새로운-기능.txt`)
+3. 한국어 칸 **스크린샷** — 아이폰 **6.9"** · **6.5"** · **6.1"** 칸과 **아이패드 13"** 칸의 옛 그림을 **모두 지우고** `docs/store/screenshots/ko/` 의 새 그림을 1 ~ 5 차례로 올린다
+   (6.9" 칸 = `ko/6.9/` · 6.5" 칸 = `ko/6.5/` · 6.1" 칸 = `ko/iphone-*.png` · 아이패드 = `ko/ipad-*.png`). **줄을 모두 펼쳐 옛 그림이 남은 칸이 없는지** 본다 (250)
+4. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — 아래 영어 여섯 줄 → 스크린샷 — 3 과 같이 `docs/store/screenshots/en/` → **저장**
+5. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+6. 제출 → `main` 병합 (= 1.1.26) → 승인 · 배포 기다림
+
+```
+• 새 옷을 입었습니다. 종이 같은 바탕, 먹빛 글자, 잎 초록 강조색 — 밝은 화면에서도 어두운 화면에서도 눈이 편한 따뜻한 색입니다.
+• 노트 제목은 명조로. 목록 · 쓰기 · 읽기 화면의 제목이 단정한 명조 글씨로 보입니다. 본문은 읽기 편한 고딕 그대로이고, 글자 크기 설정을 따라 함께 커집니다.
+• 노트 목록이 가벼워졌습니다. 올해 고친 노트는 날짜에서 연도를 뺐고, 아이패드에서는 고른 노트가 옅은 초록으로 표시됩니다.
+• 읽기 화면을 다듬었습니다. 줄 간격을 넉넉히 하고, 아이패드의 넓은 화면에서는 글줄이 너무 길어지지 않게 가운데에 모았습니다.
+• 설정과 도움말 화면도 같은 종이 바탕으로 맞췄습니다.
+• 바뀐 것은 보이는 모습뿐입니다. 노트 파일은 한 글자도 바뀌지 않습니다.
+```
+
+```
+• A fresh look: paper-toned backgrounds, ink-colored text, and a leaf-green accent — warm and easy on the eyes in both light and dark mode.
+• Note titles now appear in an elegant serif typeface in the note list, the editor, and the reading view. Body text stays in the easy-to-read system font, and both grow with your text size setting.
+• A lighter note list: notes edited this year drop the year from their date, and on iPad the selected note is marked in soft green.
+• A refined reading view with more generous line spacing. On the wide iPad screen, lines stay centered at a comfortable length.
+• Settings and Help now share the same paper background.
+• Only the look has changed — your note files stay exactly as they were.
+```
 
 ### 1.1.25 제출 순서 — 빌드 151 (2026-11-07 준비 · 빌드 151 확인 끝 — 사용자 *빌드 151 체크리스트 확인 완료* · 1.1.24 승인 뒤 · **제출함 2026-11-07 · 승인 · 배포 2026-11-09**)
 
@@ -670,15 +704,15 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.21** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 1.1.19 의 글은 `docs/store/1.1.19-새로운-기능.txt` 끝.
+> **1.1.26** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt` 끝.
 
 ```
-• Fixes hidden line breaks and spaces in text brought in from elsewhere. Pasting fixes them automatically; for notes already in your folder, choose Fix Line Breaks from the More menu. Headings and lists show up as they should.
-• Import a folder exported as Markdown from another notes app: Settings → Folder → Import an Exported Markdown Folder. Notes go side by side in one folder, photos into its assets folder, and links are updated. The chosen folder stays as it is.
-• Moving a note to another folder now moves the photos only that note uses along with it, so deleting the old folder no longer breaks them.
-• Restore a deleted folder from the Trash in one step.
-• Korean words in text made on other devices now show up in search.
-• A tidier Settings screen: four groups — Folder, Notes, Cleanup, Help — with the explanations gathered on a single Guide page. The app version is at the bottom of Settings.
+• A fresh look: paper-toned backgrounds, ink-colored text, and a leaf-green accent — warm and easy on the eyes in both light and dark mode.
+• Note titles now appear in an elegant serif typeface in the note list, the editor, and the reading view. Body text stays in the easy-to-read system font, and both grow with your text size setting.
+• A lighter note list: notes edited this year drop the year from their date, and on iPad the selected note is marked in soft green.
+• A refined reading view with more generous line spacing. On the wide iPad screen, lines stay centered at a comfortable length.
+• Settings and Help now share the same paper background.
+• Only the look has changed — your note files stay exactly as they were.
 ```
 
 ---
@@ -934,16 +968,16 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.21** (2026-11-01 — 287 줄바꿈 고치기 · 289 마크다운으로 내보낸 폴더 가져오기 · 290 찾기 NFC · 291 옮길 때 사진 같이 · 292 휴지통 지운 폴더 · 293 설정 정리). 글은 `docs/store/1.1.21-새로운-기능.txt`. 1.1.19 의 글은 `docs/store/1.1.19-새로운-기능.txt`.
+> **1.1.26** (2026-11-14 — 316 ~ 320 디자인 묶음 · ADR-0010). 글은 `docs/store/1.1.26-새로운-기능.txt`. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 다른 곳에서 옮겨 온 글의 보이지 않는 줄바꿈 · 빈칸 글자를 고칩니다. 붙여 넣을 때 저절로 고치고, 이미 들어온 노트는 더 보기 메뉴의 ‘줄바꿈 고치기’로 고칩니다. 제목과 목록이 제 모양으로 섭니다.
-• 다른 노트 앱이 마크다운으로 내보낸 폴더를 가져옵니다. 설정 → 폴더 → ‘마크다운으로 내보낸 폴더 가져오기’를 누르면 노트는 한 폴더에 나란히, 사진은 그 폴더의 assets 로 모으고 링크를 맞춥니다. 고른 폴더는 그대로 둡니다.
-• 노트를 다른 폴더로 옮길 때 그 노트만 쓰는 사진도 함께 옮깁니다. 옛 폴더를 지워도 사진이 깨지지 않습니다.
-• 휴지통에서 지운 폴더를 폴더째 되돌릴 수 있습니다.
-• 다른 기기에서 만든 글의 한글 낱말이 찾기에 걸리지 않던 것을 고쳤습니다.
-• 설정 화면을 정리했습니다. 폴더 · 노트 · 정리 · 도움 네 묶음으로 줄이고, 안내는 ‘사용법’ 한 화면에 모았습니다. 앱 판은 설정 맨 아래에 있습니다.
+• 새 옷을 입었습니다. 종이 같은 바탕, 먹빛 글자, 잎 초록 강조색 — 밝은 화면에서도 어두운 화면에서도 눈이 편한 따뜻한 색입니다.
+• 노트 제목은 명조로. 목록 · 쓰기 · 읽기 화면의 제목이 단정한 명조 글씨로 보입니다. 본문은 읽기 편한 고딕 그대로이고, 글자 크기 설정을 따라 함께 커집니다.
+• 노트 목록이 가벼워졌습니다. 올해 고친 노트는 날짜에서 연도를 뺐고, 아이패드에서는 고른 노트가 옅은 초록으로 표시됩니다.
+• 읽기 화면을 다듬었습니다. 줄 간격을 넉넉히 하고, 아이패드의 넓은 화면에서는 글줄이 너무 길어지지 않게 가운데에 모았습니다.
+• 설정과 도움말 화면도 같은 종이 바탕으로 맞췄습니다.
+• 바뀐 것은 보이는 모습뿐입니다. 노트 파일은 한 글자도 바뀌지 않습니다.
 ```
 
