@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>기록 습관 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+/* 앱 색은 App/DesignSystem/Palette.swift 의 밝은 판 (1.1.26 · 316) — 종이 · 먹 · 잎 초록 */
+:root{ --paper:#FAF7F1; --raised:#F1ECE3; --grouped:#F3EFE8; --ink:#24211E; --faint:#6B655C; --marker:#B0A99D;
+  --leaf:#4A7429; --leaf2:#6FA53A; --wood:#D6A266; --gold:#C49A45; --stage:#F6F1E7; --stage2:#EDE4D4; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--stage)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--stage) 55%, var(--stage2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.5) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf2),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+
+.hook{position:absolute;left:0;right:0;top:110px;text-align:center}
+.hook .kk{font-size:32px;font-weight:700;letter-spacing:6px;color:var(--leaf);margin-bottom:26px}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:98px;line-height:1.22;letter-spacing:-2px}
+.hook p{margin-top:26px;font-size:48px;font-weight:700;color:#3F3B36}
+.hook p b{color:var(--leaf)}
+
+.cap{position:absolute;left:70px;right:70px;top:170px;text-align:center}
+.cap .kicker{display:inline-block;padding:10px 30px;border-radius:40px;background:rgba(74,116,41,.12);color:var(--leaf);font-size:30px;font-weight:700;margin-bottom:26px}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:900;font-size:84px;line-height:1.22;letter-spacing:-1px}
+.cap p{margin-top:22px;font-size:36px;color:#55514B;font-weight:500;line-height:1.45}
+
+.phone{position:absolute;left:170px;top:700px;width:740px;height:1150px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.24), 0 6px 18px rgba(0,0,0,.12)}
+.phone.low{top:760px}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--paper);overflow:hidden;color:var(--ink)}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:20}
+.homebar{position:absolute;bottom:20px;left:50%;margin-left:-110px;width:220px;height:10px;border-radius:5px;background:#1C1B1A;opacity:.8;z-index:19}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(74,116,41,.20);border:4px solid rgba(74,116,41,.55);pointer-events:none;z-index:18;opacity:0}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--leaf);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+.layer{position:absolute;inset:0}
+
+.home{background:linear-gradient(180deg,#DCE3EE,#E9E2D6)}
+.home .grid{position:absolute;top:140px;left:52px;right:52px;display:grid;grid-template-columns:repeat(4,1fr);row-gap:34px;justify-items:center}
+.home .ap{width:132px;text-align:center;font-size:24px;color:#2A2724;position:relative;height:170px}
+.home .ap .sq{width:132px;height:132px;border-radius:32px;background:#F4F1EA;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.home .ap img{width:132px;height:132px;border-radius:32px;display:block;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.home .dock{position:absolute;left:30px;right:30px;bottom:34px;height:170px;border-radius:50px;background:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:space-around;padding:0 20px}
+.home .dock .sq{width:120px;height:120px;border-radius:30px;background:#F4F1EA;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+
+/* 앱 — 1.1.26 새 디자인 */
+.app{background:var(--grouped)}
+.abar{position:absolute;top:96px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 30px;z-index:3}
+.abar .circ{width:76px;height:76px;border-radius:38px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .circ svg{width:34px;height:34px;stroke:var(--ink);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.abar .mid{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.abar .mid b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.abar .mid small{display:block;font-size:22px;color:var(--faint)}
+.abar .pill{margin-left:auto;height:76px;padding:0 24px;border-radius:38px;background:#fff;display:flex;align-items:center;gap:26px;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .pill svg{width:40px;height:40px;stroke:var(--leaf);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.asf{position:absolute;top:220px;left:30px;right:30px;height:76px;border-radius:38px;background:rgba(36,33,30,.07);display:flex;align-items:center;gap:14px;padding:0 26px;font-size:30px;color:var(--faint)}
+.asf svg{width:32px;height:32px;stroke:var(--faint);stroke-width:4;fill:none}
+.alist{position:absolute;top:320px;left:30px;right:30px;background:var(--paper);border-radius:30px;padding:0 30px}
+.arow{padding:22px 0;border-bottom:1px solid rgba(36,33,30,.10)}
+.arow:last-child{border-bottom:none}
+.arow b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.arow span{display:block;font-size:26px;color:var(--faint);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arow small{display:block;font-size:22px;color:var(--faint);margin-top:4px}
+.editor{background:var(--paper)}
+.ebody{position:absolute;top:240px;left:52px;right:52px;font-size:36px;line-height:1.62}
+.eln{min-height:58px;white-space:pre}
+.eln.t{font-family:'Noto Serif KR',serif;font-weight:700;font-size:58px;line-height:1.35;min-height:92px;letter-spacing:-.5px}
+.eln .mk{color:var(--marker)}
+.eln .chk{color:var(--leaf)}
+/* 읽기 화면 (웹) — 상자는 읽기 화면에서만 그려진다 */
+.reader{background:var(--paper)}
+.eln .box{display:inline-block;width:34px;height:34px;border-radius:8px;border:3px solid var(--faint);vertical-align:-5px;margin-right:12px}
+.eln .box.on{background:var(--leaf);border-color:var(--leaf);position:relative}
+.eln .box.on:after{content:'';position:absolute;left:9px;top:3px;width:8px;height:16px;border:solid #fff;border-width:0 4px 4px 0;transform:rotate(45deg)}
+.ebar{position:absolute;left:0;right:0;bottom:0;height:120px;background:var(--raised);display:flex;align-items:center;justify-content:space-around;padding:0 30px 20px;font-size:32px;color:var(--leaf);font-weight:700}
+
+/* 노트 정보 시트 (NoteInfoSheet) */
+.sheet{position:absolute;left:0;right:0;bottom:0;top:250px;background:var(--grouped);border-radius:44px 44px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.16);z-index:8;padding:0 30px;transform:translateY(100%)}
+.sheet .sh{height:110px;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px;position:relative}
+.sheet .sh span{position:absolute;left:10px;font-family:'Noto Sans KR';font-weight:500;font-size:30px;color:var(--leaf)}
+.sheet .gh{font-size:24px;color:var(--faint);margin:16px 24px 10px}
+.sheet .gb{background:var(--paper);border-radius:26px;padding:0 26px}
+.sheet .gr{height:76px;display:flex;align-items:center;justify-content:space-between;font-size:30px;border-bottom:1px solid rgba(36,33,30,.10)}
+.sheet .gr:last-child{border-bottom:none}
+.sheet .gr i{font-style:normal;color:var(--faint)}
+.sheet .gr.hot i{color:var(--leaf);font-weight:700}
+
+/* 한 주 점 (그림 — 앱 화면이 아니다) */
+.week{position:absolute;left:90px;right:90px;top:760px;display:flex;justify-content:space-between}
+.week .d{width:110px;text-align:center}
+.week .d i{display:block;width:96px;height:96px;margin:0 auto;border-radius:48px;background:var(--leaf);opacity:.9}
+.week .d.off i{background:transparent;border:5px dashed #CFC6B6;opacity:1}
+.week .d span{display:block;margin-top:14px;font-size:28px;color:var(--faint);font-weight:500}
+.chips{position:absolute;left:0;right:0;top:1080px;text-align:center}
+.chips span{display:inline-block;margin:12px 10px;padding:22px 38px;border-radius:50px;background:#fff;box-shadow:0 10px 30px rgba(80,60,30,.12);font-size:36px;font-weight:700}
+.chips span s{color:#A39A8C;text-decoration-thickness:3px}
+.note2{position:absolute;left:0;right:0;top:1400px;text-align:center;font-family:'Noto Serif KR',serif;font-weight:700;font-size:46px;color:#4A4640}
+
+/* 정리 카드 */
+.bigcard{position:absolute;left:80px;right:80px;top:560px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:20px 46px}
+.bigcard .row{display:flex;align-items:flex-start;gap:26px;padding:30px 0;border-bottom:1px solid #EEE9E0;opacity:0}
+.bigcard .row:last-child{border-bottom:none}
+.bigcard .row .ck{flex:none;width:62px;height:62px;border-radius:31px;background:var(--leaf);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900;margin-top:4px}
+.bigcard .row b{display:block;font-family:'Noto Serif KR',serif;font-weight:900;font-size:46px}
+.bigcard .row span{display:block;font-size:32px;color:#55514B;margin-top:6px}
+.sumfoot{position:absolute;left:0;right:0;top:1520px;text-align:center;font-size:36px;color:#55514B;font-weight:500}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:300px;text-align:center}
+.hero img{width:300px;height:300px;border-radius:70px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:120px;margin-top:50px;letter-spacing:2px}
+.hero .tagline{margin-top:24px;font-family:'Noto Serif KR',serif;font-weight:700;font-size:50px;color:#4A4640}
+.hero .say{font-size:40px;margin-top:80px;font-weight:700;color:var(--leaf)}
+.hero .say2{font-size:36px;margin-top:40px;font-weight:500;color:#55514B}
+.bigsearch{display:flex;align-items:center;gap:22px;margin:24px auto 0;width:760px;height:120px;border-radius:36px;background:#fff;box-shadow:0 20px 50px rgba(80,60,30,.16);padding:0 40px;font-size:52px;font-weight:700;text-align:left}
+.bigsearch svg{width:56px;height:56px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.hero .foot{margin-top:46px;font-size:36px;color:var(--faint);font-weight:500;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 0 · 썸네일 — 폰 + 손가락 + 센 한 문장 -->
+  <section class="scene" id="s0">
+    <div class="hook"><div class="kk">기록이 습관이 안 되는 이유</div><h1>의지가 아니라<br>시작이 무거워서</h1><p>하루 <b>한 줄</b>이면 됩니다</p></div>
+    <div class="phone low"><div class="screen"><div class="island"></div>
+      <div class="layer reader">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>2026-11-16</b></div><span class="pill"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14"/><circle cx="13" cy="20" r="1.6"/><circle cx="20" cy="20" r="1.6"/><circle cx="27" cy="20" r="1.6"/></svg><svg viewBox="0 0 40 40"><path d="M8 32 L12 22 L26 8 L32 14 L18 28 Z"/></svg></span></div>
+        <div class="ebody">
+          <div class="eln t">2026-11-16</div>
+          <div class="eln"><span class="box on"></span>산책 20분</div>
+          <div class="eln"><span class="box on"></span>물 2리터</div>
+          <div class="eln"><span class="box"></span>책 12쪽</div>
+        </div>
+      </div>
+      <div class="tap" style="opacity:1;left:9px;top:417px"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 1 · 시작은 쉽게 — 앱을 열면 마지막 노트로 (302) -->
+  <section class="scene" id="s1">
+    <div class="cap" id="c1"><div class="kicker">시작은 쉽게</div><h2>열면 바로,<br>어제 쓰던 노트</h2><p>설정 → 앱을 열면 마지막 노트로</p></div>
+    <div class="phone" id="p1"><div class="screen"><div class="island"></div>
+      <div class="layer home" id="home1"><div class="grid">
+        <div class="ap"><div class="sq"></div></div><div class="ap"><div class="sq"></div></div><div class="ap"><div class="sq"></div></div><div class="ap"><div class="sq"></div></div>
+        <div class="ap"><div class="sq"></div></div><div class="ap" id="our1"><img src="icon.png" alt="">느린 여백</div><div class="ap"><div class="sq"></div></div><div class="ap"><div class="sq"></div></div>
+      </div><div class="dock"><div class="sq"></div><div class="sq"></div><div class="sq"></div><div class="sq"></div></div></div>
+      <div class="layer editor" id="ed1" style="opacity:0">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>2026-11-15</b></div><span class="pill"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14"/><circle cx="13" cy="20" r="1.6"/><circle cx="20" cy="20" r="1.6"/><circle cx="27" cy="20" r="1.6"/></svg></span></div>
+        <div class="ebody">
+          <div class="eln t">2026-11-15</div>
+          <div class="eln">- <span class="chk">[x]</span> 산책 20분</div>
+          <div class="eln">- <span class="chk">[x]</span> 책 8쪽</div>
+          <div class="eln" id="l1"></div>
+        </div>
+        <div class="ebar"><span>B</span><span><i>I</i></span><span><s>S</s></span><span>&lt;/&gt;</span><span>☰</span></div>
+      </div>
+      <div class="tap" id="t1"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 2 · 작게 — 오늘 날짜 노트에 한 줄 (303) -->
+  <section class="scene" id="s2">
+    <div class="cap" id="c2"><div class="kicker">작게</div><h2>오늘 날짜 노트에<br>한 줄이면 충분</h2><p>설정 → 새 노트 이름을 오늘 날짜로</p></div>
+    <div class="phone" id="p2"><div class="screen"><div class="island"></div>
+      <div class="layer app" id="li2">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>하루 기록</b><small>노트 4개</small></div><span class="pill"><svg viewBox="0 0 40 40"><path d="M5 12 H15 L18 15 H35 V32 H5 Z"/><path d="M26 20 V28 M22 24 H30"/></svg><svg viewBox="0 0 40 40"><path d="M8 32 L12 22 L26 8 L32 14 L18 28 Z"/></svg></span></div>
+        <div class="asf"><svg viewBox="0 0 32 32"><circle cx="13" cy="13" r="9"/><path d="M20 20 L28 28"/></svg>모든 노트에서 찾기</div>
+        <div class="alist">
+          <div class="arow"><b>2026-11-15</b><span>산책 20분 · 책 8쪽</span><small>11월 15일 오후 10:12</small></div>
+          <div class="arow"><b>2026-11-14</b><span>물 2리터 · 일찍 자기</span><small>11월 14일 오후 11:03</small></div>
+          <div class="arow"><b>2026-11-12</b><span>산책 15분</span><small>11월 12일 오후 9:40</small></div>
+        </div>
+      </div>
+      <div class="layer editor" id="ed2" style="opacity:0">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>2026-11-16</b></div><span class="pill"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14"/><circle cx="13" cy="20" r="1.6"/><circle cx="20" cy="20" r="1.6"/><circle cx="27" cy="20" r="1.6"/></svg></span></div>
+        <div class="ebody">
+          <div class="eln t">2026-11-16</div>
+          <div class="eln" id="l2"></div>
+        </div>
+        <div class="ebar"><span>B</span><span><i>I</i></span><span><s>S</s></span><span>&lt;/&gt;</span><span>☰</span></div>
+      </div>
+      <div class="tap" id="t2"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 3 · 보이게 — 쌓이는 날짜 노트 · 노트 정보 (315 · 숫자는 Tools/golden/note_stats.py 로 셈) -->
+  <section class="scene" id="s3">
+    <div class="cap" id="c3"><div class="kicker">보이게</div><h2>쌓인 기록이<br>눈에 보이게</h2><p>··· → 노트 정보 — 글자 · 할 일 끝낸 일</p></div>
+    <div class="phone" id="p3"><div class="screen"><div class="island"></div>
+      <div class="layer reader">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>2026-11-16</b></div><span class="pill"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14"/><circle cx="13" cy="20" r="1.6"/><circle cx="20" cy="20" r="1.6"/><circle cx="27" cy="20" r="1.6"/></svg><svg viewBox="0 0 40 40"><path d="M8 32 L12 22 L26 8 L32 14 L18 28 Z"/></svg></span></div>
+        <div class="ebody" style="font-size:33px">
+          <div class="eln t">2026-11-16</div>
+          <div class="eln"><span class="box on"></span>산책 20분</div>
+          <div class="eln"><span class="box on"></span>물 2리터</div>
+          <div class="eln"><span class="box on"></span>책 12쪽</div>
+          <div class="eln"><span class="box"></span>열두 시 전에 자기</div>
+          <div class="eln"> </div>
+          <div class="eln" style="white-space:normal">은행잎이 거의 다 떨어졌다. 내일은 조금 더 일찍 나가 볼 것.</div>
+        </div>
+      </div>
+      <div class="sheet" id="sh3">
+        <div class="sh"><span>완료</span>노트 정보</div>
+        <div class="gh">글</div>
+        <div class="gb"><div class="gr">글자 (공백 포함)<i>71</i></div><div class="gr">글자 (공백 빼고)<i>55</i></div><div class="gr">낱말<i>22</i></div><div class="gr">문단<i>3</i></div><div class="gr">읽는 시간<i>약 1분</i></div></div>
+        <div class="gh">할 일</div>
+        <div class="gb"><div class="gr hot">끝낸 일<i>3 / 4</i></div></div>
+      </div>
+      <div class="tap" id="t3"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 너그럽게 — 연속 기록 · 알림 · 배지 없음 (재촉하지 않는 편과 같은 약속) -->
+  <section class="scene" id="s4">
+    <div class="cap" id="c4"><div class="kicker">너그럽게</div><h2>하루 빠져도<br>혼내지 않게</h2><p>끊긴 날을 세지 않습니다 — 다시 쓰면 그만</p></div>
+    <div class="week" id="wk4">
+      <div class="d"><i></i><span>월</span></div><div class="d"><i></i><span>화</span></div><div class="d off"><i></i><span>수</span></div><div class="d"><i></i><span>목</span></div><div class="d"><i></i><span>금</span></div><div class="d off"><i></i><span>토</span></div><div class="d"><i></i><span>일</span></div>
+    </div>
+    <div class="chips" id="ch4"><span><s>연속 기록</s> 없음</span><span><s>알림</s> 없음</span><br><span><s>배지 · 점수</s> 없음</span></div>
+    <div class="note2" id="n4">빠진 날보다, 쓴 날이 남습니다</div>
+  </section>
+
+  <!-- 5 · 정리 -->
+  <section class="scene" id="s5">
+    <div class="cap" id="c5" style="top:150px"><h2 style="font-size:76px">기록이 습관이 되는<br>네 가지</h2></div>
+    <div class="bigcard" id="bc5">
+      <div class="row"><span class="ck">✓</span><div><b>시작은 쉽게</b><span>열면 바로 어제 쓰던 노트</span></div></div>
+      <div class="row"><span class="ck">✓</span><div><b>작게</b><span>오늘 날짜 노트에 한 줄</span></div></div>
+      <div class="row"><span class="ck">✓</span><div><b>보이게</b><span>쌓이는 날짜 노트 · 노트 정보</span></div></div>
+      <div class="row"><span class="ck">✓</span><div><b>너그럽게</b><span>연속 기록도 알림도 없이</span></div></div>
+    </div>
+    <div class="sumfoot" id="sf5">쓴 기록은 내 아이클라우드의 .md 파일로 남습니다</div>
+  </section>
+
+  <!-- 6 · 끝 — 링크는 고정 댓글에만 -->
+  <section class="scene" id="s6">
+    <div class="hero" id="h6">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="tagline">한 줄이 습관이 되는 노트</div>
+      <div class="say">받는 링크는 고정 댓글에 👇</div>
+      <div class="say2">또는 앱스토어 검색창에</div>
+      <div class="bigsearch"><svg viewBox="0 0 56 56"><circle cx="24" cy="24" r="14"/><path d="M35 35 L46 46"/></svg><span id="bq6"></span></div>
+      <div class="foot">아이폰 · 아이패드 · 무료</div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const SC = { s0:[0,3.6], s1:[3.6,9.8], s2:[9.8,16.4], s3:[16.4,22.8], s4:[22.8,28.2], s5:[28.2,33.4], s6:[33.4,38.6] };
+const DURATION = 38.6;
+function rise(el,t,a,d=0.7,dy=60){ const p=out(seg(t,a,a+d)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dy}px)`; }
+function tapAt(el,t,a,x,y){
+  const p=seg(t,a,a+0.55);
+  el.style.left=(x-60)+'px'; el.style.top=(y-60)+'px';
+  el.style.opacity = p>0 && p<1 ? (p<0.3 ? p/0.3 : 1-(p-0.3)/0.7) : 0;
+  el.style.transform=`scale(${0.7+0.5*p})`;
+}
+// 커서가 있는 줄은 마크다운 표시(`- [x]`)가 옅은 회색이다 (MarkdownStyler L2 — 회색은 커서 줄에서만).
+function cursorLine(tx){ const m=tx.match(/^(- (\[[ x]?\]?)?)/); return m ? '<span class="mk">'+m[1]+'</span>'+tx.slice(m[1].length) : tx; }
+function renderS0(t){}
+function renderS1(t){
+  const s=SC.s1[0];
+  rise($('c1'),t,s+0.1); rise($('p1'),t,s+0.25,0.8,90);
+  tapAt($('t1'),t,s+1.2,278,410);
+  const o=out(seg(t,s+1.6,s+2.0)); $('ed1').style.opacity=o; $('home1').style.opacity=1-o;
+  $('ed1').style.transform=`scale(${0.92+0.08*o})`;
+  $('l1').innerHTML=cursorLine(typed('- [ ] 일찍 자기',t,s+2.8,7))+(t>s+2.0?`<span class="caret" style="opacity:${blink(t)}"></span>`:'');
+}
+function renderS2(t){
+  const s=SC.s2[0];
+  rise($('c2'),t,s+0.1); rise($('p2'),t,s+0.25,0.8,90);
+  tapAt($('t2'),t,s+1.3,634,151);
+  const o=out(seg(t,s+1.7,s+2.1)); $('ed2').style.opacity=o; $('li2').style.opacity=1-o;
+  $('l2').innerHTML=cursorLine(typed('- [x] 산책 20분',t,s+2.6,7))+(t>s+2.1?`<span class="caret" style="opacity:${blink(t)}"></span>`:'');
+}
+function renderS3(t){
+  const s=SC.s3[0];
+  rise($('c3'),t,s+0.1); rise($('p3'),t,s+0.25,0.8,90);
+  tapAt($('t3'),t,s+1.3,562,151);
+  const o=out(seg(t,s+1.7,s+2.3)); $('sh3').style.transform=`translateY(${(1-o)*100}%)`;
+}
+function renderS4(t){
+  const s=SC.s4[0];
+  rise($('c4'),t,s+0.1);
+  document.querySelectorAll('#wk4 .d').forEach((el,i)=>rise(el,t,s+0.5+i*0.18,0.4,30));
+  rise($('ch4'),t,s+2.0,0.6,40); rise($('n4'),t,s+2.8,0.6,30);
+}
+function renderS5(t){
+  const s=SC.s5[0];
+  rise($('c5'),t,s+0.1); rise($('bc5'),t,s+0.3,0.8,80);
+  document.querySelectorAll('#bc5 .row').forEach((el,i)=>rise(el,t,s+0.9+i*0.6,0.5,30));
+  rise($('sf5'),t,s+3.6,0.6,20);
+}
+function renderS6(t){
+  const s=SC.s6[0];
+  rise($('h6'),t,s+0.2,0.8,40);
+  $('bq6').innerHTML = typed('느린 여백',t,s+2.2,5)+`<span class="caret" style="opacity:${blink(t)}"></span>`;
+}
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.4));
+  const o = last ? 1 : 1-ease(seg(t,b-0.35,b-0.02));
+  return Math.min(i,o);
+}
+const R = {s0:renderS0,s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5,s6:renderS6};
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001) R[k](t);
+  });
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
