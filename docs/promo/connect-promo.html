@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>잇기 쇼츠</title>
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+/* 앱 색은 App/DesignSystem/Palette.swift 의 밝은 판 (1.1.26 · 316) — 종이 · 먹 · 잎 초록 · 태그 */
+:root{ --paper:#FAF7F1; --raised:#F1ECE3; --grouped:#F3EFE8; --ink:#24211E; --faint:#6B655C; --marker:#B0A99D; --rule:rgba(36,33,30,.12);
+  --leaf:#4A7429; --leaf2:#6FA53A; --tag:#805C00; --wood:#D6A266; --gold:#C49A45; --stage:#F6F1E7; --stage2:#EDE4D4; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--stage)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--stage) 55%, var(--stage2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.5) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf2),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+
+.hook{position:absolute;left:0;right:0;top:110px;text-align:center}
+.hook .kk{font-size:32px;font-weight:700;letter-spacing:6px;color:var(--leaf);margin-bottom:26px}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:98px;line-height:1.22;letter-spacing:-2px}
+.hook p{margin-top:26px;font-size:48px;font-weight:700;color:#3F3B36}
+.hook p b{color:var(--leaf)}
+
+.cap{position:absolute;left:70px;right:70px;top:170px;text-align:center}
+.cap .kicker{display:inline-block;padding:10px 30px;border-radius:40px;background:rgba(74,116,41,.12);color:var(--leaf);font-size:30px;font-weight:700;margin-bottom:26px}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:900;font-size:82px;line-height:1.22;letter-spacing:-1px}
+.cap p{margin-top:22px;font-size:36px;color:#55514B;font-weight:500;line-height:1.45}
+.cap code{font-family:'Noto Sans Mono',monospace;font-weight:600;color:var(--leaf)}
+
+.phone{position:absolute;left:170px;top:700px;width:740px;height:1150px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.24), 0 6px 18px rgba(0,0,0,.12)}
+.phone.low{top:760px}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--paper);overflow:hidden;color:var(--ink)}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:20}
+.homebar{position:absolute;bottom:20px;left:50%;margin-left:-110px;width:220px;height:10px;border-radius:5px;background:#1C1B1A;opacity:.8;z-index:19}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(74,116,41,.20);border:4px solid rgba(74,116,41,.55);pointer-events:none;z-index:18;opacity:0}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--leaf);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+.layer{position:absolute;inset:0;background:var(--paper)}
+
+.abar{position:absolute;top:96px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 30px;z-index:3}
+.abar .circ{width:76px;height:76px;border-radius:38px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .circ svg{width:34px;height:34px;stroke:var(--ink);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.abar .mid{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.abar .mid b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.abar .pill{margin-left:auto;height:76px;padding:0 24px;border-radius:38px;background:#fff;display:flex;align-items:center;gap:26px;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .pill svg{width:40px;height:40px;stroke:var(--leaf);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* 읽기 화면 (MarkdownHTML.baseCSS) */
+.rbody{position:absolute;top:240px;left:52px;right:52px;font-size:34px;line-height:1.72}
+.rbody h1{font-family:'Noto Serif KR',serif;font-weight:700;font-size:58px;line-height:1.35;letter-spacing:-.5px;margin-bottom:18px}
+.rbody p{margin:14px 0}
+.rbody ul{margin:14px 0 14px 38px}
+.rbody li{margin:6px 0}
+.rbody .tg{color:var(--tag);font-weight:600}
+.rbody a{color:var(--leaf);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:6px}
+.bl{margin-top:44px;padding-top:20px;border-top:1px solid var(--rule)}
+.bl .bt{font-size:29px;font-weight:600;color:var(--faint);margin-bottom:10px}
+.bl .bi{margin:12px 0;padding:6px 12px;margin-left:-12px;border-radius:14px}
+.bl .bi small{font-size:27px;color:var(--faint);margin-left:10px}
+.bl .bi.hot{background:rgba(74,116,41,.12)}
+
+/* 쓰기 화면 */
+.ebody{position:absolute;top:240px;left:52px;right:52px;font-size:36px;line-height:1.62}
+.eln{min-height:58px;white-space:pre-wrap;word-break:break-all}
+.topcover{position:absolute;top:0;left:0;right:0;height:210px;background:var(--paper);z-index:2}
+.eln.t{font-family:'Noto Serif KR',serif;font-weight:700;font-size:58px;line-height:1.35;min-height:92px;letter-spacing:-.5px}
+.eln .mk{color:var(--marker)}
+.eln .lk{color:var(--leaf)}
+.ebar{position:absolute;left:0;right:0;bottom:0;height:120px;background:var(--raised);display:flex;align-items:center;justify-content:space-around;padding:0 30px 20px;font-size:32px;color:var(--leaf);font-weight:700}
+/* 노트 잇기 고를 목록 (LinkPickerBar) — 편집 도구 띠 바로 위 */
+.picker{position:absolute;left:0;right:0;bottom:120px;height:104px;background:var(--raised);border-top:1px solid var(--rule);display:flex;align-items:center;gap:16px;padding:0 24px;opacity:0;white-space:nowrap;overflow:hidden}
+.picker .cp{padding:14px 26px;border-radius:40px;background:var(--paper);font-size:30px}
+.picker .cp.on{background:rgba(74,116,41,.18)}
+.picker .nw{font-size:30px;color:var(--leaf);padding:0 6px}
+
+/* 찾기 시트 (SearchSheet) */
+.srch{position:absolute;inset:0;background:var(--grouped);transform:translateY(100%);z-index:9;border-radius:44px 44px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.16)}
+.srch .sh{position:absolute;top:110px;left:0;right:0;height:90px;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.srch .sh span{position:absolute;left:40px;font-family:'Noto Sans KR';font-weight:500;font-size:30px;color:var(--leaf)}
+.srch .sf{position:absolute;top:220px;left:30px;right:30px;height:76px;border-radius:38px;background:rgba(36,33,30,.07);display:flex;align-items:center;gap:14px;padding:0 26px;font-size:32px}
+.srch .sf svg{width:32px;height:32px;stroke:var(--faint);stroke-width:4;fill:none}
+.srch .res{position:absolute;top:330px;left:30px;right:30px;background:var(--paper);border-radius:30px;padding:0 30px}
+.srch .rw{padding:22px 0;border-bottom:1px solid var(--rule);opacity:0}
+.srch .rw:last-child{border-bottom:none}
+.srch .rw b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.srch .rw span{display:block;font-size:26px;color:var(--faint);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srch .rw span i{font-style:normal;color:var(--tag);font-weight:600}
+.srch .rw small{display:inline-flex;align-items:center;gap:8px;font-size:22px;color:var(--faint);margin-top:6px}
+
+/* 정리 카드 */
+.bigcard{position:absolute;left:80px;right:80px;top:560px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:20px 46px}
+.bigcard .row{display:flex;align-items:flex-start;gap:26px;padding:32px 0;border-bottom:1px solid #EEE9E0;opacity:0}
+.bigcard .row:last-child{border-bottom:none}
+.bigcard .row .ck{flex:none;width:62px;height:62px;border-radius:31px;background:var(--leaf);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900;margin-top:4px}
+.bigcard .row b{display:block;font-family:'Noto Serif KR',serif;font-weight:900;font-size:46px}
+.bigcard .row span{display:block;font-size:32px;color:#55514B;margin-top:6px}
+.bigcard .row code{font-family:'Noto Sans Mono',monospace;font-weight:600;color:var(--leaf)}
+.sumfoot{position:absolute;left:0;right:0;top:1440px;text-align:center;font-size:36px;color:#55514B;font-weight:500;line-height:1.5}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:300px;text-align:center}
+.hero img{width:300px;height:300px;border-radius:70px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:120px;margin-top:50px;letter-spacing:2px}
+.hero .tagline{margin-top:24px;font-family:'Noto Serif KR',serif;font-weight:700;font-size:50px;color:#4A4640}
+.hero .say{font-size:40px;margin-top:80px;font-weight:700;color:var(--leaf)}
+.hero .say2{font-size:36px;margin-top:40px;font-weight:500;color:#55514B}
+.bigsearch{display:flex;align-items:center;gap:22px;margin:24px auto 0;width:760px;height:120px;border-radius:36px;background:#fff;box-shadow:0 20px 50px rgba(80,60,30,.16);padding:0 40px;font-size:52px;font-weight:700;text-align:left}
+.bigsearch svg{width:56px;height:56px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.hero .foot{margin-top:46px;font-size:36px;color:var(--faint);font-weight:500;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 0 · 썸네일 — 읽기 화면 맨 아래 '이 노트를 가리키는 노트' 위의 손가락 -->
+  <section class="scene" id="s0">
+    <div class="hook"><div class="kk">메모가 쓸모없어지는 이유</div><h1>쌓아만 두고<br>다시 못 만나서</h1><p>이어 두면, <b>다시 만납니다</b></p></div>
+    <div class="phone low"><div class="screen"><div class="island"></div>
+      <div class="layer">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>예산 계획</b></div><span class="pill"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14"/><circle cx="13" cy="20" r="1.6"/><circle cx="20" cy="20" r="1.6"/><circle cx="27" cy="20" r="1.6"/></svg><svg viewBox="0 0 40 40"><path d="M8 32 L12 22 L26 8 L32 14 L18 28 Z"/></svg></span></div>
+        <div class="rbody">
+          <h1>예산 계획</h1>
+          <p>사업비는 분기마다 다시 본다. <span class="tg">#예산</span></p>
+          <ul><li>1분기 확정 — 3월 둘째 주</li><li>교육비는 2분기로 당김</li></ul>
+          <div class="bl"><div class="bt">이 노트를 가리키는 노트 · 3</div>
+            <div class="bi hot"><a>11월 회의록</a><small>회의</small></div>
+            <div class="bi"><a>9월 회의록</a><small>회의</small></div>
+            <div class="bi"><a>연간 사업 계획</a></div>
+          </div>
+        </div>
+      </div>
+      <div class="tap" style="opacity:1;left:78px;top:634px"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 1 · 쓰다가 [[ 만 치면 (NoteLinking · LinkPickerBar) -->
+  <section class="scene" id="s1">
+    <div class="cap" id="c1"><div class="kicker">잇기</div><h2>쓰다가 <code style="font-size:.86em">[[</code> 만 치면<br>다른 노트로</h2><p>고르면 표준 마크다운 링크 — 다른 앱에서도 열립니다</p></div>
+    <div class="phone" id="p1"><div class="screen"><div class="island"></div>
+      <div class="layer">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>11월 회의록</b></div><span class="pill"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14"/><circle cx="13" cy="20" r="1.6"/><circle cx="20" cy="20" r="1.6"/><circle cx="27" cy="20" r="1.6"/></svg></span></div>
+        <div class="ebody">
+          <div class="eln t">11월 회의록</div>
+          <div class="eln">- 교육 일정은 12월로</div>
+          <div class="eln" id="l1"></div>
+          <div class="eln" id="l2"></div>
+        </div>
+        <div class="picker" id="pk1"><span class="cp" id="cp1">예산 계획</span><span class="cp">2026 예산 메모</span><span class="nw">＋ 예산 — 새 노트</span></div>
+        <div class="ebar"><span>B</span><span><i>I</i></span><span><s>S</s></span><span>&lt;/&gt;</span><span>☰</span></div>
+      </div>
+      <div class="tap" id="t1"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 2 · 거꾸로 — 이 노트를 가리키는 노트 (212) -->
+  <section class="scene" id="s2">
+    <div class="cap" id="c2"><div class="kicker">거꾸로</div><h2>나를 가리킨 노트도<br>맨 아래에</h2><p>읽기 화면 끝 — 이 노트를 가리키는 노트</p></div>
+    <div class="phone" id="p2"><div class="screen"><div class="island"></div>
+      <div class="layer">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>예산 계획</b></div><span class="pill"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14"/><circle cx="13" cy="20" r="1.6"/><circle cx="20" cy="20" r="1.6"/><circle cx="27" cy="20" r="1.6"/></svg><svg viewBox="0 0 40 40"><path d="M8 32 L12 22 L26 8 L32 14 L18 28 Z"/></svg></span></div>
+        <div class="topcover"></div>
+        <div class="rbody" id="rb2">
+          <h1>예산 계획</h1>
+          <p>사업비는 분기마다 다시 본다. <span class="tg">#예산</span></p>
+          <ul><li>1분기 확정 — 3월 둘째 주</li><li>교육비는 2분기로 당김</li><li>장비비는 4분기에 다시</li></ul>
+          <div class="bl" id="bl2"><div class="bt">이 노트를 가리키는 노트 · 3</div>
+            <div class="bi" id="bi1"><a>11월 회의록</a><small>회의</small></div>
+            <div class="bi" id="bi2"><a>9월 회의록</a><small>회의</small></div>
+            <div class="bi" id="bi3"><a>연간 사업 계획</a></div>
+          </div>
+        </div>
+      </div>
+      <div class="tap" id="t2"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 3 · 묶기 — #태그 를 누르면 그 태그가 든 노트 (301) -->
+  <section class="scene" id="s3">
+    <div class="cap" id="c3"><div class="kicker">묶기</div><h2><span style="color:var(--tag)">#태그</span> 하나 누르면<br>한자리에</h2><p>흩어진 폴더의 노트도 한 번에 모입니다</p></div>
+    <div class="phone" id="p3"><div class="screen"><div class="island"></div>
+      <div class="layer">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>예산 계획</b></div><span class="pill"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14"/><circle cx="13" cy="20" r="1.6"/><circle cx="20" cy="20" r="1.6"/><circle cx="27" cy="20" r="1.6"/></svg><svg viewBox="0 0 40 40"><path d="M8 32 L12 22 L26 8 L32 14 L18 28 Z"/></svg></span></div>
+        <div class="rbody">
+          <h1>예산 계획</h1>
+          <p>사업비는 분기마다 다시 본다. <span class="tg" id="tg3">#예산</span></p>
+          <ul><li>1분기 확정 — 3월 둘째 주</li><li>교육비는 2분기로 당김</li></ul>
+        </div>
+      </div>
+      <div class="srch" id="sr3">
+        <div class="sh"><span>닫기</span>찾기</div>
+        <div class="sf"><svg viewBox="0 0 32 32"><circle cx="13" cy="13" r="9"/><path d="M20 20 L28 28"/></svg>#예산</div>
+        <div class="res">
+          <div class="rw"><b>예산 계획</b><span>사업비는 분기마다 다시 본다. <i>#예산</i></span></div>
+          <div class="rw"><b>11월 회의록</b><span>자세한 숫자는 예산 계획 <i>#예산</i></span><small>📁 회의</small></div>
+          <div class="rw"><b>연간 사업 계획</b><span>3분기 — 교육비 조정 <i>#예산</i></span><small>📁 일</small></div>
+          <div class="rw"><b>장비 구입 목록</b><span>노트북 두 대 · 모니터 <i>#예산</i></span><small>📁 일</small></div>
+        </div>
+      </div>
+      <div class="tap" id="t3"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 정리 -->
+  <section class="scene" id="s4">
+    <div class="cap" id="c4" style="top:150px"><h2 style="font-size:74px">메모를 다시 만나는<br>세 가지 길</h2></div>
+    <div class="bigcard" id="bc4">
+      <div class="row"><span class="ck">✓</span><div><b>잇기</b><span>쓰다가 <code>[[</code> 로 다른 노트를</span></div></div>
+      <div class="row"><span class="ck">✓</span><div><b>거꾸로</b><span>나를 가리킨 노트가 맨 아래에</span></div></div>
+      <div class="row"><span class="ck">✓</span><div><b>묶기</b><span><span style="display:inline;color:var(--tag);font-weight:700">#태그</span> 하나 누르면 한자리에</span></div></div>
+    </div>
+    <div class="sumfoot" id="sf4">링크도 태그도 표준 마크다운 그대로 —<br>내 폴더의 .md 파일에 남습니다</div>
+  </section>
+
+  <!-- 5 · 끝 — 링크는 설명과 고정 댓글에 (11-15 규칙) -->
+  <section class="scene" id="s5">
+    <div class="hero" id="h5">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="tagline">이어 두면, 다시 만나는 노트</div>
+      <div class="say">받는 링크는 설명 · 고정 댓글에 👇</div>
+      <div class="say2">또는 앱스토어 검색창에</div>
+      <div class="bigsearch"><svg viewBox="0 0 56 56"><circle cx="24" cy="24" r="14"/><path d="M35 35 L46 46"/></svg><span id="bq5"></span></div>
+      <div class="foot">아이폰 · 아이패드 · 무료</div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const SC = { s0:[0,3.6], s1:[3.6,12.0], s2:[12.0,18.0], s3:[18.0,24.4], s4:[24.4,29.8], s5:[29.8,35.0] };
+const DURATION = 35.0;
+function rise(el,t,a,d=0.7,dy=60){ const p=out(seg(t,a,a+d)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dy}px)`; }
+function tapAt(el,t,a,x,y){
+  const p=seg(t,a,a+0.55);
+  el.style.left=(x-60)+'px'; el.style.top=(y-60)+'px';
+  el.style.opacity = p>0 && p<1 ? (p<0.3 ? p/0.3 : 1-(p-0.3)/0.7) : 0;
+  el.style.transform=`scale(${0.7+0.5*p})`;
+}
+const car = t => `<span class="caret" style="opacity:${blink(t)}"></span>`;
+function renderS0(t){}
+// 1 · `- 자세한 숫자는 [[예산` → 고를 목록 → `[예산 계획](<예산 계획.md>)` (커서 줄은 표시가 옅은 회색) → 다음 줄로 가면 이름만 잎 초록
+function renderS1(t){
+  const s=SC.s1[0];
+  rise($('c1'),t,s+0.1); rise($('p1'),t,s+0.25,0.8,90);
+  const pick=s+3.6, enter=s+5.2;
+  const typing='- 자세한 숫자는 [[예산';
+  if(t<pick){
+    const tx=typed(typing,t,s+1.0,7);
+    const i=tx.indexOf('[[');
+    const html = (tx.startsWith('-')?'<span class="mk">-</span>'+tx.slice(1):tx);
+    $('l1').innerHTML = (i>=0 ? '<span class="mk">-</span>'+tx.slice(1,i)+'<span class="mk">[[</span>'+tx.slice(i+2) : html) + car(t);
+    $('l2').innerHTML='';
+  } else if(t<enter){
+    $('l1').innerHTML='<span class="mk">-</span> 자세한 숫자는 <span class="mk">[</span>예산 계획<span class="mk">](&lt;예산 계획.md&gt;)</span>'+car(t);
+    $('l2').innerHTML='';
+  } else {
+    $('l1').innerHTML='- 자세한 숫자는 <span class="lk">예산 계획</span>';
+    $('l2').innerHTML='<span class="mk">-</span> '+typed('강사 섭외는 다음 주',t,enter+0.3,7)+car(t);
+  }
+  const showPk = t>s+2.6 && t<pick+0.15;
+  $('pk1').style.opacity = showPk ? out(seg(t,s+2.6,s+2.9)) : 0;
+  $('cp1').className = 'cp' + (t>pick-0.35 ? ' on':'');
+  tapAt($('t1'),t,pick-0.4,117,946);
+}
+// 2 · 맨 아래로 내려가 '이 노트를 가리키는 노트 · 3' — 하나씩 짚는다
+function renderS2(t){
+  const s=SC.s2[0];
+  rise($('c2'),t,s+0.1); rise($('p2'),t,s+0.25,0.8,90);
+  const k=ease(seg(t,s+1.0,s+1.8)); $('rb2').style.transform=`translateY(${-k*120}px)`;
+  [1,2,3].forEach(i=>{ $('bi'+i).className='bi'+(t>s+2.2+(i-1)*0.6 && t<s+2.2+i*0.6 ? ' hot':''); });
+  tapAt($('t2'),t,s+4.4,150,640);
+  if(t>s+4.4) $('bi1').className='bi hot';
+}
+// 3 · #예산 을 누르면 찾기 시트 — 그 태그가 든 노트 넷
+function renderS3(t){
+  const s=SC.s3[0];
+  rise($('c3'),t,s+0.1); rise($('p3'),t,s+0.25,0.8,90);
+  tapAt($('t3'),t,s+1.2,560,382);
+  const o=out(seg(t,s+1.6,s+2.1)); $('sr3').style.transform=`translateY(${(1-o)*100}%)`;
+  document.querySelectorAll('#sr3 .rw').forEach((el,i)=>rise(el,t,s+2.2+i*0.35,0.4,20));
+}
+function renderS4(t){
+  const s=SC.s4[0];
+  rise($('c4'),t,s+0.1); rise($('bc4'),t,s+0.3,0.8,80);
+  document.querySelectorAll('#bc4 .row').forEach((el,i)=>rise(el,t,s+0.9+i*0.6,0.5,30));
+  rise($('sf4'),t,s+3.0,0.6,20);
+}
+function renderS5(t){
+  const s=SC.s5[0];
+  rise($('h5'),t,s+0.2,0.8,40);
+  $('bq5').innerHTML = typed('느린 여백',t,s+2.2,5)+car(t);
+}
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.4));
+  const o = last ? 1 : 1-ease(seg(t,b-0.35,b-0.02));
+  return Math.min(i,o);
+}
+const R = {s0:renderS0,s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5};
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001) R[k](t);
+  });
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
