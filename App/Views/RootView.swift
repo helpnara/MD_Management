@@ -57,6 +57,14 @@ struct RootView: View {
             NoteDetail()
         }
         .navigationSplitViewStyle(.balanced)
+        // **323 — 켤 때는 세 칸** (321 iOS 27 SDK 탐색 사진). iPadOS 27 은 시작값(`.all`)을 두고도 처음부터 폴더 칸을 접어 두 칸으로 띄웠다 —
+        // 폴더 칸의 찾기 칸(260 · 286)까지 함께 숨는다. 켤 때 **한 번만** 설계대로 되돌린다. 사람이 접은 칸은 건드리지 않는다(그 뒤로는 안 부른다).
+        // iOS 26 에서는 이미 `.all` 이라 아무 일도 안 한다.
+        .task {
+            guard horizontalSizeClass == .regular else { return }
+            try? await Task.sleep(for: .milliseconds(400))
+            if columnVisibility != .all { columnVisibility = .all }
+        }
         // **상세 칸에도 바깥 폭을 알려 준다** (125). 아이패드의 상세 칸은 좁아도 regular 이고,
         // 도구 줄을 아이폰에서만 줄이려면 **바깥 화면**의 폭을 봐야 한다. 예전에는 이 값을
         // 시트에만 건넸다 — 그때는 띠가 둘이 되는 것만 막으면 됐다 (빌드 24 · 13번).
@@ -869,6 +877,9 @@ private struct NoteList: View {
         // **종이 바탕** (320). 줄 바탕은 줄마다 (`RowBackground` · 고른 줄은 우리가 칠한다).
         .scrollContentBackground(.hidden)
         .background(Palette.paper)
+        // **324 — 시스템 초점 테두리를 끈다** (321 탐색 사진). iPadOS 27 은 고른 줄 둘레에 강조색 테두리를 그려 318 의 옅은 초록 칸과 이중이 됐다.
+        // 고른 줄은 이미 `RowBackground` 가 보여 준다. 자판으로 오가기는 메뉴 단축키(⌥⌘↑↓ · 309)가 맡는다.
+        .focusEffectDisabled()
         // 검색 (ADR-0003). 150ms 디바운스는 모델이 한다. `⌘F` 로 칸을 연다 (S9). **아이폰만** (260 — 아이패드는 폴더 칸).
         // 안내 글은 폴더 화면의 칸과 같다 — 어디서 찾든 모든 노트를 찾는다 (2026-10-22 사용자 (가)).
         // **폴더 화면과 같은 칸 · 같은 자리** (266) — 예전 시스템 칸(`.searchable` · 당기면 나옴)은 폭 · 밝기 · 자리가 폴더 화면의 칸과 달랐다.
