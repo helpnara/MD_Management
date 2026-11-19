@@ -872,9 +872,8 @@ private struct NoteList: View {
         // **종이 바탕** (320). 줄 바탕은 줄마다 (`RowBackground` · 고른 줄은 우리가 칠한다).
         .scrollContentBackground(.hidden)
         .background(Palette.paper)
-        // **324 — 시스템 초점 테두리를 끈다** (321 탐색 사진). iPadOS 27 은 고른 줄 둘레에 강조색 테두리를 그려 318 의 옅은 초록 칸과 이중이 됐다.
-        // 고른 줄은 이미 `RowBackground` 가 보여 준다. 자판으로 오가기는 메뉴 단축키(⌥⌘↑↓ · 309)가 맡는다.
-        .focusEffectDisabled()
+        // 324 (열림) — iPadOS 27 은 고른 노트 줄 둘레에 강조색 테두리를 그린다(318 의 옅은 초록 칸과 이중). `focusEffectDisabled` 를 목록 · 줄마다
+        // 걸어 봤으나 안 사라졌다(빌드 153 사진) — 초점 고리가 아니라 고른 줄을 그리는 방식으로 보인다. `docs/08-feedback.md` 324.
         // 검색 (ADR-0003). 150ms 디바운스는 모델이 한다. `⌘F` 로 칸을 연다 (S9). **아이폰만** (260 — 아이패드는 폴더 칸).
         // 안내 글은 폴더 화면의 칸과 같다 — 어디서 찾든 모든 노트를 찾는다 (2026-10-22 사용자 (가)).
         // **폴더 화면과 같은 칸 · 같은 자리** (266) — 예전 시스템 칸(`.searchable` · 당기면 나옴)은 폭 · 밝기 · 자리가 폴더 화면의 칸과 달랐다.
@@ -1090,9 +1089,6 @@ private struct NoteList: View {
                 .padding(.vertical, 2)
                 // 종이 바탕 · 고른 줄은 옅은 잎 초록 (318). 아이폰은 고르면 바로 넘어가므로 칠하지 않는다.
                 .listRowBackground(RowBackground(selected: !rootIsCompact && library.selectedNoteID == note.id))
-                // 324 — iPadOS 27 은 외장 자판이 붙으면 고른 줄 둘레에 초점 고리를 그린다(318 의 옅은 초록 칸과 이중). 목록에 건 것만으로는
-                // 안 사라졌다(321 두 번째 탐색) — 줄마다 건다.
-                .focusEffectDisabled()
                 // **구분선을 줄 맨 앞에 맞춘다** (121, 사용자 첨부 — 줄이 끊어져 보였다).
                 // SwiftUI 는 줄 안의 어느 요소를 기준으로 구분선을 들여쓸지 스스로 고르는데,
                 // `받는 중` 딱지가 붙은 줄에서는 **그 딱지 앞**을 골라 구분선이 화면 가운데서
