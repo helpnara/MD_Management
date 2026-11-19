@@ -1,0 +1,636 @@
+name: 앱 빌드 · iOS 27 SDK 탐색 (321)
+
+# **321 — iOS 27 SDK 로 옮기기 전에 본다** (2026-11-19 사용자 — *제안 하는 순서에 맞춰서 진행해줘*, `docs/85-ios27-sdk-review.md`).
+# `build.yml` 과 같은 단계를 `xcode-27` 러너(macOS 27 · Xcode 27)에서 돌린다. **출시와 무관** — 테스트플라이트에 안 올린다.
+# 사진은 `screenshots/ios27/` 에 따로 둔다 (지금 사진을 덮지 않는다). 빌드 경고는 `screenshots/ios27/build-warnings.txt`.
+# 돌리는 법: `Tools/ios27/request.txt` 에 한 줄을 더해 푸시한다. 전환이 끝나면 이 흐름은 지운다.
+# (본문은 `build.yml` 을 기계적으로 바꿔 만들었다 — 단계를 고치면 둘 다 고친다.)
+
+on:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - "Tools/ios27/**"
+      - ".github/workflows/build-ios27.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: build-ios27-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: 빌드 · 스크린샷 (Xcode 27)
+    runs-on: xcode-27
+    permissions:
+      contents: write
+    env:
+      BUNDLE_ID: com.helpnara.markdown
+      SCHEME: Notebook
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 스크린샷을 되돌려 커밋해야 하므로 푸시 가능한 체크아웃
+          persist-credentials: true
+
+      # 러너 이미지에 Xcode 가 여러 개 깔려 있다. TestFlight 로 올라가는 것과 같은
+      # SDK 로 컴파일해야 여기서 통과한 코드가 배포에서도 통과한다.
+      - name: Xcode 27 선택
+        run: |
+          set -uo pipefail
+
+          # 러너가 기본으로 선택해 둔 Xcode 에만 시뮬레이터 런타임이 갖춰져 있다.
+          # 그래서 **이미 26 이상이면 손대지 않는다.** 예전에 major 만 비교해
+          # 다른 26.x 로 바꿨다가 iOS 26.0 is not installed 로 막혔다.
+          xcver() {
+            [ -f "$1/Contents/version.plist" ] || return 1
+            /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+              "$1/Contents/version.plist" 2>/dev/null
+          }
+
+          CUR_APP=$(xcode-select -p 2>/dev/null || true)
+          CUR_APP=${CUR_APP%/Contents/Developer}
+          CUR_V=$(xcver "$CUR_APP" || true)
+          echo "현재 선택: ${CUR_APP:-(없음)} ${CUR_V:-(?)}"
+
+          NEED=1
+          case "${CUR_V%%.*}" in
+            ''|*[!0-9]*) ;;
+            *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;;
+          esac
+
+          if [ "$NEED" -eq 1 ]; then
+            BEST=""; BEST_K=0; BEST_V=""
+            for app in /Applications/Xcode*.app; do
+              v=$(xcver "$app" || true)
+              [ -n "$v" ] || continue
+              k=$(echo "$v" | awk -F. '{printf "%d", ($1*10000)+($2*100)+$3}')
+              echo "  $app → $v"
+              if [ "$k" -gt "$BEST_K" ]; then BEST_K=$k; BEST="$app"; BEST_V="$v"; fi
+            done
+            if [ -n "$BEST" ]; then
+              echo "전환: $BEST ($BEST_V)"
+              sudo xcode-select -s "$BEST/Contents/Developer"
+            fi
+          fi
+
+          xcodebuild -version
+          swift --version
+          echo "── 깔린 Xcode ──"; ls -d /Applications/Xcode*.app || true
+          echo "── 시뮬레이터 런타임 ──"; xcrun simctl list runtimes || true
+          if [ "$(xcodebuild -version | head -1 | awk '{print $2}' | cut -d. -f1)" -lt 27 ]; then
+            echo "::error::Xcode 27 이 아닙니다 — 이 흐름은 iOS 27 SDK 탐색용이다 (321)."
+            exit 1
+          fi
+          mkdir -p screenshots/ios27
+          { xcodebuild -version; xcodebuild -showsdks | grep -i iphone; } > screenshots/ios27/xcode.txt 2>&1 || true
+
+      - name: XcodeGen 설치
+        run: brew install xcodegen
+
+      - name: Xcode 프로젝트 생성
+        run: xcodegen generate
+
+      # 깨진 순수 로직이 시뮬레이터까지 가면 안 된다. 20초짜리 관문이다.
+      # (리눅스 러너의 core-test.yml 이 이미 한 번 봤지만, macOS 툴체인에서도
+      #  서는지는 여기서만 알 수 있다.)
+      - name: Core 테스트
+        working-directory: Packages/Core
+        run: swift test
+
+      - name: iPhone 시뮬레이터 고르기
+        id: sim
+        run: |
+          # 러너 이미지마다 있는 기기가 달라 이름을 박지 않는다.
+          # SE · mini 는 화면이 좁아 설계 기준과 어긋나므로 제외한다.
+          read -r UDID NAME <<< "$(xcrun simctl list devices available -j | python3 -c "
+          import json, re, sys
+          data = json.load(sys.stdin)['devices']
+          rank = {'': 3, ' Pro': 2, ' Plus': 1, ' Pro Max': 0}
+          best = None
+          for runtime, devices in data.items():
+              if 'iOS' not in runtime:
+                  continue
+              m = re.search(r'iOS-(\\d+)-(\\d+)', runtime)
+              version = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+              for d in devices:
+                  name = d.get('name', '')
+                  if not d.get('isAvailable') or not name.startswith('iPhone'):
+                      continue
+                  if 'SE' in name or 'mini' in name:
+                      continue
+                  n = re.match(r'iPhone (\\d+)(.*)\$', name)
+                  if not n:
+                      continue
+                  key = (version, int(n.group(1)), rank.get(n.group(2), 0))
+                  if best is None or key > best[0]:
+                      best = (key, d['udid'], name)
+          if best is None:
+              sys.exit('쓸 만한 iPhone 시뮬레이터를 찾지 못했습니다')
+          print(best[1], best[2])
+          ")"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "선택한 시뮬레이터: $NAME ($UDID)"
+
+      # **가로용으로 제일 큰 아이폰을 따로 고른다** (154).
+      # 아이폰 가로에서 위험한 자리는 Pro Max · Plus 다 — 그 폭에서는 iOS 가
+      # 아이패드와 같은 `regular` 로 쳐서 **3단 화면**으로 들어간다. 위에서 고른
+      # 기본형으로는 그 길을 못 본다.
+      - name: 가로용 큰 아이폰 고르기
+        id: wide
+        run: |
+          read -r UDID NAME <<< "$(xcrun simctl list devices available -j | python3 -c "
+          import json, re, sys
+          data = json.load(sys.stdin)['devices']
+          # 큰 것이 먼저다 — 위 기본형 고르기와 순위가 **거꾸로**다.
+          rank = {' Pro Max': 3, ' Plus': 2, ' Pro': 1, '': 0}
+          best = None
+          for runtime, devices in data.items():
+              if 'iOS' not in runtime:
+                  continue
+              m = re.search(r'iOS-(\d+)-(\d+)', runtime)
+              version = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+              for d in devices:
+                  name = d.get('name', '')
+                  if not d.get('isAvailable') or not name.startswith('iPhone'):
+                      continue
+                  if 'SE' in name or 'mini' in name:
+                      continue
+                  n = re.match(r'iPhone (\d+)(.*)\$', name)
+                  if not n:
+                      continue
+                  key = (version, rank.get(n.group(2), 0), int(n.group(1)))
+                  if best is None or key > best[0]:
+                      best = (key, d['udid'], name)
+          if best is None:
+              print('')
+          else:
+              print(best[1], best[2])
+          ")"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "가로용 아이폰: ${NAME:-없음} ($UDID)"
+
+      # **iPad 도 한 대 고른다.** 3단 분할이 실제로 펼쳐지는지는 그림으로만 안다
+      # (가정 A8). 큰 것이 좋다 — 늘어진 자리가 제일 잘 드러난다.
+      - name: iPad 시뮬레이터 고르기
+        id: ipad
+        run: |
+          read -r UDID NAME <<< "$(xcrun simctl list devices available -j | python3 -c "
+          import json, re, sys
+          data = json.load(sys.stdin)['devices']
+          best = None
+          for runtime, devices in data.items():
+              if 'iOS' not in runtime:
+                  continue
+              m = re.search(r'iOS-(\\d+)-(\\d+)', runtime)
+              version = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+              for d in devices:
+                  name = d.get('name', '')
+                  if not d.get('isAvailable') or not name.startswith('iPad'):
+                      continue
+                  if 'mini' in name:
+                      continue
+                  size = re.search(r'(\\d+)-inch', name)
+                  inch = int(size.group(1)) if size else 0
+                  key = (version, inch, 'Pro' in name, name)
+                  if best is None or key > best[0]:
+                      best = (key, d['udid'], name)
+          print(*(best[1], best[2]) if best else ('', ''))
+          ")"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "선택한 iPad: ${NAME:-없음} ($UDID)"
+
+      # **오류 줄만 맨 끝에 다시 찍는다.** `xcodebuild` 의 로그는 수천 줄이고 오류는 그
+      # 한복판에 묻힌다 — 원격 세션에서는 그것을 찾는 일 자체가 한 바퀴다 (2026-09-18,
+      # 편집 도구 띠에서 두 번 겪었다). 로그 끝만 봐도 원인이 보이게 한다.
+      - name: 빌드
+        run: |
+          set -o pipefail
+          if ! xcodebuild \
+            -project Notebook.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee /tmp/build.log; then
+            echo "::group::오류 줄만"
+            grep -E "error:|error " /tmp/build.log | sort -u | head -80 || echo "오류 줄을 못 찾았습니다"
+            echo "::endgroup::"
+            exit 1
+          fi
+          # 321 — 우리 코드의 경고만 (의존 패키지 SourcePackages 는 뺀다). 사용 중단 API 가 여기 나온다.
+          mkdir -p screenshots/ios27
+          grep -E "warning:" /tmp/build.log | grep -v "SourcePackages" | sed -E 's#^.*/(App|Shared|ShareExtension|Packages)/#\1/#' | sort -u > screenshots/ios27/build-warnings.txt || true
+          echo "우리 코드의 경고 $(wc -l < screenshots/ios27/build-warnings.txt) 줄"
+          cat screenshots/ios27/build-warnings.txt | head -80
+          # 321 ① — SwiftUI 앱의 장면 설정이 번들에 들어갔나 (iOS 27 은 장면 없는 앱을 켜자마자 끈다)
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
+          { echo "── Info.plist 의 장면 설정 ──"; plutil -p "$APP/Info.plist" | grep -A8 -i "SceneManifest" || echo "UIApplicationSceneManifest 없음"; } | tee -a screenshots/ios27/xcode.txt
+
+      # **iCloud 설정이 번들에 정말 박혔는지 본다.**
+      #
+      # `project.yml` 에 중첩 딕셔너리로 적어도 XcodeGen 이 그것을 Info.plist 에
+      # 제대로 쓰는지는 **빌드 결과를 봐야만** 안다. 이 칸이 없어서 실기기까지
+      # 내려갔다 (2026-09-13, 가정 A2 — `Files` 앱에 폴더가 안 보였다).
+      - name: iCloud 설정이 번들에 박혔는지
+        run: |
+          set -uo pipefail
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
+          echo "번들: $APP"
+          plutil -convert json -o - "$APP/Info.plist" | python3 -c "
+          import json, sys
+          plist = json.load(sys.stdin)
+          want = 'iCloud.com.helpnara.markdown'
+          containers = plist.get('NSUbiquitousContainers')
+          if not containers:
+              sys.exit('::error::NSUbiquitousContainers 가 번들에 없습니다 — XcodeGen 이 중첩 딕셔너리를 안 쓴 것입니다')
+          print(json.dumps(containers, ensure_ascii=False, indent=2))
+          entry = containers.get(want)
+          if entry is None:
+              sys.exit('::error::키가 ' + want + ' 가 아닙니다: ' + repr(list(containers)))
+          if entry.get('NSUbiquitousContainerIsDocumentScopePublic') is not True:
+              sys.exit('::error::NSUbiquitousContainerIsDocumentScopePublic 이 true 가 아닙니다 — Files 앱에 폴더가 안 보입니다')
+          if not entry.get('NSUbiquitousContainerName'):
+              sys.exit('::error::NSUbiquitousContainerName 이 비어 있습니다')
+          print('iCloud 설정 정상:', entry['NSUbiquitousContainerName'])
+          "
+          # **Files 의 겉이름은 언어마다 다르게 두지 않는다** (221). 언어 문구 파일에 같은 열쇠가 끼면
+          # 그 언어로 앱을 연 기기가 이름을 바꿔 올린다 (빌드 90 · 5) — 끼어 있으면 막는다.
+          for f in "$APP"/*.lproj/InfoPlist.strings; do
+            [ -f "$f" ] || continue
+            if plutil -convert json -o - "$f" | grep -q NSUbiquitousContainerName; then
+              echo "::error::$f 에 NSUbiquitousContainerName 이 있습니다 — Files 이름은 project.yml 한 곳 (221)"; exit 1
+            fi
+          done
+
+      # **화소 검사를 스크린샷 앞에 깐다.** 다시 찍는 고리가 심판과 **같은 것**을
+      # 봐야 한다 — 크기만 보면 사이드바가 그려진 아이패드 3단 화면은 오른쪽 칸이
+      # 비어도 커서 통과한다 (빌드 49 에서 `ipad/02-reading.png` 가 그랬다).
+      - name: 화소 검사 준비 (pillow)
+        run: |
+          python3 -m venv .ci-venv
+          .ci-venv/bin/pip install --quiet --disable-pip-version-check pillow
+
+      - name: 시뮬레이터 스크린샷
+        run: |
+          UDID="${{ steps.sim.outputs.udid }}"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+
+          # 상태 바를 고정한다. 그러지 않으면 시계가 매 실행 달라져 스크린샷이
+          # 항상 변경됨으로 판정되고 커밋이 무의미하게 쌓인다.
+          status_bar() {
+            xcrun simctl status_bar "$1" override \
+              --time "9:41" \
+              --dataNetwork wifi --wifiMode active --wifiBars 3 \
+              --batteryState charged --batteryLevel 100
+          }
+          status_bar "$UDID"
+
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
+          echo "설치: $APP"
+          xcrun simctl install "$UDID" "$APP"
+
+          # **앱이 왜 안 뜨는지 먼저 듣는다.** 스크린샷 고리는 안 떴다 만 말해 주고
+          # 이유는 안 말한다. 한 번은 콘솔을 붙여 띄워 보고 출력을 그대로 남긴다.
+          # (macOS 에는 timeout 이 없어 perl 의 alarm 을 쓴다.)
+          echo "── 콘솔을 붙여 한 번 띄워 본다 ──"
+          perl -e 'alarm 25; exec @ARGV' \
+            xcrun simctl launch --console-pty "$UDID" "$BUNDLE_ID" -sampleFolder 2>&1 \
+            | head -60 || true
+          echo "── 여기까지 ──"
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+
+          mkdir -p screenshots/ios27
+          rm -f /tmp/shoot-failures
+
+          # 첫 장은 예열 뒤에 찍는다. 위 콘솔 탐침이 앱을 끈 직후의 첫 실행은
+          # 시뮬레이터가 앱을 앞으로 올리기 전에 찍혀 홈 화면이 남은 적이 있다.
+          xcrun simctl launch "$UDID" "$BUNDLE_ID" -sampleFolder >/dev/null 2>&1 || true
+          sleep 8
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+          sleep 2
+
+          # **심판과 같은 것을 본다** (빌드 49). `SHOOT_REGION` 이 있으면 그 칸에 글이
+          # 있는지 `not-blank.py` 로 본다 — 뒤에서 도는 심판과 **같은 도구 · 같은 칸**이다.
+          # 예전에는 크기만 보고 통과시켜, 빈 칸을 뒤에서야 잡고 다시 찍지도 못했다.
+          region_is_blank() {
+            local region
+            region=$(awk -v f="$1" '$1 == f { print $2 }' Tools/ci/screens.txt)
+            [ -n "$region" ] || return 1          # 표에 없으면 안 본다
+            ! .ci-venv/bin/python Tools/ci/not-blank.py "screenshots/ios27/$1:$region" >/dev/null 2>&1
+          }
+
+          # 못 찍은 것보다 **못 찍은 줄 모르는 것**이 훨씬 나쁘다.
+          # 그래서 두 가지를 확인하고 아니면 다시 찍는다.
+          shoot() {
+            local file="$1"; shift
+            # **언어를 말하지 않은 장은 한국어로 띄운다** (262). 시뮬레이터는 영어로 떠서 한국어 장이 영어 화면이었다 —
+            # `13-search` (`회의`) 는 2026-10-10 뒤로 *결과 없음* 이었는데 칸 안에 글자가 있어 빈 화면 심판을 지났다.
+            case " $* " in *" -AppleLanguages "*) ;; *) set -- "$@" -AppleLanguages "(ko)" -AppleLocale ko_KR ;; esac
+            local attempt pid size previous=0
+            for attempt in $(seq 1 "${SHOOT_ATTEMPTS:-3}"); do
+              xcrun simctl terminate "$UDID" "$BUNDLE_ID" >/dev/null 2>&1 || true
+              pid=$(xcrun simctl launch "$UDID" "$BUNDLE_ID" "$@" | awk '{print $NF}')
+              # **다시 찍을수록 더 기다린다.** 읽기 모드의 웹뷰는 첫 그림이 늦고,
+              # 갓 켠 아이패드는 더 늦다. 같은 시간으로 세 번 찍으면 세 번 다 빈다.
+              sleep $(( ${SHOOT_WAIT:-7} + (attempt - 1) * 6 ))
+              # (1) 앱이 살아 있나
+              if ! kill -0 "$pid" 2>/dev/null; then
+                echo "  앱이 떠 있지 않습니다 (pid $pid). 다시 ($attempt/${SHOOT_ATTEMPTS:-3})"
+                sleep 3
+                continue
+              fi
+              xcrun simctl io "$UDID" screenshot "screenshots/ios27/$file"
+              size=$(stat -f%z "screenshots/ios27/$file")
+              # (2) 홈 화면은 벽지 때문에 PNG 가 유난히 크다 (3MB 안팎).
+              if [ "$size" -ge 2000000 ]; then
+                echo "  홈 화면 같습니다 ($size 바이트). 다시 ($attempt/${SHOOT_ATTEMPTS:-3})"
+                sleep 5
+                continue
+              fi
+              # (3) 아직 안 그려진 화면은 단색이라 PNG 가 유난히 작다.
+              #     **기기마다 다르다** — 화소 수가 다르기 때문이다. 빌드 4 에서
+              #     아이패드의 빈 읽기 화면이 119,762바이트로 50,000 문턱을 그냥
+              #     넘어갔다. 실제 값: 아이폰 목록 124KB · 아이패드 3단 307KB ·
+              #     아이패드 빈 화면 119KB. 그래서 아이패드는 250,000 을 쓴다.
+              if [ "$size" -ge "${SHOOT_MIN:-100000}" ]; then
+                if region_is_blank "$file"; then
+                  echo "  내용 칸이 비어 있습니다. 다시 ($attempt/${SHOOT_ATTEMPTS:-3})"
+                  sleep 3
+                  continue
+                fi
+                echo "찍음: $file ($size 바이트) $*"
+                return 0
+              fi
+              # (4) **같은 크기가 두 번 나오면 다시 찍어도 같다.**
+              #     아직 안 그려진 화면은 찍을 때마다 크기가 달라진다. 바이트까지
+              #     똑같다는 것은 화면이 멎었다는 뜻이고, 그러면 작은 것은 시간
+              #     탓이 아니라 **내용 탓**이다 — 큰 글씨는 글자가 크고 수가 적어
+              #     PNG 가 작아진다.
+              #
+              #     빌드 7 에서 아이패드 큰 글씨가 239,561 바이트로 **세 번 똑같이**
+              #     나왔는데 문턱(250,000)만 보고 20분을 다시 찍었다. 문턱을 낮추는
+              #     것으로는 못 고친다 — 같은 실행에서 덜 그려진 화면이 203,852,
+              #     다 그려진 큰 글씨가 239,561 이라 숫자 하나로는 안 갈린다.
+              #     **갈리는 것은 크기가 아니라 "멎었는가" 다.**
+              if [ "$attempt" -gt 1 ] && [ "$size" -eq "$previous" ] \
+                 && [ "$size" -ge "${SHOOT_FLOOR:-60000}" ] \
+                 && ! region_is_blank "$file"; then
+                echo "찍음: $file ($size 바이트 · 두 번 똑같으므로 멎은 화면으로 본다) $*"
+                return 0
+              fi
+              previous=$size
+              echo "  빈 화면 같습니다 ($size 바이트). 다시 ($attempt/${SHOOT_ATTEMPTS:-3})"
+              sleep 3
+            done
+            echo "::error::$file — 여러 번 찍었지만 화면이 비어 있습니다"
+            echo "$file" >> /tmp/shoot-failures
+          }
+
+          # ── iPhone ──
+          # **화면을 지정해 찍는다.** 앱을 켜기만 하면 한 장밖에 못 본다.
+          shoot 01-list.png -sampleFolder
+          shoot 02-note.png -sampleFolder -openFirstNote
+          # **큰 글씨** (접근성). 이 한 장이 없으면 Dynamic Type 이 아무것도
+          # 안 바꾸고 있는 것을 못 잡는다 — 지난 앱에서 275곳을 나중에 고쳤다.
+          shoot 03-large-text.png -sampleFolder -openFirstNote \
+            -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+          # 큰 글씨 **목록** — 배너와 행이 같이 견디는지 (빌드 2 에서 배너가 잘렸다).
+          shoot 04-large-text-list.png -sampleFolder \
+            -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+          # **진단 화면** — 폴더가 어디인지 보여 주는 곳. 2026-09-13 에 이것이
+          # 없어서 A2 반증의 원인을 화면으로 못 봤다.
+          shoot 07-diagnostics.png -sampleFolder -diagnostics
+          # **설정 화면** — `파일` 앱에서 여는 방법을 적어 둔 곳. 문장이 길어
+          # 큰 글씨에서 잘리기 쉬우므로 한 장 찍어 둔다.
+          shoot 09-settings.png -sampleFolder -settings
+          # **휴지통** — 견본 폴더에는 지운 것이 없으므로 빈 화면 안내와 비활성 `비우기` 가 보여야 한다.
+          shoot 11-trash.png -sampleFolder -settings -trash
+          # **고른 폴더(b) 상태의 설정** — 돌아가기 단추와 안내 문구가 보여야 한다. 폴더 고르기
+          # 창 자체는 시뮬레이터 스크립트로 못 누르므로 견본 폴더를 (b) 인 척 연다.
+          shoot 12-settings-chosen.png -sampleFolder -settings -chosenFolder
+          # **검색** — 2글자 `회의` 는 LIKE 폴백 길이다 (ADR-0003). 결과에 견본 노트가 보여야 한다.
+          shoot 13-search.png -sampleFolder -search 회의
+          # **폴더 화면의 찾기 칸** (260 · 261). 빈 칸 아래 최근 고친 노트 · 폴더 화면의 결과 ·
+          # 결과를 누른 것과 같은 길로 연 노트 — 아이폰은 폴더 화면에서 노트까지 두 칸을 한 번에 넘어가야 한다.
+          # 16 이 노트가 아니라 결과 목록이면 그 길이 막힌 것이다 (빈 화면 심판으로는 못 갈린다 — 눈으로 본다).
+          # 찾는 말은 `2026` — 시뮬레이터가 영어로 떠 견본이 영어일 때도(빌드 115 첫 바퀴 — `회의` 는 결과 없음) 한국어일 때도 걸린다.
+          shoot 14-folder-recent.png -sampleFolder -folderSearch
+          shoot 15-folder-search.png -sampleFolder -folderSearch -search 2026
+          # **읽기 모드로 열기를 켠 채로** (264) — 켜 둔 기기에서 폴더 화면으로 연 노트가 단추는 *읽기* 인데 본문은 편집기에 멈췄다.
+          # 16 · 18 은 **읽기 화면**(아래 굵게 · 기울임 띠가 없다 · 위 단추는 연필)이어야 한다. 17 은 설정을 끈 채 — 쓰기 화면이어야 한다.
+          # 18 은 사람이 걸린 길 — 빈 찾기 칸의 **최근 고친 노트**를 눌러 찾기를 닫으며 넘어간다.
+          # 설정은 **실행 인자로** 준다 (`-mode.reading YES`) — 설정 파일에 남지 않는다. 빌드 116 첫 바퀴는 앱 안에서 켰다가 남아
+          # 뒤의 17 · 다크 · 영어 장까지 읽기로 열렸다 (`en/02-note` = `05-reading` 과 같은 바이트).
+          shoot 16-folder-search-open.png -sampleFolder -folderSearch -search 2026 -openFirstHit -mode.reading YES
+          shoot 17-folder-search-open-write.png -sampleFolder -folderSearch -search 2026 -openFirstHit
+          shoot 18-folder-recent-open.png -sampleFolder -folderSearch -openFirstRecent -mode.reading YES
+          # **어디서나 찾기 시트** (286) — 노트를 연 채 ··· → 모든 노트에서 찾기 · ⌘F 가 띄우는 것. 노트 위에 시트가 서고 결과 셋이 보여야 한다.
+          shoot 19-search-sheet.png -sampleFolder -openFirstNote -searchSheet -search 2026
+          # **새 노트** — 만들기 → 열기 흐름. 편집기에 `# 새 노트` 한 줄이 보여야 한다.
+          shoot 10-new-note.png -sampleFolder -newNote
+          # **첨부 시험** — 사진 셋(영문 · 한글+공백 · 퍼센트 인코딩)이 다
+          # 그려지는지. 실기기로 내려보내기 전에 지나는 칸이다 (A3 · A13).
+          shoot 08-attachment-test.png -sampleFolder -attachmentTest
+          # **읽기 모드** (ADR-0004). 원격 세션에서 렌더 결과를 눈으로 보는
+          # 유일한 창구다 — 표 · 코드 · 사진이 제대로 나오는지.
+          shoot 05-reading.png -sampleFolder -readingMode
+          shoot 06-reading-large-text.png -sampleFolder -readingMode \
+            -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+          # **영어** (219) — 이 앱만 English 로 띄운다 (설정 → 앱 → 언어 와 같은 것). 영어 견본 노트 ·
+          # 영어 화면 문구가 함께 나와야 한다. 한국어 글자가 보이면 번역이 빠진 자리다. 영어 스토어 화면에도 쓴다.
+          EN=(-AppleLanguages "(en)" -AppleLocale en_US)
+          mkdir -p screenshots/ios27/en
+          shoot en/01-list.png -sampleFolder "${EN[@]}"
+          shoot en/02-note.png -sampleFolder -openFirstNote "${EN[@]}"
+          shoot en/05-reading.png -sampleFolder -readingMode "${EN[@]}"
+          shoot en/09-settings.png -sampleFolder -settings "${EN[@]}"
+          shoot en/13-search.png -sampleFolder -search Meeting "${EN[@]}"
+
+          # ── 다크 모드 ──
+          xcrun simctl ui "$UDID" appearance dark
+          mkdir -p screenshots/ios27/dark
+          shoot dark/01-list.png -sampleFolder
+          shoot dark/02-note.png -sampleFolder -openFirstNote
+          # 웹뷰의 색 토큰이 앱과 같이 어두워지는지 (설계서 §8)
+          shoot dark/03-reading.png -sampleFolder -readingMode
+          xcrun simctl ui "$UDID" appearance light
+
+          # ── 아이폰 가로 (154) ──
+          #
+          # **`simctl` 에는 화면을 돌리는 명령이 없다.** Simulator 앱의 메뉴를
+          # `osascript` 로 눌러 본다. 러너 · 권한에 따라 막히므로 **안 되면 경고만
+          # 남기고 지나간다** — 이 칸은 심판이 아니라 **덤**이다. 가로보기의 진짜
+          # 심판은 실기기의 사람이다 (CLAUDE.md §2 의 마지막 칸).
+          #
+          # **돌았는지는 화면 크기로 확인한다** (빌드 49). 처음에는 `osascript` 가
+          # 0 을 냈다고 돌아간 줄 알고 **세로 그림 두 장을 가로라고 커밋했다** —
+          # 명령이 성공한 것과 화면이 돌아간 것은 다르다. 이제 **가로가 아니면
+          # 지우고 경고**한다. 없는 심판을 있는 척하는 것이 제일 나쁘다.
+          #
+          # 큰 아이폰을 쓰는 까닭: 그 폭에서만 `regular` 로 바뀌어 3단 화면이 나온다.
+          rm -rf screenshots/ios27/landscape
+          WIDE="${{ steps.wide.outputs.udid }}"
+          if [ -n "$WIDE" ]; then
+            echo "── 아이폰 가로: ${{ steps.wide.outputs.name }} ──"
+            if [ "$WIDE" != "$UDID" ]; then
+              xcrun simctl boot "$WIDE" || true
+              xcrun simctl bootstatus "$WIDE" -b || true
+              status_bar "$WIDE"
+              xcrun simctl install "$WIDE" "$APP" || true
+            fi
+            open -a Simulator --args -CurrentDeviceUDID "$WIDE" || true
+            sleep 12
+            osascript -e 'tell application "Simulator" to activate' 2>/dev/null || true
+            sleep 2
+
+            # 가로가 됐나 — **그림의 가로세로로 본다.**
+            is_landscape() {
+              xcrun simctl io "$WIDE" screenshot /tmp/rotate-probe.png >/dev/null 2>&1 || return 1
+              .ci-venv/bin/python -c 'import sys; from PIL import Image; w, h = Image.open("/tmp/rotate-probe.png").size; sys.exit(0 if w > h else 1)' >/dev/null 2>&1
+            }
+
+            # 두 가지로 눌러 본다 — 단축키와 메뉴 항목.
+            osascript -e 'tell application "System Events" to tell process "Simulator" to keystroke (ASCII character 28) using command down' 2>/dev/null || true
+            sleep 5
+            if ! is_landscape; then
+              osascript -e 'tell application "System Events" to tell process "Simulator" to click menu item "Rotate Left" of menu 1 of menu bar item "Device" of menu bar 1' 2>/dev/null || true
+              sleep 5
+            fi
+
+            if is_landscape; then
+              mkdir -p screenshots/ios27/landscape
+              for pair in "landscape/01-list.png:" "landscape/02-note.png:-openFirstNote"; do
+                file="${pair%%:*}"; extra="${pair#*:}"
+                xcrun simctl terminate "$WIDE" "$BUNDLE_ID" >/dev/null 2>&1 || true
+                # shellcheck disable=SC2086
+                xcrun simctl launch "$WIDE" "$BUNDLE_ID" -sampleFolder $extra -AppleLanguages "(ko)" -AppleLocale ko_KR >/dev/null 2>&1 || true
+                sleep 12
+                xcrun simctl io "$WIDE" screenshot "screenshots/ios27/$file" >/dev/null 2>&1 || true
+                if [ -f "screenshots/ios27/$file" ]; then
+                  echo "찍음: $file ($(stat -f%z "screenshots/ios27/$file") 바이트 · 가로)"
+                else
+                  echo "::warning::$file — 가로 스크린샷을 못 찍었습니다"
+                fi
+              done
+              xcrun simctl terminate "$WIDE" "$BUNDLE_ID" >/dev/null 2>&1 || true
+            else
+              echo "::warning::아이폰을 가로로 돌리지 못했습니다 (화면이 여전히 세로입니다) — 가로는 실기기에서 사람이 봅니다 (154)"
+            fi
+            osascript -e 'tell application "Simulator" to quit' 2>/dev/null || true
+            if [ "$WIDE" != "$UDID" ]; then
+              xcrun simctl shutdown "$WIDE" || true
+            fi
+          else
+            echo "::warning::가로용 큰 아이폰 시뮬레이터가 없어 가로 스크린샷을 건너뜁니다"
+          fi
+
+          # ── iPad (가정 A8 — 3단 분할이 정말 펼쳐지는가) ──
+          IPAD="${{ steps.ipad.outputs.udid }}"
+          if [ -n "$IPAD" ]; then
+            echo "── iPad: ${{ steps.ipad.outputs.name }} ──"
+            SHOOT_WAIT=12; SHOOT_ATTEMPTS=4; SHOOT_MIN=250000
+            xcrun simctl boot "$IPAD" || true
+            xcrun simctl bootstatus "$IPAD" -b
+            status_bar "$IPAD"
+            xcrun simctl install "$IPAD" "$APP"
+            mkdir -p screenshots/ios27/ipad
+            UDID="$IPAD"
+            shoot ipad/01-split.png -sampleFolder
+            shoot ipad/02-reading.png -sampleFolder -readingMode
+            shoot ipad/03-large-text.png -sampleFolder \
+              -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
+            # 260 — 아이패드의 찾기 칸 · 결과는 폴더 칸에. 가운데 칸은 폴더의 노트 그대로.
+            shoot ipad/04-search.png -sampleFolder -search 2026
+            # **아이패드 폴더 칸의 찾기 칸이 붙박이** (286) — 띠의 바탕이 칸의 바탕과 섞여야 한다 (266 때 안 맞아 미뤘던 것).
+            # **찾기 시트** — 아이패드에서도 노트 위에 뜬다.
+            shoot ipad/05-search-sheet.png -sampleFolder -searchSheet -search 2026
+            mkdir -p screenshots/ios27/en/ipad
+            shoot en/ipad/01-split.png -sampleFolder "${EN[@]}"
+            UDID="${{ steps.sim.outputs.udid }}"
+          else
+            echo "::warning::iPad 시뮬레이터가 없어 iPad 스크린샷을 건너뜁니다"
+          fi
+
+          ls -la screenshots/ios27 screenshots/ios27/dark screenshots/ios27/ipad screenshots/ios27/en screenshots/ios27/en/ipad 2>/dev/null || true
+
+          # 한 장이라도 못 찍었으면 막는다. 스크린샷은 원격 세션에서 앱이 실제로
+          # 도는지 보는 유일한 창구라, 못 찍은 채 초록이면 그게 제일 위험하다.
+          if [ -s /tmp/shoot-failures ]; then
+            echo "::error::못 찍은 화면 $(wc -l < /tmp/shoot-failures)장:"
+            cat /tmp/shoot-failures
+            echo "위의 '콘솔을 붙여 한 번 띄워 본다' 출력에 이유가 있습니다."
+            exit 1
+          fi
+          echo "전부 찍었습니다."
+
+      # **아티팩트를 커밋보다 앞에 둔다.** 커밋이 실패하면 결과물을 못 받는다.
+      # **화면은 떴는데 안이 비었는가.** 파일 크기로는 이것을 못 가린다 —
+      # 빌드 7 에서 빈 편집기가 114,161바이트를 내고 문턱(100,000)을 넘어갔다.
+      # 여기서는 내용 칸의 화소를 직접 세어 본다. 볼 곳이 화면마다 다르므로
+      # (아이패드는 오른쪽 칸이 본문이다) 비율로 적어 준다.
+      - name: 내용 칸이 정말 그려졌나 (화소)
+        run: |
+          # **찍는 고리와 같은 표를 읽는다** (`Tools/ci/screens.txt`). 예전에는 볼 칸을
+          # 여기에 따로 적어 두어, 찍는 쪽이 통과시킨 빈 화면을 여기서야 잡았다 —
+          # 그때는 다시 찍을 기회가 없었다 (빌드 49 · ipad/02-reading.png).
+          #
+          # **없는 파일은 넘어가지 않는다.** 표에 적힌 것은 다 찍혀 있어야 한다 —
+          # 안 찍힌 것을 조용히 건너뛰면 심판이 없는 초록이 된다.
+          args=()
+          while read -r file region; do
+            case "$file" in ''|'#'*) continue ;; esac
+            if [ ! -f "screenshots/ios27/$file" ]; then
+              echo "::error::screenshots/ios27/$file — 표에 있는데 안 찍혔습니다"
+              exit 1
+            fi
+            args+=("screenshots/ios27/$file:$region")
+          done < Tools/ci/screens.txt
+          .ci-venv/bin/python Tools/ci/not-blank.py "${args[@]}"
+
+      - name: 스크린샷 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-ios27
+          path: screenshots/ios27/
+          if-no-files-found: warn
+
+      - name: 스크린샷을 브랜치에 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 새 스크린샷은 추적되지 않는 파일이라 git diff 로는 안 보인다.
+          git add -A screenshots/ios27
+          if git diff --cached --quiet; then
+            echo "스크린샷 변화 없음 — 커밋하지 않는다"
+            exit 0
+          fi
+          git commit -m "chore: iOS 27 SDK 탐색 스크린샷 (${{ steps.sim.outputs.name }}) [skip ci]"
+
+          # 촬영은 몇 분 걸린다. 그동안 사람이 푸시하면 이 push 가 밀려서,
+          # **찍어 놓고도 못 올리는** 일이 벌어진다. 리베이스하고 다시 민다.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:${{ github.ref_name }}; then
+              echo "올렸습니다 (시도 $attempt)"
+              exit 0
+            fi
+            echo "밀렸습니다. 원격을 당겨 리베이스하고 다시 시도합니다 ($attempt/3)"
+            git fetch origin ${{ github.ref_name }}
+            # 스크린샷은 러너가 새로 찍은 것이 항상 옳다. 충돌하면 우리 것을 쓴다.
+            # **리베이스에서 `theirs` 가 내 커밋(러너가 찍은 것)이다** (233) — `ours` 는 원격 쪽이라, 예전에는
+            # 충돌 때 옛 스크린샷이 남았다. 위 주석의 뜻(러너가 새로 찍은 것이 옳다)대로 `theirs`.
+            git rebase -X theirs origin/${{ github.ref_name }} || {
+              git rebase --abort || true
+              sleep $((attempt * 5))
+              continue
+            }
+            sleep $((attempt * 5))
+          done
+          echo "::error::스크린샷을 세 번 시도했지만 올리지 못했습니다."
+          exit 1

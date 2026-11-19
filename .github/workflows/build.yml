@@ -22,6 +22,9 @@ on:
       - ".github/workflows/probe.yml"
       - ".github/workflows/store-preview.yml"
       - ".github/workflows/store-shots.yml"
+      # 321 — iOS 27 SDK 탐색 흐름과 그 요청 파일 (따로 돈다)
+      - "Tools/ios27/**"
+      - ".github/workflows/build-ios27.yml"
   workflow_dispatch:
 
 concurrency:
