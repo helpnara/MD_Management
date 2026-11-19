@@ -57,14 +57,9 @@ struct RootView: View {
             NoteDetail()
         }
         .navigationSplitViewStyle(.balanced)
-        // **323 — 켤 때는 세 칸** (321 iOS 27 SDK 탐색 사진). iPadOS 27 은 시작값(`.all`)을 두고도 처음부터 폴더 칸을 접어 두 칸으로 띄웠다 —
-        // 폴더 칸의 찾기 칸(260 · 286)까지 함께 숨는다. 켤 때 **한 번만** 설계대로 되돌린다. 사람이 접은 칸은 건드리지 않는다(그 뒤로는 안 부른다).
-        // iOS 26 에서는 이미 `.all` 이라 아무 일도 안 한다.
-        .task {
-            guard horizontalSizeClass == .regular else { return }
-            try? await Task.sleep(for: .milliseconds(400))
-            if columnVisibility != .all { columnVisibility = .all }
-        }
+        // **323 — iPadOS 27 (SDK 27) 은 세로 화면에서 세 칸을 나란히 두지 않는다** (321 탐색 · 2026-11-19). 시작값이 `.all` 이어도 폴더 칸을 접어
+        // 두 칸으로 띄우고, 억지로 `.all` 로 되돌리면 폴더 칸을 **노트 위에 겹쳐** 띄워 뒤를 어둡게 한다(탐색 사진 02 · 04) — 더 나빠서 되돌렸다.
+        // 시스템 기본을 따른다: 폴더 칸은 왼쪽 위 단추로 열고, 숨었을 때 찾기는 돋보기(286)가 맡는다.
         // **상세 칸에도 바깥 폭을 알려 준다** (125). 아이패드의 상세 칸은 좁아도 regular 이고,
         // 도구 줄을 아이폰에서만 줄이려면 **바깥 화면**의 폭을 봐야 한다. 예전에는 이 값을
         // 시트에만 건넸다 — 그때는 띠가 둘이 되는 것만 막으면 됐다 (빌드 24 · 13번).
@@ -1095,6 +1090,9 @@ private struct NoteList: View {
                 .padding(.vertical, 2)
                 // 종이 바탕 · 고른 줄은 옅은 잎 초록 (318). 아이폰은 고르면 바로 넘어가므로 칠하지 않는다.
                 .listRowBackground(RowBackground(selected: !rootIsCompact && library.selectedNoteID == note.id))
+                // 324 — iPadOS 27 은 외장 자판이 붙으면 고른 줄 둘레에 초점 고리를 그린다(318 의 옅은 초록 칸과 이중). 목록에 건 것만으로는
+                // 안 사라졌다(321 두 번째 탐색) — 줄마다 건다.
+                .focusEffectDisabled()
                 // **구분선을 줄 맨 앞에 맞춘다** (121, 사용자 첨부 — 줄이 끊어져 보였다).
                 // SwiftUI 는 줄 안의 어느 요소를 기준으로 구분선을 들여쓸지 스스로 고르는데,
                 // `받는 중` 딱지가 붙은 줄에서는 **그 딱지 앞**을 골라 구분선이 화면 가운데서
