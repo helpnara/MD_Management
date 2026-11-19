@@ -1,3 +1,1 @@
-     |                                                                                    `- warning: main actor-isolated static property 'rowSpacing' can not be referenced from a Sendable closure
-2026-11-19 09:56:38.022 appintentsmetadataprocessor[6208:21922] warning: Metadata extraction skipped, no AppIntents.framework dependency found
-App/Views/RootView.swift:2367:84: warning: main actor-isolated static property 'rowSpacing' can not be referenced from a Sendable closure
+2026-11-19 13:34:53.112 appintentsmetadataprocessor[5936:20511] warning: Metadata extraction skipped, no AppIntents.framework dependency found
