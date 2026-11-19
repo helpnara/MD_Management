@@ -2364,7 +2364,8 @@ private struct FormatBar: View {
                     .padding(.horizontal, Metrics.gutter * 0.75)
                     .padding(.vertical, Metrics.rowSpacing)
                     .background(Capsule().fill(Palette.ink.opacity(0.85)))
-                    .alignmentGuide(VerticalAlignment.top) { $0[.bottom] + Metrics.rowSpacing }
+                    // 322 — iOS 27 SDK 는 이 닫는 묶음을 Sendable 로 본다. 주 액터 값(`Metrics`)은 만들 때 잡아 둔다.
+                    .alignmentGuide(VerticalAlignment.top) { [lift = Metrics.rowSpacing] dimensions in dimensions[.bottom] + lift }
                     .transition(.opacity)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
