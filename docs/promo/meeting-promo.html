@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>회의록 찾기 쇼츠</title>
+<!--
+  느린 여백 쇼츠 · 회의록 찾기 편 (2026-11-20). 세로 1080 × 1920 · 30fps · 34초 · 소리 없음.
+  11-20 결정(People_mgmt docs/promo-youtube-stats.md) — 채널 하나 유지 · 여백 · 인연에 돈 · 시간 다리 2주 시험의 첫 여백 편. 첫 물음에 시간 숫자.
+  숫자(파이썬 대조): 10분 × 250 근무일 = 2,500분 ≒ 41.7시간 ≒ 하루 8시간 근무 5.2일. 0초 장면에 물음이 이미 다 떠 있다.
+  찾기 편(10-29)은 tag: · path: 를 설명 글로만 적었다 — 이 편은 좁혀 찾기를 화면으로 보인다.
+  코드에서 읽은 것: 폴더 화면 찾기 칸 `모든 노트에서 찾기` · `취소` · 결과 줄(명조 제목 · 본문 한 줄 · 폴더) — screenshots/15 의 꼴 ·
+  검색 문법 `SearchQuery` — 빈칸 = 모두(AND) · "…" = 구절 · tag:앱 · path:아이디어/ · 2글자 이하는 본문 LIKE 로(두 글자부터 본문까지) ·
+  제목 초성 `HangulInitials`(ㅎㅇㄹ → 회의록 · 제목만) · 안내 `제목과 본문을 찾습니다. tag:태그 · path:폴더 로 좁힐 수 있습니다.`(RootView).
+  결과 줄은 칠 없이 그대로(실제 결과 줄에는 칠이 없다). 안내 `제목과 본문을 찾습니다 …` 는 검색 전 최근 고친 노트 아래에만 있어 결과 장면에 넣지 않았다.
+  노트 글은 지어낸 견본이다.
+-->
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+/* 앱 색은 App/DesignSystem/Palette.swift 의 밝은 판 (1.1.26 · 316) — 종이 · 먹 · 잎 초록 */
+:root{ --paper:#FAF7F1; --raised:#F1ECE3; --grouped:#F3EFE8; --ink:#24211E; --faint:#6B655C; --marker:#B0A99D;
+  --leaf:#4A7429; --leaf2:#6FA53A; --wood:#D6A266; --gold:#C49A45; --red:#E5483C; --stage:#F6F1E7; --stage2:#EDE4D4; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--stage)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--stage) 55%, var(--stage2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.5) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf2),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+
+.hook{position:absolute;left:0;right:0;top:120px;text-align:center}
+.hook .kk{font-size:30px;font-weight:700;letter-spacing:10px;color:var(--leaf);margin-bottom:26px}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:100px;line-height:1.22;letter-spacing:-2px}
+.hook p{margin-top:26px;font-size:50px;font-weight:700;color:#3F3B36}
+.hook p b{color:var(--red)}
+
+.cap{position:absolute;left:70px;right:70px;top:170px;text-align:center}
+.cap .kicker{display:inline-block;padding:10px 30px;border-radius:40px;background:rgba(74,116,41,.12);color:var(--leaf);font-size:30px;font-weight:700;margin-bottom:26px}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:900;font-size:84px;line-height:1.22;letter-spacing:-1px}
+.cap p{margin-top:22px;font-size:38px;color:#55514B;font-weight:500;line-height:1.45}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:700px;width:740px;height:1150px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.24), 0 6px 18px rgba(0,0,0,.12)}
+.phone.low{top:760px}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--paper);overflow:hidden;color:var(--ink)}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:20}
+.homebar{position:absolute;bottom:20px;left:50%;margin-left:-110px;width:220px;height:10px;border-radius:5px;background:#1C1B1A;opacity:.8;z-index:19}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(74,116,41,.20);border:4px solid rgba(74,116,41,.55);pointer-events:none;z-index:18;opacity:0}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--leaf);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+.layer{position:absolute;inset:0}
+
+/* 홈 화면 */
+.home{background:linear-gradient(180deg,#DCE3EE,#E9E2D6)}
+.home .grid{position:absolute;top:140px;left:52px;right:52px;display:grid;grid-template-columns:repeat(4,1fr);row-gap:34px;justify-items:center}
+.home .ap{width:132px;text-align:center;font-size:24px;color:#2A2724;position:relative;height:170px}
+.home .ap .sq{width:132px;height:132px;border-radius:32px;background:#F4F1EA;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.home .ap img{width:132px;height:132px;border-radius:32px;display:block;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.home .ap .x{position:absolute;left:-14px;top:-14px;width:46px;height:46px;border-radius:23px;background:#8E8E93;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;opacity:0;z-index:2}
+.home .dock{position:absolute;left:30px;right:30px;bottom:34px;height:170px;border-radius:50px;background:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:space-around;padding:0 20px}
+.home .dock .sq{width:120px;height:120px;border-radius:30px;background:#F4F1EA;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.28);opacity:0;z-index:5}
+.alert{position:absolute;left:94px;right:94px;top:400px;border-radius:40px;background:rgba(246,246,248,.98);text-align:center;z-index:6;opacity:0;overflow:hidden}
+.alert b{display:block;font-size:32px;padding:38px 30px 34px}
+.alert small{display:block;font-size:24px;color:#55514B;padding:0 36px 28px;line-height:1.45}
+.alert .bt{border-top:1px solid #DCDCE0;font-size:32px;padding:24px 0}
+.alert .bt.red{color:var(--red);font-weight:700}
+
+/* 파일 앱 (이름 없는 그림) */
+.files{background:#FFFFFF}
+.files .hd{position:absolute;top:110px;left:40px;font-size:30px;color:#8A8A8E;display:flex;align-items:center;gap:6px}
+.files .hd svg{width:30px;height:30px;stroke:#8A8A8E;stroke-width:4;fill:none;stroke-linecap:round}
+.files .big{position:absolute;top:160px;left:44px;font-size:60px;font-weight:900}
+.files .lst{position:absolute;top:270px;left:40px;right:40px}
+.files .fr{display:flex;align-items:center;gap:22px;height:110px;border-bottom:1px solid #EDEDF0;font-size:34px}
+.files .fr small{margin-left:auto;font-size:26px;color:#8A8A8E}
+.files .fd{width:54px;height:68px;border-radius:8px;background:#fff;border:2px solid #D8D8DC;flex:none;position:relative}
+.files .fd:after{content:'MD';position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:14px;font-weight:700;color:#8A8A8E}
+.files .fi{width:64px;height:50px;border-radius:9px;background:#7FB6E8;flex:none}
+.files .fr.glow{background:rgba(74,116,41,.10);border-radius:16px}
+
+/* 스토어 (이름 없는 그림) */
+.store{background:#fff}
+.ssf{position:absolute;top:120px;left:40px;right:40px;height:84px;border-radius:24px;background:#EEEEF0;display:flex;align-items:center;padding:0 26px;gap:16px;font-size:34px;color:#24211E}
+.ssf svg{width:36px;height:36px;stroke:#8A8A8E;stroke-width:4;fill:none;flex:none}
+.sres{position:absolute;top:250px;left:40px;right:40px;display:flex;gap:26px;align-items:center}
+.sres img{width:150px;height:150px;border-radius:34px;box-shadow:0 8px 22px rgba(0,0,0,.14);flex:none}
+.sres .nm{font-size:38px;font-weight:700}
+.sres .sb{font-size:25px;color:#8A8A8E;margin-top:6px;line-height:1.35}
+.sres .get{margin-left:auto;flex:none;min-width:130px;height:62px;border-radius:31px;background:#EEF1F6;color:#0A7AFF;font-size:30px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 26px}
+.ring{width:58px;height:58px;border-radius:29px;border:6px solid #DDE3EC;border-top-color:#0A7AFF}
+.sshots{position:absolute;top:450px;left:40px;right:0;display:flex;gap:22px}
+.sshots i{display:block;width:300px;height:560px;border-radius:30px;background:var(--raised);flex:none}
+
+/* 앱 — 새 디자인 (종이 · 먹 · 잎 초록 · 명조 제목) */
+.app{background:var(--grouped)}
+.abar{position:absolute;top:96px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 30px;z-index:3}
+.abar .circ{width:76px;height:76px;border-radius:38px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .circ svg{width:34px;height:34px;stroke:var(--ink);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.abar .mid{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.abar .mid b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.abar .mid small{display:block;font-size:22px;color:var(--faint)}
+.abar .pill{margin-left:auto;height:76px;padding:0 24px;border-radius:38px;background:#fff;display:flex;align-items:center;gap:26px;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .pill svg{width:40px;height:40px;stroke:var(--leaf);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.asf{position:absolute;top:220px;left:30px;right:30px;height:76px;border-radius:38px;background:rgba(36,33,30,.07);display:flex;align-items:center;gap:14px;padding:0 26px;font-size:30px;color:var(--faint)}
+.asf svg{width:32px;height:32px;stroke:var(--faint);stroke-width:4;fill:none}
+.alist{position:absolute;top:330px;left:30px;right:30px;background:var(--paper);border-radius:30px;padding:0 30px}
+.arow{padding:24px 0;border-bottom:1px solid rgba(36,33,30,.10)}
+.arow:last-child{border-bottom:none}
+.arow b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.arow span{display:block;font-size:26px;color:var(--faint);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arow small{display:block;font-size:22px;color:var(--faint);margin-top:4px}
+.flabel{position:absolute;top:300px;left:60px;font-size:26px;color:var(--faint)}
+.editor{background:var(--paper)}
+.ebody{position:absolute;top:240px;left:52px;right:52px;font-size:36px;line-height:1.62}
+.eln{min-height:58px;white-space:pre}
+.eln.t{font-family:'Noto Serif KR',serif;font-weight:700;font-size:58px;line-height:1.35;min-height:90px;letter-spacing:-.5px}
+.eln .mk{color:var(--marker)}
+.ebar{position:absolute;left:0;right:0;bottom:0;height:120px;background:var(--raised);display:flex;align-items:center;justify-content:space-around;padding:0 30px 20px;font-size:32px;color:var(--leaf);font-weight:700}
+
+/* 정리 카드 */
+.bigcard{position:absolute;left:96px;right:96px;top:640px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:26px 50px}
+.bigcard .row{display:flex;align-items:center;gap:28px;font-size:40px;padding:30px 0;border-bottom:1px solid #EEE9E0;opacity:0}
+.bigcard .row:last-child{border-bottom:none}
+.bigcard .row .ck{flex:none;width:62px;height:62px;border-radius:31px;background:var(--leaf);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900}
+.bigcard .row b{min-width:170px;font-weight:700}
+.bigcard .row span{color:#4A4640}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:300px;text-align:center}
+.hero img{width:300px;height:300px;border-radius:70px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:120px;margin-top:50px;letter-spacing:2px}
+.hero .tagline{margin-top:24px;font-family:'Noto Serif KR',serif;font-weight:700;font-size:50px;color:#4A4640}
+.hero .say{font-size:40px;margin-top:80px;font-weight:700;color:var(--leaf)}
+.hero .say2{font-size:36px;margin-top:40px;font-weight:500;color:#55514B}
+.bigsearch{display:flex;align-items:center;gap:22px;margin:24px auto 0;width:760px;height:120px;border-radius:36px;background:#fff;box-shadow:0 20px 50px rgba(80,60,30,.16);padding:0 40px;font-size:52px;font-weight:700;text-align:left}
+.bigsearch svg{width:56px;height:56px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.hero .foot{margin-top:46px;font-size:36px;color:var(--faint);font-weight:500;letter-spacing:2px}
+.pointer{display:inline-block;margin-left:12px;font-size:44px}
+
+.stack{position:absolute;left:150px;right:150px;top:930px}
+.stack .n{height:120px;border-radius:26px;background:var(--paper);box-shadow:0 10px 26px rgba(80,60,30,.12);margin-bottom:22px;padding:22px 34px}
+.stack .n b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.stack .n span{display:block;font-size:24px;color:var(--faint);margin-top:6px}
+.big2{position:absolute;left:0;right:0;top:760px;text-align:center}
+.big2 .num{font-family:'Noto Serif KR',serif;font-weight:900;font-size:220px;letter-spacing:-4px;color:var(--leaf)}
+.big2 .unit{font-size:44px;font-weight:700;color:#3F3B36;margin-top:6px}
+.days{position:absolute;left:150px;right:150px;top:1220px;display:flex;gap:18px}
+.days i{flex:1;height:150px;border-radius:24px;background:var(--leaf);opacity:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:16px;font-style:normal;color:#fff;font-size:28px;font-weight:700}
+.days i.part{background:var(--leaf2)}
+/* 폴더 화면 찾기 (screenshots/15 의 꼴) */
+.fbar{position:absolute;top:110px;left:0;right:0;text-align:center;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.sfield{position:absolute;top:180px;left:30px;right:110px;height:76px;border-radius:38px;background:rgba(36,33,30,.08);display:flex;align-items:center;gap:14px;padding:0 24px;font-size:32px}
+.sfield svg{width:32px;height:32px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.sfield .ph{color:var(--faint)}
+.scancel{position:absolute;top:198px;right:30px;font-size:30px;color:var(--leaf)}
+.res{position:absolute;top:300px;left:30px;right:30px;background:var(--paper);border-radius:30px;padding:0 30px}
+.rr{padding:24px 0;border-bottom:1px solid rgba(36,33,30,.10)}
+.rr:last-child{border-bottom:none}
+.rr b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.rr span{display:block;font-size:25px;color:#55514B;margin-top:8px;line-height:1.4}
+.rr span em{font-style:normal}
+.rr small{display:flex;align-items:center;gap:10px;font-size:22px;color:var(--faint);margin-top:8px}
+.rr small svg{width:28px;height:22px;stroke:var(--faint);stroke-width:2.4;fill:none}
+.rcount{position:absolute;top:270px;left:62px;font-size:24px;color:var(--faint)}
+.gfoot{position:absolute;left:46px;right:46px;bottom:70px;font-size:24px;color:var(--faint);line-height:1.45}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 0 · 0초부터 다 떠 있는 물음 + 쌓인 회의록 -->
+  <section class="scene" id="s0">
+    <div class="hook"><div class="kk">회의록이 쌓일수록</div><h1>찾느라 하루 10분,<br>1년이면 41시간?</h1><p>지난 결정, <b>어디</b>에 적었더라</p></div>
+    <div class="stack">
+      <div class="n"><b>11월 3주 회의록</b><span>예산 · 일정 · 담당</span></div>
+      <div class="n" style="opacity:.8"><b>11월 2주 회의록</b><span>예산은 3월에 다시 결정</span></div>
+      <div class="n" style="opacity:.6"><b>11월 1주 회의록</b><span>행사 예산 초안 공유</span></div>
+      <div class="n" style="opacity:.4"><b>10월 5주 회의록</b><span>…</span></div>
+    </div>
+  </section>
+
+  <!-- 1 · 셈 — 10분 × 250 근무일 -->
+  <section class="scene" id="s1">
+    <div class="cap" id="c1"><div class="kicker">하루 10분이 쌓이면</div><h2>근무일 250일 × 10분</h2></div>
+    <div class="big2" id="b1"><div class="num" id="n1">0</div><div class="unit">시간 — 하루 8시간 근무로 닷새 넘게</div></div>
+    <div class="days" id="d1"><i>1일</i><i>2일</i><i>3일</i><i>4일</i><i>5일</i><i class="part" style="flex:.2"></i></div>
+  </section>
+
+  <!-- 2 · 낱말 두 개면 — 둘 다 든 노트만 -->
+  <section class="scene" id="s2">
+    <div class="cap" id="c2"><div class="kicker">낱말 두 개면</div><h2>둘 다 든 노트만</h2><p>빈칸으로 띄우면 모두 들어간 노트를 찾습니다</p></div>
+    <div class="phone" id="p2"><div class="screen"><div class="island"></div>
+      <div class="layer app">
+        <div class="fbar">폴더</div>
+        <div class="sfield"><svg viewBox="0 0 32 32"><circle cx="13" cy="13" r="9"/><path d="M20 20 L28 28"/></svg><span id="q2"></span></div><div class="scancel">취소</div>
+        <div class="rcount" id="rc2"></div>
+        <div class="res" id="r2" style="top:320px"><div class="rr"><b>11월 2주 회의록</b><span>…<em>예산</em>은 3월에 다시 <em>결정</em>하기로…</span><small><svg viewBox="0 0 28 22"><path d="M2 5 H10 L12 8 H26 V20 H2 Z"/></svg>회의록</small></div><div class="rr"><b>11월 1주 회의록</b><span>…행사 <em>예산</em> 초안 공유, <em>결정</em>은 다음 주…</span><small><svg viewBox="0 0 28 22"><path d="M2 5 H10 L12 8 H26 V20 H2 Z"/></svg>회의록</small></div><div class="rr"><b>연말 행사 준비</b><span>…장소 <em>예산</em> 비교 — <em>결정</em> 전 확인할 것…</span><small><svg viewBox="0 0 28 22"><path d="M2 5 H10 L12 8 H26 V20 H2 Z"/></svg>일</small></div></div>
+      </div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 3 · 폴더로 좁히기 — path:회의록/ -->
+  <section class="scene" id="s3">
+    <div class="cap" id="c3"><div class="kicker">폴더로 좁히기</div><h2>path:회의록/</h2><p>회의록 폴더 안에서만 — tag:태그 도 됩니다</p></div>
+    <div class="phone" id="p3"><div class="screen"><div class="island"></div>
+      <div class="layer app">
+        <div class="fbar">폴더</div>
+        <div class="sfield"><svg viewBox="0 0 32 32"><circle cx="13" cy="13" r="9"/><path d="M20 20 L28 28"/></svg><span id="q3"></span></div><div class="scancel">취소</div>
+        <div class="res" id="r3" style="top:320px"><div class="rr"><b>11월 2주 회의록</b><span>…<em>예산</em>은 3월에 다시 <em>결정</em>하기로…</span><small><svg viewBox="0 0 28 22"><path d="M2 5 H10 L12 8 H26 V20 H2 Z"/></svg>회의록</small></div><div class="rr"><b>11월 1주 회의록</b><span>…행사 <em>예산</em> 초안 공유, <em>결정</em>은 다음 주…</span><small><svg viewBox="0 0 28 22"><path d="M2 5 H10 L12 8 H26 V20 H2 Z"/></svg>회의록</small></div></div>
+      </div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 정리 -->
+  <section class="scene" id="s4">
+    <div class="cap" id="c4"><div class="kicker">찾기 칸 하나로</div><h2>훑지 말고<br>좁혀서 찾기</h2></div>
+    <div class="bigcard" id="bc4" style="top:700px">
+      <div class="row"><span class="ck">✓</span><b>두 글자</b><span>회의 · 예산 — 본문까지</span></div>
+      <div class="row"><span class="ck">✓</span><b>빈칸</b><span>예산 결정 — 둘 다 든 노트</span></div>
+      <div class="row"><span class="ck">✓</span><b>따옴표</b><span>"다시 결정" — 그 말 그대로</span></div>
+      <div class="row"><span class="ck">✓</span><b>범위</b><span>path:회의록/ · tag:회의</span></div>
+      <div class="row"><span class="ck">✓</span><b>초성</b><span>ㅎㅇㄹ → 회의록 (제목)</span></div>
+    </div>
+  </section>
+
+  <!-- 5 · 끝 -->
+  <section class="scene" id="s5">
+    <div class="hero" id="h5">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="tagline">찾는 시간을 줄이는 노트</div>
+      <div class="say">받는 링크는 설명과 고정 댓글에<span class="pointer">👇</span></div>
+      <div class="say2">또는 앱스토어 검색창에</div>
+      <div class="bigsearch"><svg viewBox="0 0 56 56"><circle cx="24" cy="24" r="14"/><path d="M35 35 L46 46"/></svg><span id="bq5"></span></div>
+      <div class="foot">아이폰 · 아이패드 · 무료</div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const SC = { s0:[0,3.6], s1:[3.6,9.6], s2:[9.6,16.6], s3:[16.6,23.2], s4:[23.2,28.8], s5:[28.8,34.0] };
+const DURATION = 34.0;
+function rise(el,t,a,d=0.7,dy=60){ const p=out(seg(t,a,a+d)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dy}px)`; }
+const caret = t => `<span class="caret" style="opacity:${blink(t)}"></span>`;
+function renderS0(t){}
+function renderS1(t){
+  const s=SC.s1[0];
+  rise($('c1'),t,s+0.1); rise($('b1'),t,s+0.3,0.6,40);
+  const v=41.7*ease(seg(t,s+0.6,s+2.6)); $('n1').textContent = v>=41.69 ? '41.7' : v.toFixed(1);
+  [...$('d1').children].forEach((el,i)=>{ el.style.opacity = seg(t,s+2.7+i*0.3,s+3.0+i*0.3); });
+}
+function renderS2(t){
+  const s=SC.s2[0];
+  rise($('c2'),t,s+0.1); rise($('p2'),t,s+0.25,0.8,90);
+  const q=typed('예산 결정',t,s+1.0,5);
+  $('q2').innerHTML = q ? q+caret(t) : '<span class="ph">모든 노트에서 찾기</span>';
+  const r=seg(t,s+2.3,s+2.7); $('r2').style.opacity=r;
+  [...$('r2').children].forEach((el,i)=>{ rise(el,t,s+2.4+i*0.3,0.4,20); });
+}
+function renderS3(t){
+  const s=SC.s3[0];
+  rise($('c3'),t,s+0.1); rise($('p3'),t,s+0.25,0.8,90);
+  const q=typed('path:회의록/ ',t,s+1.0,8)+(t>s+2.6?typed('예산 결정',t,s+2.6,8):'');
+  $('q3').innerHTML = (q||'')+caret(t);
+  const r=seg(t,s+3.8,s+4.2); $('r3').style.opacity=r;
+  [...$('r3').children].forEach((el,i)=>{ rise(el,t,s+3.9+i*0.3,0.4,20); });
+}
+function renderS4(t){
+  const s=SC.s4[0];
+  rise($('c4'),t,s+0.1); rise($('bc4'),t,s+0.3,0.8,80);
+  document.querySelectorAll('#bc4 .row').forEach((el,i)=>{ rise(el,t,s+0.8+i*0.5,0.45,30); });
+}
+function renderS5(t){
+  const s=SC.s5[0];
+  rise($('h5'),t,s+0.2,0.8,40);
+  $('bq5').innerHTML = typed('느린 여백',t,s+2.2,5)+caret(t);
+}
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.4));
+  const o = last ? 1 : 1-ease(seg(t,b-0.35,b-0.02));
+  return Math.min(i,o);
+}
+const R = {s0:renderS0,s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5};
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001) R[k](t);
+  });
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
