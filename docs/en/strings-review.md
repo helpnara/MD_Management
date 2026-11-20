@@ -46,6 +46,7 @@
 | **Slow Margin 폴더 안의 파일이면 그 노트가 바로 열립니다.** 폴더 밖의 파일이면 가져올지 묻습니다. | **Files inside the Slow Margin folder open right away.** For files outside it, you'll be asked whether to import them. |
 | **···** 의 **노트 정보**(⌘⇧I)에 글자 · 낱말 · 문단 · 할 일 · 읽는 시간이 있습니다. 마크다운 표시는 세지 않고 보이는 글만 셉니다. | **Note Info** in the **···** menu (⌘⇧I) shows characters, words, paragraphs, tasks, and reading time. Markdown markup isn’t counted — only the text you see. |
 | **공유** → 목록에서 **느린 여백** 을 고릅니다. | Tap **Share**, then choose **Slow Margin**. |
+| **넣기 → 문서 첨부** 창이 열 때마다 같은 폴더에서 열려 위 폴더로 못 나가고, 제목 옆 **⌄** 에 **최근 삭제된 항목** 하나만 보이면 아이폰이 지운 폴더를 마지막 자리로 기억한 것입니다. **파일** 앱 → **둘러보기** → **최근 삭제된 항목** 에서 그 폴더를 **복구**하거나 **삭제**하면 풀립니다. | If **Insert → Attach Document** keeps opening in the same folder, you can't go up to other folders, and the **⌄** next to the title shows only **Recently Deleted**, your iPhone remembered a deleted folder as its last location. In the **Files** app, go to **Browse → Recently Deleted** and **Recover** or **Delete** that folder to fix it. |
 | **되돌리기**는 원래 있던 폴더로 돌려놓습니다. 줄을 왼쪽으로 밀면 **영구 삭제**할 수 있습니다. 영구 삭제는 되돌릴 수 없어 확인 문구를 입력해야 합니다. 노트를 영구 삭제하면 **그 노트만 쓰던 첨부**도 함께 지워집니다. | **Restore** puts a note back in its original folder. Swipe left on a row to **delete it permanently**. Because this can't be undone, you'll be asked to type a confirmation word. Permanently deleting a note also deletes **any attachments used only by that note**. |
 | **비우기**를 하면 첨부도 모두 지워집니다. | **Empty** also deletes all attachments. |
 | **이미 마크다운을 모아 둔 폴더**를 그대로 열 수 있습니다. 내보낸 폴더 가져오기는 같은 이름의 새 폴더로 들여옵니다. 자세한 것은 아래 **사용법**에 있습니다. | You can open **a folder where you already keep Markdown** as it is. Importing an exported folder brings it in as a new folder with the same name. See **Guide** below for details. |
@@ -212,7 +213,7 @@
 | 문단 | Paragraphs |
 | 문서 | Document |
 | 문서 첨부 | Attach Document |
-| 문서를 고르지 못했습니다: %@ | Couldn't pick the document: %@ |
+| 문서 첨부 창이 한 폴더에 갇힐 때 | When the Attach Document window is stuck in one folder |
 | 문제 | Issues |
 | 문제를 알릴 때 이것을 붙여 주세요. 글과 사진은 담기지 않습니다 — 폴더 종류 · 파일 수 · 판 번호뿐입니다. | Include this when reporting a problem. It doesn't contain your writing or photos — only the folder type, file counts and app version. |
 | 미리보기 | Preview |

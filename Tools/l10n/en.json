@@ -240,7 +240,6 @@
   "문단": "Paragraphs",
   "문서": "Document",
   "문서 첨부": "Attach Document",
-  "문서를 고르지 못했습니다: %@": "Couldn't pick the document: %@",
   "문제": "Issues",
   "문제를 알릴 때 이것을 붙여 주세요. 글과 사진은 담기지 않습니다 — 폴더 종류 · 파일 수 · 판 번호뿐입니다.": "Include this when reporting a problem. It doesn't contain your writing or photos — only the folder type, file counts and app version.",
   "미리보기": "Preview",
