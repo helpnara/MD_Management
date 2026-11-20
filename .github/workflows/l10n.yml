@@ -21,7 +21,7 @@ concurrency:
 jobs:
   export:
     name: 열쇠 뽑기
-    runs-on: macos-26
+    runs-on: xcode-27  # 321 — iOS 27 SDK (2027-04 부터 올림 필수). macOS 27 · Xcode 27
     permissions:
       contents: write
     steps:
@@ -29,7 +29,7 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Xcode 26 이상 선택
+      - name: Xcode 27 이상 선택
         run: |
           set -uo pipefail
 
@@ -50,7 +50,7 @@ jobs:
           NEED=1
           case "${CUR_V%%.*}" in
             ''|*[!0-9]*) ;;
-            *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;;
+            *) [ "${CUR_V%%.*}" -ge 27 ] && NEED=0 ;;
           esac
 
           if [ "$NEED" -eq 1 ]; then

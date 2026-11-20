@@ -30,7 +30,7 @@ concurrency:
 jobs:
   shots:
     name: 스토어 스크린샷
-    runs-on: macos-26
+    runs-on: xcode-27  # 321 — iOS 27 SDK (2027-04 부터 올림 필수). macOS 27 · Xcode 27
     permissions:
       contents: write
     env:
@@ -41,7 +41,7 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Xcode 26 이상 선택
+      - name: Xcode 27 이상 선택
         run: |
           set -uo pipefail
           xcver() {
@@ -52,7 +52,7 @@ jobs:
           CUR_V=$(xcver "$CUR_APP" || true)
           echo "현재 선택: ${CUR_APP:-(없음)} ${CUR_V:-(?)}"
           NEED=1
-          case "${CUR_V%%.*}" in ''|*[!0-9]*) ;; *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;; esac
+          case "${CUR_V%%.*}" in ''|*[!0-9]*) ;; *) [ "${CUR_V%%.*}" -ge 27 ] && NEED=0 ;; esac
           if [ "$NEED" -eq 1 ]; then
             BEST=""; BEST_K=0
             for app in /Applications/Xcode*.app; do
@@ -90,7 +90,7 @@ jobs:
                   name = d["name"]
                   if name.startswith("iPhone") and "SE" not in name and "mini" not in name:
                       # **칸과 같은 크기(1206 × 2622)로 찍히는 기기만** — 늘리지도 줄이지도 않는다 (2026-10-08 영어 칸 실측).
-                      order = ["iPhone 17 Pro", "iPhone 17", "iPhone 16 Pro"]
+                      order = ["iPhone 18 Pro", "iPhone 17 Pro", "iPhone 18", "iPhone 17", "iPhone 16 Pro"]
                       if name in order:
                           phones.append(((version, -order.index(name)), d["udid"], name))
                   if name.startswith("iPad") and "13-inch" in name:

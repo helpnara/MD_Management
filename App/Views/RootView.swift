@@ -57,6 +57,9 @@ struct RootView: View {
             NoteDetail()
         }
         .navigationSplitViewStyle(.balanced)
+        // **323 — iPadOS 27 (SDK 27) 은 세로 화면에서 세 칸을 나란히 두지 않는다** (321 탐색 · 2026-11-19). 시작값이 `.all` 이어도 폴더 칸을 접어
+        // 두 칸으로 띄우고, 억지로 `.all` 로 되돌리면 폴더 칸을 **노트 위에 겹쳐** 띄워 뒤를 어둡게 한다(탐색 사진 02 · 04) — 더 나빠서 되돌렸다.
+        // 시스템 기본을 따른다: 폴더 칸은 왼쪽 위 단추로 열고, 숨었을 때 찾기는 돋보기(286)가 맡는다.
         // **상세 칸에도 바깥 폭을 알려 준다** (125). 아이패드의 상세 칸은 좁아도 regular 이고,
         // 도구 줄을 아이폰에서만 줄이려면 **바깥 화면**의 폭을 봐야 한다. 예전에는 이 값을
         // 시트에만 건넸다 — 그때는 띠가 둘이 되는 것만 막으면 됐다 (빌드 24 · 13번).
@@ -869,6 +872,11 @@ private struct NoteList: View {
         // **종이 바탕** (320). 줄 바탕은 줄마다 (`RowBackground` · 고른 줄은 우리가 칠한다).
         .scrollContentBackground(.hidden)
         .background(Palette.paper)
+        // **324 — 자판 초점 테두리는 옅은 먹색으로** (2026-11-20 사용자 — *옅게 바꾸기*). 아이패드에 외장 자판을 붙이면 iPadOS 27 이 고른 줄 둘레에
+        // 자판 초점 테두리를 **강조색**으로 그려 318 의 옅은 초록 칸과 진한 초록이 이중이 됐다(자판을 떼면 안 생긴다 — 사용자 사진 두 장).
+        // 테두리는 남긴다(자판으로 오갈 때 어디 있는지). 이 목록 안에서만 강조색을 옅은 먹으로 — 줄 밀기 단추 · *새로 옴* 은 제 색을 따로 정해 두었다.
+        // `focusEffectDisabled` 로는 안 사라졌다(빌드 153 사진).
+        .tint(Palette.inkFaint)
         // 검색 (ADR-0003). 150ms 디바운스는 모델이 한다. `⌘F` 로 칸을 연다 (S9). **아이폰만** (260 — 아이패드는 폴더 칸).
         // 안내 글은 폴더 화면의 칸과 같다 — 어디서 찾든 모든 노트를 찾는다 (2026-10-22 사용자 (가)).
         // **폴더 화면과 같은 칸 · 같은 자리** (266) — 예전 시스템 칸(`.searchable` · 당기면 나옴)은 폭 · 밝기 · 자리가 폴더 화면의 칸과 달랐다.
@@ -1539,23 +1547,14 @@ private struct NoteDetail: View {
                 await library.insertPhotos(datas)
             }
         }
-        // **파일만** (296, 2026-11-01 사용자 화면 — 폴더 안의 폴더에 못 들어갔다). `.item` 은 폴더도 들어 고르기 창이 폴더를
-        // *들어갈 곳* 이 아니라 *고를 항목* 으로 다뤘다 — 여러 개 고르기에서는 누르면 골라질 뿐이다. `.data` 는 파일(사진 · PDF ·
-        // 동영상 · 문서)만이라 폴더는 다시 들어갈 곳이 된다. 폴더를 골라야 하는 창(가져오기 · 다른 폴더 고르기)은 `.folder` 그대로.
-        .fileImporter(isPresented: $showsDocumentPicker, allowedContentTypes: [.data],
-                      allowsMultipleSelection: true) { result in
-            switch result {
-            case .success(let urls):
+        // **문서 첨부 창** (325 — 300 의 넷째). 열 때마다 새로 만들고 지금 노트의 폴더에서 연다. 두 번째부터 iOS 가 기억한 자리(지운 폴더)로 가는
+        // 것은 앱 밖의 일이라 막지 못했다 — 사용법에 푸는 길을 적었다. 까닭은 `DocumentPicker` · `docs/08-feedback.md` 325.
+        .sheet(isPresented: $showsDocumentPicker) {
+            DocumentPicker(start: documentPickerStart) { urls in
                 Task { await library.attachDocuments(urls) }
-            case .failure(let error):
-                library.report(String(localized: "문서를 고르지 못했습니다: \(error.localizedDescription)"))
             }
+            .ignoresSafeArea()
         }
-        // **늘 지금 노트의 폴더에서 연다** (300 셋째, 2026-11-04 사용자 화면 — 제목 옆 ⌄ 메뉴에 위 폴더 대신 *최근 삭제된 항목* 하나뿐).
-        // 시작 자리를 안 정하면 iOS 는 **지난번에 쓰던 폴더**에서 창을 연다. 그 폴더가 그사이 지워져 *최근 삭제된 항목* 에 있으면
-        // 안의 폴더는 열리지 않고(지운 것은 되살리거나 지우기만 된다), 지나온 기록도 없어 `<` 가 꺼져 **밖으로도 못 나갔다.**
-        // 그 자리를 기억하니 문서 첨부를 누를 때마다 같은 곳에 갇혔다. 노트 폴더는 앱이 늘 열 수 있는 자리다.
-        .fileDialogDefaultDirectory(documentPickerStart)
         .fullScreenCover(isPresented: $showsCamera) {
             CameraView { data in Task { await library.insertPhoto(data) } }
                 .ignoresSafeArea()
@@ -2364,7 +2363,8 @@ private struct FormatBar: View {
                     .padding(.horizontal, Metrics.gutter * 0.75)
                     .padding(.vertical, Metrics.rowSpacing)
                     .background(Capsule().fill(Palette.ink.opacity(0.85)))
-                    .alignmentGuide(VerticalAlignment.top) { $0[.bottom] + Metrics.rowSpacing }
+                    // 322 — iOS 27 SDK 는 이 닫는 묶음을 Sendable 로 본다. 주 액터 값(`Metrics`)은 만들 때 잡아 둔다.
+                    .alignmentGuide(VerticalAlignment.top) { [lift = Metrics.rowSpacing] dimensions in dimensions[.bottom] + lift }
                     .transition(.opacity)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)

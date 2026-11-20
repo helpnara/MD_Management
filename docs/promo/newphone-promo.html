@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>새 폰 노트 쇼츠</title>
+<!--
+  느린 여백 쇼츠 · 새 폰 편 (2026-11-18). 세로 1080 × 1920 · 30fps · 33.6초 · 소리 없음.
+  11-18 2회차 분석(People_mgmt docs/promo-youtube-stats.md) — 잃지 않는다 · 걱정 해소가 센 결이지만 **같은 이야기 · 같은 그림은 되풀이하지 않는다**
+  (지워도 남는 편 5회 — 파일 편과 같은 말 · 앱스토어에서 다시 받기 그림). 그래서 이번 편만의 걱정(폰 교체)과 그림(폰 두 대 · 아직 안 받음 → 받는 중 → 열림 · 모두 받기).
+  0초 장면에 물음이 이미 다 떠 있다.
+
+  코드에서 읽은 것 (claude/yeobek-app-design-review-gljamw):
+  - 기본 폴더는 앱의 iCloud 폴더 · 파일 앱에 보이는 이름 `Slow Margin` (project.yml NSUbiquitousContainerName) · 설정 → 폴더 → `다른 폴더 고르기` / `기본 iCloud 폴더로 돌아가기`
+  - 목록 줄의 `아직 안 받음` / `받는 중` 과 구름 그림 (RootView · 156) · 누르면 `iCloud 에서 받는 중입니다` 뒤 다 오면 저절로 열림 (86)
+  - 안 받은 노트가 500개를 넘으면 앱이 스스로 받지 않는다(245) — 그때 설정 → 도움 → 진단 의 `아직 받지 않은 노트 N개 모두 받기`(274) ·
+    진단 줄 `제목만 색인 · N개 · 안 받은 노트가 많아 내려받지 않음` · 띠 `아직 받지 않은 노트를 받는 중 n / N` (WorkBand)
+  노트 글 · 개수는 지어낸 견본이다.
+-->
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+/* 앱 색은 App/DesignSystem/Palette.swift 의 밝은 판 (1.1.26 · 316) — 종이 · 먹 · 잎 초록 */
+:root{ --paper:#FAF7F1; --raised:#F1ECE3; --grouped:#F3EFE8; --ink:#24211E; --faint:#6B655C; --marker:#B0A99D;
+  --leaf:#4A7429; --leaf2:#6FA53A; --wood:#D6A266; --gold:#C49A45; --red:#E5483C; --stage:#F6F1E7; --stage2:#EDE4D4; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--stage)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--stage) 55%, var(--stage2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.5) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf2),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+
+.hook{position:absolute;left:0;right:0;top:120px;text-align:center}
+.hook .kk{font-size:30px;font-weight:700;letter-spacing:10px;color:var(--leaf);margin-bottom:26px}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:100px;line-height:1.22;letter-spacing:-2px}
+.hook p{margin-top:26px;font-size:50px;font-weight:700;color:#3F3B36}
+.hook p b{color:var(--red)}
+
+.cap{position:absolute;left:70px;right:70px;top:170px;text-align:center}
+.cap .kicker{display:inline-block;padding:10px 30px;border-radius:40px;background:rgba(74,116,41,.12);color:var(--leaf);font-size:30px;font-weight:700;margin-bottom:26px}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:900;font-size:84px;line-height:1.22;letter-spacing:-1px}
+.cap p{margin-top:22px;font-size:38px;color:#55514B;font-weight:500;line-height:1.45}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:700px;width:740px;height:1150px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.24), 0 6px 18px rgba(0,0,0,.12)}
+.phone.low{top:760px}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--paper);overflow:hidden;color:var(--ink)}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:20}
+.homebar{position:absolute;bottom:20px;left:50%;margin-left:-110px;width:220px;height:10px;border-radius:5px;background:#1C1B1A;opacity:.8;z-index:19}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(74,116,41,.20);border:4px solid rgba(74,116,41,.55);pointer-events:none;z-index:18;opacity:0}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--leaf);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+.layer{position:absolute;inset:0}
+
+/* 홈 화면 */
+.home{background:linear-gradient(180deg,#DCE3EE,#E9E2D6)}
+.home .grid{position:absolute;top:140px;left:52px;right:52px;display:grid;grid-template-columns:repeat(4,1fr);row-gap:34px;justify-items:center}
+.home .ap{width:132px;text-align:center;font-size:24px;color:#2A2724;position:relative;height:170px}
+.home .ap .sq{width:132px;height:132px;border-radius:32px;background:#F4F1EA;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.home .ap img{width:132px;height:132px;border-radius:32px;display:block;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.home .ap .x{position:absolute;left:-14px;top:-14px;width:46px;height:46px;border-radius:23px;background:#8E8E93;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;opacity:0;z-index:2}
+.home .dock{position:absolute;left:30px;right:30px;bottom:34px;height:170px;border-radius:50px;background:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:space-around;padding:0 20px}
+.home .dock .sq{width:120px;height:120px;border-radius:30px;background:#F4F1EA;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.28);opacity:0;z-index:5}
+.alert{position:absolute;left:94px;right:94px;top:400px;border-radius:40px;background:rgba(246,246,248,.98);text-align:center;z-index:6;opacity:0;overflow:hidden}
+.alert b{display:block;font-size:32px;padding:38px 30px 34px}
+.alert small{display:block;font-size:24px;color:#55514B;padding:0 36px 28px;line-height:1.45}
+.alert .bt{border-top:1px solid #DCDCE0;font-size:32px;padding:24px 0}
+.alert .bt.red{color:var(--red);font-weight:700}
+
+/* 파일 앱 (이름 없는 그림) */
+.files{background:#FFFFFF}
+.files .hd{position:absolute;top:110px;left:40px;font-size:30px;color:#8A8A8E;display:flex;align-items:center;gap:6px}
+.files .hd svg{width:30px;height:30px;stroke:#8A8A8E;stroke-width:4;fill:none;stroke-linecap:round}
+.files .big{position:absolute;top:160px;left:44px;font-size:60px;font-weight:900}
+.files .lst{position:absolute;top:270px;left:40px;right:40px}
+.files .fr{display:flex;align-items:center;gap:22px;height:110px;border-bottom:1px solid #EDEDF0;font-size:34px}
+.files .fr small{margin-left:auto;font-size:26px;color:#8A8A8E}
+.files .fd{width:54px;height:68px;border-radius:8px;background:#fff;border:2px solid #D8D8DC;flex:none;position:relative}
+.files .fd:after{content:'MD';position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:14px;font-weight:700;color:#8A8A8E}
+.files .fi{width:64px;height:50px;border-radius:9px;background:#7FB6E8;flex:none}
+.files .fr.glow{background:rgba(74,116,41,.10);border-radius:16px}
+
+/* 스토어 (이름 없는 그림) */
+.store{background:#fff}
+.ssf{position:absolute;top:120px;left:40px;right:40px;height:84px;border-radius:24px;background:#EEEEF0;display:flex;align-items:center;padding:0 26px;gap:16px;font-size:34px;color:#24211E}
+.ssf svg{width:36px;height:36px;stroke:#8A8A8E;stroke-width:4;fill:none;flex:none}
+.sres{position:absolute;top:250px;left:40px;right:40px;display:flex;gap:26px;align-items:center}
+.sres img{width:150px;height:150px;border-radius:34px;box-shadow:0 8px 22px rgba(0,0,0,.14);flex:none}
+.sres .nm{font-size:38px;font-weight:700}
+.sres .sb{font-size:25px;color:#8A8A8E;margin-top:6px;line-height:1.35}
+.sres .get{margin-left:auto;flex:none;min-width:130px;height:62px;border-radius:31px;background:#EEF1F6;color:#0A7AFF;font-size:30px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 26px}
+.ring{width:58px;height:58px;border-radius:29px;border:6px solid #DDE3EC;border-top-color:#0A7AFF}
+.sshots{position:absolute;top:450px;left:40px;right:0;display:flex;gap:22px}
+.sshots i{display:block;width:300px;height:560px;border-radius:30px;background:var(--raised);flex:none}
+
+/* 앱 — 새 디자인 (종이 · 먹 · 잎 초록 · 명조 제목) */
+.app{background:var(--grouped)}
+.abar{position:absolute;top:96px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 30px;z-index:3}
+.abar .circ{width:76px;height:76px;border-radius:38px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .circ svg{width:34px;height:34px;stroke:var(--ink);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.abar .mid{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.abar .mid b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.abar .mid small{display:block;font-size:22px;color:var(--faint)}
+.abar .pill{margin-left:auto;height:76px;padding:0 24px;border-radius:38px;background:#fff;display:flex;align-items:center;gap:26px;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .pill svg{width:40px;height:40px;stroke:var(--leaf);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.asf{position:absolute;top:220px;left:30px;right:30px;height:76px;border-radius:38px;background:rgba(36,33,30,.07);display:flex;align-items:center;gap:14px;padding:0 26px;font-size:30px;color:var(--faint)}
+.asf svg{width:32px;height:32px;stroke:var(--faint);stroke-width:4;fill:none}
+.alist{position:absolute;top:330px;left:30px;right:30px;background:var(--paper);border-radius:30px;padding:0 30px}
+.arow{padding:24px 0;border-bottom:1px solid rgba(36,33,30,.10)}
+.arow:last-child{border-bottom:none}
+.arow b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.arow span{display:block;font-size:26px;color:var(--faint);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arow small{display:block;font-size:22px;color:var(--faint);margin-top:4px}
+.flabel{position:absolute;top:300px;left:60px;font-size:26px;color:var(--faint)}
+.editor{background:var(--paper)}
+.ebody{position:absolute;top:240px;left:52px;right:52px;font-size:36px;line-height:1.62}
+.eln{min-height:58px;white-space:pre}
+.eln.t{font-family:'Noto Serif KR',serif;font-weight:700;font-size:58px;line-height:1.35;min-height:90px;letter-spacing:-.5px}
+.eln .mk{color:var(--marker)}
+.ebar{position:absolute;left:0;right:0;bottom:0;height:120px;background:var(--raised);display:flex;align-items:center;justify-content:space-around;padding:0 30px 20px;font-size:32px;color:var(--leaf);font-weight:700}
+
+/* 정리 카드 */
+.bigcard{position:absolute;left:96px;right:96px;top:640px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:26px 50px}
+.bigcard .row{display:flex;align-items:center;gap:28px;font-size:40px;padding:30px 0;border-bottom:1px solid #EEE9E0;opacity:0}
+.bigcard .row:last-child{border-bottom:none}
+.bigcard .row .ck{flex:none;width:62px;height:62px;border-radius:31px;background:var(--leaf);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900}
+.bigcard .row b{min-width:170px;font-weight:700}
+.bigcard .row span{color:#4A4640}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:300px;text-align:center}
+.hero img{width:300px;height:300px;border-radius:70px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:120px;margin-top:50px;letter-spacing:2px}
+.hero .tagline{margin-top:24px;font-family:'Noto Serif KR',serif;font-weight:700;font-size:50px;color:#4A4640}
+.hero .say{font-size:40px;margin-top:80px;font-weight:700;color:var(--leaf)}
+.hero .say2{font-size:36px;margin-top:40px;font-weight:500;color:#55514B}
+.bigsearch{display:flex;align-items:center;gap:22px;margin:24px auto 0;width:760px;height:120px;border-radius:36px;background:#fff;box-shadow:0 20px 50px rgba(80,60,30,.16);padding:0 40px;font-size:52px;font-weight:700;text-align:left}
+.bigsearch svg{width:56px;height:56px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.hero .foot{margin-top:46px;font-size:36px;color:var(--faint);font-weight:500;letter-spacing:2px}
+.pointer{display:inline-block;margin-left:12px;font-size:44px}
+
+/* 두 폰 — 예전 폰 · 새 폰 (첫 장면) */
+.duo{position:absolute;left:0;right:0;top:860px;height:900px}
+.mini{position:absolute;top:0;width:420px;height:820px;border-radius:70px;background:#1C1B1A;padding:12px;box-shadow:0 30px 70px rgba(80,60,30,.22)}
+.mini .screen{border-radius:60px}
+.mini .island{top:18px;width:130px;margin-left:-65px;height:38px}
+.mini .lab{position:absolute;top:-70px;left:0;right:0;text-align:center;font-size:34px;font-weight:700;color:var(--faint)}
+.mini .ml{position:absolute;top:110px;left:24px;right:24px}
+.mini .ml div{height:84px;border-radius:18px;background:var(--raised);margin-bottom:16px;padding:14px 20px}
+.mini .ml b{display:block;font-family:'Noto Serif KR',serif;font-size:26px}
+.mini .ml span{display:block;font-size:18px;color:var(--faint);margin-top:4px}
+.mini .q{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Noto Serif KR',serif;font-weight:900;font-size:180px;color:var(--marker)}
+.arrow{position:absolute;left:478px;top:330px;width:124px;height:80px}
+.arrow svg{width:124px;height:80px;stroke:var(--leaf);stroke-width:7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* 목록의 받기 표시 (RootView — 아직 안 받음 / 받는 중) */
+.dl{display:flex;align-items:center;gap:8px;font-size:22px;color:var(--faint);margin-top:6px}
+.dl svg{width:28px;height:28px;stroke:var(--faint);stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* 받는 중 화면 */
+.wait{position:absolute;inset:0;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;opacity:0}
+.spin{width:64px;height:64px;border-radius:32px;border:6px solid rgba(36,33,30,.12);border-top-color:var(--faint)}
+.wait b{font-size:30px;font-weight:500;color:var(--faint)}
+.wait small{font-size:24px;color:var(--faint)}
+/* 진단 화면 */
+.diag{background:var(--grouped)}
+.dhd{position:absolute;top:120px;left:0;right:0;text-align:center;font-family:'Noto Serif KR',serif;font-weight:700;font-size:36px}
+.dgrp{position:absolute;top:220px;left:30px;right:30px;background:var(--paper);border-radius:30px;padding:0 30px}
+.drow{display:flex;justify-content:space-between;align-items:center;gap:24px;min-height:96px;padding:14px 0;border-bottom:1px solid rgba(36,33,30,.10);font-size:28px}
+.drow>:first-child,.drow{white-space:nowrap}
+.drow small{font-size:25px;color:var(--faint);text-align:right;white-space:normal;line-height:1.35}
+.dbtn{display:flex;align-items:center;gap:14px;height:110px;font-size:29px;color:var(--leaf);font-weight:700}
+.dbtn svg{width:36px;height:36px;stroke:var(--leaf);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.band{position:absolute;top:96px;left:30px;right:30px;height:92px;border-radius:24px;background:var(--raised);display:flex;align-items:center;gap:18px;padding:0 26px;font-size:26px;z-index:4;opacity:0}
+.band .spin{width:34px;height:34px;border-width:4px}
+.band small{margin-left:auto;font-size:26px;color:var(--faint);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 0 · 0초부터 다 떠 있는 물음 + 예전 폰 · 새 폰 -->
+  <section class="scene" id="s0">
+    <div class="hook"><div class="kk">새 폰으로 바꾸는 날</div><h1>노트 300개,<br>어떻게 옮기죠?</h1><p>백업 복원도, 내보내기도 <b>없이</b>?</p></div>
+    <div class="duo">
+      <div class="mini" style="left:70px"><div class="lab">예전 폰</div><div class="screen"><div class="island"></div><div class="ml"><div><b>주말에 읽을 책</b><span>느리게 걷는 법 · 작은 방의 정리</span></div><div><b>11월 회의록</b><span>지난 결정 다시 보기 — 예산 · 일정</span></div><div><b>산책 일기</b><span>은행잎이 다 떨어지기 전에</span></div><div><b>여행 준비</b><span>얇은 겉옷 · 우산 · 종이 지도</span></div></div></div></div>
+      <div class="arrow"><svg viewBox="0 0 124 80"><path d="M8 40 H112 M86 14 L112 40 L86 66"/></svg></div>
+      <div class="mini" style="left:590px"><div class="lab">새 폰</div><div class="screen"><div class="island"></div><div class="q" id="q0">?</div></div></div>
+    </div>
+  </section>
+
+  <!-- 1 · 같은 Apple 계정이면 앱만 받으면 된다 -->
+  <section class="scene" id="s1">
+    <div class="cap" id="c1"><div class="kicker">같은 Apple 계정이라면</div><h2>앱만 받으면<br>노트가 따라옵니다</h2><p>노트가 내 iCloud Drive 의 .md 파일이라서</p></div>
+    <div class="phone" id="p1"><div class="screen"><div class="island"></div>
+      <div class="layer app" id="ap1">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>느린 여백</b><small>노트 300개</small></div><span class="pill"><svg viewBox="0 0 40 40"><path d="M5 12 H15 L18 15 H35 V32 H5 Z"/><path d="M26 20 V28 M22 24 H30"/></svg><svg viewBox="0 0 40 40"><path d="M8 32 L12 22 L26 8 L32 14 L18 28 Z"/></svg></span></div>
+        <div class="asf"><svg viewBox="0 0 32 32"><circle cx="13" cy="13" r="9"/><path d="M20 20 L28 28"/></svg>모든 노트에서 찾기</div>
+        <div class="alist"><div class="arow" id="r0"><b>주말에 읽을 책</b><span class="pv" id="pv0" style="display:none">느리게 걷는 법 · 작은 방의 정리</span><div class="dl" id="dl0"><svg viewBox="0 0 28 28"><path d="M8 21 H20 A5 5 0 0 0 20 11 A7 7 0 0 0 7 12 A4.5 4.5 0 0 0 8 21 Z"/></svg><em style="font-style:normal">아직 안 받음</em></div></div><div class="arow" id="r1"><b>11월 회의록</b><span class="pv" id="pv1" style="display:none">지난 결정 다시 보기 — 예산 · 일정</span><div class="dl" id="dl1"><svg viewBox="0 0 28 28"><path d="M8 21 H20 A5 5 0 0 0 20 11 A7 7 0 0 0 7 12 A4.5 4.5 0 0 0 8 21 Z"/></svg><em style="font-style:normal">아직 안 받음</em></div></div><div class="arow" id="r2"><b>산책 일기</b><span class="pv" id="pv2" style="display:none">은행잎이 다 떨어지기 전에</span><div class="dl" id="dl2"><svg viewBox="0 0 28 28"><path d="M8 21 H20 A5 5 0 0 0 20 11 A7 7 0 0 0 7 12 A4.5 4.5 0 0 0 8 21 Z"/></svg><em style="font-style:normal">아직 안 받음</em></div></div><div class="arow" id="r3"><b>여행 준비</b><span class="pv" id="pv3" style="display:none">얇은 겉옷 · 우산 · 종이 지도</span><div class="dl" id="dl3"><svg viewBox="0 0 28 28"><path d="M8 21 H20 A5 5 0 0 0 20 11 A7 7 0 0 0 7 12 A4.5 4.5 0 0 0 8 21 Z"/></svg><em style="font-style:normal">아직 안 받음</em></div></div></div>
+      </div>
+      <div class="wait" id="w1"><div class="spin" id="sp1"></div><b>iCloud 에서 받는 중입니다</b><small>주말에 읽을 책</small></div>
+      <div class="layer editor" id="ed1" style="opacity:0">
+        <div class="abar"><span class="circ"><svg viewBox="0 0 34 34"><path d="M21 7 L11 17 L21 27"/></svg></span><div class="mid"><b>주말에 읽을 책</b><small></small></div><span class="pill"><svg viewBox="0 0 40 40"><path d="M5 12 H15 L18 15 H35 V32 H5 Z"/><path d="M26 20 V28 M22 24 H30"/></svg><svg viewBox="0 0 40 40"><path d="M8 32 L12 22 L26 8 L32 14 L18 28 Z"/></svg></span></div>
+        <div class="ebody"><div class="eln t">주말에 읽을 책</div><div class="eln"><span class="mk">-</span> 느리게 걷는 법</div><div class="eln"><span class="mk">-</span> 작은 방을 넓게 쓰는 정리</div><div class="eln"><span class="mk">-</span> 손으로 쓰는 일기</div></div>
+      </div>
+      <div class="tap" id="t1"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 2 · 아직 안 받은 노트도 누르면 받아서 연다 -->
+  <section class="scene" id="s2">
+    <div class="cap" id="c2"><div class="kicker">처음엔 이름부터</div><h2>누르면 받아서<br>바로 엽니다</h2><p>아직 안 받음 → 받는 중 → 다 오면 저절로 열려요</p></div>
+  </section>
+
+  <!-- 3 · 노트가 아주 많다면 — 설정 → 도움 → 진단 → 모두 받기 -->
+  <section class="scene" id="s3">
+    <div class="cap" id="c3"><div class="kicker">노트가 아주 많다면</div><h2>한 번에<br>모두 받기</h2><p>설정 → 도움 → 진단</p></div>
+    <div class="phone" id="p3"><div class="screen"><div class="island"></div>
+      <div class="layer diag">
+        <div class="dhd">진단</div>
+        <div class="band" id="bd3"><div class="spin" id="sp3"></div>아직 받지 않은 노트를 받는 중<small id="cnt3">0 / 640</small></div>
+        <div class="dgrp" id="dg3">
+          <div class="drow">폴더 안 노트<small>820개</small></div>
+          <div class="drow">색인된 노트<small>820개</small></div>
+          <div class="drow"><span>제목만 색인</span><small>640개 · 안 받은 노트가<br>많아 내려받지 않음</small></div>
+          <div class="dbtn" id="db3"><svg viewBox="0 0 28 28"><path d="M8 21 H20 A5 5 0 0 0 20 11 A7 7 0 0 0 7 12 A4.5 4.5 0 0 0 8 21 Z"/><path d="M14 13 V19 M11 16.5 L14 19.5 L17 16.5"/></svg>아직 받지 않은 노트 640개 모두 받기</div>
+        </div>
+      </div>
+      <div class="tap" id="t3"></div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 꼭 확인할 것 -->
+  <section class="scene" id="s4">
+    <div class="cap" id="c4"><div class="kicker">바꾸기 전에 한 번만</div><h2>이것만<br>확인하세요</h2></div>
+    <div class="bigcard" id="bc4">
+      <div class="row"><span class="ck">✓</span><b>계정</b><span>두 폰 모두 같은 Apple 계정</span></div>
+      <div class="row"><span class="ck">✓</span><b>iCloud</b><span>iCloud Drive 켜 두기</span></div>
+      <div class="row"><span class="ck">✓</span><b>폴더</b><span>다른 폴더를 골라 썼다면<br>새 폰에서도 그 폴더를</span></div>
+      <div class="row"><span class="ck">✓</span><b>파일</b><span>파일 앱 → iCloud Drive<br>→ Slow Margin 에도 그대로</span></div>
+    </div>
+  </section>
+
+  <!-- 5 · 끝 -->
+  <section class="scene" id="s5">
+    <div class="hero" id="h5">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="tagline">폰이 바뀌어도 따라오는 노트</div>
+      <div class="say">받는 링크는 설명과 고정 댓글에<span class="pointer">👇</span></div>
+      <div class="say2">또는 앱스토어 검색창에</div>
+      <div class="bigsearch"><svg viewBox="0 0 56 56"><circle cx="24" cy="24" r="14"/><path d="M35 35 L46 46"/></svg><span id="bq5"></span></div>
+      <div class="foot">아이폰 · 아이패드 · 무료</div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+// s1 · s2 는 같은 폰 하나를 이어 쓴다 — s2 는 글만 바뀐다
+const SC = { s0:[0,3.6], s1:[3.6,10.0], s2:[10.0,16.6], s3:[16.6,22.6], s4:[22.6,28.2], s5:[28.2,33.6] };
+const DURATION = 33.6;
+const CLOUD = '<svg viewBox="0 0 28 28"><path d="M8 21 H20 A5 5 0 0 0 20 11 A7 7 0 0 0 7 12 A4.5 4.5 0 0 0 8 21 Z"/></svg>', CLOUD_DN = '<svg viewBox="0 0 28 28"><path d="M8 21 H20 A5 5 0 0 0 20 11 A7 7 0 0 0 7 12 A4.5 4.5 0 0 0 8 21 Z"/><path d="M14 13 V19 M11 16.5 L14 19.5 L17 16.5"/></svg>';
+function rise(el,t,a,d=0.7,dy=60){ const p=out(seg(t,a,a+d)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dy}px)`; }
+function tapAt(el,t,a,x,y){
+  const p=seg(t,a,a+0.55);
+  el.style.left=(x-60)+'px'; el.style.top=(y-60)+'px';
+  el.style.opacity = p>0 && p<1 ? (p<0.3 ? p/0.3 : 1-(p-0.3)/0.7) : 0;
+  el.style.transform=`scale(${0.7+0.5*p})`;
+}
+function renderS0(t){ $('q0').style.opacity = 0.55 + 0.35*(0.5+0.5*Math.sin(t*3.2)); }
+// 폰 하나가 s1 에서 s2 끝까지 남는다 — 목록의 줄이 위에서부터 차례로 받아지고, s2 에서 첫 줄을 눌러 연다
+function phoneStory(t){
+  const s=SC.s1[0];
+  // 1번 장면: 2.0초부터 아래 세 줄이 차례로 받아진다 (첫 줄은 남겨 두었다가 s2 에서 누른다)
+  for(let i=0;i<4;i++){
+    const at = i===0 ? 99 : s+2.0+i*0.9;
+    const asked = i===0 ? (t>SC.s2[0]+1.2) : (t>at-0.6);
+    const done = t>at;
+    $('pv'+i).style.display = done ? 'block' : 'none';
+    const dl=$('dl'+i);
+    dl.style.display = done ? 'none' : 'flex';
+    if(!done) dl.innerHTML = (asked ? CLOUD_DN : CLOUD) + '<em style="font-style:normal">' + (asked ? '받는 중' : '아직 안 받음') + '</em>';
+  }
+  // 2번 장면: 첫 줄을 누르면 받는 중 화면 → 다 오면 저절로 열린다
+  const s2=SC.s2[0];
+  tapAt($('t1'),t,s2+1.0,330,390);
+  const w=out(seg(t,s2+1.4,s2+1.7))*(1-out(seg(t,s2+3.6,s2+3.9)));
+  $('w1').style.opacity=w; $('sp1').style.transform=`rotate(${(t*420)%360}deg)`;
+  const e=out(seg(t,s2+3.6,s2+3.9));
+  $('ed1').style.opacity=e;
+  $('ap1').style.opacity=1-Math.max(w,e);
+}
+function renderS1(t){
+  const s=SC.s1[0];
+  rise($('c1'),t,s+0.1); rise($('p1'),t,s+0.25,0.8,90);
+  phoneStory(t);
+}
+function renderS2(t){
+  const s=SC.s2[0];
+  rise($('c2'),t,s+0.1);
+  // 폰은 s1 의 것을 그대로 보인다
+  $('s1').style.opacity=1; $('s1').style.visibility='visible'; $('c1').style.opacity=0; $('p1').style.opacity=1; $('p1').style.transform='none';
+  phoneStory(t);
+}
+function renderS3(t){
+  const s=SC.s3[0];
+  rise($('c3'),t,s+0.1); rise($('p3'),t,s+0.25,0.8,90);
+  tapAt($('t3'),t,s+1.6,370,640);
+  const b=out(seg(t,s+2.0,s+2.3)); $('bd3').style.opacity=b;
+  $('sp3').style.transform=`rotate(${(t*420)%360}deg)`;
+  const n=Math.round(640*ease(seg(t,s+2.2,s+5.6)));
+  $('cnt3').textContent = n + ' / 640';
+  $('db3').style.opacity = 1-0.6*b;
+}
+function renderS4(t){
+  const s=SC.s4[0];
+  rise($('c4'),t,s+0.1); rise($('bc4'),t,s+0.3,0.8,80);
+  document.querySelectorAll('#bc4 .row').forEach((el,i)=>{ rise(el,t,s+0.9+i*0.6,0.5,30); });
+}
+function renderS5(t){
+  const s=SC.s5[0];
+  rise($('h5'),t,s+0.2,0.8,40);
+  $('bq5').innerHTML = typed('느린 여백',t,s+2.2,5)+`<span class="caret" style="opacity:${blink(t)}"></span>`;
+}
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.4));
+  const o = last ? 1 : 1-ease(seg(t,b-0.35,b-0.02));
+  return Math.min(i,o);
+}
+const R = {s0:renderS0,s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5};
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    let alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    // s1 → s2 는 폰이 이어지므로 s1 은 끝에서 사라지지 않는다
+    if(k==='s1' && vis) alpha = Math.min(1, out(seg(t,a+0.02,a+0.4)));
+    if(k==='s2' && vis) alpha = Math.min(1, 1-ease(seg(t,b-0.35,b-0.02)));
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001) R[k](t);
+  });
+  // s2 동안 s1(폰)을 같은 투명도로 함께 보인다
+  if(t>=SC.s2[0] && t<SC.s2[1]){ const a2=parseFloat($('s2').style.opacity); $('s1').style.opacity=a2; $('s1').style.visibility='visible'; }
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>

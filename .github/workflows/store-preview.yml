@@ -22,7 +22,7 @@ concurrency:
 jobs:
   preview:
     name: 영어 미리보기 영상
-    runs-on: macos-26
+    runs-on: xcode-27  # 321 — iOS 27 SDK (2027-04 부터 올림 필수). macOS 27 · Xcode 27
     permissions:
       contents: write
     env:
@@ -32,7 +32,7 @@ jobs:
         with:
           persist-credentials: true
 
-      - name: Xcode 26 이상 선택
+      - name: Xcode 27 이상 선택
         run: |
           set -uo pipefail
           xcver() {
@@ -43,7 +43,7 @@ jobs:
           CUR_V=$(xcver "$CUR_APP" || true)
           echo "현재 선택: ${CUR_APP:-(없음)} ${CUR_V:-(?)}"
           NEED=1
-          case "${CUR_V%%.*}" in ''|*[!0-9]*) ;; *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;; esac
+          case "${CUR_V%%.*}" in ''|*[!0-9]*) ;; *) [ "${CUR_V%%.*}" -ge 27 ] && NEED=0 ;; esac
           if [ "$NEED" -eq 1 ]; then
             BEST=""; BEST_K=0
             for app in /Applications/Xcode*.app; do
@@ -61,7 +61,7 @@ jobs:
           python3 Tools/store/preview/add-target.py
           xcodegen generate
 
-      - name: 시뮬레이터 고르기 (iPhone 17 Pro — 1206 × 2622)
+      - name: 시뮬레이터 고르기 (iPhone 18 Pro · 17 Pro — 1206 × 2622)
         id: sim
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
@@ -73,8 +73,8 @@ jobs:
               if not m:
                   continue
               for d in devices:
-                  if d.get("isAvailable") and d["name"] in ("iPhone 17 Pro", "iPhone 17", "iPhone 16 Pro"):
-                      order = ["iPhone 17 Pro", "iPhone 17", "iPhone 16 Pro"].index(d["name"])
+                  if d.get("isAvailable") and d["name"] in ("iPhone 18 Pro", "iPhone 17 Pro", "iPhone 18", "iPhone 17", "iPhone 16 Pro"):
+                      order = ["iPhone 18 Pro", "iPhone 17 Pro", "iPhone 18", "iPhone 17", "iPhone 16 Pro"].index(d["name"])
                       found.append(((int(m.group(1)), int(m.group(2))), -order, d["udid"], d["name"]))
           best = max(found) if found else None
           print(f"phone={best[2] if best else ''}")

@@ -429,6 +429,16 @@
         }
       }
     },
+    "**넣기 → 문서 첨부** 창이 열 때마다 같은 폴더에서 열려 위 폴더로 못 나가고, 제목 옆 **⌄** 에 **최근 삭제된 항목** 하나만 보이면 아이폰이 지운 폴더를 마지막 자리로 기억한 것입니다. **파일** 앱 → **둘러보기** → **최근 삭제된 항목** 에서 그 폴더를 **복구**하거나 **삭제**하면 풀립니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If **Insert → Attach Document** keeps opening in the same folder, you can't go up to other folders, and the **⌄** next to the title shows only **Recently Deleted**, your iPhone remembered a deleted folder as its last location. In the **Files** app, go to **Browse → Recently Deleted** and **Recover** or **Delete** that folder to fix it."
+          }
+        }
+      }
+    },
     "**되돌리기**는 원래 있던 폴더로 돌려놓습니다. 줄을 왼쪽으로 밀면 **영구 삭제**할 수 있습니다. 영구 삭제는 되돌릴 수 없어 확인 문구를 입력해야 합니다. 노트를 영구 삭제하면 **그 노트만 쓰던 첨부**도 함께 지워집니다." : {
       "localizations" : {
         "en" : {
@@ -2173,12 +2183,12 @@
         }
       }
     },
-    "문서를 고르지 못했습니다: %@" : {
+    "문서 첨부 창이 한 폴더에 갇힐 때" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't pick the document: %@"
+            "value" : "When the Attach Document window is stuck in one folder"
           }
         }
       }

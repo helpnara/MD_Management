@@ -31,7 +31,7 @@ concurrency:
 jobs:
   app:
     name: 빌드 · 스크린샷
-    runs-on: macos-26
+    runs-on: xcode-27  # 321 — iOS 27 SDK (2027-04 부터 올림 필수). macOS 27 · Xcode 27
     permissions:
       contents: write
     env:
@@ -45,7 +45,7 @@ jobs:
 
       # 러너 이미지에 Xcode 가 여러 개 깔려 있다. TestFlight 로 올라가는 것과 같은
       # SDK 로 컴파일해야 여기서 통과한 코드가 배포에서도 통과한다.
-      - name: Xcode 26 이상 선택
+      - name: Xcode 27 이상 선택
         run: |
           set -uo pipefail
 
@@ -66,7 +66,7 @@ jobs:
           NEED=1
           case "${CUR_V%%.*}" in
             ''|*[!0-9]*) ;;
-            *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;;
+            *) [ "${CUR_V%%.*}" -ge 27 ] && NEED=0 ;;
           esac
 
           if [ "$NEED" -eq 1 ]; then

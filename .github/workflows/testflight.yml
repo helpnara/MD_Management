@@ -26,15 +26,15 @@ concurrency:
 jobs:
   upload:
     name: 빌드 · 서명 · TestFlight 업로드
-    runs-on: macos-26
+    runs-on: xcode-27  # 321 — iOS 27 SDK (2027-04 부터 올림 필수). macOS 27 · Xcode 27
     env:
       SCHEME: Notebook
       PROJECT: Notebook.xcodeproj
     steps:
       - uses: actions/checkout@v4
 
-      # 애플은 2026년부터 iOS 26 SDK(Xcode 26+) 로 빌드한 바이너리만 받는다.
-      - name: Xcode 26 이상 선택
+      # 애플은 2026년부터 iOS 26 SDK(Xcode 26+), 2027-04 부터 iOS 27 SDK(Xcode 27+) 로 빌드한 바이너리만 받는다 (321 — 2026-11-19 전환).
+      - name: Xcode 27 이상 선택
         run: |
           set -uo pipefail
           xcver() {
@@ -48,7 +48,7 @@ jobs:
           NEED=1
           case "${CUR_V%%.*}" in
             ''|*[!0-9]*) ;;
-            *) [ "${CUR_V%%.*}" -ge 26 ] && NEED=0 ;;
+            *) [ "${CUR_V%%.*}" -ge 27 ] && NEED=0 ;;
           esac
           if [ "$NEED" -eq 1 ]; then
             BEST=""; BEST_K=0
@@ -60,8 +60,8 @@ jobs:
             [ -n "$BEST" ] && sudo xcode-select -s "$BEST/Contents/Developer"
           fi
           xcodebuild -version
-          if [ "$(xcodebuild -version | head -1 | awk '{print $2}' | cut -d. -f1)" -lt 26 ]; then
-            echo "::error::Xcode 26 미만입니다. 업로드가 409 로 거부됩니다."
+          if [ "$(xcodebuild -version | head -1 | awk '{print $2}' | cut -d. -f1)" -lt 27 ]; then
+            echo "::error::Xcode 27 미만입니다 — 2027-04 부터 iOS 27 SDK 가 아니면 올림이 거부된다 (321)."
             exit 1
           fi
 
