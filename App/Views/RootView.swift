@@ -1544,23 +1544,16 @@ private struct NoteDetail: View {
                 await library.insertPhotos(datas)
             }
         }
-        // **파일만** (296, 2026-11-01 사용자 화면 — 폴더 안의 폴더에 못 들어갔다). `.item` 은 폴더도 들어 고르기 창이 폴더를
-        // *들어갈 곳* 이 아니라 *고를 항목* 으로 다뤘다 — 여러 개 고르기에서는 누르면 골라질 뿐이다. `.data` 는 파일(사진 · PDF ·
-        // 동영상 · 문서)만이라 폴더는 다시 들어갈 곳이 된다. 폴더를 골라야 하는 창(가져오기 · 다른 폴더 고르기)은 `.folder` 그대로.
-        .fileImporter(isPresented: $showsDocumentPicker, allowedContentTypes: [.data],
-                      allowsMultipleSelection: true) { result in
-            switch result {
-            case .success(let urls):
+        // **문서 첨부 창은 열 때마다 새로 만든다** (325 — 300 의 넷째, 2026-11-20 사용자 화면 두 장). 예전 `fileImporter` +
+        // `fileDialogDefaultDirectory`(300 셋째)는 **켜고 처음 열 때만** 지금 노트의 폴더에서 열렸고, 한 번 고르거나 취소한 뒤 다시 열면
+        // iOS 가 기억하는 옛 자리(지운 폴더 — *최근 삭제된 항목* 안)에서 열려 위 · 다른 폴더로 못 나갔다. 파일만(296) · 여러 개는 그대로.
+        // 왜 그런지와 경우의 수는 `DocumentPicker` · `docs/08-feedback.md` 325.
+        .sheet(isPresented: $showsDocumentPicker) {
+            DocumentPicker(start: documentPickerStart) { urls in
                 Task { await library.attachDocuments(urls) }
-            case .failure(let error):
-                library.report(String(localized: "문서를 고르지 못했습니다: \(error.localizedDescription)"))
             }
+            .ignoresSafeArea()
         }
-        // **늘 지금 노트의 폴더에서 연다** (300 셋째, 2026-11-04 사용자 화면 — 제목 옆 ⌄ 메뉴에 위 폴더 대신 *최근 삭제된 항목* 하나뿐).
-        // 시작 자리를 안 정하면 iOS 는 **지난번에 쓰던 폴더**에서 창을 연다. 그 폴더가 그사이 지워져 *최근 삭제된 항목* 에 있으면
-        // 안의 폴더는 열리지 않고(지운 것은 되살리거나 지우기만 된다), 지나온 기록도 없어 `<` 가 꺼져 **밖으로도 못 나갔다.**
-        // 그 자리를 기억하니 문서 첨부를 누를 때마다 같은 곳에 갇혔다. 노트 폴더는 앱이 늘 열 수 있는 자리다.
-        .fileDialogDefaultDirectory(documentPickerStart)
         .fullScreenCover(isPresented: $showsCamera) {
             CameraView { data in Task { await library.insertPhoto(data) } }
                 .ignoresSafeArea()
