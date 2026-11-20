@@ -520,5 +520,7 @@
   "휴지통을 비우는 중": "Emptying Trash",
   "휴지통을 읽는 중": "Reading Trash",
   "휴지통의 노트 %lld개와 첨부 %lld개를 완전히 지웁니다. 되돌릴 수 없습니다. 지우려면 %@ 라고 입력하세요.": "Permanently deletes everything in the Trash (notes: %lld, attachments: %lld). This can't be undone. To delete, type %@.",
-  "휴지통이 비었습니다": "Trash Is Empty"
+  "휴지통이 비었습니다": "Trash Is Empty",
+  "문서 첨부 창이 한 폴더에 갇힐 때": "When the Attach Document window is stuck in one folder",
+  "**넣기 → 문서 첨부** 창이 열 때마다 같은 폴더에서 열려 위 폴더로 못 나가고, 제목 옆 **⌄** 에 **최근 삭제된 항목** 하나만 보이면 아이폰이 지운 폴더를 마지막 자리로 기억한 것입니다. **파일** 앱 → **둘러보기** → **최근 삭제된 항목** 에서 그 폴더를 **복구**하거나 **삭제**하면 풀립니다.": "If **Insert → Attach Document** keeps opening in the same folder, you can't go up to other folders, and the **⌄** next to the title shows only **Recently Deleted**, your iPhone remembered a deleted folder as its last location. In the **Files** app, go to **Browse → Recently Deleted** and **Recover** or **Delete** that folder to fix it."
 }

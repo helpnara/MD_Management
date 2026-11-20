@@ -1547,10 +1547,8 @@ private struct NoteDetail: View {
                 await library.insertPhotos(datas)
             }
         }
-        // **문서 첨부 창은 열 때마다 새로 만든다** (325 — 300 의 넷째, 2026-11-20 사용자 화면 두 장). 예전 `fileImporter` +
-        // `fileDialogDefaultDirectory`(300 셋째)는 **켜고 처음 열 때만** 지금 노트의 폴더에서 열렸고, 한 번 고르거나 취소한 뒤 다시 열면
-        // iOS 가 기억하는 옛 자리(지운 폴더 — *최근 삭제된 항목* 안)에서 열려 위 · 다른 폴더로 못 나갔다. 파일만(296) · 여러 개는 그대로.
-        // 왜 그런지와 경우의 수는 `DocumentPicker` · `docs/08-feedback.md` 325.
+        // **문서 첨부 창** (325 — 300 의 넷째). 열 때마다 새로 만들고 지금 노트의 폴더에서 연다. 두 번째부터 iOS 가 기억한 자리(지운 폴더)로 가는
+        // 것은 앱 밖의 일이라 막지 못했다 — 사용법에 푸는 길을 적었다. 까닭은 `DocumentPicker` · `docs/08-feedback.md` 325.
         .sheet(isPresented: $showsDocumentPicker) {
             DocumentPicker(start: documentPickerStart) { urls in
                 Task { await library.attachDocuments(urls) }
