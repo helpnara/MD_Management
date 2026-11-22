@@ -3611,6 +3611,26 @@
         }
       }
     },
+    "주석" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment"
+          }
+        }
+      }
+    },
+    "주석 · {n}줄" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment · {n} lines"
+          }
+        }
+      }
+    },
     "주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다." : {
       "localizations" : {
         "en" : {

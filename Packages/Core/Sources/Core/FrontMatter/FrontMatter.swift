@@ -94,16 +94,25 @@ public enum FrontMatterParser {
     /// **왜 `#` 을 요구하지 않게 했나.** 요구하던 시절에는 반대 방향(`aligned` — 파일명이
     /// 본문을 이긴다)이 필요했고, 자료 사고가 전부 거기서 나왔다 (빌드 20 · 1, 30 · 5,
     /// 32 · 103). 한 방향만 남기면 **앱이 본문을 고치는 코드가 하나도 없다** (ADR-0001).
+    ///
+    /// **HTML 주석(`<!-- … -->`) 안의 줄도 건너뛴다** (327, 2026-11-22 — 머리말 뒤에 메모를 주석으로 둔 노트).
     public static func firstLine(of text: String) -> String? {
-        let body = parse(text).body
-        for line in body.components(separatedBy: "\n") {
+        titleLine(in: parse(text).body.components(separatedBy: "\n"))?.text
+    }
+
+    /// **제목이 되는 줄** — 번호와 (마커를 뗀) 글. 첫 줄 셈(`firstLine`)과 이름 바꾸기(`replacingFirstLine`)가 **같은 줄**을 본다
+    /// (327 — 예전에는 바꾸기가 따로 *빈 줄 아닌 첫 줄* 을 골라, 머리말 뒤의 `<!--` 줄을 새 이름으로 덮을 수 있었다. 주석이 풀려
+    /// 본문으로 드러나는 자리였다 — CLAUDE.md §1 *같은 것을 재는 곳이 둘이면 갈린다*). 파이썬 `title_line` 과 같은 셈이다.
+    static func titleLine(in lines: [String]) -> (index: Int, text: String)? {
+        let comments = BlockContext.commentLines(in: lines)
+        for (index, line) in lines.enumerated() where !comments[index] {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty { continue }
             guard let text = stripHeadingMarker(trimmed) else { continue }
             // **글자가 한 자도 없는 줄은 건너뛴다** — `---` 수평선이나 장식 줄이다.
             // 사람이 파일명으로 삼고 싶은 줄이 아니다 (골든 `no-frontmatter.md` 가 그것을 잡았다).
             guard text.contains(where: { $0.isLetter || $0.isNumber }) else { continue }
-            return text
+            return (index, text)
         }
         return nil
     }
@@ -127,7 +136,8 @@ public enum FrontMatterParser {
 
     /// **첫 줄의 글을 바꾼 것** (54 의 반대 방향 — 파일명을 바꾸면 첫 줄이 따라간다).
     /// 첫 줄이 `# ` 로 시작했으면 **그 마커를 그대로 두고** 글자만 바꾼다.
-    /// 쓸 줄이 없으면(빈 노트) `nil` — 없는 줄을 만들지는 않는다.
+    /// 바꾸는 줄은 **`firstLine` 이 읽은 그 줄**이다 (327) — 주석 · 글자 없는 장식 줄은 건드리지 않는다.
+    /// 쓸 줄이 없으면(빈 노트 · 주석뿐인 노트) `nil` — 없는 줄을 만들지는 않는다.
     public static func replacingFirstLine(in text: String, with title: String) -> String? {
         let header = headerLength(of: text)
         let utf16 = Array(text.utf16)
@@ -136,8 +146,7 @@ public enum FrontMatterParser {
         // 머리말 뒤 첫 줄바꿈까지가 머리말이다 (headerLength 는 닫는 울타리까지만 센다).
         if !head.isEmpty, rest.hasPrefix("\n") { head += "\n"; rest.removeFirst() }
         var lines = rest.components(separatedBy: "\n")
-        guard let index = lines.firstIndex(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty })
-        else { return nil }
+        guard let index = titleLine(in: lines)?.index else { return nil }
 
         let old = lines[index]
         let indent = old.prefix { $0 == " " || $0 == "\t" }

@@ -78,7 +78,9 @@ actor SearchIndex {
     /// - v5 (빌드 136 · 290): 본문 · 제목을 **NFC 로** 넣는다. 찾는 말은 NFC 로 바꾸는데(`Paths.normalized`) 넣는 글은 그대로라,
     ///   맥에서 오거나 메모가 내보낸 글의 NFD 낱말은 화면에는 같아 보여도 **찾아지지 않았다** (289 의 내보낸 노트에 7곳).
     ///   보여 주는 글도 이 사본에서 나오지만 NFC 와 NFD 는 같은 글자로 그려진다 — 원본 파일은 건드리지 않는다(ADR-0001).
-    private static let version = 5
+    /// - v6 (빌드 156 · 326 · 327): 제목 · 미리보기 줄이 HTML 주석(`<!-- … -->`) 안의 줄을 건너뛴다 — 주석을 머리에 둔 노트는
+    ///   목록에 주석 안의 글이 제목 · 미리보기로 보였다. 판을 안 올리면 고치지 않은 노트는 옛 줄을 그대로 든다 (v2 의 교훈).
+    private static let version = 6
 
     /// **안 받은 노트가 이보다 많으면 내려받기를 시키지 않는다** (245, 2026-10-13 사용자 — *만약 수천개라면 유사한 상황이
     /// 발생할 가능성 · a 방식이 나을 것*). 그 아래면 예전처럼 받아서 본문까지 — 노트 150개쯤인 폴더는 본문 검색이 그대로다.
@@ -584,9 +586,12 @@ actor SearchIndex {
     }
 
     /// 본문의 첫 글줄 — 제목 줄(`# `)은 목록에 이미 있으니 건너뛴다.
+    /// **HTML 주석 덩이의 줄도 건너뛴다** (326 · 327) — 주석인지는 첫 줄 셈과 같은 `BlockContext.commentLines`.
     static func firstBodyLine(of body: String) -> String {
         var passedTitle = false
-        for line in body.components(separatedBy: "\n") {
+        let lines = body.components(separatedBy: "\n")
+        let comments = BlockContext.commentLines(in: lines)
+        for (index, line) in lines.enumerated() where !comments[index] {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             if trimmed.isEmpty { continue }
             // 글자가 한 자도 없는 줄(`---` 수평선 · 장식)은 제목도 미리보기도 아니다 (107 과 같은 규칙).

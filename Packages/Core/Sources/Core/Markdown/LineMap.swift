@@ -90,7 +90,7 @@ public enum LineMap {
     // MARK: - 속
 
     /// `HTMLFormatter` 가 내는 **블록 여는 태그의 순서** 그대로. 날 HTML 블록은 `NoteRewriter` 가
-    /// 글자로 바꿔 `<p>` 하나로 내므로 자리만 차지하고(줄 범위 없음) 표에는 안 들어간다.
+    /// 글자로 바꿔 `<p>` 하나로 내므로 자리만 차지하고(줄 범위 없음) 표에는 안 들어간다. 주석 덩이는 접힌 칸이라 자리도 없다 (326).
     struct Entry {
         let tag: String
         let block: LineBlock?
@@ -190,6 +190,8 @@ public enum LineMap {
         }
 
         mutating func visitHTMLBlock(_ html: HTMLBlock) {
+            // 326 — 주석 덩이는 접힌 칸(`<details>`)으로 그려 `<p>` 를 안 낸다. 같은 잣대(`MarkdownHTML.isComment`)로 뺀다.
+            guard !MarkdownHTML.isComment(html.rawHTML) else { return }
             entries.append(Entry(tag: "p", block: nil))
         }
     }

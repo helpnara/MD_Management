@@ -345,6 +345,8 @@
 | 제목만 색인 | Title-Only Index |
 | 제목에서 찾음 | Found in title |
 | 제목을 따라 파일 이름이 바뀝니다 | File Names Will Follow Titles |
+| 주석 | Comment |
+| 주석 · {n}줄 | Comment · {n} lines |
 | 주소를 링크로 만들었습니다. 되돌리기로 무를 수 있습니다. | Turned the URL into a link. You can undo this. |
 | 줄 | Lines |
 | 줄바꿈 고치기 | Fix Line Breaks |

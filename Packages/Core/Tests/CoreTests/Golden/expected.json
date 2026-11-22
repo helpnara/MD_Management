@@ -3723,6 +3723,298 @@
       "shallower": null
     }
   ],
+  "firstLineCases": [
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석 · 6줄"
+      ],
+      "commentLines": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "firstLine": "2편 — 게시용",
+      "name": "사용자 노트의 꼴 — 머리말 · 여러 줄 주석 · 제목",
+      "retitled": "---\ntitle: 둘째 편\nstatus: 초안\n---\n\n<!-- 방향\n\n1편 = 첫 이야기\n2편 = 둘째 이야기\n\n- 고칠 것 하나\n-->\n\n# 새 제목\n\n본문 첫 줄",
+      "text": "---\ntitle: 둘째 편\nstatus: 초안\n---\n\n<!-- 방향\n\n1편 = 첫 이야기\n2편 = 둘째 이야기\n\n- 고칠 것 하나\n-->\n\n# 2편 — 게시용\n\n본문 첫 줄"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석 · 3줄"
+      ],
+      "commentLines": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "firstLine": "제목 줄",
+      "name": "머리말 없이 맨 앞 주석 — 빈 줄도 안에",
+      "retitled": "<!--\n메모 하나\n\n메모 둘\n-->\n새 제목\n본문",
+      "text": "<!--\n메모 하나\n\n메모 둘\n-->\n제목 줄\n본문"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "firstLine": "제목",
+      "name": "한 줄 주석",
+      "retitled": "<!-- 메모 -->\n\n# 새 제목\n본문",
+      "text": "<!-- 메모 -->\n\n# 제목\n본문"
+    },
+    {
+      "commentBlocks": 2,
+      "commentLabels": [
+        "주석",
+        "주석"
+      ],
+      "commentLines": [
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "firstLine": "제목",
+      "name": "주석 둘 연달아",
+      "retitled": "<!-- 하나 -->\n<!--\n둘\n-->\n\n새 제목",
+      "text": "<!-- 하나 -->\n<!--\n둘\n-->\n\n제목"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "firstLine": "제목",
+      "name": "제목 뒤 본문 가운데 주석",
+      "retitled": "# 새 제목\n\n<!-- 가운데 메모 -->\n\n본문",
+      "text": "# 제목\n\n<!-- 가운데 메모 -->\n\n본문"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ],
+      "firstLine": "제목",
+      "name": "울타리 안의 <!-- 는 글자",
+      "retitled": "# 새 제목\n\n```\n<!-- 글자 그대로\n```\n\n<!-- 진짜 주석 -->",
+      "text": "# 제목\n\n```\n<!-- 글자 그대로\n```\n\n<!-- 진짜 주석 -->"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석 · 3줄"
+      ],
+      "commentLines": [
+        true,
+        true,
+        true
+      ],
+      "firstLine": null,
+      "name": "닫히지 않은 주석 — 글 끝까지",
+      "retitled": null,
+      "text": "<!-- 닫지 않음\n제목처럼 보이는 줄\n본문"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        true,
+        false
+      ],
+      "firstLine": "제목",
+      "name": "주석 뒤 같은 줄의 글도 주석 덩이",
+      "retitled": "<!-- 메모 --> 뒤 글\n새 제목",
+      "text": "<!-- 메모 --> 뒤 글\n제목"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        false,
+        false,
+        false,
+        true,
+        false
+      ],
+      "firstLine": "할 일",
+      "name": "목록 항목 안의 주석",
+      "retitled": "# 새 제목\n\n- 하나\n  <!-- 메모 -->\n- 둘",
+      "text": "# 할 일\n\n- 하나\n  <!-- 메모 -->\n- 둘"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        false,
+        false,
+        false
+      ],
+      "firstLine": "> <!-- 메모 -->",
+      "name": "인용 안의 주석은 줄 셈 밖",
+      "retitled": "새 제목\n\n제목",
+      "text": "> <!-- 메모 -->\n\n제목"
+    },
+    {
+      "commentBlocks": 0,
+      "commentLabels": [],
+      "commentLines": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "firstLine": "제목",
+      "name": "네 칸 들여쓴 <!-- 는 코드",
+      "retitled": "# 새 제목\n\n    <!-- 코드 -->\n본문",
+      "text": "# 제목\n\n    <!-- 코드 -->\n본문"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석 · 2줄"
+      ],
+      "commentLines": [
+        false,
+        true,
+        true,
+        false
+      ],
+      "firstLine": "제목",
+      "name": "글 바로 밑의 <!-- 는 글을 끊는다",
+      "retitled": "새 제목\n<!-- 메모\n둘째 -->\n본문",
+      "text": "제목\n<!-- 메모\n둘째 -->\n본문"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        true,
+        false
+      ],
+      "firstLine": "제목",
+      "name": "빈 주석 <!-->",
+      "retitled": "<!-->\n새 제목",
+      "text": "<!-->\n제목"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "firstLine": "제목",
+      "name": "주석 안의 울타리",
+      "retitled": "<!--\n```\n-->\n새 제목\n```",
+      "text": "<!--\n```\n-->\n제목\n```"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        true,
+        false
+      ],
+      "firstLine": "진짜 제목",
+      "name": "머리말 제목 없이 주석 뒤 글",
+      "retitled": "---\ntags: [메모]\n---\n<!-- 메모 -->\n# 새 제목",
+      "text": "---\ntags: [메모]\n---\n<!-- 메모 -->\n# 진짜 제목"
+    },
+    {
+      "commentBlocks": 1,
+      "commentLabels": [
+        "주석"
+      ],
+      "commentLines": [
+        true,
+        false
+      ],
+      "firstLine": null,
+      "name": "주석만 있는 노트",
+      "retitled": null,
+      "text": "<!-- 메모 -->\n"
+    },
+    {
+      "commentBlocks": 0,
+      "commentLabels": [],
+      "commentLines": [
+        false,
+        false,
+        false
+      ],
+      "firstLine": "옛",
+      "name": "주석 없는 노트 — 예전 그대로",
+      "retitled": "\n## 새 제목\n본문",
+      "text": "\n## 옛\n본문"
+    },
+    {
+      "commentBlocks": 0,
+      "commentLabels": [],
+      "commentLines": [
+        false,
+        false,
+        false
+      ],
+      "firstLine": "제목",
+      "name": "글자 없는 장식 줄 뒤 제목 — 이름 바꾸기도 같은 줄",
+      "retitled": "***\n새 제목\n본문",
+      "text": "***\n제목\n본문"
+    }
+  ],
   "folderTreeCases": [
     {
       "children": {},

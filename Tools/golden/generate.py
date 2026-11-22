@@ -206,21 +206,53 @@ def strip_heading_marker(line: str) -> str:
     return line.strip()
 
 
-def first_line(text: str) -> str | None:
-    """**첫 줄이 곧 제목이다** (T6). `#` 은 있어도 없어도 된다.
-
-    글자가 한 자도 없는 줄(`---` 수평선 · 장식)은 건너뛴다 — 사람이 파일명으로
-    삼고 싶은 줄이 아니다.
-    """
-    _, body = split_front_matter(text)
-    for line in body.split("\n"):
+def title_line(lines: list[str]):
+    """제목이 되는 줄 (번호 · 글). 첫 줄 셈과 이름 바꾸기가 **같은 줄**을 본다 (327)."""
+    comments = [r == "comment" for r in context_roles(lines)] if any("<!--" in l for l in lines) else [False] * len(lines)
+    for index, line in enumerate(lines):
+        if comments[index]:
+            continue
         stripped = strip_heading_marker(line.strip())
         if not stripped:
             continue
         if not any(ch.isalpha() or ch.isdigit() for ch in stripped):
             continue
-        return stripped
+        return index, stripped
     return None
+
+
+def first_line(text: str) -> str | None:
+    """**첫 줄이 곧 제목이다** (T6). `#` 은 있어도 없어도 된다.
+
+    글자가 한 자도 없는 줄(`---` 수평선 · 장식)은 건너뛴다 — 사람이 파일명으로
+    삼고 싶은 줄이 아니다. **HTML 주석(`<!-- … -->`) 안의 줄도 건너뛴다** (327).
+    """
+    _, body = split_front_matter(text)
+    found = title_line(body.split("\n"))
+    return found[1] if found else None
+
+
+def replacing_first_line(text: str, title: str) -> str | None:
+    """이름을 바꾸면 첫 줄이 따라간다 (54 반대) — Swift `FrontMatterParser.replacingFirstLine`.
+    **`first_line` 이 읽은 그 줄**을 바꾼다 (327 — 예전에는 빈 줄 아닌 첫 줄을 덮어 `<!--` 를 지울 수 있었다)."""
+    raw, body = split_front_matter(text)
+    if raw is None:
+        head, rest = "", text
+    else:
+        head, rest = text[:len(text) - len(body)], body
+    lines = rest.split("\n")
+    found = title_line(lines)
+    if found is None:
+        return None
+    index = found[0]
+    old = lines[index]
+    indent = old[:len(old) - len(old.lstrip(" \t"))]
+    after_indent = old[len(indent):]
+    marker = after_indent[:len(after_indent) - len(after_indent.lstrip("#"))]
+    after = after_indent[len(marker):]
+    keeps = 1 <= len(marker) <= 6 and (after == "" or after[0] == " ")
+    lines[index] = f"{indent}{marker} {title}" if keeps else f"{indent}{title}"
+    return head + "\n".join(lines)
 
 
 def note_title(text: str, file_name: str) -> str:
@@ -637,20 +669,34 @@ def underline_level(line: str) -> int | None:
     return 1 if m.group(1)[0] == "=" else 2
 
 
-def context_roles(lines: list[str], editor: bool = True) -> list[str]:
+def opens_comment(line: str) -> bool:
+    """HTML 주석 덩이(`<!--`)를 여는 줄 — 앞 빈칸 셋까지 (326 · Swift `BlockContext.opensComment`). 울타리 · 주석 밖에서만 뜻이 있다."""
+    return leading_width(line) <= 3 and line.lstrip(" \t").startswith("<!--")
+
+
+def context_roles(lines: list[str], editor: bool = True, inside_comment: bool = False) -> list[str]:
     """`editor=False` 는 표준 그대로 (cmark-gfm 에 대어 보는 셈), `True` 는 편집기 — 치는 중인 줄(`is_tentative`)을
     목록을 시작하는 줄로 본다 (빌드 69 · 9번). 둘이 갈리는 것은 그 줄 언저리뿐이다.
 
     `indentedCode` (빌드 78 사용자 화면) — 빈 줄 · 제목 · 울타리 뒤의 네 칸 줄은 **열린 목록 항목 안이 아니면** 코드다.
-    열린 목록(항목 글이 시작하는 칸)은 빈 줄을 건너서도 산다. Swift 는 `defer`, 여기는 `try/finally` 로 같은 자리에서 고친다."""
+    열린 목록(항목 글이 시작하는 칸)은 빈 줄을 건너서도 산다. Swift 는 `defer`, 여기는 `try/finally` 로 같은 자리에서 고친다.
+
+    `comment` (326) — HTML 주석 덩이의 줄. `<!--` 로 여는 줄부터 `-->` 가 든 줄까지(닫지 않으면 글 끝까지). 빈 줄도 안에 든다.
+    울타리 안의 `<!--` 는 글자다. 주석은 글을 끊는다(CommonMark 의 HTML 덩이 2번)."""
     roles = ["normal"] * len(lines)
     paragraph = None
     in_fence = False
+    in_comment = inside_comment
     container = False
     open_list = None
     after_blank = True
     for i, line in enumerate(lines):
         kind = context_kind(line)
+        if in_comment:
+            roles[i] = "comment"
+            if "-->" in line:
+                in_comment = False
+            continue
         if in_fence:
             if kind == "fence":
                 in_fence = False
@@ -663,8 +709,15 @@ def context_roles(lines: list[str], editor: bool = True) -> list[str]:
             after_blank = True
             continue
         width = leading_width(line)
-        lazy = not after_blank and kind == "plain" and (paragraph is not None or container)
+        starts_comment = opens_comment(line)
+        lazy = not after_blank and kind == "plain" and not starts_comment and (paragraph is not None or container)
         try:
+            if starts_comment:
+                roles[i] = "comment"
+                in_comment = "-->" not in line
+                paragraph = None
+                container = False
+                continue
             if editor and is_tentative(line):
                 paragraph = None
                 container = True
@@ -757,6 +810,72 @@ def is_tentative(line: str) -> bool:
     return underline_level(line) == 2 and line.count("-") < 3
 
 
+def judged_comment_lines(lines: list[str]) -> list[bool]:
+    """**심판** (326) — markdown-it 이 HTML 덩이로 읽은 줄 가운데 첫 줄이 `<!--`(앞 빈칸 셋까지)인 덩이의 줄들.
+    목록 항목 안의 주석도 든다(첫 줄 앞 빈칸이 셋까지면). 인용(`>`) 안은 줄이 `>` 로 시작하므로 빠진다 — 셈도 그렇다.
+    cmark-gfm 에도 묻는다 — 날 HTML 을 그대로 내게 하고 주석 덩이 글이 **그대로 한 덩이로** 나오는지 본다."""
+    body = "\n".join(lines)
+    marks = [False] * len(lines)
+    groups = []
+    for token in make_parser().parse(body):
+        if token.type != "html_block" or not token.map:
+            continue
+        start, end = token.map
+        if not opens_comment(lines[start]):
+            continue
+        for row in range(start, min(end, len(lines))):
+            marks[row] = True
+        groups.append(token.content)
+    rendered = cmarkgfm.github_flavored_markdown_to_html(body, options=cmarkgfm.Options.CMARK_OPT_UNSAFE)
+    for content in groups:
+        if content.rstrip("\n") not in rendered:
+            raise SystemExit(f"::error::주석 덩이가 cmark 와 다르다 — {content!r}:\n{rendered}")
+    return marks
+
+
+FIRST_LINE_CASES = ROOT / "Tools" / "golden" / "first-line-cases.json"
+
+
+def build_first_line_cases() -> list[dict]:
+    """326 · 327 — 제목 앞의 주석. 첫 줄 · 이름 바꾸기 · 주석 줄 · 읽기 화면의 주석 칸 수.
+    주석 줄은 셈(`context_roles`)이 낸 것을 **심판(markdown-it · cmark-gfm)에 대어 본 뒤에** 싣는다."""
+    spec = json.loads(FIRST_LINE_CASES.read_text(encoding="utf-8"))
+    out = []
+    for case in spec["cases"]:
+        text = "\n".join(case["lines"])
+        _, body = split_front_matter(text)
+        body_lines = body.split("\n")
+        comments = [r == "comment" for r in context_roles(body_lines)]
+        if comments != judged_comment_lines(body_lines):
+            raise SystemExit(f"::error::[{case['name']}] 주석 줄이 심판과 다르다")
+        # 읽기 화면은 주석 덩이마다 접힌 칸 하나 — 겹친 자리(목록 · 인용 안)도 센다. 칸 이름은 여닫는 표시를 뗀 글의 줄 수.
+        contents = [token.content for token in make_parser().parse(body)
+                    if token.type == "html_block" and token.content.lstrip(" \t").startswith("<!--")]
+        blocks = len(contents)
+        out.append({
+            "name": case["name"],
+            "text": text,
+            "firstLine": first_line(text),
+            "retitled": replacing_first_line(text, "새 제목"),
+            "commentLines": comments,
+            "commentBlocks": blocks,
+            "commentLabels": [comment_label(c) for c in contents],
+        })
+    return out
+
+
+def comment_label(raw: str) -> str:
+    """접힌 주석 칸의 이름 (Swift `MarkdownHTML.commentBox` · `CommentLabels`) — 여닫는 표시를 뗀 글이 두 줄 이상이면 줄 수를 단다."""
+    inner = raw.strip()
+    if inner.startswith("<!--") and inner.endswith("-->"):
+        inner = inner[4:-3] if len(inner) >= 7 else ""     # `<!-->` · `<!--->` — 표시가 겹친 빈 주석
+    elif inner.startswith("<!--"):
+        inner = inner[4:]
+    text = inner.strip()
+    count = len(text.split("\n")) if text else 0
+    return f"주석 · {count}줄" if count > 1 else "주석"
+
+
 def build_context_cases() -> list[dict]:
     """역할을 셈하고, **cmark-gfm 이 그린 것과 맞는지** 본다.
 
@@ -771,6 +890,8 @@ def build_context_cases() -> list[dict]:
         lines = case["lines"]
         roles = context_roles(lines, editor=False)      # 표준 — cmark-gfm 에 대어 본다
         rendered = cmark_html("\n".join(lines))
+        if [r == "comment" for r in roles] != judged_comment_lines(lines):
+            raise SystemExit(f"::error::[{case['name']}] 주석 줄이 심판과 다르다 — {roles} · {judged_comment_lines(lines)}")
         groups: list[tuple[int, list[str]]] = []
         current: list[str] = []
         for line, role in zip(lines, roles):
@@ -794,6 +915,8 @@ def build_context_cases() -> list[dict]:
         previous = None             # 직전의 빈 줄 아닌 줄의 역할
         fence_open = False
         for line, role in zip(lines, roles):
+            if role == "comment":
+                continue
             kind = context_kind(line)
             if not fence_open and kind == "fence" and role == "normal":
                 groups_code += 1
@@ -813,6 +936,8 @@ def build_context_cases() -> list[dict]:
         breaks = 0
         in_fence = False
         for line, role in zip(lines, roles):
+            if role == "comment":
+                continue
             kind = context_kind(line)
             if in_fence:
                 in_fence = kind != "fence"
@@ -2885,6 +3010,7 @@ def build() -> dict:
         "nestingCases": build_nesting_cases(),
         "emphasisCases": build_emphasis_cases(),
         "contextCases": build_context_cases(),
+        "firstLineCases": build_first_line_cases(),
         "folderTreeCases": build_folder_tree_cases(),
         "inboxCases": build_inbox_cases(),
         "scrollGaugeCases": build_scroll_gauge_cases(),
@@ -4819,7 +4945,7 @@ def tally(loaded: dict) -> str:
         ("사례", "cases"), ("줄 모양", "styleCases"), ("들여쓰기", "indentCases"),
         ("단계", "depthCases"), ("개요", "outlineCases"), ("엔터", "enterCases"), ("지우기", "backspaceCases"), ("줄바꿈 고치기", "lineBreakCases"), ("메모 가져오기", "notesExportCases"), ("옮길 때 같이 갈 첨부", "moveAttachmentCases"), ("번호", "renumberCases"),
         ("상대 링크", "linkCases"), ("태그", "tagCases"), ("옮기기", "rebaseCases"),
-        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
+        ("고정", "pinCases"), ("편집 도구", "formatCases"), ("줄 지도", "lineMapCases"), ("첨부 셈", "attachmentCases"), ("폴더 이름 링크", "retargetCases"), ("겹침 깊이", "nestingCases"), ("강조 여닫기", "emphasisCases"), ("줄 문맥", "contextCases"), ("제목 앞 주석", "firstLineCases"), ("폴더 나무", "folderTreeCases"), ("스크롤 막대", "scrollGaugeCases"), ("목록 모양", "restyleCases"), ("공유로 받은 글", "shareCases"),
         ("노트 연결", "linkTriggerCases"), ("붙여넣기", "pasteCases"), ("깨진 링크", "brokenCases"), ("고른 글 감싸기", "wrapCases"), ("매달린 들여쓰기", "hangingCases"), ("노트 세기", "countCases"), ("받은 글 폴더", "inboxCases"), ("글로 온 주소", "sharedAddressCases"), ("제목 창구", "titleServiceCases"), ("덧붙일 항목", "shareEntryCases"), ("덧붙이기", "shareAppendCases"), ("평가 부탁", "reviewCases"), ("보이는 줄", "previewCases"),
     ]
     counted = [f"{name} {len(loaded[key])}건" for name, key in parts]

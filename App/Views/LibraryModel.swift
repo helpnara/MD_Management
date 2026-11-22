@@ -3704,7 +3704,9 @@ final class LibraryModel: ObservableObject {
                                            tooDeepNotice: String(localized: "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다."),
                                            codeLabels: CodeBoxLabels(code: String(localized: "코드"),
                                                                      copy: String(localized: "복사"),
-                                                                     expand: String(localized: "크게 보기")))
+                                                                     expand: String(localized: "크게 보기")),
+                                           commentLabels: CommentLabels(one: String(localized: "주석"),
+                                                                        lines: String(localized: "주석 · {n}줄")))
         codeBlocks = rendered.codeBlocks
 
         let pointing = backlinksOwner == path ? backlinks : []
