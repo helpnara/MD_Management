@@ -203,6 +203,30 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.28 제출 순서 — 빌드 156 (2026-11-22 준비 · 빌드 156 확인 끝 — 사용자 *빌드 156 체크리스트 확인 완료.* · *1.1.28 심사 제출 준비하자*)
+
+> 326 · 327 제목 앞의 HTML 주석 — 읽기 화면은 접힌 칸 · 쓰기 화면은 흐린 글 · 첫 줄 셈 · 이름 바꾸기 · 미리보기가 주석을 건너뜀 — `docs/89-build-156.md`.
+> 스토어 그림 · 설명 · 키워드 · 부제 · 메모(Notes)는 1.1.27 그대로 (그림에 주석이 든 노트가 없어 화면이 같다).
+> 프로모션 텍스트는 11월 홍보 글 그대로 (12-01 에 되돌림 — 알림 예약됨). 글자 수는 `python3 Tools/store/count.py`.
+
+1. App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.28` → **빌드** 칸에서 **156** (`1.1.28 (156)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — 아래 세 줄 (`docs/store/1.1.28-새로운-기능.txt`)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — 아래 영어 세 줄 → **저장**
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+5. 제출 → `main` 병합 (= 1.1.28) → 승인 · 배포 기다림
+
+```
+• 노트에 적어 둔 주석(<!-- … -->)을 읽기 화면에서 옅은 작은 칸 하나로 접어 보여 줍니다. 누르면 펼쳐집니다. 예전에는 제목 앞의 주석이 큰 제목 글자로 보였습니다.
+• 쓰기 화면에서도 주석 줄은 흐린 글자로 보이고, 제목 모양은 주석 다음의 첫 줄에 붙습니다.
+• 노트 목록의 제목 · 미리보기 줄과 첫 줄을 따라가는 파일 이름이 주석 안의 글을 건너뜁니다. 노트 이름을 바꿀 때도 주석은 그대로 두고 제목 줄만 바꿉니다.
+```
+
+```
+• Comments in your notes (<!-- … -->) now appear in the reading view as a single small, subtle box that you can tap to expand. Previously, a comment above the title showed up in large title text.
+• In the editor, comment lines are shown in faded text, and the title style goes to the first line after the comment.
+• Note titles and preview lines in the note list, and file names that follow the first line, now skip text inside comments. Renaming a note changes only the title line and leaves comments untouched.
+```
+
 ### 1.1.27 제출 순서 — 빌드 155 (2026-11-20 준비 · 빌드 155 확인 끝 — 사용자 *0-3번 확인 완료.* · *1.1.27 심사 제출 준비하자* · **제출함 2026-11-20** · `main` 병합 = 1.1.27 · **승인 · 배포 2026-11-21**)
 
 > iOS 27 SDK 전환 (321) · 322 · 323 아이패드 세로 두 칸 · 324 자판 초점 테두리 옅게 · 325 문서 첨부 창 안내 — `docs/86-build-153.md` · `docs/87-build-154.md` · `docs/88-build-155.md`.
@@ -731,13 +755,12 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.27** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt` 끝.
+> **1.1.28** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt` 끝.
 
 ```
-• Rebuilt for iOS 27 and iPadOS 27.
-• On iPad in portrait, you now see two columns—the note list and the note—as iPadOS 27 does. Open the folder column with the button at the top left. In landscape, you still get all three columns.
-• On iPad with a hardware keyboard, the bold outline around the selected note is now a soft, subtle color.
-• If the Attach Document window gets stuck in a deleted folder, Settings → Help → Guide now explains how to fix it.
+• Comments in your notes (<!-- … -->) now appear in the reading view as a single small, subtle box that you can tap to expand. Previously, a comment above the title showed up in large title text.
+• In the editor, comment lines are shown in faded text, and the title style goes to the first line after the comment.
+• Note titles and preview lines in the note list, and file names that follow the first line, now skip text inside comments. Renaming a note changes only the title line and leaves comments untouched.
 ```
 
 ---
@@ -993,14 +1016,13 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.27** (2026-11-20 — 321 iOS 27 SDK · 323 아이패드 세로 두 칸 · 324 자판 초점 테두리 · 325 문서 첨부 안내). 글은 `docs/store/1.1.27-새로운-기능.txt`. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt`.
+> **1.1.28** (2026-11-22 — 326 · 327 제목 앞의 HTML 주석). 글은 `docs/store/1.1.28-새로운-기능.txt`. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• iOS 27 · iPadOS 27 에 맞춰 새로 만들었습니다.
-• 아이패드를 세로로 두면 iPadOS 27 방식대로 노트 목록과 노트 두 칸으로 보입니다. 폴더 칸은 왼쪽 위 단추로 엽니다. 가로로 두면 예전처럼 세 칸입니다.
-• 아이패드에 외장 키보드를 붙였을 때 고른 노트 둘레에 생기던 진한 테두리를 옅은 색으로 바꿨습니다.
-• 문서 첨부 창이 지운 폴더에 갇혀 다른 폴더로 못 나갈 때 푸는 방법을 설정 → 도움 → 사용법에 적었습니다.
+• 노트에 적어 둔 주석(<!-- … -->)을 읽기 화면에서 옅은 작은 칸 하나로 접어 보여 줍니다. 누르면 펼쳐집니다. 예전에는 제목 앞의 주석이 큰 제목 글자로 보였습니다.
+• 쓰기 화면에서도 주석 줄은 흐린 글자로 보이고, 제목 모양은 주석 다음의 첫 줄에 붙습니다.
+• 노트 목록의 제목 · 미리보기 줄과 첫 줄을 따라가는 파일 이름이 주석 안의 글을 건너뜁니다. 노트 이름을 바꿀 때도 주석은 그대로 두고 제목 줄만 바꿉니다.
 ```
 
