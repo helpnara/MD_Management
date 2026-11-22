@@ -20,7 +20,7 @@ final class FirstLineCommentGoldenTests: XCTestCase {
         let firstLineCases: [Case]
     }
 
-    static func load() throws -> [Golden.Case] {
+    static func goldenCases() throws -> [Golden.Case] {
         let here = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         let url = here.appendingPathComponent("Golden/expected.json")
         return try JSONDecoder().decode(Golden.self, from: try Data(contentsOf: url)).firstLineCases
@@ -28,7 +28,7 @@ final class FirstLineCommentGoldenTests: XCTestCase {
 
     /// 첫 줄(목록 제목 · 파일 이름)은 주석 안의 줄을 건너뛴다.
     func testFirstLineSkipsComments() throws {
-        let cases = try Self.load()
+        let cases = try Self.goldenCases()
         XCTAssertFalse(cases.isEmpty, "정답표가 비었다")
         for item in cases {
             XCTAssertEqual(FrontMatterParser.firstLine(of: item.text), item.firstLine, "[\(item.name)]")
@@ -37,14 +37,14 @@ final class FirstLineCommentGoldenTests: XCTestCase {
 
     /// **이름을 바꾸면 첫 줄 셈이 읽은 그 줄**을 바꾼다 — `<!--` 줄을 덮어 주석을 풀지 않는다 (327).
     func testRetitleReplacesTheLineFirstLineRead() throws {
-        for item in try Self.load() {
+        for item in try Self.goldenCases() {
             XCTAssertEqual(FrontMatterParser.replacingFirstLine(in: item.text, with: "새 제목"), item.retitled, "[\(item.name)]")
         }
     }
 
     /// 주석 줄 — 편집기 칠하기 · 첫 줄 셈 · 목록 미리보기가 같은 셈(`BlockContext`)을 쓴다.
     func testCommentLinesMatchJudges() throws {
-        for item in try Self.load() {
+        for item in try Self.goldenCases() {
             let body = FrontMatterParser.parse(item.text).body.components(separatedBy: "\n")
             XCTAssertEqual(BlockContext.commentLines(in: body), item.commentLines, "[\(item.name)]")
             XCTAssertEqual(BlockContext.roles(of: body).map { $0 == .comment }, item.commentLines, "역할 — [\(item.name)]")
@@ -53,7 +53,7 @@ final class FirstLineCommentGoldenTests: XCTestCase {
 
     /// 편집기가 위쪽을 훑어 넘기는 *열린 덩이* 는 줄 역할 셈과 같아야 한다 — 어느 줄에서 잘라 넘겨도 아래 역할이 그대로.
     func testOpenBlockAgreesWithRoles() throws {
-        for item in try Self.load() {
+        for item in try Self.goldenCases() {
             let body = FrontMatterParser.parse(item.text).body.components(separatedBy: "\n")
             let whole = BlockContext.roles(of: body)
             var open = BlockContext.Open.none
@@ -69,7 +69,7 @@ final class FirstLineCommentGoldenTests: XCTestCase {
 
     /// 읽기 화면 — 주석 덩이마다 접힌 칸 하나, 칸 이름은 줄 수. 줄 지도(`data-line`)도 그대로 붙는다.
     func testReadingViewFoldsComments() throws {
-        for item in try Self.load() {
+        for item in try Self.goldenCases() {
             let html = MarkdownHTML.render(markdown: item.text, notePath: "노트.md", existing: []).bodyHTML
             XCTAssertEqual(html.components(separatedBy: "<details class=\"yb-comment\">").count - 1, item.commentBlocks,
                            "[\(item.name)] 접힌 칸 수\n\(html)")
