@@ -43,6 +43,22 @@ public struct CodeBoxLabels: Sendable {
     }
 }
 
+/// 접힌 주석 칸의 글자 (326). Core 에는 번역 목록이 없어 App 이 번역해 넘긴다 — 기본값은 한국어.
+/// `lines` 의 `{n}` 자리에 줄 수가 들어간다. 한 줄짜리 주석은 `one` 만 (*주석 · 1줄* 은 군더더기다).
+public struct CommentLabels: Sendable {
+    public let one: String
+    public let lines: String
+
+    public init(one: String = "주석", lines: String = "주석 · {n}줄") {
+        self.one = one
+        self.lines = lines
+    }
+
+    func label(lineCount: Int) -> String {
+        lineCount > 1 ? lines.replacingOccurrences(of: "{n}", with: String(lineCount)) : one
+    }
+}
+
 /// 마크다운을 뷰어용 HTML 로 바꾼다 (ADR-0004).
 ///
 /// 파싱은 `swift-markdown`, HTML 생성은 그 안의 `HTMLFormatter` 가 한다.
@@ -100,7 +116,8 @@ public enum MarkdownHTML {
         notePath: String,
         existing: Set<String>,
         tooDeepNotice: String = "겹침이 너무 깊은 글이라 글자 그대로 보여 줍니다.",
-        codeLabels: CodeBoxLabels = CodeBoxLabels()
+        codeLabels: CodeBoxLabels = CodeBoxLabels(),
+        commentLabels: CommentLabels = CommentLabels()
     ) -> RenderedNote {
         let body = FrontMatterParser.parse(markdown).body
 
@@ -117,7 +134,7 @@ public enum MarkdownHTML {
         // 따옴표가 둥근 것으로 바뀌면 사용자가 쓴 글과 다르게 보인다.
         let document = Document(parsing: body, options: [.disableSmartOpts])
 
-        var rewriter = NoteRewriter(notePath: Paths.normalized(notePath), existing: existing)
+        var rewriter = NoteRewriter(notePath: Paths.normalized(notePath), existing: existing, commentLabels: commentLabels)
         var rewritten = rewriter.visit(document) ?? document
         // 제목 안의 굵게 · 기울임 · 코드 · 링크를 살린다 (201) — 위에서 링크 · 이스케이프를 다 고친 **뒤에** 한다.
         var headings = HeadingRewriter()
@@ -179,6 +196,34 @@ public enum MarkdownHTML {
         }
         out += text.substring(from: cursor)
         return (out, blocks)
+    }
+
+    /// **HTML 주석 덩이인가** (326) — 날 HTML 덩이의 글이 `<!--` 로 시작한다. 읽기 화면(`NoteRewriter`)과 줄 지도(`LineMap`)가
+    /// 같은 잣대로 본다 — 한쪽만 접힌 칸으로 알면 블록 짝이 어긋난다.
+    static func isComment(_ rawHTML: String) -> Bool {
+        rawHTML.drop(while: { $0 == " " || $0 == "\t" }).hasPrefix("<!--")
+    }
+
+    /// **주석 덩이 → 접힌 칸** (326, 2026-11-22 사용자 — 머리말 뒤 `<!-- 방향 …` 22줄이 첫 줄 제목 규칙(133)으로 큰 명조가 됐다.
+    /// *제목 앞의 주석 처리된 부분은 다른 방식으로 보여줘야*). 숨기지 않는다 — 파일이 원본이라(ADR-0001) 무엇이 있는지는 보여야 한다.
+    /// 옅은 작은 칸 `▸ 주석 · 22줄` 하나로 접어 두고, 누르면 펼쳐 여닫는 표시(`<!--` · `-->`)를 뗀 글을 작은 흐린 글자로 보인다.
+    /// 여닫기는 HTML 의 `<details>` 가 한다 — 자바스크립트가 꺼진 웹뷰(안전 3겹)에서도 된다. 글은 **이스케이프한 그대로**다(안전 1겹).
+    /// 칸의 이름은 CSS 가 그린다(`data-label`) — 코드 상자 머리(237)처럼 글을 골라 복사할 때 실리지 않는다.
+    /// 줄 지도(`LineMap`)가 세는 태그(`p` · `pre` …)를 쓰지 않는다 — 주석은 블록 짝에서 빠진다.
+    static func commentBox(_ rawHTML: String, labels: CommentLabels) -> String {
+        // 앞뒤 빈칸 · 줄바꿈(`\r\n` 도)을 먼저 뗀다 — 덩이 끝의 줄바꿈이 남으면 `-->` 로 끝나는지 못 본다.
+        var inner = Substring(rawHTML.trimmingCharacters(in: .whitespacesAndNewlines))
+        if inner.hasPrefix("<!--"), inner.hasSuffix("-->") {
+            // `<!-->` · `<!--->` 는 여닫는 표시가 겹친 빈 주석이다 (CommonMark).
+            inner = inner.count >= 7 ? inner.dropFirst(4).dropLast(3) : ""
+        } else if inner.hasPrefix("<!--") {
+            // 닫지 않았거나 `-->` 뒤에 글이 더 있다 — 여는 표시만 뗀다. 나머지는 쓴 그대로.
+            inner = inner.dropFirst(4)
+        }
+        let text = String(inner).trimmingCharacters(in: .whitespacesAndNewlines)
+        let lineCount = text.isEmpty ? 0 : text.components(separatedBy: "\n").count
+        return "<details class=\"yb-comment\"><summary data-label=\"\(escape(labels.label(lineCount: lineCount)))\"></summary>"
+            + "<div class=\"yb-comment-text\">\(escape(text))</div></details>\n"
     }
 
     /// `escape` 를 거꾸로 — 같은 다섯 글자만. `&amp;` 는 맨 나중에 (먼저 풀면 `&amp;lt;` 가 `<` 가 된다).
@@ -422,12 +467,27 @@ public enum MarkdownHTML {
     /* **첫 줄은 `#` 이 없어도 제목이다** (133). 이 앱에서 첫 줄은 곧 파일명이므로(107)
        제목으로 보이는 편이 맞다. **파일은 한 글자도 안 바뀐다** — 보이는 모습만 그렇다.
        편집기도 같은 규칙으로 그린다 (`MarkdownStyler`) — 두 자리가 갈리면 93 이 된다. */
-    body > p:first-child { font-size: 1.7em; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em;
+    /* 326 — 앞에 **주석 칸만** 있으면 그 뒤의 첫 문단이 제목이다 (편집기 · 파일 이름 셈도 주석을 건너뛴다).
+       `p:not(:not(주석) ~ p)` — 주석 칸이 아닌 형제가 앞에 하나도 없는 문단. 앞에 아무것도 없을 때(`:first-child`)도 든다. */
+    body > p:not(:not(details.yb-comment) ~ p) { font-size: 1.7em; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em;
       font-family: "YBSerif", ui-serif, serif; }
     /* **첫 덩이 위에는 빈 자리를 두지 않는다** (136, 사용자 — `# 제목` 을 쓰면 읽기 모드에서
        제목 위로 한 줄이 비었다). 제목의 위 여백은 **글 사이**에서나 뜻이 있지 맨 처음에는
        군더더기다. `#` 이 있든 없든 같은 자리에서 시작한다. */
     body > :first-child { margin-top: 0; }
+    /* 326 — 맨 앞 주석 칸들 바로 뒤의 첫 덩이도 위 여백 없이 — 칸의 아래 여백만 둔다. */
+    body > details.yb-comment ~ :not(details.yb-comment):not(:not(details.yb-comment) ~ *) { margin-top: 0; }
+    /* 326 — HTML 주석은 옅은 작은 칸 하나로 접어 둔다. 누르면 펼쳐 작은 흐린 글로 (글은 쓴 그대로 — 줄바꿈 · 빈 줄도). */
+    details.yb-comment { margin: 0 0 0.9em; color: var(--yb-ink-faint); font-size: 0.8em; line-height: 1.6; }
+    details.yb-comment > summary { display: inline-flex; align-items: center; gap: 0.45em; list-style: none; cursor: pointer;
+      padding: 0.2em 0.75em; border: 1px solid var(--yb-rule); border-radius: 1em;
+      -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+    details.yb-comment > summary::-webkit-details-marker { display: none; }
+    details.yb-comment > summary::before { content: "\\25B8"; font-size: 0.95em; }
+    details.yb-comment[open] > summary::before { content: "\\25BE"; }
+    details.yb-comment > summary::after { content: attr(data-label); }
+    .yb-comment-text { margin-top: 0.6em; padding: 0.1em 0 0.1em 0.9em; border-left: 0.15em solid var(--yb-rule);
+      white-space: pre-wrap; overflow-wrap: anywhere; }
     a { color: var(--yb-accent); text-decoration: underline; text-decoration-thickness: 0.06em; text-underline-offset: 0.2em; }
     ul, ol { margin: 0.9em 0; padding-left: 1.4em; }
     li { margin: 0.25em 0; }
@@ -559,12 +619,15 @@ private struct NoteRewriter: MarkupRewriter {
     /// 폴더 안에 실제로 있는 상대경로들. 클로저가 아니라 값이라 저장해도 안전하다.
     let existing: Set<String>
 
+    let commentLabels: CommentLabels
+
     private(set) var missing: [String] = []
     private var missingSeen: Set<String> = []
 
-    init(notePath: String, existing: Set<String>) {
+    init(notePath: String, existing: Set<String>, commentLabels: CommentLabels = CommentLabels()) {
         self.notePath = notePath
         self.existing = existing
+        self.commentLabels = commentLabels
     }
 
     private mutating func record(_ rawLink: String) {
@@ -600,7 +663,10 @@ private struct NoteRewriter: MarkupRewriter {
 
     mutating func visitHTMLBlock(_ html: HTMLBlock) -> Markup? {
         var copy = html
-        copy.rawHTML = "<p>" + MarkdownHTML.escape(html.rawHTML) + "</p>\n"
+        // 326 — 주석은 접힌 칸으로. 그 밖의 날 HTML 은 예전처럼 글자로 보이는 문단.
+        copy.rawHTML = MarkdownHTML.isComment(html.rawHTML)
+            ? MarkdownHTML.commentBox(html.rawHTML, labels: commentLabels)
+            : "<p>" + MarkdownHTML.escape(html.rawHTML) + "</p>\n"
         return copy
     }
 

@@ -36,20 +36,31 @@ public enum BlockContext {
         /// (읽기 화면은 회색 덩어리로 그렸는데 쓰기 화면은 상자가 없었다). 목록 항목 안이면 그 항목의 글이고, 항목 글 칸에서
         /// 네 칸 더 들어가야 항목 안의 코드다. `code` 와 따로 둔다 — 엔터가 목록을 잇는 판정(`continuesText`)은 울타리 안만 본다.
         case indentedCode
+        /// **HTML 주석 덩이의 줄** (326) — `<!--` 로 여는 줄(앞 빈칸 셋까지)부터 `-->` 가 든 줄까지, 닫지 않으면 글 끝까지. 빈 줄도 안에 든다.
+        /// 편집기는 머리말처럼 흐린 고정폭으로, 읽기 화면은 접힌 칸으로 그린다. 첫 줄 셈(제목 · 파일 이름 · 이름 바꾸기)은 건너뛴다 (327).
+        /// 울타리 안의 `<!--` 는 글자다. 주석은 글을 끊는다 (CommonMark 의 HTML 덩이 2번).
+        case comment
     }
 
     /// `lines` 는 **머리말 뒤** 의 줄들 (줄바꿈 없이). 첫 줄 위는 빈 줄로 본다.
     /// `insideFence` — 첫 줄이 이미 코드 울타리 안인가 (위쪽 울타리 줄 수가 홀수).
-    public static func roles(of lines: [String], insideFence: Bool = false) -> [Role] {
+    /// `insideComment` — 첫 줄이 이미 주석 덩이 안인가 (326 · 위쪽을 `openBlock(after:from:)` 로 훑은 값).
+    public static func roles(of lines: [String], insideFence: Bool = false, insideComment: Bool = false) -> [Role] {
         var roles = Array(repeating: Role.normal, count: lines.count)
         var paragraph: Int? = nil       // 열린 문단의 첫 줄
         var inFence = insideFence
+        var inComment = insideComment
         var container = false           // 바로 위가 목록 · 인용 — 글줄은 거기 딸린다
         var list: Int? = nil            // 열린 목록 항목의 글이 시작하는 칸 — 빈 줄을 건너서도 산다
         var afterBlank = true           // 첫 줄 위는 빈 줄로 본다
 
         for (index, line) in lines.enumerated() {
             let kind = kind(of: line)
+            if inComment {
+                roles[index] = .comment
+                if closesComment(line) { inComment = false }
+                continue
+            }
             if inFence {
                 if kind == .fence { inFence = false } else { roles[index] = .code }
                 continue
@@ -61,8 +72,9 @@ public enum BlockContext {
                 continue
             }
             let width = leadingWidth(line)
-            // 목록 글에 빈칸 없이 붙어 오는 글줄(게으른 이음)은 덜 들여써도 그 항목에 남는다.
-            let lazy = !afterBlank && kind == .plain && (paragraph != nil || container)
+            let startsComment = opensComment(line)
+            // 목록 글에 빈칸 없이 붙어 오는 글줄(게으른 이음)은 덜 들여써도 그 항목에 남는다. 주석은 이음이 아니다 — 덩이를 연다.
+            let lazy = !afterBlank && kind == .plain && !startsComment && (paragraph != nil || container)
             defer {
                 // 열린 목록 — 항목 줄이면 그 글 칸으로, 항목 글 칸보다 덜 들여쓴 줄이 오면 목록 밖이다.
                 let itemKind = kind == .container || kind == .weakItem || kind == .indented
@@ -72,6 +84,14 @@ public enum BlockContext {
                     list = nil
                 }
                 afterBlank = false
+            }
+            // 326 — 주석 덩이를 연다. 글을 끊고, 같은 줄에서 닫히지 않으면 아래 줄들도 주석이다.
+            if startsComment {
+                roles[index] = .comment
+                inComment = !closesComment(line)
+                paragraph = nil
+                container = false
+                continue
             }
             // **치는 중일 수 있는 줄은 목록을 시작하는 줄로 본다** (빌드 69 · 9번). 표준은 글 바로 밑의 `-` · 빈 `- ` 를
             // 제목 밑줄로 읽지만, 그렇게 칠하면 글 밑에서 목록을 시작하는 순간 윗글이 제목으로 커진다.
@@ -126,6 +146,43 @@ public enum BlockContext {
             }
         }
         return roles
+    }
+
+    /// **HTML 주석 덩이를 여는 줄인가** (326) — 앞 빈칸 셋까지 뒤에 `<!--`. 울타리 · 주석 밖에서만 뜻이 있다.
+    public static func opensComment(_ line: String) -> Bool {
+        guard leadingWidth(line) <= 3 else { return false }
+        return line.drop(while: { $0 == " " }).hasPrefix("<!--")
+    }
+
+    /// 주석 덩이를 닫는 줄인가 — `-->` 가 들었다. 여는 줄 자신도 본다 (`<!-- 메모 -->` · `<!-->` 는 한 줄로 끝난다).
+    static func closesComment(_ line: String) -> Bool {
+        line.contains("-->")
+    }
+
+    /// 줄 아래로 **열려 있는 덩이** (326) — 편집기가 위쪽을 훑어 `roles` 의 `insideFence` · `insideComment` 를 정할 때 쓴다.
+    /// 울타리 안의 `<!--` 는 글자, 주석 안의 울타리는 글자다 — 둘을 **한 번의 훑기**로 따라가야 서로를 안 놓친다.
+    public enum Open: Equatable, Sendable { case none, fence, comment }
+
+    public static func openBlock(after line: String, from state: Open) -> Open {
+        switch state {
+        case .fence:
+            return isFence(line) ? .none : .fence
+        case .comment:
+            return closesComment(line) ? .none : .comment
+        case .none:
+            if isFence(line) { return .fence }
+            if opensComment(line) { return closesComment(line) ? .none : .comment }
+            return .none
+        }
+    }
+
+    /// 줄마다 **주석 덩이의 줄인가** (327) — 첫 줄 셈(`FrontMatterParser`) · 목록 미리보기가 건너뛸 줄. `roles` 와 같은 셈이다.
+    /// `<!--` 가 한 번도 없으면 훑지 않는다.
+    public static func commentLines(in lines: [String]) -> [Bool] {
+        guard lines.contains(where: { $0.contains("<!--") }) else {
+            return Array(repeating: false, count: lines.count)
+        }
+        return roles(of: lines).map { $0 == .comment }
     }
 
     /// 줄 앞 빈칸의 폭 (탭은 넷).

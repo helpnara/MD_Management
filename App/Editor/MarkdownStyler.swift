@@ -65,7 +65,7 @@ enum MarkdownStyler {
             touched = NSUnionRange(touched, run)
         }
         // **코드 울타리가 생기거나 없어지면 그 아래가 다 바뀐다** (200). 울타리 줄 수가 달라졌을 때만 글 끝까지 —
-        // 코드 안에서 글자를 칠 때마다 아래를 다 칠하지는 않는다 (S11).
+        // 코드 안에서 글자를 칠 때마다 아래를 다 칠하지는 않는다 (S11). 주석(`<!--` · `-->`)도 같다 (326) — 그 줄 수도 함께 센다.
         let fenceCount = countFences(in: text, from: header)
         if let fences, fences.pointee != fenceCount {
             touched = NSUnionRange(touched, NSRange(location: touched.location, length: text.length - touched.location))
@@ -89,7 +89,8 @@ enum MarkdownStyler {
         // 다르다고 잘못 보면 지금처럼 칠할 뿐이다 — 틀려도 예전보다 나빠지지 않는 쪽으로 견준다.
         func paint(_ paragraph: NSRange) {
             let fresh = NSMutableAttributedString(string: text.substring(with: paragraph))
-            if paragraph.location < header {
+            // 326 — HTML 주석 덩이의 줄도 머리말처럼 통째로 흐린 고정폭. 본문이 아니라는 것이 한눈에 보이게 (읽기 화면은 접힌 칸).
+            if paragraph.location < header || roles[paragraph.location] == .comment {
                 fresh.setAttributes(sheet.frontMatter(), range: NSRange(location: 0, length: fresh.length))
             } else {
                 // 커서가 이 문단에 있나. 문단 끝(줄바꿈 앞)까지, 마지막 문단은 글 끝까지.
@@ -121,7 +122,7 @@ enum MarkdownStyler {
         // 고친 자리에서 먼 **역할 있는 줄** — 여러 줄짜리 밑줄 제목의 윗줄들 · 글에 이어지는 줄.
         // 코드 줄은 빼고 — 울타리 수가 그대로면 코드 안팎은 안 바뀐다. 긴 코드 덩이를 글자마다 칠하지 않는다 (200 · S11).
         for start in roles.keys.sorted() where (start < touched.location || start >= limit)
-            && roles[start] != .code && roles[start] != .indentedCode {
+            && roles[start] != .code && roles[start] != .indentedCode && roles[start] != .comment {
             paint(text.paragraphRange(for: NSRange(location: start, length: 0)))
         }
         return header
@@ -170,13 +171,21 @@ enum MarkdownStyler {
     }
 
     /// 머리말 뒤 **첫 글줄**의 자리. 빈 줄은 건너뛴다. 없으면 `nil`.
+    /// **HTML 주석 덩이도 건너뛴다** (326, 2026-11-22 사용자 — 머리말 뒤 `<!-- 방향 …` 이 제목 크기로 커졌다).
+    /// 주석인지는 `BlockContext.openBlock` — 줄 역할 셈과 같은 잣대다. `<!--` 가 없으면 예전 그대로.
     private static func firstMeaningfulParagraph(in text: NSString, after header: Int) -> Int? {
         var location = min(header, max(0, text.length - 1))
+        let watchesComments = text.range(of: "<!--").location != NSNotFound
+        var open = BlockContext.Open.none
         while location < text.length {
             let paragraph = text.paragraphRange(for: NSRange(location: location, length: 0))
-            var line = paragraph
-            if line.length > 0, text.character(at: NSMaxRange(line) - 1) == 0x0A { line.length -= 1 }
-            if !text.substring(with: line).trimmingCharacters(in: .whitespaces).isEmpty {
+            let line = lineText(text, paragraph)
+            var inComment = false
+            if watchesComments {
+                inComment = open == .comment || (open == .none && BlockContext.opensComment(line))
+                open = BlockContext.openBlock(after: line, from: open)
+            }
+            if !inComment, !line.trimmingCharacters(in: .whitespaces).isEmpty {
                 return paragraph.location
             }
             let next = NSMaxRange(paragraph)
@@ -324,7 +333,8 @@ enum MarkdownStyler {
             if next <= at { break }
             at = next
         }
-        let roles = BlockContext.roles(of: lines, insideFence: fenceIsOpen(in: text, from: header, to: from))
+        let open = openBlock(in: text, from: header, to: from)
+        let roles = BlockContext.roles(of: lines, insideFence: open == .fence, insideComment: open == .comment)
         var map: [Int: BlockContext.Role] = [:]
         for (index, location) in starts.enumerated() where location >= begin && index < roles.count && roles[index] != .normal {
             map[location] = roles[index]
@@ -332,16 +342,19 @@ enum MarkdownStyler {
         return map
     }
 
-    /// 머리말 뒤 **코드 울타리 줄의 수** (200). 울타리 글자가 아예 없으면 훑지 않는다.
+    /// 머리말 뒤 **코드 울타리 줄의 수** (200) 와 **주석 표시(`<!--` · `-->`)가 든 줄의 수** (326) — 둘을 한 값에 담는다
+    /// (주석 줄은 2²⁰ 씩). 값이 바뀌면 고친 자리부터 글 끝까지 다시 칠한다. 그런 글자가 아예 없으면 훑지 않는다.
     private static func countFences(in text: NSString, from start: Int) -> Int {
-        guard text.range(of: "```").location != NSNotFound || text.range(of: "~~~").location != NSNotFound else {
-            return 0
-        }
+        let fences = text.range(of: "```").location != NSNotFound || text.range(of: "~~~").location != NSNotFound
+        let comments = text.range(of: "<!--").location != NSNotFound || text.range(of: "-->").location != NSNotFound
+        guard fences || comments else { return 0 }
         var count = 0
         var at = min(start, text.length)
         while at < text.length {
             let paragraph = text.paragraphRange(for: NSRange(location: at, length: 0))
-            if BlockContext.isFence(lineText(text, paragraph)) { count += 1 }
+            let line = lineText(text, paragraph)
+            if fences, BlockContext.isFence(line) { count += 1 }
+            if comments, line.contains("<!--") || line.contains("-->") { count += 1 << 20 }
             let next = NSMaxRange(paragraph)
             if next <= at { break }
             at = next
@@ -349,17 +362,19 @@ enum MarkdownStyler {
         return count
     }
 
-    /// `start ..< end` 사이에 코드 울타리 줄이 홀수 개면 `end` 는 울타리 안이다.
-    private static func fenceIsOpen(in text: NSString, from start: Int, to end: Int) -> Bool {
+    /// `end` 가 코드 울타리 안인가 · 주석 덩이 안인가 (326) — `start ..< end` 를 **한 번 훑어** 따라간다. 울타리 안의 `<!--` 는
+    /// 글자이고 주석 안의 울타리는 글자라, 따로 세면 서로를 놓친다. 그런 글자가 아예 없으면 훑지 않는다.
+    private static func openBlock(in text: NSString, from start: Int, to end: Int) -> BlockContext.Open {
         guard end > start,
-              text.range(of: "```").location != NSNotFound || text.range(of: "~~~").location != NSNotFound else {
-            return false
+              text.range(of: "```").location != NSNotFound || text.range(of: "~~~").location != NSNotFound
+                || text.range(of: "<!--").location != NSNotFound else {
+            return .none
         }
-        var open = false
+        var open = BlockContext.Open.none
         var at = start
         while at < end {
             let paragraph = text.paragraphRange(for: NSRange(location: at, length: 0))
-            if BlockContext.isFence(lineText(text, paragraph)) { open.toggle() }
+            open = BlockContext.openBlock(after: lineText(text, paragraph), from: open)
             let next = NSMaxRange(paragraph)
             if next <= at { break }
             at = next
