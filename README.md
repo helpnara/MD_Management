@@ -21,6 +21,7 @@
 | [docs/06-ci.md](docs/06-ci.md) | CI · TestFlight 절차 |
 | [docs/adr/](docs/adr/) | 되돌리기 비싼 결정 (목록은 그 폴더의 README) |
 | [CLAUDE.md](CLAUDE.md) | 세션 규약 |
+| [docs/90-handover.md](docs/90-handover.md) | 이관 안내 — 다른 계정에서 이어 받기 (첫 세션 점검 · 날짜가 정해진 일) |
 
 ## 구조
 
