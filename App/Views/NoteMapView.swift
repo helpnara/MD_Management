@@ -33,6 +33,7 @@ struct NoteMapView: View {
     @State private var loaded = false
     @State private var shown = Self.pageSize
     @State private var shownPhrases = Self.phrasePageSize
+    @State private var shownPeople = Self.phrasePageSize
     @State private var route: [String] = []
 
     static let pageSize = 30
@@ -65,6 +66,7 @@ struct NoteMapView: View {
         .onChange(of: periodDays) { _, _ in
             shown = Self.pageSize
             shownPhrases = Self.phrasePageSize
+            shownPeople = Self.phrasePageSize
         }
         .onChange(of: library.hiddenWords) { _, _ in Task { await reload() } }
     }
@@ -76,8 +78,10 @@ struct NoteMapView: View {
             if let overview, let snapshot {
                 // 332 — **구절과 낱말을 두 구역으로** (2026-11-26 사용자 — *구절하고 단어하고 구분이 필요할 것 같은데*).
                 // 구절은 늘 제 낱말보다 노트 수가 적어 한 목록에 섞으면 가라앉았다 (빌드 159). 구역마다 따로 겨루고 막대도 따로 잰다.
-                let phrases = overview.entries.filter { NoteMap.isPhrase($0.keyword) }
-                let words = overview.entries.filter { !NoteMap.isPhrase($0.keyword) }
+                // 333 — 갈래는 셈(`Model.kind`) 하나로 가른다: 구절 · 낱말 · 사람 (사람은 참고용 — 맨 아래).
+                let phrases = overview.entries.filter { snapshot.model.kind(of: $0.keyword) == .phrase }
+                let words = overview.entries.filter { snapshot.model.kind(of: $0.keyword) == .word }
+                let people = overview.entries.filter { snapshot.model.kind(of: $0.keyword) == .person }
                 if !phrases.isEmpty {
                     Section {
                         rows(phrases, limit: shownPhrases)
@@ -104,6 +108,20 @@ struct NoteMapView: View {
                     VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
                         if phrases.isEmpty { summary(overview: overview, snapshot: snapshot) }
                         sectionTitle(String(localized: "낱말"), count: words.count)
+                    }
+                }
+                // 333 — **사람** (2026-11-26 사용자 — *노트맵을 보는 이유가 요즘 동향이나 이슈가 뭐였지를 보는 것이기 때문에 사람부분을 따로 떼서
+                // 참고용으로*). 이름 + 직함이 노트 둘 이상에 나온 것.
+                if !people.isEmpty {
+                    Section {
+                        rows(people, limit: shownPeople)
+                        if people.count > shownPeople {
+                            Button("더 보기") { shownPeople += Self.phrasePageSize }
+                                .font(.scaled(.body))
+                                .foregroundStyle(Palette.accent)
+                        }
+                    } header: {
+                        sectionTitle(String(localized: "사람 — 참고"), count: people.count)
                     }
                 }
                 if !library.hiddenWords.isEmpty {
