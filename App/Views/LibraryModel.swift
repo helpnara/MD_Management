@@ -895,6 +895,61 @@ final class LibraryModel: ObservableObject {
         findInNote(term)
     }
 
+    // MARK: - 노트 지도 (329 · 330)
+
+    /// 지도 한 판 — 시트가 열릴 때 · 숨긴 말이 바뀔 때 다시 만든다. 셈은 Core `NoteMap` (파이썬 쌍둥이 · 정답표).
+    struct NoteMapSnapshot: Sendable {
+        let model: NoteMap.Model
+        /// 오늘 — 1970-01-01 부터 센 날 (기기 달력).
+        let today: Int
+        /// 본문을 아직 못 받아 셈에서 빠진 노트 수 (245).
+        let titleOnly: Int
+        /// 노트 줄을 그릴 제목 · 고친 시각.
+        let notes: [String: NoteSummary]
+    }
+
+    /// **지도에서 고른 노트를 연다** — 시트를 닫고 이 요청을 남기면 폴더 화면이 찾기 결과와 같은 길(`openFromFolders`)로 연다.
+    /// 시트는 폴더 화면 밖에서 떠서 그 화면의 칸 선택을 못 만진다.
+    struct NoteMapOpen: Equatable {
+        let id = UUID()
+        let path: String
+        let keyword: String
+    }
+
+    @Published var noteMapOpen: NoteMapOpen?
+    /// 지도에서 뺀 말 — `.여백/숨긴말.json`.
+    @Published private(set) var hiddenWords: [String] = []
+
+    func showNoteMap() {
+        guard sheet == nil else { return }
+        sheet = .noteMap
+    }
+
+    /// 색인에서 노트마다 낱말 꼴을 읽어 모델을 만든다. 색인 전이면 빈 지도.
+    func loadNoteMap() async -> NoteMapSnapshot? {
+        guard let index else { return nil }
+        let hidden = await store?.readHiddenWords() ?? []
+        if hidden != hiddenWords { hiddenWords = hidden }
+        let (rows, titleOnly, notes) = await index.noteMapRows()
+        let model = await Task.detached(priority: .userInitiated) { NoteMap.Model(rows: rows, hidden: Set(hidden)) }.value
+        return NoteMapSnapshot(model: model, today: SearchIndex.localDay(.now), titleOnly: titleOnly, notes: notes)
+    }
+
+    func hideWord(_ word: String) async {
+        guard let store else { return }
+        hiddenWords = await store.writeHiddenWords(hiddenWords + [word], mergingDisk: true)
+    }
+
+    func unhideWord(_ word: String) async {
+        guard let store else { return }
+        hiddenWords = await store.writeHiddenWords(hiddenWords.filter { $0 != word }, mergingDisk: false)
+    }
+
+    func openFromNoteMap(path: String, keyword: String) {
+        sheet = nil
+        noteMapOpen = NoteMapOpen(path: path, keyword: keyword)
+    }
+
     // MARK: - 노트 정보 (315)
 
     /// ··· 메뉴 · ⌘⇧I. 셈은 Core `NoteStats` (파이썬 쌍둥이 · 정답표) — 지금 글(`draft`)로 센다. 쓰는 중이면 저장 전 글도 들어간다.
@@ -1053,6 +1108,8 @@ final class LibraryModel: ObservableObject {
         case search
         /// **노트 정보** (315) — 글자 · 낱말 · 문단 · 할 일 · 읽는 시간 · 파일.
         case noteInfo
+        /// **노트 지도** (329 · 330) — 기간별 키워드 · 키워드 하나 중심의 작은 관계도.
+        case noteMap
 
         var id: String {
             switch self {
@@ -1065,6 +1122,7 @@ final class LibraryModel: ObservableObject {
             case .brokenLinks: return "brokenLinks"
             case .search: return "search"
             case .noteInfo: return "noteInfo"
+            case .noteMap: return "noteMap"
             case .code(let index, _): return "code-\(index)"
             }
         }
@@ -1999,7 +2057,10 @@ final class LibraryModel: ObservableObject {
             log("문서 첨부 \(lines.count)개: \(note.relativePath)")
         }
         // 사진과 같다 (235) — 다 성공했다고 남의 알림을 지우지 않는다.
-        if !failed.isEmpty { report(String(localized: "첨부하지 못했습니다: \(failed.joined(separator: ", "))")) }
+        // 328 — 다른 앱도 못 읽게 저장된 파일이 있다 (내려받은 PDF · 2026-11-22 사용자). 앱이 고칠 수 없어 사본을 만드는 길을 알린다.
+        if !failed.isEmpty {
+            report(String(localized: "첨부하지 못했습니다: \(failed.joined(separator: ", "))\n파일 앱에서 그 파일을 길게 눌러 복제한 뒤 사본을 넣어 보세요."))
+        }
         if !folders.isEmpty { report(String(localized: "폴더는 첨부할 수 없습니다: \(folders.joined(separator: ", "))")) }
     }
 

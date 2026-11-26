@@ -96,6 +96,12 @@ struct RootView: View {
             try? await Task.sleep(for: .milliseconds(1200))
             library.sheet = .search
         }
+        // CI — **노트 지도** (`-noteMap` · 329). 색인이 견본 노트를 다 읽을 때까지 조금 더 기다린다.
+        .task {
+            guard library.launch.noteMap else { return }
+            try? await Task.sleep(for: .milliseconds(3000))
+            library.sheet = .noteMap
+        }
         .task(id: library.selectedFolder) {
             library.autoSelectsFirstNote = prefersPreselectedNote
             // 폴더를 고르기만 했다 — 금고 전체를 다시 훑지 않는다 (270).
@@ -166,6 +172,8 @@ struct RootView: View {
                 SearchSheet().environmentObject(library)
             case .noteInfo:
                 NoteInfoSheet().environmentObject(library)
+            case .noteMap:
+                NoteMapView().environmentObject(library)
             case .code(_, let block):
                 CodeViewer(block: block)
             }
@@ -609,7 +617,25 @@ private struct FolderSidebar: View {
         .onChange(of: library.selectedFolder) { _, folder in
             selection = folder
         }
+        // **노트 지도에서 고른 노트** (329) — 시트가 닫힌 뒤 찾기 결과와 같은 길로 열고, 그 말로 노트 안 찾기를 연다 (314 와 같다).
+        .onChange(of: library.noteMapOpen) { _, request in
+            guard let request else { return }
+            library.noteMapOpen = nil
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))     // 시트가 내려가는 동안 칸을 넘기지 않는다
+                await openFromFolders(request.path)
+                library.findInNote(request.keyword)
+            }
+        }
         .toolbar {
+            // **노트 지도** (329 · 330) — 폴더 전체의 기간별 키워드.
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    library.showNoteMap()
+                } label: {
+                    Label("노트 지도", systemImage: "point.3.connected.trianglepath.dotted")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     // **아이패드는 고른 폴더 안에** (218) — 폴더 칸에 고른 폴더가 늘 보인다. **아이폰은 최상위에** — 폴더 화면으로
@@ -1307,7 +1333,7 @@ private struct SearchSheet: View {
 }
 
 /// **최근 고친 노트 한 줄** (261) — 폴더 화면의 빈 찾기 칸 아래. 고친 때는 노트 목록과 같은 모양으로 적는다.
-private struct RecentNoteRow: View {
+struct RecentNoteRow: View {     // 노트 지도(329)의 노트 줄도 이것 — 같은 줄을 두 벌 그리지 않는다
     let note: NoteSummary
 
     var body: some View {

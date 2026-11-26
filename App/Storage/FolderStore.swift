@@ -567,6 +567,30 @@ actor FolderStore {
         return settled
     }
 
+    /// **숨긴 말** (329 노트 지도) — `.여백/숨긴말.json`. 고정과 같은 꼴 · 같은 셈(`Pins`)이다.
+    func readHiddenWords() -> [String] {
+        openScopeIfNeeded()
+        let url = root.appendingPathComponent(NoteMap.hiddenFileName)
+        var data: Data?
+        coordinateRead(url) { readURL in data = try? Data(contentsOf: readURL) }
+        guard let data else { return [] }
+        return Pins.decode(data)
+    }
+
+    /// 숨기기는 디스크와 **합쳐서** (두 기기가 각각 숨겨도 둘 다 남는다), 되살리기는 합치지 않고 적는다 (합치면 되살린 말이 돌아온다).
+    @discardableResult
+    func writeHiddenWords(_ words: [String], mergingDisk: Bool) -> [String] {
+        openScopeIfNeeded()
+        let settled = mergingDisk ? Pins.merged(words, readHiddenWords()) : Pins.tidy(words)
+        do {
+            try createFolder(Pins.folder)
+            try writeData(Pins.encode(settled), to: NoteMap.hiddenFileName)
+        } catch {
+            // 못 적어도 노트는 멀쩡하다 — 이번 실행 동안만 숨는다.
+        }
+        return settled
+    }
+
     /// 안전 저장용 임시 파일 자리. **원본과 같은 볼륨의 교체 전용 폴더**여야 한다.
     ///
     /// 빌드 20 까지는 앱의 `tmp` 에 썼다. 그러면 `replaceItemAt` 이 자리를 맞바꾸지 못하고

@@ -25,7 +25,7 @@ enum SampleFolder {
         ideas: "Ideas", idea: "App Concept.md",
         welcomeText: englishWelcome, meetingText: englishMeeting, ideaText: englishIdea)
 
-    static func make() -> URL {
+    static func make(noteMapExtras: Bool = false) -> URL {
         // 앱이 지금 보여 주는 언어를 따른다 — 화면 문구와 같은 판단(`AppLanguage`)이다.
         let set = AppLanguage.isEnglish ? english : korean
         let root = FileManager.default.temporaryDirectory
@@ -46,7 +46,34 @@ enum SampleFolder {
         try? FileManager.default.createDirectory(at: ideas, withIntermediateDirectories: true)
         write(set.ideaText, to: ideas.appendingPathComponent(set.idea))
 
+        if noteMapExtras { writeNoteMapExtras(in: root) }
         return root
+    }
+
+    /// **노트 지도를 찍을 견본** (329 · CI `-noteMap` 일 때만). 견본 셋으로는 4주 안에 노트가 둘뿐이라 지도가 빈다 —
+    /// 날짜를 흩은 노트를 `기록` 폴더에 더 둔다 (고친 날짜를 며칠 전으로). 둘러보기 견본(사람이 보는 것)에는 안 들어간다.
+    private static func writeNoteMapExtras(in root: URL) {
+        let folder = root.appendingPathComponent("기록", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let notes: [(String, Int, String)] = [
+            ("산책 기록.md", 1, "# 산책 기록\n\n저녁 산책을 했다. 산책 길에 디자인 생각을 정리했다. 명조 제목이 마음에 든다."),
+            ("디자인 메모.md", 3, "# 디자인 메모\n\n디자인은 덜어내기부터. 명조와 고딕을 나눈다. 초록 한 가지를 강조색으로."),
+            ("주간 회의.md", 5, "# 주간 회의\n\n회의에서 디자인 일정을 정했다. 회의 뒤 산책."),
+            ("읽은 책.md", 8, "# 읽은 책\n\n독서 모임 책을 다 읽었다. 독서를 마치고 노트를 쓰고 산책을 했다."),
+            ("명조 고르기.md", 12, "# 명조 고르기\n\n제목 글꼴을 명조로 바꿨다. 글꼴 크기는 그대로. 디자인 회의에서 보여 줬다."),
+            ("독서 모임.md", 16, "# 독서 모임\n\n독서 모임에서 여행 이야기를 했다. 여행 계획은 다음 달."),
+            ("초록 색.md", 20, "# 초록 색\n\n초록을 잎 색으로. 초록의 밝기를 두 벌로 맞췄다. 디자인 마무리."),
+            ("여행 계획.md", 34, "# 여행 계획\n\n여행 준비물. 여행에서 쓸 노트. 회의 일정과 겹치지 않게."),
+            ("지난 회의.md", 40, "# 지난 회의\n\n회의를 길게 했다. 회의록 정리. 독서 모임 날짜."),
+            ("운동 일지.md", 45, "# 운동 일지\n\n운동을 했다. 운동 뒤 산책."),
+        ]
+        let now = Date()
+        for (name, daysAgo, text) in notes {
+            let url = folder.appendingPathComponent(name)
+            write(text, to: url)
+            let date = now.addingTimeInterval(-Double(daysAgo) * 86_400)
+            try? FileManager.default.setAttributes([.modificationDate: date], ofItemAtPath: url.path)
+        }
     }
 
     private static func write(_ text: String, to url: URL) {

@@ -80,7 +80,9 @@ actor SearchIndex {
     ///   보여 주는 글도 이 사본에서 나오지만 NFC 와 NFD 는 같은 글자로 그려진다 — 원본 파일은 건드리지 않는다(ADR-0001).
     /// - v6 (빌드 156 · 326 · 327): 제목 · 미리보기 줄이 HTML 주석(`<!-- … -->`) 안의 줄을 건너뛴다 — 주석을 머리에 둔 노트는
     ///   목록에 주석 안의 글이 제목 · 미리보기로 보였다. 판을 안 올리면 고치지 않은 노트는 옛 줄을 그대로 든다 (v2 의 교훈).
-    private static let version = 6
+    /// - v7 (329 · 330 노트 지도): `note.terms`(노트의 낱말 꼴 — `NoteMap.terms`) · `note.created`(머리말 날짜의 날) 열.
+    ///   지도를 열 때마다 본문을 다시 읽지 않게 쓸 때 한 번 셈한다. 판을 올려 옛 노트도 다시 셈한다.
+    private static let version = 7
 
     /// **안 받은 노트가 이보다 많으면 내려받기를 시키지 않는다** (245, 2026-10-13 사용자 — *만약 수천개라면 유사한 상황이
     /// 발생할 가능성 · a 방식이 나을 것*). 그 아래면 예전처럼 받아서 본문까지 — 노트 150개쯤인 폴더는 본문 검색이 그대로다.
@@ -166,7 +168,9 @@ actor SearchIndex {
           size INTEGER NOT NULL,
           tags TEXT NOT NULL DEFAULT '',
           first_line TEXT NOT NULL DEFAULT '',
-          links TEXT NOT NULL DEFAULT ''
+          links TEXT NOT NULL DEFAULT '',
+          terms TEXT NOT NULL DEFAULT '',
+          created INTEGER
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS note_fts USING fts5(
           rel_path UNINDEXED, title, body, tags, tokenize='\(tokenize)'
@@ -380,6 +384,35 @@ actor SearchIndex {
         return AttachmentLedger.ordered(rows.map { $0[0] })
     }
 
+    /// **노트 지도의 재료** (329 · 330) — 노트마다 (경로, 날, 낱말 꼴). 날은 머리말 날짜가 있으면 그것, 없으면 파일의 고친 날짜를
+    /// **이 기기의 달력**으로 (설계 §5.1). 본문을 아직 못 받아 제목만 든 노트(245)는 빼고 그 수를 따로 돌려준다.
+    /// `notes` — 노트 줄을 그릴 제목 · 고친 시각 (경로로 찾는다).
+    func noteMapRows(calendar: Calendar = .current) -> (rows: [NoteMap.Row], titleOnly: Int, notes: [String: NoteSummary]) {
+        do { try open() } catch { return ([], 0, [:]) }
+        var rows: [NoteMap.Row] = []
+        var notes: [String: NoteSummary] = [:]
+        var titleOnly = 0
+        for row in query("SELECT rel_path, mtime, created, terms, title, size FROM note") {
+            let mtime = Int(row[1]) ?? 0
+            if mtime == Self.titleOnlyStamp {
+                titleOnly += 1
+                continue
+            }
+            let modified = Date(timeIntervalSince1970: TimeInterval(mtime))
+            let day = Int(row[2]) ?? Self.localDay(modified, calendar: calendar)
+            rows.append(NoteMap.Row(path: row[0], day: day, terms: NoteMap.decode(row[3])))
+            notes[row[0]] = NoteSummary(relativePath: row[0], title: row[4], preview: "", modifiedAt: modified,
+                                        size: Int(row[5]) ?? 0, isDownloaded: true)
+        }
+        return (rows, titleOnly, notes)
+    }
+
+    /// 1970-01-01 부터 센 날 — 기기 달력의 연 · 월 · 일로 (`NoteMap.civilDay`). 오늘도 같은 셈으로 낸다.
+    static func localDay(_ date: Date, calendar: Calendar = .current) -> Int {
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        return NoteMap.civilDay(year: parts.year ?? 1970, month: parts.month ?? 1, day: parts.day ?? 1)
+    }
+
     /// `links` 열의 구분자 — 경로에는 줄바꿈이 없다. 앞뒤에도 두어 `instr` 가 경로 하나에 꼭 맞게.
     private static let linksSeparator = "\n"
 
@@ -395,10 +428,13 @@ actor SearchIndex {
         let targets = AttachmentLedger.linkTargets(of: note.relativePath, text: text)
         let links = targets.isEmpty ? "" : Self.linksSeparator + targets.joined(separator: Self.linksSeparator) + Self.linksSeparator
         run("""
-        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links) VALUES(?,?,?,?,?,?,?)
+        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links, terms, created) VALUES(?,?,?,?,?,?,?,?,?)
         ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
-          size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links
-        """, [note.relativePath, title, String(mtime), String(note.size), tags, firstLine, links])
+          size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links,
+          terms=excluded.terms, created=excluded.created
+        """, [.text(note.relativePath), .text(title), .text(String(mtime)), .text(String(note.size)), .text(tags), .text(firstLine),
+              .text(links), .text(NoteMap.encode(NoteMap.terms(of: text))),
+              NoteMap.createdDay(parsed.frontMatter?.created).map { Bind.int(Int64($0)) } ?? Bind.null])
         guard let id = rowID(of: note.relativePath) else { return firstLine }
         run("DELETE FROM note_fts WHERE rowid = ?", [.int(id)])
         run("INSERT INTO note_fts(rowid, rel_path, title, body, tags) VALUES(?,?,?,?,?)",
@@ -409,10 +445,11 @@ actor SearchIndex {
     /// **제목만** 넣는다 (245) — 본문 · 태그 · 미리보기 · 링크는 비운다. `mtime` 은 `titleOnlyStamp`.
     private func writeTitleOnly(_ note: NoteSummary) {
         run("""
-        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links) VALUES(?,?,?,?,?,?,?)
+        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links, terms, created) VALUES(?,?,?,?,?,?,?,?,NULL)
         ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
-          size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links
-        """, [note.relativePath, Paths.normalized(note.title), String(Self.titleOnlyStamp), String(note.size), "", "", ""])
+          size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links,
+          terms=excluded.terms, created=excluded.created
+        """, [note.relativePath, Paths.normalized(note.title), String(Self.titleOnlyStamp), String(note.size), "", "", "", ""])
         guard let id = rowID(of: note.relativePath) else { return }
         run("DELETE FROM note_fts WHERE rowid = ?", [.int(id)])
         run("INSERT INTO note_fts(rowid, rel_path, title, body, tags) VALUES(?,?,?,?,?)",
@@ -643,6 +680,7 @@ actor SearchIndex {
     private enum Bind {
         case text(String)
         case int(Int64)
+        case null
     }
 
     @discardableResult
@@ -660,6 +698,7 @@ actor SearchIndex {
             switch value {
             case .text(let text): sqlite3_bind_text(statement, Int32(index + 1), text, -1, Self.transient)
             case .int(let number): sqlite3_bind_int64(statement, Int32(index + 1), number)
+            case .null: sqlite3_bind_null(statement, Int32(index + 1))
             }
         }
     }

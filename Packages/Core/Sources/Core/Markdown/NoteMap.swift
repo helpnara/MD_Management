@@ -57,6 +57,10 @@ public enum NoteMap {
         return set
     }()
 
+    /// **숨긴 말** (329) — 사용자 폴더 안 숨김 파일. 고정한 노트(`Pins`)와 같은 자리 · 같은 꼴(글 목록 JSON)이라
+    /// 읽기 · 쓰기 · 합치기는 `Pins.decode` · `encode` · `merged` 를 그대로 쓴다 (같은 일을 하는 길을 둘 두지 않는다).
+    public static let hiddenFileName = ".여백/숨긴말.json"
+
     /// 둘레 말은 여섯까지.
     public static let neighborLimit = 6
     static let scoreScale = 1_000_000.0

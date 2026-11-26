@@ -426,6 +426,12 @@ jobs:
           shoot 18-folder-recent-open.png -sampleFolder -folderSearch -openFirstRecent -mode.reading YES
           # **어디서나 찾기 시트** (286) — 노트를 연 채 ··· → 모든 노트에서 찾기 · ⌘F 가 띄우는 것. 노트 위에 시트가 서고 결과 셋이 보여야 한다.
           shoot 19-search-sheet.png -sampleFolder -openFirstNote -searchSheet -search 2026
+          # **노트 지도** (329 · 330) — 폴더 화면 위 단추가 띄우는 시트. 4주 막대 목록(↑ · 새로 표시) · 첫 키워드 화면(작은 관계도 +
+          # 이 말이 든 노트) · 큰 글씨(관계도 대신 줄 목록). 견본에 날짜를 흩은 `기록` 노트가 더 들어간다 (`-noteMap` 일 때만).
+          shoot 20-note-map.png -sampleFolder -noteMap
+          shoot 21-note-map-keyword.png -sampleFolder -noteMapKeyword
+          shoot 22-note-map-large-text.png -sampleFolder -noteMapKeyword \
+            -UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityL
           # **새 노트** — 만들기 → 열기 흐름. 편집기에 `# 새 노트` 한 줄이 보여야 한다.
           shoot 10-new-note.png -sampleFolder -newNote
           # **첨부 시험** — 사진 셋(영문 · 한글+공백 · 퍼센트 인코딩)이 다
@@ -453,6 +459,9 @@ jobs:
           shoot dark/02-note.png -sampleFolder -openFirstNote
           # 웹뷰의 색 토큰이 앱과 같이 어두워지는지 (설계서 §8)
           shoot dark/03-reading.png -sampleFolder -readingMode
+          # 노트 지도 (329 · 330) — 막대 · 관계도의 말 칸 · 선이 어두움에서도 이웃 화면과 같은 종이 · 먹 · 잎 초록인지
+          shoot dark/20-note-map.png -sampleFolder -noteMap
+          shoot dark/21-note-map-keyword.png -sampleFolder -noteMapKeyword
           xcrun simctl ui "$UDID" appearance light
 
           # ── 아이폰 가로 (154) ──
@@ -544,6 +553,8 @@ jobs:
             # **아이패드 폴더 칸의 찾기 칸이 붙박이** (286) — 띠의 바탕이 칸의 바탕과 섞여야 한다 (266 때 안 맞아 미뤘던 것).
             # **찾기 시트** — 아이패드에서도 노트 위에 뜬다.
             shoot ipad/05-search-sheet.png -sampleFolder -searchSheet -search 2026
+            # 노트 지도의 키워드 화면 (330) — 아이패드 시트 폭에서 관계도
+            shoot ipad/06-note-map-keyword.png -sampleFolder -noteMapKeyword
             mkdir -p screenshots/en/ipad
             shoot en/ipad/01-split.png -sampleFolder "${EN[@]}"
             UDID="${{ steps.sim.outputs.udid }}"
