@@ -86,7 +86,8 @@ struct RootView: View {
             // **앱을 열면 마지막으로 보던 노트로** (302, 2026-11-06 사용자 — *같은 노트에 계속 업데이트가 많아*). **여기서 바로 연다** —
             // 빌드 148 은 폴더 목록 화면에 맡겼는데 아이폰은 그 화면이 덮여 있어 뒤로 가기를 눌러야 돌았다 (`LibraryModel.openLastNote`).
             // 아이폰은 모델이 폴더 · 노트를 고르면 칸이 저절로 선다 (`-openFirstNote` 와 같다). CI 인자가 있으면 그쪽이 먼저다.
-            if library.launch.searchTerm == nil, !library.launch.newNote, !library.launch.openFirstNote {
+            // `-noteMap` 은 폴더 화면에 머문다 — 노트로 넘어가는 칸 넘김과 시트 띄우기가 겹치면 시트가 버려진다 (빌드 화면 사진).
+            if library.launch.searchTerm == nil, !library.launch.newNote, !library.launch.openFirstNote, !library.launch.noteMap {
                 await library.openLastNote()
             }
         }
@@ -95,6 +96,23 @@ struct RootView: View {
             guard library.launch.searchSheet else { return }
             try? await Task.sleep(for: .milliseconds(1200))
             library.sheet = .search
+        }
+        // CI — **노트 지도** (`-noteMap` · 329). 색인이 견본 노트를 다 읽을 때까지 조금 더 기다린다.
+        .task {
+            guard library.launch.noteMap else { return }
+            // 색인이 견본 노트를 한 바퀴 다 읽은 뒤에 (길어야 10초).
+            for _ in 0..<40 where library.indexStatus.lastRefresh == nil {
+                try? await Task.sleep(for: .milliseconds(250))
+            }
+            try? await Task.sleep(for: .milliseconds(800))
+            // **섰는지 보고 다시 띄운다** (331 · 빌드 화면 사진 두 번) — 아이폰이 켜지며 노트 목록 칸을 밀어 넣는 순간과 겹치면
+            // 시트가 조용히 버려진다. 그 순간은 실행마다 달라 기다리기로는 못 막는다. 시트 화면이 `onAppear` 로 알릴 때까지.
+            for _ in 0..<6 where !library.noteMapVisible {
+                library.sheet = nil
+                try? await Task.sleep(for: .milliseconds(300))
+                library.sheet = .noteMap
+                try? await Task.sleep(for: .milliseconds(1200))
+            }
         }
         .task(id: library.selectedFolder) {
             library.autoSelectsFirstNote = prefersPreselectedNote
@@ -166,6 +184,8 @@ struct RootView: View {
                 SearchSheet().environmentObject(library)
             case .noteInfo:
                 NoteInfoSheet().environmentObject(library)
+            case .noteMap:
+                NoteMapView().environmentObject(library)
             case .code(_, let block):
                 CodeViewer(block: block)
             }
@@ -609,7 +629,25 @@ private struct FolderSidebar: View {
         .onChange(of: library.selectedFolder) { _, folder in
             selection = folder
         }
+        // **노트 지도에서 고른 노트** (329) — 시트가 닫힌 뒤 찾기 결과와 같은 길로 열고, 그 말로 노트 안 찾기를 연다 (314 와 같다).
+        .onChange(of: library.noteMapOpen) { _, request in
+            guard let request else { return }
+            library.noteMapOpen = nil
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))     // 시트가 내려가는 동안 칸을 넘기지 않는다
+                await openFromFolders(request.path)
+                library.findInNote(request.keyword)
+            }
+        }
         .toolbar {
+            // **노트 지도** (329 · 330) — 폴더 전체의 기간별 키워드.
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    library.showNoteMap()
+                } label: {
+                    Label("노트 지도", systemImage: "point.3.connected.trianglepath.dotted")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     // **아이패드는 고른 폴더 안에** (218) — 폴더 칸에 고른 폴더가 늘 보인다. **아이폰은 최상위에** — 폴더 화면으로
@@ -1307,7 +1345,7 @@ private struct SearchSheet: View {
 }
 
 /// **최근 고친 노트 한 줄** (261) — 폴더 화면의 빈 찾기 칸 아래. 고친 때는 노트 목록과 같은 모양으로 적는다.
-private struct RecentNoteRow: View {
+struct RecentNoteRow: View {     // 노트 지도(329)의 노트 줄도 이것 — 같은 줄을 두 벌 그리지 않는다
     let note: NoteSummary
 
     var body: some View {

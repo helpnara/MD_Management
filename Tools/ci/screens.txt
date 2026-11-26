@@ -20,6 +20,9 @@
 11-trash.png           0,0.15,1,0.80
 12-settings-chosen.png 0,0.15,1,0.80
 13-search.png          0,0.18,1,0.60
+20-note-map.png        0,0.20,1,0.80
+21-note-map-keyword.png 0,0.15,1,0.80
+dark/20-note-map.png   0,0.20,1,0.80
 dark/02-note.png       0,0.15,1,0.75
 ipad/01-split.png      0.56,0.06,1,0.90
 ipad/02-reading.png    0.56,0.06,1,0.90

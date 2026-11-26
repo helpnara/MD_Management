@@ -229,7 +229,7 @@ enum FolderSource {
         attempts: Int = 3
     ) async -> FolderChoice {
         if launch.useSampleFolder {
-            let url = await MainActor.run { SampleFolder.make() }
+            let url = await MainActor.run { SampleFolder.make(noteMapExtras: launch.noteMap) }
             // CI 가 **고른 폴더 상태의 설정 화면**을 찍으려고 쓴다 — 폴더 고르기 창은 시뮬레이터
             // 스크립트로 못 누른다. 임시 폴더를 (b) 인 척 쓴다. 보안 범위 열기는 실패해도
             // 그냥 지나가므로(일반 폴더) 화면만 다르고 동작은 같다.
@@ -334,6 +334,10 @@ struct LaunchOptions: Sendable {
     var openFirstRecent = false
     /// **어디서나 찾기 시트를 띄우고 시작한다** (286) — CI 가 노트를 연 채 뜬 시트를 찍는다. `-search` 와 같이 주면 결과가 든 시트.
     var searchSheet = false
+    /// **노트 지도 시트를 띄우고 시작한다** (329) — CI 가 지도를 찍는다. 견본 폴더에 날짜를 흩은 노트를 더 둔다 (`SampleFolder`).
+    var noteMap = false
+    /// 노트 지도의 첫 키워드 화면(330)까지 연다. `-noteMap` 과 같이 준다.
+    var noteMapKeyword = false
 
     static func fromProcess(_ arguments: [String] = ProcessInfo.processInfo.arguments) -> LaunchOptions {
         LaunchOptions(
@@ -356,7 +360,9 @@ struct LaunchOptions: Sendable {
             folderSearch: arguments.contains("-folderSearch"),
             openFirstHit: arguments.contains("-openFirstHit"),
             openFirstRecent: arguments.contains("-openFirstRecent"),
-            searchSheet: arguments.contains("-searchSheet")
+            searchSheet: arguments.contains("-searchSheet"),
+            noteMap: arguments.contains("-noteMap") || arguments.contains("-noteMapKeyword"),
+            noteMapKeyword: arguments.contains("-noteMapKeyword")
         )
     }
 }

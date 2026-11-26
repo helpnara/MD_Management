@@ -65,6 +65,8 @@ TRASH_GROUP_CASES = ROOT / "Tools" / "golden" / "trash-group-cases.json"
 IMAGE_FIT_CASES = ROOT / "Tools" / "golden" / "image-fit-cases.json"
 # 315 — 노트 통계 (Swift `NoteStats`). 셈은 `note_stats.py` (쌍둥이).
 NOTE_STATS_CASES = ROOT / "Tools" / "golden" / "note-stats-cases.json"
+# 329 · 330 — 노트 지도 (Swift `NoteMap`). 셈은 `note_map.py` (쌍둥이).
+NOTE_MAP_CASES = ROOT / "Tools" / "golden" / "note-map-cases.json"
 RETARGET_CASES = ROOT / "Tools" / "golden" / "retarget-cases.json"
 NESTING_CASES = ROOT / "Tools" / "golden" / "nesting-cases.json"
 EMPHASIS_CASES = ROOT / "Tools" / "golden" / "emphasis-cases.json"
@@ -2990,6 +2992,7 @@ def build() -> dict:
         "trashGroupCases": build_trash_group_cases(),
         "imageFitCases": build_image_fit_cases(),
         "noteStatsCases": build_note_stats_cases(),
+        "noteMapCases": build_note_map_cases(),
         "linkTriggerCases": build_link_trigger_cases(),
         "pasteCases": build_paste_cases(),
         "brokenCases": build_broken_cases(),
@@ -4303,6 +4306,54 @@ def build_image_fit_cases() -> list:
     return out
 
 
+
+def build_note_map_cases() -> dict:
+    """329 · 330 — 노트 지도. 낱말 꼴(노트 하나) · 키워드 · 기간 순위 · 이웃 · 노트 목록 · 머리말 날짜 · 관계도 자리.
+    뜻(`expectKeywords` · `expectOrder`)을 적은 사례는 셈과 맞는지 본다."""
+    sys.path.insert(0, str(ROOT / "Tools" / "golden"))
+    import note_map as nm
+    spec = json.loads(NOTE_MAP_CASES.read_text(encoding="utf-8"))
+
+    def terms_of(text):
+        return nm.terms(text, context_roles, split_front_matter)
+
+    term_cases = [{"name": c["name"], "text": c["text"], "terms": terms_of(c["text"])} for c in spec["terms"]]
+    folders = []
+    for case in spec["folders"]:
+        rows = [{"path": n["path"], "day": n["day"], "terms": terms_of(n["text"])} for n in case["notes"]]
+        model = nm.Model(rows, case["hidden"])
+        keywords = sorted(model.df)
+        if "expectKeywords" in case and keywords != case["expectKeywords"]:
+            raise SystemExit(f"::error::[{case['name']}] 노트 지도 키워드: 뜻 {case['expectKeywords']} · 셈 {keywords}")
+        overviews = [dict(model.overview(case["today"], d, by), days=d, by=by)
+                     for d in case["days"] for by in ("count", "score")]
+        first = case["days"][0]
+        order = [e["keyword"] for e in overviews[0]["entries"]]
+        if "expectScoreOrder" in case:
+            got = [e["keyword"] for e in overviews[1]["entries"]]
+            if got != case["expectScoreOrder"]:
+                raise SystemExit(f"::error::[{case['name']}] 노트 지도 두드러진 순: 뜻 {case['expectScoreOrder']} · 셈 {got}")
+        if "expectOrder" in case and order != case["expectOrder"]:
+            raise SystemExit(f"::error::[{case['name']}] 노트 지도 차례: 뜻 {case['expectOrder']} · 셈 {order}")
+        for ov in overviews:
+            counts = [e["count"] for e in ov["entries"]]
+            if ov["by"] == "count" and counts != sorted(counts, reverse=True):
+                raise SystemExit(f"::error::[{case['name']}] 많이 쓴 순인데 노트 수가 들쭉날쭉: {counts}")
+            for e in ov["entries"]:
+                if e["count"] > ov["notes"] or (e["mark"] and not ov["previousNotes"]):
+                    raise SystemExit(f"::error::[{case['name']}] 노트 지도가 앞뒤가 안 맞는다: {e}")
+        centers = case.get("centers", order[:3])
+        neighbors = [{"center": c, "days": first, "neighbors": model.neighbors(c, case["today"], first)} for c in centers]
+        pairs = case.get("pairs", [[c, None] for c in order[:2]])
+        paths = [{"keyword": k, "also": a, "days": first, "paths": model.note_paths(k, a, case["today"], first)}
+                 for k, a in pairs]
+        folders.append({"name": case["name"], "today": case["today"], "hidden": case["hidden"], "notes": [
+            {"path": n["path"], "day": n["day"], "text": n["text"]} for n in case["notes"]],
+            "keywords": keywords, "overviews": overviews, "neighbors": neighbors, "paths": paths})
+    created = [{"text": c, "day": nm.created_day(c)} for c in spec["created"]]
+    layout = [{"count": n, "points": nm.layout(n)} for n in spec["layout"]]
+    return {"terms": term_cases, "folders": folders, "created": created, "layout": layout}
+
 def build_note_stats_cases() -> list:
     """315 — 뜻과 셈이 같고, 공백 뺀 글자 ≤ 글자 · 끝낸 일 ≤ 할 일 · 문단 ≤ 줄. 뒤섞기는 random() 만 쓴다."""
     sys.path.insert(0, str(ROOT / "Tools" / "golden"))
@@ -4958,6 +5009,9 @@ def tally(loaded: dict) -> str:
     maps = loaded.get("mapCases")
     if maps:
         counted.append(f"지도 장소 {len(maps)}건")
+    note_map = loaded.get("noteMapCases")
+    if note_map:
+        counted.append(f"노트 지도 {len(note_map['terms'])}·{len(note_map['folders'])}·{len(note_map['created'])}·{len(note_map['layout'])}건")
     stats_cases = loaded.get("noteStatsCases")
     if stats_cases:
         counted.append(f"노트 통계 {len(stats_cases)}건")

@@ -115,12 +115,32 @@
         }
       }
     },
+    "%@ · %@ 함께 든 노트 %lld개" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes with %1$@ and %2$@: %3$lld"
+          }
+        }
+      }
+    },
     "%@ — 새 노트" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ — New Note"
+          }
+        }
+      }
+    },
+    "%@ 거르기 풀기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Filter: %@"
           }
         }
       }
@@ -231,6 +251,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter a new name for the folder %@. The notes inside move with it.%@"
+          }
+        }
+      }
+    },
+    "%@, 노트 %lld개" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$lld notes"
+          }
+        }
+      }
+    },
+    "%@, 노트 %lld개, 새로 나옴" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$lld notes, new"
+          }
+        }
+      }
+    },
+    "%@, 노트 %lld개, 앞 기간보다 늘어남" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$lld notes, up from the previous period"
+          }
+        }
+      }
+    },
+    "%@, 함께 든 노트 %lld개" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, together in %2$lld notes"
           }
         }
       }
@@ -485,6 +545,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : ". You can undo this."
+          }
+        }
+      }
+    },
+    "1년" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Year"
+          }
+        }
+      }
+    },
+    "3개월" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 Months"
+          }
+        }
+      }
+    },
+    "4주" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "4 Weeks"
           }
         }
       }
@@ -813,6 +903,16 @@
         }
       }
     },
+    "거르기 풀기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Filter"
+          }
+        }
+      }
+    },
     "걸린 시간 · 경로" : {
       "localizations" : {
         "en" : {
@@ -1085,6 +1185,16 @@
         }
       }
     },
+    "구절 — 자주 붙여 쓰는 말" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phrases — Words You Often Write Together"
+          }
+        }
+      }
+    },
     "굵게" : {
       "localizations" : {
         "en" : {
@@ -1325,6 +1435,26 @@
         }
       }
     },
+    "기간" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Period"
+          }
+        }
+      }
+    },
+    "기간을 늘려 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try a longer period."
+          }
+        }
+      }
+    },
     "기록" : {
       "localizations" : {
         "en" : {
@@ -1381,6 +1511,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Words"
+          }
+        }
+      }
+    },
+    "내려받지 않은 노트 %lld개는 빠졌습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld notes not yet downloaded are left out"
           }
         }
       }
@@ -1509,6 +1649,16 @@
         }
       }
     },
+    "노트 %lld개에서" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From %lld notes"
+          }
+        }
+      }
+    },
     "노트 300개 만들기 (약 20MB)" : {
       "localizations" : {
         "en" : {
@@ -1575,6 +1725,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Swipe a note row left and tap **Move** (on iPad, drag it onto a folder). If the note links to files in its folder, you're asked: **Update and Move** moves the photos only this note uses into the new folder and updates the links; **Just Move** leaves both the text and the files as they are."
+          }
+        }
+      }
+    },
+    "노트 지도" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note Map"
+          }
+        }
+      }
+    },
+    "노트 지도를 만들 수 없습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't Build the Note Map"
+          }
+        }
+      }
+    },
+    "노트가 쌓이면 자주 쓴 말이 여기에 보입니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As your notes grow, the words you use often will appear here."
           }
         }
       }
@@ -1881,6 +2061,36 @@
         }
       }
     },
+    "되살리기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore"
+          }
+        }
+      }
+    },
+    "두 말이 함께 든 노트만" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only Notes with Both Words"
+          }
+        }
+      }
+    },
+    "두드러진 순" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standout"
+          }
+        }
+      }
+    },
     "둘러보기 자료입니다 · 실제 파일이 아닙니다" : {
       "localizations" : {
         "en" : {
@@ -2069,6 +2279,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create"
+          }
+        }
+      }
+    },
+    "많이 쓴 순" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most Used"
+          }
+        }
+      }
+    },
+    "말을 누르면 그 말이 가운데로 옵니다. 길게 누르면 두 말이 함께 든 노트만 봅니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap a word to move it to the center. Touch and hold to see only notes that contain both words."
           }
         }
       }
@@ -2541,6 +2771,16 @@
         }
       }
     },
+    "새로" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
+          }
+        }
+      }
+    },
     "새로 옴" : {
       "localizations" : {
         "en" : {
@@ -2601,6 +2841,16 @@
         }
       }
     },
+    "색인이 아직 준비되지 않았습니다. 잠시 뒤 다시 열어 보세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The search index isn't ready yet. Try again in a moment."
+          }
+        }
+      }
+    },
     "서식 글 길이" : {
       "localizations" : {
         "en" : {
@@ -2647,6 +2897,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "In the Settings app, tap your name → iCloud and make sure **iCloud Drive** is on. If it's on and this still happens, try deleting and reinstalling the app."
+          }
+        }
+      }
+    },
+    "숨긴 말" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden Words"
+          }
+        }
+      }
+    },
+    "숨긴 말 %lld개" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden Words: %lld"
+          }
+        }
+      }
+    },
+    "숨긴 말은 이 폴더 안의 숨김 파일에 적혀 다른 기기에도 따라갑니다. 노트 글은 바뀌지 않습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden words are saved in a hidden file in this folder and follow you to your other devices. Your notes aren't changed."
+          }
+        }
+      }
+    },
+    "숨긴 말이 없습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Hidden Words"
           }
         }
       }
@@ -2843,6 +3133,16 @@
         }
       }
     },
+    "아직 키워드가 될 만한 말이 없습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Keywords Yet"
+          }
+        }
+      }
+    },
     "안 쓰는 첨부" : {
       "localizations" : {
         "en" : {
@@ -2941,6 +3241,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Unknown"
+          }
+        }
+      }
+    },
+    "앞 기간 · 다른 노트보다 이 기간에 두드러진 말이 위로 옵니다. 숫자는 노트 수입니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Words that stand out in this period, compared with the previous period and your other notes, come first. Numbers are note counts."
           }
         }
       }
@@ -3167,6 +3477,16 @@
         }
       }
     },
+    "이 기간에 고친 노트가 없습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Notes Edited in This Period"
+          }
+        }
+      }
+    },
     "이 기기" : {
       "localizations" : {
         "en" : {
@@ -3255,6 +3575,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The file this link points to isn't in the folder.\n%@\n\nLink paths are relative to the note's folder."
+          }
+        }
+      }
+    },
+    "이 말 숨기기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide This Word"
+          }
+        }
+      }
+    },
+    "이 말이 든 노트 %lld개" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notes with This Word: %lld"
           }
         }
       }
@@ -3821,6 +4161,16 @@
         }
       }
     },
+    "차례" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Order"
+          }
+        }
+      }
+    },
     "찾기" : {
       "localizations" : {
         "en" : {
@@ -4037,12 +4387,12 @@
         }
       }
     },
-    "첨부하지 못했습니다: %@" : {
+    "첨부하지 못했습니다: %@\n파일 앱에서 그 파일을 길게 눌러 복제한 뒤 사본을 넣어 보세요." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't attach: %@"
+            "value" : "Couldn't attach: %@\nIn the Files app, touch and hold the file, choose Duplicate, then attach the copy."
           }
         }
       }
@@ -4409,6 +4759,16 @@
         }
       }
     },
+    "폴더 화면 위의 **노트 지도** 단추를 누르면 4주 · 3개월 · 1년 동안 고친 노트에 자주 쓴 말이 막대로 보입니다. 자주 붙여 쓰는 두 낱말(**독서 모임** 같은 구절)도 함께 셉니다. 차례는 **많이 쓴 순** 과 **두드러진 순**(앞 기간 · 다른 노트보다 이 기간에 두드러진 말) 중에서 고릅니다. **↑** 는 앞 기간보다 늘어난 말, **새로** 는 앞 기간에 없던 말입니다. 말을 누르면 함께 자주 나온 말과 그 말이 든 노트가 보이고, 노트를 누르면 그 말을 찾은 채 열립니다. 말을 길게 눌러 **숨기기** 할 수 있습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap **Note Map** at the top of the folder screen to see, as bars, the words you used most in notes edited over the last 4 weeks, 3 months, or year. Two-word phrases you often write together (like **book club**) are counted too. Sort by **Most Used** or **Standout** (words that stand out in this period compared with the previous period and your other notes). **↑** marks words that rose from the previous period, and **New** marks words that weren't there before. Tap a word to see the words that often appear with it and the notes that contain it; tap a note to open it with that word found. Touch and hold a word to **hide** it."
+          }
+        }
+      }
+    },
     "폴더는 두 단계까지라 %@ 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다." : {
       "localizations" : {
         "en" : {
@@ -4565,6 +4925,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tasks"
+          }
+        }
+      }
+    },
+    "함께 %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Together %lld"
+          }
+        }
+      }
+    },
+    "함께 나온 말" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Words That Appear Together"
           }
         }
       }
