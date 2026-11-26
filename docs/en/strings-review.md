@@ -17,7 +17,9 @@
 | %@ (맨 위) | %@ (Top Level) |
 | %@ (충돌 %@) | %@ (Conflict %@) |
 | %@ · %@ | %@ · %@ |
+| %@ · %@ 함께 든 노트 %lld개 | Notes with %1$@ and %2$@: %3$lld |
 | %@ — 새 노트 | %@ — New Note |
+| %@ 거르기 풀기 | Clear Filter: %@ |
 | %@ 과 그 노트만 쓰던 첨부를 완전히 지웁니다. 되돌릴 수 없습니다. 지우려면 %@ 라고 입력하세요. | Permanently deletes %@ and any attachments used only by that note. This can't be undone. To delete, type %@. |
 | %@ 안에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | The folder will be created in %@. If the name is taken, a number is added. |
 | %@ 을 폴더 안 .trash 로 옮깁니다. 설정 → 휴지통에서 되돌릴 수 있습니다. | Moves %@ to the hidden .trash folder. You can restore it from Settings → Trash. |
@@ -29,6 +31,10 @@
 | %@ 폴더와 안의 노트 %lld개를 폴더 안 .trash 로 옮깁니다. 안의 폴더도 함께 갑니다. 설정 → 휴지통에서 노트를 되돌리면 폴더도 다시 생깁니다.%@ | Moves the folder %@ and the notes inside it (%lld) to the hidden .trash folder, along with any folders inside. Restoring a note from Settings → Trash brings its folder back.%@ |
 | %@ 폴더의 노트 %lld개와 첨부를 완전히 지웁니다. 다른 노트가 쓰는 첨부는 남깁니다. 되돌릴 수 없습니다. 지우려면 %@ 라고 입력하세요. | Permanently deletes the %1$@ folder's notes (%2$lld) and attachments. Attachments other notes use are kept. This can't be undone. To delete, type %3$@. |
 | %@ 폴더의 새 이름입니다. 안의 노트는 그대로 따라갑니다.%@ | Enter a new name for the folder %@. The notes inside move with it.%@ |
+| %@, 노트 %lld개 | %1$@, %2$lld notes |
+| %@, 노트 %lld개, 새로 나옴 | %1$@, %2$lld notes, new |
+| %@, 노트 %lld개, 앞 기간보다 늘어남 | %1$@, %2$lld notes, up from the previous period |
+| %@, 함께 든 노트 %lld개 | %1$@, together in %2$lld notes |
 | %lld | %lld |
 | %lld개 | %lld |
 | %lld개 · %@ | %lld · %@ |
@@ -52,6 +58,9 @@
 | **이미 마크다운을 모아 둔 폴더**를 그대로 열 수 있습니다. 내보낸 폴더 가져오기는 같은 이름의 새 폴더로 들여옵니다. 자세한 것은 아래 **사용법**에 있습니다. | You can open **a folder where you already keep Markdown** as it is. Importing an exported folder brings it in as a new folder with the same name. See **Guide** below for details. |
 | **첫 줄을 파일명으로**는 앱에서 고친 노트의 파일 이름을 첫 줄 제목에 맞춥니다 — 파일 이름을 바꾸는 유일한 설정이라 켤 때 한 번 더 묻습니다. 공유는 첨부가 없으면 `.md` 하나, 있으면 `.zip` 하나로 보냅니다. | **First Line as File Name** renames notes you edit in the app to match their first-line title — it's the only setting that renames files, so it asks once when you turn it on. Sharing sends one `.md` file, or one `.zip` if there are attachments. |
 | . 되돌리기로 무를 수 있습니다. | . You can undo this. |
+| 1년 | 1 Year |
+| 3개월 | 3 Months |
+| 4주 | 4 Weeks |
 | CP949 (예전 한글 윈도) | CP949 (legacy Korean Windows) |
 | [마크다운 갈래]↵ | [Markdown]↵ |
 | [첨부]↵ | [Attachments]↵ |
@@ -82,6 +91,7 @@
 | 가져올까요? | Import This File? |
 | 갈래 | Types |
 | 같이 옮길 첨부를 세는 중 | Counting attachments to move along |
+| 거르기 풀기 | Clear Filter |
 | 걸린 시간 · 경로 | Timings · Path |
 | 검색 색인을 만드는 중 | Building the search index |
 | 결과 | Result |
@@ -132,12 +142,15 @@
 | 글자 (공백 빼고) | Characters (No Spaces) |
 | 글자 (공백 포함) | Characters (With Spaces) |
 | 금고 파일 | Files in folder |
+| 기간 | Period |
+| 기간을 늘려 보세요. | Try a longer period. |
 | 기록 | Notes |
 | 기본 iCloud 폴더로 돌아가기 | Back to Default iCloud Folder |
 | 기울임 | Italic |
 | 끝낸 일 | Done |
 | 날짜 · 시각 | Date & Time |
 | 낱말 | Words |
+| 내려받지 않은 노트 %lld개는 빠졌습니다 | %lld notes not yet downloaded are left out |
 | 내어쓰기 | Decrease Indent |
 | 넣기 | Insert |
 | 노트 | Notes |
@@ -148,6 +161,7 @@
 | 노트 %lld개 만들기 (작은 노트 · 약 20MB) | Create %lld notes (small notes · about 20MB) |
 | 노트 %lld개는 그 사이 바뀌어 고치지 못했습니다 | one: %lld note had changed in the meantime and couldn't be updated / other: %lld notes had changed in the meantime and couldn't be updated |
 | 노트 %lld개를 만들까요? | Create %lld notes? |
+| 노트 %lld개에서 | From %lld notes |
 | 노트 300개 만들기 (약 20MB) | Create 300 Notes (about 20 MB) |
 | 노트 목록 차례 | Note List Order |
 | 노트 안에서 찾기 | Find in Note |
@@ -155,6 +169,9 @@
 | 노트 잇기 | Linking Notes |
 | 노트 정보 | Note Info |
 | 노트 줄을 왼쪽으로 밀어 **이동**(아이패드는 폴더로 끌어다 놓기). 폴더 안을 가리키는 링크가 있으면 묻습니다 — **고치고 옮기기**는 이 노트만 쓰는 사진을 새 폴더로 함께 옮기고 링크를 맞춥니다. **그냥 옮기기**는 본문도 파일도 그대로 둡니다. | Swipe a note row left and tap **Move** (on iPad, drag it onto a folder). If the note links to files in its folder, you're asked: **Update and Move** moves the photos only this note uses into the new folder and updates the links; **Just Move** leaves both the text and the files as they are. |
+| 노트 지도 | Note Map |
+| 노트 지도를 만들 수 없습니다 | Can't Build the Note Map |
+| 노트가 쌓이면 자주 쓴 말이 여기에 보입니다. | As your notes grow, the words you use often will appear here. |
 | 노트가 없습니다 | No Notes |
 | 노트를 가져오는 중 | Importing notes |
 | 노트를 고르세요 | Select a Note |
@@ -184,6 +201,8 @@
 | 되돌리기 | Restore |
 | 되돌리는 중 | Restoring |
 | 되돌리지 못했습니다: %@ | Couldn't restore: %@ |
+| 되살리기 | Restore |
+| 두 말이 함께 든 노트만 | Only Notes with Both Words |
 | 둘러보기 자료입니다 · 실제 파일이 아닙니다 | Sample notes · Not your files |
 | 들여쓰기 | Increase Indent |
 | 띠 시험 | Banner Test |
@@ -202,6 +221,7 @@
 | 마크다운으로 내보낸 폴더 가져오기 | Import an Exported Markdown Folder |
 | 만드는 중 %lld / %lld | Creating %lld of %lld… |
 | 만들기 | Create |
+| 말을 누르면 그 말이 가운데로 옵니다. 길게 누르면 두 말이 함께 든 노트만 봅니다. | Tap a word to move it to the center. Touch and hold to see only notes that contain both words. |
 | 맨 위에 폴더를 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | The folder will be created at the top level. If the name is taken, a number is added. |
 | 모두 고르기 | Select All |
 | 모두 휴지통으로 | Move All to Trash |
@@ -244,17 +264,23 @@
 | 새 이름에 맞게 | to match the new name |
 | 새 자리에 맞게 | to match the new location |
 | 새 폴더 | New Folder |
+| 새로 | New |
 | 새로 옴 | New |
 | 색인 다시 만들기 | Rebuild Index |
 | 색인 크기 | Index Size |
 | 색인된 노트 | Indexed Notes |
 | 색인은 캐시입니다. 검색이 이상하면 다시 만드세요 — 파일은 건드리지 않습니다. 쓰는 곳 · 폴더 이름 · 판은 설정 화면에 있습니다. | The index is a cache. If search misbehaves, rebuild it — your files are never touched. Storage, folder name and version are on the Settings screen. |
 | 색인을 만드는 중입니다 | Building the index… |
+| 색인이 아직 준비되지 않았습니다. 잠시 뒤 다시 열어 보세요. | The search index isn't ready yet. Try again in a moment. |
 | 서식 글 길이 | Formatted Text Length |
 | 서식을 마크다운으로 바꿨습니다. 되돌리기로 무를 수 있습니다. | Converted the formatting to Markdown. You can undo this. |
 | 설정 | Settings |
 | 설정 → 휴지통에서 되돌릴 수 있습니다. | You can restore it from Settings → Trash. |
 | 설정 앱 → 맨 위 이름 → iCloud → **iCloud Drive** 가 켜져 있는지 보세요. 켜져 있는데도 이러면 앱을 지웠다 다시 설치해 보세요. | In the Settings app, tap your name → iCloud and make sure **iCloud Drive** is on. If it's on and this still happens, try deleting and reinstalling the app. |
+| 숨긴 말 | Hidden Words |
+| 숨긴 말 %lld개 | Hidden Words: %lld |
+| 숨긴 말은 이 폴더 안의 숨김 파일에 적혀 다른 기기에도 따라갑니다. 노트 글은 바뀌지 않습니다. | Hidden words are saved in a hidden file in this folder and follow you to your other devices. Your notes aren't changed. |
+| 숨긴 말이 없습니다 | No Hidden Words |
 | 시험 그림을 만들지 못했습니다 | Couldn't create the test image |
 | 시험 도구 | Test Tools |
 | 시험 도구를 보이고 있습니다 — 다섯 번 더 누르면 감춥니다 | Test tools are shown — tap five more times to hide them |
@@ -273,6 +299,7 @@
 | 아직 받지 않은 노트를 받는 중 | Downloading notes not yet on this device |
 | 아직 안 받음 | Not downloaded |
 | 아직 이 기기로 받지 않은 노트 %lld개는 제목으로만 찾았습니다. | %lld notes not yet downloaded to this device were matched by title only. |
+| 아직 키워드가 될 만한 말이 없습니다 | No Keywords Yet |
 | 안 쓰는 첨부 | Unused Attachments |
 | 안 쓰는 첨부가 없습니다 | No Unused Attachments |
 | 안 쓰는 첨부를 휴지통으로 옮기는 중 | Moving unused attachments to Trash |
@@ -303,6 +330,7 @@
 | 왔던 노트 | Previous Note |
 | 외장 자판 | External Keyboard |
 | 위 도구 줄의 책 단추로 읽기와 편집을 오갑니다. 설정의 **노트를 열 때 읽기 모드로**를 켜면 노트를 고를 때마다 읽기 모드로 시작합니다. 새 노트를 만들 때는 그대로 편집 모드입니다. | The book button in the top toolbar switches between reading and editing. Turn on **Open Notes in Reading Mode** in Settings to start in reading mode whenever you pick a note. New notes still open in editing mode. |
+| 이 기간에 고친 노트가 없습니다 | No Notes Edited in This Period |
 | 이 기기 | On this device |
 | 이 노트 | This note |
 | 이 노트를 가리키는 노트 | Notes Linking Here |
@@ -311,6 +339,8 @@
 | 이 노트에는 폴더 안을 가리키는 링크가 %lld개 있습니다. **고치고 옮기기** 는 이 노트만 쓰는 사진 · 첨부 %lld개를 새 폴더로 함께 옮기고 링크를 새 자리에 맞춥니다. 다른 노트도 쓰는 것은 제자리에 두고 링크만 고칩니다. **그냥 옮기기** 를 고르면 본문도 파일도 그대로입니다. | Links in this note to files in the folder: %lld. **Update and Move** moves the photos and attachments only this note uses (%lld) into the new folder along with it, and updates the links. Files other notes also use stay where they are; only the links are updated. Choose **Just Move** to leave both the text and the files as they are. |
 | 이 노트의 링크가 모두 제 파일을 가리킵니다. | Every link in this note points to a file that exists. |
 | 이 링크가 가리키는 파일이 폴더에 없습니다.↵%@↵↵링크의 경로는 노트가 있는 폴더 기준입니다. | The file this link points to isn't in the folder.↵%@↵↵Link paths are relative to the note's folder. |
+| 이 말 숨기기 | Hide This Word |
+| 이 말이 든 노트 %lld개 | Notes with This Word: %lld |
 | 이 파일은 **Slow Margin 폴더 밖**에 있습니다. | This file is **outside the Slow Margin folder**. |
 | 이 파일의 글자 인코딩을 알아보지 못했습니다. UTF-8 로 저장한 뒤 다시 열어 주세요. | Couldn't detect this file's text encoding. Save it as UTF-8 and open it again. |
 | 이 폴더 안에 새 폴더 | New Folder in This Folder |
@@ -384,7 +414,7 @@
 | 첨부가 폴더에 없습니다: %@ | Attachment isn't in the folder: %@ |
 | 첨부를 되돌리지 못했습니다: %@ | Couldn't restore the attachment: %@ |
 | 첨부를 복사하는 사이 다른 노트로 넘어가 본문에는 넣지 않았습니다. 파일은 %@ 옆 assets 폴더에 있습니다. | You moved to another note while the attachments were being copied, so they were not added to the text. The files are in the assets folder next to %@. |
-| 첨부하지 못했습니다: %@ | Couldn't attach: %@ |
+| 첨부하지 못했습니다: %@↵파일 앱에서 그 파일을 길게 눌러 복제한 뒤 사본을 넣어 보세요. | Couldn't attach: %@↵In the Files app, touch and hold the file, choose Duplicate, then attach the copy. |
 | 첫 줄을 파일명으로 | First Line as File Name |
 | 체크상자 | Checklist |
 | 최근 고친 노트 | Recently Edited |
@@ -420,6 +450,7 @@
 | 폴더 이름을 바꾸고 링크를 고치는 중 | Renaming the folder and fixing links |
 | 폴더 이름을 바꾸지 못했습니다: %@ | Couldn't rename the folder: %@ |
 | 폴더 줄의 **되돌리기**는 안의 노트와 첨부를 모두 원래 폴더로 돌려놓습니다. 줄을 누르면 안의 것이 보입니다. | **Restore** on a folder row puts all its notes and attachments back in their original folder. Tap the row to see what's inside. |
+| 폴더 화면 위의 **노트 지도** 단추를 누르면 4주 · 3개월 · 1년 동안 고친 노트에 자주 쓴 말이 막대로 보입니다. **↑** 는 앞 기간보다 늘어난 말, **새로** 는 앞 기간에 없던 말입니다. 말을 누르면 함께 자주 나온 말과 그 말이 든 노트가 보이고, 노트를 누르면 그 말을 찾은 채 열립니다. 말을 길게 눌러 **숨기기** 할 수 있습니다. | Tap **Note Map** at the top of the folder screen to see, as bars, the words you used most in notes edited over the last 4 weeks, 3 months, or year. **↑** marks words that rose from the previous period, and **New** marks words that weren't there before. Tap a word to see the words that often appear with it and the notes that contain it; tap a note to open it with that word found. Touch and hold a word to **hide** it. |
 | 폴더는 두 단계까지라 %@ 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다. | Folders can only go two levels deep, so it will be created in %@. If the name is taken, a number is added. |
 | 폴더는 첨부할 수 없습니다: %@ | Folders can't be attached: %@ |
 | 폴더를 가리키는 링크를 세는 중 | Counting links to this folder |
@@ -436,6 +467,8 @@
 | 하위 폴더 | Subfolders |
 | 한 낱말씩 | One Word at a Time |
 | 할 일 | Tasks |
+| 함께 %lld | Together %lld |
+| 함께 나온 말 | Words That Appear Together |
 | 화면 아래 **빨간 띠**를 띄웁니다. 편집 도구 띠와 겹치지 않는지, 큰 글씨에서 잘리지 않는지 볼 때 씁니다. 띠를 누르면 사라집니다. | Shows a **red banner** at the bottom of the screen, to check that it doesn't overlap the formatting bar or get cut off with large text. Tap the banner to dismiss it. |
 | 확인 | OK |
 | 확인 문구 | Confirmation Word |
