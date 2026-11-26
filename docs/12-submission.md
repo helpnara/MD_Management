@@ -209,6 +209,30 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.30 제출 순서 — 빌드 161 (2026-11-26 준비 · 빌드 161 확인 끝 — 사용자 *체크리스트 확인 완료.* · **1.1.29 승인 · 배포 뒤에 낸다** — 한 번에 한 판만 심사에 들어간다)
+
+> 333 노트 지도 덜어내기(문맥 다양성 · 기능 명사 · 동사 꼴 · 한 글자+조사 · 굳은 표현 · 구절이 덮는 낱말) · `사람 — 참고` 구역 — `docs/96-build-161.md` · 설계 `docs/92-note-map-design.md` §11.
+> 설명 · 스토어 그림 · 키워드 · 부제 · 메모(Notes)는 1.1.29 그대로 (설명의 *요즘 무엇을 썼나* 절이 이미 노트 지도를 말한다).
+> 예로 든 이름(홍길동)은 가짜 이름이다 — 사용자의 노트에서 가져오지 않았다.
+
+1. 1.1.29 가 **배포**된 뒤 App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.30` → **빌드** 칸에서 **161** (`1.1.30 (161)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — 아래 세 줄 (`docs/store/1.1.30-새로운-기능.txt`)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — 아래 영어 세 줄 → **저장**
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+5. 제출 → `main` 병합 (= 1.1.30) → 승인 · 배포 기다림
+
+```
+• 노트 지도가 요즘 하는 일 중심으로 더 또렷해졌습니다. 관련 · 기존 · 가능처럼 어디에나 쓰이는 말, 동사 · 형용사 꼴, 예를 들어 같은 굳은 표현은 키워드에서 빠집니다.
+• 늘 함께 붙여 쓰는 말은 낱말 대신 구절 하나로 보여 줍니다.
+• 노트에 자주 나오는 이름과 직함(예: 홍길동 책임)은 맨 아래 사람 구역에 참고로 따로 모입니다.
+```
+
+```
+• Note Map now focuses more clearly on what you've been working on. Words that show up everywhere (like related, existing, or possible), verb and adjective forms, and set expressions such as for example are left out of the keywords.
+• Words you almost always write together now appear as a single phrase instead of separate words.
+• Names with titles that appear often in your notes (like Manager Hong) are gathered separately at the bottom in People, for reference.
+```
+
 ### 1.1.29 제출 순서 — 빌드 160 (2026-11-26 준비 · 빌드 160 확인 끝 — 사용자 *빌드 160 체크리스트 0-6 확인 완료* · *심사 제출 준비하자* · **제출함 2026-11-26** (사용자 — *심사 제출 완료*) · `main` 병합 = 1.1.29)
 
 > 329 노트 지도(기간별 키워드 · 숨긴 말) · 330 키워드 중심 작은 관계도 · 331 차례 고르기 · 두 낱말 구절 · 332 구절 · 낱말 두 구역 · 328 첨부 실패 안내 — `docs/93-build-158.md` · `docs/94-build-159.md` · `docs/95-build-160.md` · 설계 `docs/92-note-map-design.md`.
@@ -803,13 +827,12 @@ https://helpnara.github.io/MD_Management/en/privacy/
 
 ### What’s New in This Version
 
-> **1.1.29** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt` 끝.
+> **1.1.30** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt` 끝.
 
 ```
-• Note Map — Tap Note Map at the top of the folder screen to see, as bars, the words and two-word phrases you used most in notes edited over the last 4 weeks, 3 months, or year. Sort by Most Used or Standout (words that stand out in this period compared with the previous period and your other notes); words on the rise get ↑, and words that just appeared get New.
-• Tap a word to see a small map of the words that often appear with it, with the notes that contain it below. Tap a note to open it with that word found.
-• Touch and hold a word you don't need to hide it. Your notes aren't changed by a single character, and hidden words follow you to your other devices.
-• If a file can't be attached, the app now explains how to attach a copy duplicated in the Files app.
+• Note Map now focuses more clearly on what you've been working on. Words that show up everywhere (like related, existing, or possible), verb and adjective forms, and set expressions such as for example are left out of the keywords.
+• Words you almost always write together now appear as a single phrase instead of separate words.
+• Names with titles that appear often in your notes (like Manager Hong) are gathered separately at the bottom in People, for reference.
 ```
 
 ---
@@ -1065,14 +1088,13 @@ python3 Tools/store/count.py
 
 ### 이 버전의 새로운 기능
 
-> **1.1.29** (2026-11-26 — 329 ~ 332 노트 지도 · 328 첨부 실패 안내). 글은 `docs/store/1.1.29-새로운-기능.txt`. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt`.
+> **1.1.30** (2026-11-26 — 333 노트 지도 덜어내기 · 사람 구역 · 1.1.29 승인 뒤 제출). 글은 `docs/store/1.1.30-새로운-기능.txt` (1.1.29 는 `docs/store/1.1.29-새로운-기능.txt`). 지난 판의 글은 `docs/store/<판>-새로운-기능.txt`.
 > 판이 바뀌면 이 울타리 안만 갈아 끼운다 — `Tools/store/count.py` 가 센다. 영어 칸은 §1-영어 의 *What’s New*.
 > 앱이 **실제로 하는 일**만 적었다 (CLAUDE.md §6).
 
 ```
-• 노트 지도 — 폴더 화면 위의 노트 지도 단추를 누르면 4주 · 3개월 · 1년 동안 고친 노트에 자주 쓴 말과 자주 붙여 쓰는 말(구절)이 막대로 보입니다. 많이 쓴 순과 두드러진 순(앞 기간 · 다른 노트보다 이 기간에 두드러진 말)을 고를 수 있고, 앞 기간보다 늘어난 말에는 ↑, 새로 나온 말에는 새로 표시가 붙습니다.
-• 말을 누르면 그 말과 함께 자주 나온 말이 작은 관계도로, 그 말이 든 노트가 아래에 모입니다. 노트를 누르면 그 말을 찾은 채 열립니다.
-• 필요 없는 말은 길게 눌러 숨길 수 있습니다. 노트 글은 한 글자도 바뀌지 않고, 숨긴 말은 다른 기기에도 따라갑니다.
-• 문서 첨부가 되지 않는 파일이면 파일 앱에서 복제한 사본을 넣는 방법을 알려 줍니다.
+• 노트 지도가 요즘 하는 일 중심으로 더 또렷해졌습니다. 관련 · 기존 · 가능처럼 어디에나 쓰이는 말, 동사 · 형용사 꼴, 예를 들어 같은 굳은 표현은 키워드에서 빠집니다.
+• 늘 함께 붙여 쓰는 말은 낱말 대신 구절 하나로 보여 줍니다.
+• 노트에 자주 나오는 이름과 직함(예: 홍길동 책임)은 맨 아래 사람 구역에 참고로 따로 모입니다.
 ```
 
