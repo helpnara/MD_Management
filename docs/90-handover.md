@@ -148,7 +148,7 @@ for r in get(f"https://api.github.com/repos/helpnara/MD_Management/actions/runs?
 
 - **사용자에게 보이는 글은 전부 한글.** 도구를 부르기 전의 한 줄 알림까지. 코드 이름 · 경로만 `코드 글씨`.
 - **시각은 한국 시간(KST, UTC+9)** 으로 알린다 — CI 로그의 `Z` 시각도 바꿔 적는다.
-- **파일이 원본 · 편집기 문자열은 마크다운 원문 하나 · 색인은 캐시**(판이 바뀌면 통째로 지우고 다시 — `SearchIndex.version`, 지금 6).
+- **파일이 원본 · 편집기 문자열은 마크다운 원문 하나 · 색인은 캐시**(판이 바뀌면 통째로 지우고 다시 — `SearchIndex.version`, 지금 7 — 329 노트 지도부터).
 - **`Packages/Core` 는 SwiftUI · UIKit · SQLite3 를 import 하지 않는다** — 리눅스 `swift test` 가 사라진다.
 - **같은 것을 재는 곳이 둘이면 갈린다** — 값을 쓰는 자리를 새로 만들기 전에 이미 재는 자리를 찾아 부른다 (최근 예: 327 — 첫 줄 셈과 이름 바꾸기가 다른 줄을 봐서 `<!--` 줄을 덮을 뻔했다 → `FrontMatterParser.titleLine` 하나로).
 - **디자인은 늘 고급스럽게** (CLAUDE.md §7 · ADR-0010) — 색은 `Palette` 에서만, 제목은 명조, 목록은 `PaperList`.
