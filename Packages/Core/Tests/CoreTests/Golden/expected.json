@@ -8780,7 +8780,8 @@
                 "keyword": "전문가",
                 "level": 3
               }
-            ]
+            ],
+            "statuses": []
           },
           {
             "center": "고양이",
@@ -8796,7 +8797,8 @@
                 "keyword": "전문가",
                 "level": 2
               }
-            ]
+            ],
+            "statuses": []
           },
           {
             "center": "전문가",
@@ -8812,7 +8814,8 @@
                 "keyword": "고양이",
                 "level": 2
               }
-            ]
+            ],
+            "statuses": []
           }
         ],
         "notes": [
@@ -8974,6 +8977,12 @@
                 "keyword": "노트",
                 "level": 3
               }
+            ],
+            "statuses": [
+              {
+                "count": 12,
+                "keyword": "정리"
+              }
             ]
           },
           {
@@ -8989,6 +8998,12 @@
                 "count": 12,
                 "keyword": "노트",
                 "level": 3
+              }
+            ],
+            "statuses": [
+              {
+                "count": 12,
+                "keyword": "정리"
               }
             ]
           },
@@ -9010,6 +9025,12 @@
                 "count": 12,
                 "keyword": "회의",
                 "level": 3
+              }
+            ],
+            "statuses": [
+              {
+                "count": 12,
+                "keyword": "정리"
               }
             ]
           }
@@ -9412,17 +9433,20 @@
                 "keyword": "팔레트",
                 "level": 2
               }
-            ]
+            ],
+            "statuses": []
           },
           {
             "center": "자판",
             "days": 28,
-            "neighbors": []
+            "neighbors": [],
+            "statuses": []
           },
           {
             "center": "없는말",
             "days": 28,
-            "neighbors": []
+            "neighbors": [],
+            "statuses": []
           }
         ],
         "notes": [
@@ -9593,7 +9617,8 @@
                 "keyword": "계획",
                 "level": 3
               }
-            ]
+            ],
+            "statuses": []
           }
         ],
         "notes": [
@@ -9718,7 +9743,8 @@
                 "keyword": "다리",
                 "level": 3
               }
-            ]
+            ],
+            "statuses": []
           },
           {
             "center": "나무",
@@ -9734,7 +9760,8 @@
                 "keyword": "다리",
                 "level": 3
               }
-            ]
+            ],
+            "statuses": []
           },
           {
             "center": "다리",
@@ -9750,7 +9777,8 @@
                 "keyword": "나무",
                 "level": 3
               }
-            ]
+            ],
+            "statuses": []
           }
         ],
         "notes": [
@@ -9861,6 +9889,12 @@
                 "keyword": "독서 모임",
                 "level": 3
               }
+            ],
+            "statuses": [
+              {
+                "count": 2,
+                "keyword": "정리"
+              }
             ]
           },
           {
@@ -9877,7 +9911,8 @@
                 "keyword": "회의",
                 "level": 3
               }
-            ]
+            ],
+            "statuses": []
           }
         ],
         "notes": [
@@ -10001,7 +10036,13 @@
           {
             "center": "독서 모임",
             "days": 28,
-            "neighbors": []
+            "neighbors": [],
+            "statuses": [
+              {
+                "count": 4,
+                "keyword": "보고"
+              }
+            ]
           },
           {
             "center": "홍길동 책임",
@@ -10016,6 +10057,12 @@
                 "count": 4,
                 "keyword": "독서 모임",
                 "level": 3
+              }
+            ],
+            "statuses": [
+              {
+                "count": 4,
+                "keyword": "보고"
               }
             ]
           }
@@ -10164,12 +10211,19 @@
           {
             "center": "차이",
             "days": 28,
-            "neighbors": []
+            "neighbors": [],
+            "statuses": [
+              {
+                "count": 1,
+                "keyword": "정리"
+              }
+            ]
           },
           {
             "center": "회의",
             "days": 28,
-            "neighbors": []
+            "neighbors": [],
+            "statuses": []
           }
         ],
         "notes": [
@@ -10251,6 +10305,241 @@
         ],
         "people": [],
         "today": 800
+      },
+      {
+        "hidden": [],
+        "keywords": [
+          "디자인",
+          "명조",
+          "심사 제출",
+          "팔레트",
+          "회의"
+        ],
+        "name": "335 · 336 제목 · 상태어",
+        "neighbors": [
+          {
+            "center": "디자인",
+            "days": 28,
+            "neighbors": [
+              {
+                "count": 2,
+                "keyword": "명조",
+                "level": 2
+              },
+              {
+                "count": 2,
+                "keyword": "팔레트",
+                "level": 2
+              },
+              {
+                "count": 3,
+                "keyword": "심사 제출",
+                "level": 3
+              },
+              {
+                "count": 4,
+                "keyword": "회의",
+                "level": 3
+              }
+            ],
+            "statuses": [
+              {
+                "count": 3,
+                "keyword": "검토"
+              },
+              {
+                "count": 3,
+                "keyword": "완료"
+              },
+              {
+                "count": 2,
+                "keyword": "정리"
+              },
+              {
+                "count": 1,
+                "keyword": "준비"
+              },
+              {
+                "count": 1,
+                "keyword": "진행"
+              }
+            ]
+          },
+          {
+            "center": "회의",
+            "days": 28,
+            "neighbors": [
+              {
+                "count": 2,
+                "keyword": "명조",
+                "level": 2
+              },
+              {
+                "count": 2,
+                "keyword": "팔레트",
+                "level": 2
+              },
+              {
+                "count": 3,
+                "keyword": "심사 제출",
+                "level": 3
+              },
+              {
+                "count": 4,
+                "keyword": "디자인",
+                "level": 3
+              }
+            ],
+            "statuses": [
+              {
+                "count": 3,
+                "keyword": "검토"
+              },
+              {
+                "count": 3,
+                "keyword": "완료"
+              },
+              {
+                "count": 2,
+                "keyword": "정리"
+              },
+              {
+                "count": 1,
+                "keyword": "준비"
+              },
+              {
+                "count": 1,
+                "keyword": "진행"
+              }
+            ]
+          }
+        ],
+        "notes": [
+          {
+            "day": 900,
+            "path": "a.md",
+            "text": "# 명조 시안\n디자인 검토를 했다. 디자인 완료. 회의 메모. 회의를 했다. 심사 제출 준비."
+          },
+          {
+            "day": 899,
+            "path": "b.md",
+            "text": "# 명조 정리\n디자인 검토. 회의 완료. 회의를 했다. 심사 제출 완료."
+          },
+          {
+            "day": 898,
+            "path": "c.md",
+            "text": "# 팔레트\n디자인 진행. 회의 완료. 회의 정리를 했다. 심사 제출 검토."
+          },
+          {
+            "day": 897,
+            "path": "d.md",
+            "text": "색 팔레트 메모. 팔레트를 골랐다. 회의 시간. 디자인을 봤다. 제출을 했다."
+          }
+        ],
+        "overviews": [
+          {
+            "by": "count",
+            "days": 28,
+            "entries": [
+              {
+                "count": 4,
+                "keyword": "디자인",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 4,
+                "keyword": "회의",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 3,
+                "keyword": "심사 제출",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 2,
+                "keyword": "명조",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 2,
+                "keyword": "팔레트",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 4,
+            "previousNotes": 0
+          },
+          {
+            "by": "score",
+            "days": 28,
+            "entries": [
+              {
+                "count": 2,
+                "keyword": "명조",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 2,
+                "keyword": "팔레트",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 3,
+                "keyword": "심사 제출",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 4,
+                "keyword": "디자인",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 4,
+                "keyword": "회의",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 4,
+            "previousNotes": 0
+          }
+        ],
+        "paths": [
+          {
+            "also": null,
+            "days": 28,
+            "keyword": "디자인",
+            "paths": [
+              "a.md",
+              "b.md",
+              "c.md",
+              "d.md"
+            ]
+          },
+          {
+            "also": null,
+            "days": 28,
+            "keyword": "회의",
+            "paths": [
+              "a.md",
+              "b.md",
+              "c.md",
+              "d.md"
+            ]
+          }
+        ],
+        "people": [],
+        "today": 900
       }
     ],
     "layout": [
@@ -11147,6 +11436,10 @@
           [
             "제목줄",
             ""
+          ],
+          [
+            "제목줄",
+            "#"
           ]
         ],
         "text": "<!-- 숨긴 메모\n여러 줄 주석 -->\n# 제목줄\n본문"
@@ -11450,8 +11743,16 @@
             ""
           ],
           [
+            "작은제목",
+            "#"
+          ],
+          [
             "큰제목",
             ""
+          ],
+          [
+            "큰제목",
+            "#"
           ]
         ],
         "text": "큰제목\n===\n작은제목\n---"
@@ -12056,6 +12357,184 @@
           ]
         ],
         "text": "사과 배추 사과\n배추 당근\n`코드` 사과"
+      },
+      {
+        "context": {
+          "고르기": [
+            1,
+            [
+              "명조"
+            ],
+            [
+              "끝냄"
+            ]
+          ],
+          "끝냄": [
+            1,
+            [
+              "고르기"
+            ],
+            []
+          ],
+          "디자인": [
+            1,
+            [
+              "본문"
+            ],
+            [
+              "시안"
+            ]
+          ],
+          "명조": [
+            1,
+            [],
+            [
+              "고르기"
+            ]
+          ],
+          "보고": [
+            1,
+            [
+              "주간"
+            ],
+            []
+          ],
+          "본문": [
+            1,
+            [],
+            [
+              "디자인"
+            ]
+          ],
+          "시안": [
+            1,
+            [
+              "디자인"
+            ],
+            []
+          ],
+          "작은제목": [
+            1,
+            [],
+            [
+              "정리"
+            ]
+          ],
+          "정리": [
+            1,
+            [
+              "작은제목"
+            ],
+            []
+          ],
+          "주간": [
+            1,
+            [],
+            [
+              "보고"
+            ]
+          ]
+        },
+        "name": "335 제목 · 머리글 줄 (#) · 밑줄 제목",
+        "terms": [
+          [
+            "고르기",
+            "#를"
+          ],
+          [
+            "고르기",
+            "를"
+          ],
+          [
+            "끝냄",
+            ""
+          ],
+          [
+            "끝냄",
+            "#"
+          ],
+          [
+            "디자인",
+            ""
+          ],
+          [
+            "디자인",
+            "#"
+          ],
+          [
+            "디자인 시안",
+            ""
+          ],
+          [
+            "명조",
+            ""
+          ],
+          [
+            "명조",
+            "#"
+          ],
+          [
+            "명조 고르기",
+            "를"
+          ],
+          [
+            "보고",
+            ""
+          ],
+          [
+            "보고",
+            "#"
+          ],
+          [
+            "본문",
+            "#의"
+          ],
+          [
+            "본문",
+            "의"
+          ],
+          [
+            "시안",
+            ""
+          ],
+          [
+            "시안",
+            "#"
+          ],
+          [
+            "작은제목",
+            ""
+          ],
+          [
+            "작은제목",
+            "#"
+          ],
+          [
+            "작은제목 정리",
+            ""
+          ],
+          [
+            "정리",
+            ""
+          ],
+          [
+            "정리",
+            "#"
+          ],
+          [
+            "주간",
+            ""
+          ],
+          [
+            "주간",
+            "#"
+          ],
+          [
+            "주간 보고",
+            ""
+          ]
+        ],
+        "text": "# 주간 보고\n본문의 디자인 시안.\n작은제목 정리\n---\n## 명조 고르기를 끝냄"
       }
     ]
   },

@@ -4354,7 +4354,8 @@ def build_note_map_cases() -> dict:
                 if e["count"] > ov["notes"] or (e["mark"] and not ov["previousNotes"]):
                     raise SystemExit(f"::error::[{case['name']}] 노트 지도가 앞뒤가 안 맞는다: {e}")
         centers = case.get("centers", order[:3])
-        neighbors = [{"center": c, "days": first, "neighbors": model.neighbors(c, case["today"], first)} for c in centers]
+        neighbors = [{"center": c, "days": first, "neighbors": model.neighbors(c, case["today"], first),
+                      "statuses": model.statuses(c, case["today"], first)} for c in centers]
         pairs = case.get("pairs", [[c, None] for c in order[:2]])
         paths = [{"keyword": k, "also": a, "days": first, "paths": model.note_paths(k, a, case["today"], first)}
                  for k, a in pairs]

@@ -41,7 +41,7 @@ public enum NoteMap {
         "개월", "아니", "이후", "이전", "전에", "후에", "여기서", "거기서", "따로", "안에", "밖에", "위에",
         "아래", "없이", "있으면", "없으면", "처음", "마지막", "보내", "하면", "되면", "다른", "같은", "없음", "있음",
         // 333 — 형식 · 기능 명사 (사용자가 숨긴 말 · 문맥 다양성이 못 잡는 드문 것까지)
-        "관련", "가능", "기존", "기반", "여부", "대상", "부분", "내용", "방법", "진행", "사용", "필요", "해당", "각각",
+        "관련", "가능", "기존", "기반", "여부", "대상", "부분", "내용", "방법", "사용", "필요", "해당", "각각",
         "일부", "전체", "현재", "최근", "그대로",
     ]
     /// 333 — 굳은 표현 (구절로 세우지 않는다).
@@ -59,6 +59,15 @@ public enum NoteMap {
     static let doubleSurnames: Set<String> = ["남궁", "황보", "제갈", "선우", "독고", "사공", "서문"]
     /// 333 — 한 글자 조사 (두 글자 덩이 *것이 · 예를 · 일에* 를 가르는 데).
     static let oneJosa = Set("은는이가을를의에로와과랑도만나들".unicodeScalars)
+    /// 336 — 상태 · 행위어: 주제가 아니라 주제의 상태 (*주제어 중심으로*). 낱말 목록에는 안 세우고 키워드 화면에 *함께 쓴 상태* 로.
+    static let status: Set<String> = [
+        "진행", "완료", "검토", "확인", "요청", "공유", "준비", "보고", "정리", "시작", "종료", "대기", "보류", "수정",
+        "반영", "적용", "처리", "착수", "마감", "연기", "취소", "점검", "논의", "협의", "결정", "전달", "회신", "답변",
+    ]
+    public static let statusLimit = 5
+    /// 335 — 노트 둘 이상의 제목 · 머리글에 나온 말은 꼴 증거 없이 받는다.
+    static let headingMinNotes = 2
+    static let headingMark = "#"
     /// 334 — 의존 명사 (*것 · 수 · 때 …*) + 한 글자 조사 두 글자 덩이는 늘 뺀다 (*것이* 가 *것이라는 · 것이라도* 때문에 빠져나갔다).
     static let boundNouns = Set("것수때적데등뿐줄바듯분".unicodeScalars)
     /// 334 — *이* 로 끝나는 덩이 뒤의 *라는 · 란 · 라도* 는 *이라는 · 이란 · 이라도* 가 갈라진 것 — 조사 증거로 세지 않는다.
@@ -237,14 +246,29 @@ public enum NoteMap {
     /// **노트 하나의 낱말 꼴** — 중복 없이 · 차례 고정. 색인에 쓸 때 부른다.
     public static func terms(of text: String) -> [Term] {
         var found = Set<Term>()
-        forEachVisibleLine(text) { line in
-            for term in scan(line) { found.insert(term) }
+        forEachVisibleLine(text) { line, heading in
+            for term in scan(line) {
+                found.insert(term)
+                // 335 — 제목 · 머리글의 낱말 (구절은 빼고) — 꼴 앞에 `#`.
+                if heading, !term.stem.contains(" ") { found.insert(Term(stem: term.stem, form: headingMark + term.form)) }
+            }
         }
         return found.sorted(by: Term.precedes)
     }
 
+    /// `#` 줄 (앞 빈칸 셋까지 · `#` 한 ~ 여섯 · 뒤가 빈칸 · 탭 · 줄 끝).
+    static func isATXHeading(_ s: [Unicode.Scalar]) -> Bool {
+        var k = 0
+        while k < s.count, k < 4, s[k] == " " { k += 1 }
+        guard k <= 3 else { return false }
+        var n = 0
+        while k + n < s.count, s[k + n] == "#" { n += 1 }
+        guard (1...6).contains(n) else { return false }
+        return k + n == s.count || s[k + n] == " " || s[k + n] == "\t"
+    }
+
     /// 셈할 줄 — 머리말 뒤 · 코드 · 주석 · 울타리 줄을 빼고 · 미리보기로 보이는 글만. `terms` · `context` 가 **이것 하나**를 쓴다.
-    static func forEachVisibleLine(_ text: String, _ body: ([Unicode.Scalar]) -> Void) {
+    static func forEachVisibleLine(_ text: String, _ body: ([Unicode.Scalar], Bool) -> Void) {
         let main = FrontMatterParser.parse(Paths.normalized(text)).body
         var lines: [[Unicode.Scalar]] = [[]]
         for s in main.unicodeScalars {
@@ -259,7 +283,8 @@ public enum NoteMap {
             default: break
             }
             if NoteStats.fence(line) != nil { continue }
-            body(Array(PreviewLine.plain(strings[index]).unicodeScalars))
+            let heading = roles[index] == .heading1 || roles[index] == .heading2 || isATXHeading(line)
+            body(Array(PreviewLine.plain(strings[index]).unicodeScalars), heading)
         }
     }
 
@@ -337,7 +362,7 @@ public enum NoteMap {
     /// 333 — **노트 하나의 문맥** — 색인에 쓸 때 부른다 (`terms(of:)` 와 같은 줄 · 같은 낱말).
     public static func context(of text: String) -> [String: Context] {
         var stats: [String: (Int, Set<String>, Set<String>)] = [:]
-        forEachVisibleLine(text) { line in
+        forEachVisibleLine(text) { line, _ in
             let toks = scan(line).map(\.stem).filter { !$0.contains(" ") }
             for (i, t) in toks.enumerated() {
                 var entry = stats[t] ?? (0, [], [])
@@ -415,6 +440,10 @@ public enum NoteMap {
             let path: String
             let day: Int
             let keywords: Set<String>
+            /// 335 — 제목 · 머리글에 나온 말.
+            let heads: Set<String>
+            /// 336 — 함께 쓴 상태어.
+            let status: Set<String>
         }
 
         let notes: [Note]
@@ -426,7 +455,10 @@ public enum NoteMap {
         public var keywords: [String] { df.keys.sorted(by: NoteMap.precedes) }
 
         public init(rows: [Row], hidden: Set<String> = []) {
-            let wordTerms = rows.map { $0.terms.filter { !$0.stem.contains(" ") } }
+            let wordTerms = rows.map { $0.terms.filter { !$0.stem.contains(" ") && !$0.form.hasPrefix(NoteMap.headingMark) } }
+            let headingTerms = rows.map { row in
+                row.terms.filter { $0.form.hasPrefix(NoteMap.headingMark) }.map { Term(stem: $0.stem, form: String($0.form.dropFirst())) }
+            }
             let phraseTerms = rows.map { $0.terms.filter { $0.stem.contains(" ") } }
             var stemForms: [String: Set<String>] = [:]
             for terms in wordTerms {
@@ -441,6 +473,10 @@ public enum NoteMap {
                 return term
             }
             let resolved = wordTerms.map { $0.map(resolve) }
+            // 335 — 노트마다 제목 · 머리글에 나온 말 (풀어서) · 그런 노트 수.
+            let heads = headingTerms.map { Set($0.map { resolve($0).stem }) }
+            var headDF: [String: Int] = [:]
+            for hs in heads { for k in hs { headDF[k, default: 0] += 1 } }
             var kwForms: [String: Set<String>] = [:]
             for pairs in resolved {
                 for term in pairs { kwForms[term.stem, default: []].insert(term.form) }
@@ -498,12 +534,17 @@ public enum NoteMap {
                             || NoteMap.isBadStem(k) || badFront(k) || oneSyllableJosa(k) || tooDiverse(k) {
                     accepted[k] = false
                 } else {
+                    // 335 — 조사를 받은 꼴이 없어도 노트 둘 이상의 제목 · 머리글에 나오면 받는다.
                     accepted[k] = forms.filter { $0.isEmpty || NoteMap.strongSet.contains($0) }.count >= 2
+                        || (headDF[k] ?? 0) >= NoteMap.headingMinNotes
                 }
             }
-            let words = resolved.map { Set($0.map(\.stem).filter { accepted[$0] == true }) }
+            let taken = resolved.map { Set($0.map(\.stem).filter { accepted[$0] == true }) }
+            // 336 — 상태어는 낱말에서 빼고 노트의 상태로 (표에 있으면 꼴 증거 없이 센다 · 구절의 뒷말로는 받은 말일 때 쓴다).
+            let words = taken.map { $0.subtracting(NoteMap.status) }
+            let statuses = resolved.map { Set($0.map(\.stem).filter { NoteMap.status.contains($0) && !hidden.contains($0) }) }
             var wordDF: [String: Int] = [:]
-            for ks in words { for k in ks { wordDF[k, default: 0] += 1 } }
+            for ks in taken { for k in ks { wordDF[k, default: 0] += 1 } }
             // 구절의 앞말은 낱말 키워드가 아니어도 된다 (*주간 · 개인정보* 는 늘 맨꼴로 앞에만 선다). 그 말이 든 노트 수.
             var stemDF: [String: Int] = [:]
             for pairs in resolved { for k in Set(pairs.map(\.stem)) { stemDF[k, default: 0] += 1 } }
@@ -563,10 +604,11 @@ public enum NoteMap {
 
             var notes: [Note] = []
             var df: [String: Int] = [:]
-            for ((row, ks), (found, mine)) in zip(zip(rows, words), zip(candidates, personCandidates)) {
-                let keywords = ks.subtracting(dropped).union(found.intersection(good)).union(mine.intersection(people))
+            for (i, row) in rows.enumerated() {
+                let keywords = words[i].subtracting(dropped).union(candidates[i].intersection(good))
+                    .union(personCandidates[i].intersection(people))
                 for k in keywords { df[k, default: 0] += 1 }
-                notes.append(Note(path: row.path, day: row.day, keywords: keywords))
+                notes.append(Note(path: row.path, day: row.day, keywords: keywords, heads: heads[i], status: statuses[i]))
             }
             self.notes = notes
             self.df = df
@@ -584,11 +626,18 @@ public enum NoteMap {
             return Int((value + 0.5).rounded(.down))
         }
 
-        func ranked(_ counts: [String: Int], minimum: Int, by order: Order = .score) -> [String] {
-            let chosen = counts.filter { $0.value >= minimum }
-                .map { (key: $0.key, count: $0.value, score: score($0.value, $0.key)) }
+        /// `heads` — 이 기간에 그 말이 제목 · 머리글에 나온 노트 수 (335 · 지도 목록만 · 둘레는 빈 것).
+        func ranked(_ counts: [String: Int], minimum: Int, by order: Order = .score, heads: [String: Int] = [:]) -> [String] {
+            let chosen = counts.filter { $0.value >= minimum }.map { entry -> (key: String, count: Int, head: Int, score: Int) in
+                let h = heads[entry.key] ?? 0
+                // 두드러진 순은 제목 노트를 한 번 더 센다 · 많이 쓴 순의 같은 수 안에서는 원래 점수.
+                return (entry.key, entry.value, h, score(entry.value + (order == .score ? h : 0), entry.key))
+            }
             return chosen.sorted { a, b in
-                if order == .count, a.count != b.count { return a.count > b.count }
+                if order == .count {
+                    if a.count != b.count { return a.count > b.count }
+                    if a.head != b.head { return a.head > b.head }
+                }
                 return a.score != b.score ? a.score > b.score : NoteMap.precedes(a.key, b.key)
             }.map(\.key)
         }
@@ -603,9 +652,15 @@ public enum NoteMap {
             let previous = notes.filter { today - $0.day >= days && today - $0.day < 2 * days }
             var cur: [String: Int] = [:]
             var prev: [String: Int] = [:]
-            for note in current { for k in note.keywords { cur[k, default: 0] += 1 } }
+            var head: [String: Int] = [:]
+            for note in current {
+                for k in note.keywords {
+                    cur[k, default: 0] += 1
+                    if note.heads.contains(k) { head[k, default: 0] += 1 }
+                }
+            }
             for note in previous { for k in note.keywords { prev[k, default: 0] += 1 } }
-            let keys = ranked(cur, minimum: current.count < 10 ? 1 : 2, by: order)
+            let keys = ranked(cur, minimum: current.count < 10 ? 1 : 2, by: order, heads: head)
             let entries = keys.map { k -> Entry in
                 let c = cur[k] ?? 0, p = prev[k] ?? 0
                 let mark: Mark = previous.isEmpty ? .none : (p == 0 ? .new : (c > p ? .up : .none))
@@ -634,6 +689,16 @@ public enum NoteMap {
                 let c = co[k] ?? 0
                 return Neighbor(keyword: k, count: c, level: min(3, max(1, (3 * c + top - 1) / top)))
             }
+        }
+
+        /// **336 — 가운데 말과 함께 쓴 상태어** (노트 수 · 많은 것부터 · 같으면 코드 포인트 순 · 다섯까지).
+        public func statuses(of center: String, today: Int, days: Int) -> [(keyword: String, count: Int)] {
+            var count: [String: Int] = [:]
+            for note in inPeriod(today: today, days: days) where note.keywords.contains(center) {
+                for k in note.status { count[k, default: 0] += 1 }
+            }
+            let order = count.keys.sorted { a, b in count[a]! != count[b]! ? count[a]! > count[b]! : NoteMap.precedes(a, b) }
+            return order.prefix(NoteMap.statusLimit).map { ($0, count[$0]!) }
         }
 
         /// 이 기간 · 그 말(과 둘째 말)이 든 노트 — 날 늦은 것부터, 같으면 경로 순.

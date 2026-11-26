@@ -35,6 +35,13 @@
   `구절 노트 수 × 10 ≥ 4 × min(앞말이 든 노트 수, 뒷말 노트 수)` (드문 말이 든 노트의 40% 이상에서 함께). 숨긴 구절이면 뺀다.
 - 받은 구절은 노트의 키워드에 더해져 낱말과 똑같이 센다. 둘레(330)에서는 가운데와 낱말이 겹치는 것을 뺀다.
 
+## 335 · 336 — 주제어 중심 (2026-11-27 사용자 — *주제어 중심으로 나오는 것이 맞아*)
+
+- **제목 · 머리글** — `#` 줄 · 밑줄 제목 줄의 낱말을 `(말, "#" + 꼴)` 로 한 번 더 담는다 (`terms`). 노트 둘 이상의 제목 · 머리글에 나온 말은
+  꼴 증거가 없어도 받는다. 많이 쓴 순은 노트 수가 같으면 *이 기간 제목에 나온 노트 수* 가 많은 것 먼저 · 두드러진 순은 그 수를 더해 점수를 낸다.
+- **상태어** (`STATUS` — 진행 · 완료 · 검토 …) — 받은 말이어도 낱말 키워드에서 뺀다. 노트의 `status` 로 두고 키워드 화면의
+  *함께 쓴 상태* (`statuses`) 로 센다 — 상태는 표에 있으면 꼴 증거 없이 센다. 구절의 뒷말로는 받은 말일 때만 쓴다 (*심사 제출*).
+
 ## 333 — 덜어내기 (사용자가 숨긴 말 · 2026-11-26)
 
 - **기능 명사** (`STOP` 에 더함) · **직함은 낱말이 아니다** (`TITLES`) · **꾸밈꼴 · 연결꼴은 낱말에도** (`bad_front`).
@@ -102,7 +109,7 @@ STOP = {
     "개월", "아니", "이후", "이전", "전에", "후에", "여기서", "거기서", "따로", "안에", "밖에", "위에",
     "아래", "없이", "있으면", "없으면", "처음", "마지막", "보내", "하면", "되면", "다른", "같은", "없음", "있음",
     # 333 — 형식 · 기능 명사 (사용자가 숨긴 말 · 문맥 다양성이 못 잡는 드문 것까지)
-    "관련", "가능", "기존", "기반", "여부", "대상", "부분", "내용", "방법", "진행", "사용", "필요", "해당", "각각",
+    "관련", "가능", "기존", "기반", "여부", "대상", "부분", "내용", "방법", "사용", "필요", "해당", "각각",
     "일부", "전체", "현재", "최근", "그대로",
 }
 # 333 — 굳은 표현 (구절로 세우지 않는다).
@@ -119,6 +126,16 @@ TITLES = {
 # *노트 이사 · 스테이지 매니저* 같은 것을 거른다 (저장소 문서 시제품).
 SURNAMES = set("김이박최정강조윤장임한오서신권황안송류전홍고문양손배백허유남심노하곽성차주우구민진지엄채원천방공현함변염여추도소석선설마길연위표명기반라왕금옥육인맹제모탁국어은편용예경봉사부")
 DOUBLE_SURNAMES = {"남궁", "황보", "제갈", "선우", "독고", "사공", "서문"}
+# 336 — 상태 · 행위어: 주제가 아니라 주제의 상태 (사용자 — *주제어 중심으로 나오는 것이 맞아*). 낱말 목록에는 안 세우고
+# 키워드 화면에 *함께 쓴 상태* 로 보인다. 구절의 뒷말로는 쓸 수 있다 (*심사 제출*).
+STATUS = {
+    "진행", "완료", "검토", "확인", "요청", "공유", "준비", "보고", "정리", "시작", "종료", "대기", "보류", "수정",
+    "반영", "적용", "처리", "착수", "마감", "연기", "취소", "점검", "논의", "협의", "결정", "전달", "회신", "답변",
+}
+STATUS_LIMIT = 5
+# 335 — 제목 · 머리글 줄 (`#` 줄 · 밑줄 제목). 그 줄의 낱말은 꼴 앞에 `#` 을 붙여 한 번 더 담는다.
+ATX_RE = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")
+HEADING_MIN_NOTES = 2
 # 334 — 의존 명사 (*것 · 수 · 때 …*) + 한 글자 조사 두 글자 덩이는 늘 뺀다 (사용자 — *것이* 가 *것이라는 · 것이라도* 때문에 빠져나갔다).
 BOUND_NOUNS = set("것수때적데등뿐줄바듯분")
 # 334 — *이* 로 끝나는 덩이 뒤의 *라는 · 란 · 라도* 는 *이라는 · 이란 · 이라도* 가 갈라진 것 — 조사 증거로 세지 않는다.
@@ -243,8 +260,12 @@ def terms(text: str, roles_of, split_front_matter) -> list[list[str]]:
     for line, role in zip(lines, roles):
         if role in ("code", "indentedCode", "comment") or FENCE_RE.match(line):
             continue
-        for term in scan(preview(line)):
-            found.add(term)
+        heading = role in ("heading1", "heading2") or bool(ATX_RE.match(line))
+        for stem, form in scan(preview(line)):
+            found.add((stem, form))
+            # 335 — 제목 · 머리글의 낱말 (구절은 빼고).
+            if heading and " " not in stem:
+                found.add((stem, "#" + form))
     return [list(t) for t in sorted(found)]
 
 
@@ -277,7 +298,8 @@ class Model:
 
     def __init__(self, rows: list[dict], hidden: list[str] | None = None):
         hidden_set = set(hidden or [])
-        word_terms = [[(s, f) for s, f in row["terms"] if " " not in s] for row in rows]
+        word_terms = [[(s, f) for s, f in row["terms"] if " " not in s and not f.startswith("#")] for row in rows]
+        heading_terms = [[(s, f[1:]) for s, f in row["terms"] if f.startswith("#")] for row in rows]
         phrase_terms = [[(s, f) for s, f in row["terms"] if " " in s] for row in rows]
         stem_forms: dict[str, set[str]] = {}
         for pairs in word_terms:
@@ -293,6 +315,12 @@ class Model:
             return stem, form
 
         resolved = [[resolve(s, f) for s, f in pairs] for pairs in word_terms]
+        # 335 — 노트마다 제목 · 머리글에 나온 말 (풀어서) · 그런 노트 수.
+        heads = [{resolve(s, f)[0] for s, f in pairs} for pairs in heading_terms]
+        head_df: dict[str, int] = {}
+        for hs in heads:
+            for k in hs:
+                head_df[k] = head_df.get(k, 0) + 1
         kw_forms: dict[str, set[str]] = {}
         for pairs in resolved:
             for k, f in pairs:
@@ -341,17 +369,22 @@ class Model:
             if (len(k) < 2 or k in STOP or k in TITLES or is_bad_stem(k) or bad_front(k) or one_syllable_josa(k)
                     or too_diverse(k)):
                 return False
-            return sum(1 for f in kw_forms[k] if f == "" or f in STRONG_SET) >= 2
+            # 335 — 조사를 받은 꼴이 없어도 노트 둘 이상의 제목 · 머리글에 나오면 받는다 (제목은 맨꼴로 적는다).
+            return sum(1 for f in kw_forms[k] if f == "" or f in STRONG_SET) >= 2 or head_df.get(k, 0) >= HEADING_MIN_NOTES
 
         accepted = {k: accept(k) for k in kw_forms}
-        words = [{k for k, _ in pairs if accepted[k]} for pairs in resolved]
+        taken = [{k for k, _ in pairs if accepted[k]} for pairs in resolved]
+        # 336 — 상태어는 낱말에서 빼고 노트의 *상태* 로 따로 둔다 (받은 말이라 구절의 뒷말로는 쓴다).
+        words = [ks - STATUS for ks in taken]
+        # 상태어는 표에 있는 말이라 꼴 증거 없이 센다 (*완료* 는 조사 없이 쓰는 일이 많다).
+        statuses = [{k for k, _ in pairs if k in STATUS and k not in hidden_set} for pairs in resolved]
         # 구절의 앞말은 낱말 키워드가 아니어도 된다 (*주간 · 개인정보* 는 늘 맨꼴로 앞에만 선다). 그 말이 든 노트 수.
         stem_df: dict[str, int] = {}
         for pairs in resolved:
             for k in {k for k, _ in pairs}:
                 stem_df[k] = stem_df.get(k, 0) + 1
         word_df: dict[str, int] = {}
-        for ks in words:
+        for ks in taken:
             for k in ks:
                 word_df[k] = word_df.get(k, 0) + 1
 
@@ -406,8 +439,9 @@ class Model:
                 covered[k] = covered.get(k, 0) + 1
         dropped = {k for k, c in covered.items() if c * 10 >= COVER_TENTHS * word_df[k]} | names
         self.notes = [
-            {"path": row["path"], "day": row["day"], "keywords": (ks - dropped) | (found & good) | (people & self.people)}
-            for row, ks, found, people in zip(rows, words, candidates, person_candidates)
+            {"path": row["path"], "day": row["day"], "keywords": (ks - dropped) | (found & good) | (people & self.people),
+             "heads": hs, "status": st}
+            for row, ks, found, people, hs, st in zip(rows, words, candidates, person_candidates, heads, statuses)
         ]
         self.df: dict[str, int] = {}
         for note in self.notes:
@@ -432,19 +466,23 @@ class Model:
         previous = [n for n in self.notes if days <= today - n["day"] < 2 * days]
         cur: dict[str, int] = {}
         prev: dict[str, int] = {}
+        head: dict[str, int] = {}
         for n in current:
             for k in n["keywords"]:
                 cur[k] = cur.get(k, 0) + 1
+                if k in n["heads"]:
+                    head[k] = head.get(k, 0) + 1
         for n in previous:
             for k in n["keywords"]:
                 prev[k] = prev.get(k, 0) + 1
         minimum = 1 if len(current) < 10 else 2
         chosen = [k for k, c in cur.items() if c >= minimum]
         # 차례 (331) — `count` 많이 쓴 순(같으면 두드러진 순) · `score` 두드러진 순.
+        # 335 — 제목 · 머리글: 많이 쓴 순은 노트 수가 같을 때 제목에 나온 노트가 많은 말을 먼저 · 두드러진 순은 그 노트를 한 번 더 센다.
         if by == "count":
-            chosen.sort(key=lambda k: (-cur[k], -self.score(cur[k], k), k))
+            chosen.sort(key=lambda k: (-cur[k], -head.get(k, 0), -self.score(cur[k], k), k))
         else:
-            chosen.sort(key=lambda k: (-self.score(cur[k], k), k))
+            chosen.sort(key=lambda k: (-self.score(cur[k] + head.get(k, 0), k), k))
         entries = []
         for k in chosen:
             p = prev.get(k, 0)
@@ -468,6 +506,16 @@ class Model:
         chosen = chosen[:NEIGHBOR_LIMIT]
         top = max((co[k] for k in chosen), default=1)
         return [{"keyword": k, "count": co[k], "level": min(3, max(1, (3 * co[k] + top - 1) // top))} for k in chosen]
+
+    def statuses(self, center: str, today: int, days: int) -> list[dict]:
+        """336 — 가운데 말이 든 이 기간 노트에 함께 쓴 상태어 (노트 수 · 많은 것부터 · 같으면 코드 포인트 순 · 다섯까지)."""
+        count: dict[str, int] = {}
+        for n in self.in_period(today, days):
+            if center in n["keywords"]:
+                for k in n["status"]:
+                    count[k] = count.get(k, 0) + 1
+        chosen = sorted(count, key=lambda k: (-count[k], k))[:STATUS_LIMIT]
+        return [{"keyword": k, "count": count[k]} for k in chosen]
 
     def note_paths(self, keyword: str, also: str | None, today: int, days: int) -> list[str]:
         picked = [n for n in self.in_period(today, days)
