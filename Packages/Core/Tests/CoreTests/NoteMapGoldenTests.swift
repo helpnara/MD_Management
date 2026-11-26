@@ -24,6 +24,7 @@ final class NoteMapGoldenTests: XCTestCase {
         }
         struct Overview: Decodable {
             let days: Int
+            let by: String
             let notes: Int
             let previousNotes: Int
             let entries: [Entry]
@@ -98,10 +99,10 @@ final class NoteMapGoldenTests: XCTestCase {
             let label = "[\(folder.name)]"
             XCTAssertEqual(model.keywords, folder.keywords, "키워드 " + label)
             for want in folder.overviews {
-                let got = model.overview(today: folder.today, days: want.days)
+                let got = model.overview(today: folder.today, days: want.days, by: NoteMap.Order(rawValue: want.by)!)
                 XCTAssertEqual(got.notes, want.notes, "기간 노트 \(want.days) " + label)
                 XCTAssertEqual(got.previousNotes, want.previousNotes, "앞 기간 노트 \(want.days) " + label)
-                XCTAssertEqual(got.entries.map(\.keyword), want.entries.map(\.keyword), "차례 \(want.days) " + label)
+                XCTAssertEqual(got.entries.map(\.keyword), want.entries.map(\.keyword), "차례 \(want.days) \(want.by) " + label)
                 XCTAssertEqual(got.entries.map(\.count), want.entries.map(\.count), "노트 수 \(want.days) " + label)
                 XCTAssertEqual(got.entries.map(\.previous), want.entries.map(\.previous), "앞 기간 수 \(want.days) " + label)
                 XCTAssertEqual(got.entries.map(\.mark.rawValue), want.entries.map(\.mark), "표시 \(want.days) " + label)

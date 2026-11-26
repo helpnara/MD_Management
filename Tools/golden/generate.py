@@ -4325,12 +4325,20 @@ def build_note_map_cases() -> dict:
         keywords = sorted(model.df)
         if "expectKeywords" in case and keywords != case["expectKeywords"]:
             raise SystemExit(f"::error::[{case['name']}] 노트 지도 키워드: 뜻 {case['expectKeywords']} · 셈 {keywords}")
-        overviews = [dict(model.overview(case["today"], d), days=d) for d in case["days"]]
+        overviews = [dict(model.overview(case["today"], d, by), days=d, by=by)
+                     for d in case["days"] for by in ("count", "score")]
         first = case["days"][0]
         order = [e["keyword"] for e in overviews[0]["entries"]]
+        if "expectScoreOrder" in case:
+            got = [e["keyword"] for e in overviews[1]["entries"]]
+            if got != case["expectScoreOrder"]:
+                raise SystemExit(f"::error::[{case['name']}] 노트 지도 두드러진 순: 뜻 {case['expectScoreOrder']} · 셈 {got}")
         if "expectOrder" in case and order != case["expectOrder"]:
             raise SystemExit(f"::error::[{case['name']}] 노트 지도 차례: 뜻 {case['expectOrder']} · 셈 {order}")
         for ov in overviews:
+            counts = [e["count"] for e in ov["entries"]]
+            if ov["by"] == "count" and counts != sorted(counts, reverse=True):
+                raise SystemExit(f"::error::[{case['name']}] 많이 쓴 순인데 노트 수가 들쭉날쭉: {counts}")
             for e in ov["entries"]:
                 if e["count"] > ov["notes"] or (e["mark"] and not ov["previousNotes"]):
                     raise SystemExit(f"::error::[{case['name']}] 노트 지도가 앞뒤가 안 맞는다: {e}")

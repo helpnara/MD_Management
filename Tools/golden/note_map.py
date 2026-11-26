@@ -19,12 +19,21 @@
 ## 폴더 전체 → 키워드 — 지도를 열 때
 
 - **줄기 꼴 모음** `stem_forms[말]` — 모든 노트의 (말, 꼴).
-- **풀기** (말, 꼴) → (키워드, 꼴): 꼴이 있고 `말+꼴` 이 다른 데서 **센 조사**(`STRONG`)를 받은 적이 있으면 `(말+꼴, "")` —
+- **풀기** (말, 꼴) → (키워드, 꼴): 꼴이 **한 글자 조사**이고 `말+꼴` 이 다른 데서 **센 조사**(`STRONG`)를 받은 적이 있으면 `(말+꼴, "")` —
   *전문가 · 고양이 · 어린이* 처럼 조사 같은 글자로 끝나는 말을 지킨다. 아니면 그대로.
 - **키워드 꼴 모음** `kw_forms[키워드]` — 푼 꼴.
 - **받는 키워드** — 영문은 그대로. 한글은 두 글자 이상 · `STOP` 아님 · 동사 끝(`is_bad_stem`) 아님 ·
   **꼴 증거 둘 이상** — 맨꼴(`""`) 과 센 조사 꼴을 센다 (약한 조사 `도 · 만 · 나 · 들` … 은 떼기만 하고 증거가 아니다 — *만들어도* 같은 동사 꼴).
 - 숨긴 말(`hidden`)은 뺀다. 노트의 키워드는 집합.
+
+## 구절 (331)
+
+- 낱말 꼴에 더해 **구절 후보** — 한 줄 안에서 빈칸 하나(U+0020)로만 떨어진 한글 덩이 둘, 앞 덩이는 조사가 없는 맨꼴.
+  `(앞말 + " " + 뒷말의 줄기, 뒷말의 조사)` 로 담는다 (빈칸이 든 말 = 구절). 낱말 셈(꼴 증거 · 풀기)에는 안 든다.
+- 받는 구절 — 뒷말을 낱말처럼 풀어 **받은 키워드**이고, 앞말은 `STOP` · 동사 줄기 · 숨긴 말이 아니면 된다
+  (*주간 · 개인정보* 는 늘 맨꼴로 앞에만 서서 낱말로는 못 받는다). 앞말이 동사의 꾸밈꼴 · 연결꼴이면 못 선다 (`bad_front`). 둘이 다르고, **노트 셋 이상**에 나오고
+  `구절 노트 수 × 10 ≥ 4 × min(앞말이 든 노트 수, 뒷말 노트 수)` (드문 말이 든 노트의 40% 이상에서 함께). 숨긴 구절이면 뺀다.
+- 받은 구절은 노트의 키워드에 더해져 낱말과 똑같이 센다. 둘레(330)에서는 가운데와 낱말이 겹치는 것을 뺀다.
 
 ## 기간 · 순위 (329)
 
@@ -32,7 +41,8 @@
 - `N` = 노트 수(본문이 든 것) · `df[k]` = k 가 든 노트 수 (전체).
 - 이 기간 노트가 10개 미만이면 한 번 나온 말도, 아니면 두 노트 이상에 나온 말만.
 - 점수 = `cur × ln((N+1)/df)` 을 **백만 배 해 반올림한 정수**(`floor(x + 0.5)` — 파이썬 `round` 는 반에서 짝수로 가서 쓰지 않는다) — 수학으로 같은 값(2·ln4 · ln16)이 언어마다 끝자리가 달라 차례가 갈리지 않게.
-  차례 — 점수 큰 것부터, 같으면 키워드의 코드 포인트 순.
+  차례 (331 · 사용자 정함 — 기본 많이 쓴 순) — `count`: 노트 수 큰 것부터, 같으면 점수 큰 것, 같으면 코드 포인트 순 ·
+  `score`: 점수 큰 것부터, 같으면 코드 포인트 순.
 - 표시 — 앞 기간에 노트가 하나도 없으면 없음. 아니면 앞 기간 0 → `new` · `cur > prev` → `up` · 아니면 없음.
 
 ## 함께 나온 말 (330)
@@ -76,7 +86,7 @@ STOP = {
     "계속", "항상", "위해", "대한", "대해", "통해", "때문", "경우", "정도", "이상", "이하", "하나", "어떤", "무엇",
     "누구", "어디", "언제", "이제", "그냥", "조금", "많이", "동안", "에서", "으로", "부터", "까지", "처럼", "보다",
     "개월", "아니", "이후", "이전", "전에", "후에", "여기서", "거기서", "따로", "안에", "밖에", "위에",
-    "아래", "없이", "있으면", "없으면", "처음", "마지막", "보내", "하면", "되면",
+    "아래", "없이", "있으면", "없으면", "처음", "마지막", "보내", "하면", "되면", "다른", "같은", "없음", "있음",
 }
 EN_STOP = {
     "the", "and", "for", "with", "that", "this", "from", "you", "your", "are", "was", "were", "not", "but",
@@ -89,6 +99,14 @@ BAD_BEFORE_DA = set("하되있없했됐였었았겠한된간온본준갔왔봤�
 
 SPACES = {0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x20, 0xA0, 0x1680, 0x2028, 0x2029, 0x202F, 0x205F, 0x3000} | set(range(0x2000, 0x200B))
 NEIGHBOR_LIMIT = 6
+# 구절 (331) — 노트 셋 이상 · 둘 중 드문 말이 든 노트의 40% 이상에서 함께.
+PHRASE_MIN_NOTES = 3
+# 구절의 앞말로 못 서는 꼴 — 동사의 꾸밈꼴(*삭제된 · 않은 · 지운*) · 연결꼴(*아니면 · 완료되면 · 하고*).
+FRONT_BAD_LAST = set("은는던된운")
+FRONT_VERB_LAST = set("한인")       # 앞부분이 따로 쓰이는 말이면 꾸밈꼴 (*고정한* ← *고정*) — *디자인 · 확인 · 권한* 은 남는다
+FRONT_BAD_SUFFIXES = ["하면", "되면", "으면", "라면", "다면", "이면", "니면", "려면", "하고", "되고", "해서", "하며", "하게", "되게",
+                      "하지", "되지", "해도"]
+PHRASE_SHARE_TENTHS = 4
 SCORE_SCALE = 1_000_000
 
 
@@ -120,9 +138,11 @@ def is_accented_letter(ch: str) -> bool:
 
 
 def scan(text: str) -> list[tuple[str, str]]:
-    """보이는 글 한 줄 → (말, 꼴) 들 (거르기 전 — 5 · 6 단계까지)."""
+    """보이는 글 한 줄 → (말, 꼴) 들 (거르기 전 — 5 · 6 단계까지). 구절 후보는 `(앞말 + " " + 뒷말, 뒷말의 조사)`."""
     out = []
     i, n = 0, len(text)
+    bare_end = -1           # 바로 앞 한글 덩이가 조사 없는 맨꼴이면 그 끝 자리 (구절의 앞말)
+    bare_word = ""
     while i < n:
         c = text[i]
         hangul = is_hangul(c)
@@ -139,11 +159,22 @@ def scan(text: str) -> list[tuple[str, str]]:
             i = j
             continue
         i = j
+        start = j - len(run)
         if hangul:
             if len(run) < 2:
+                bare_end = -1
                 continue
-            out.append(strip_josa(run))
+            stem, form = strip_josa(run)
+            out.append((stem, form))
+            # 구절 (331) — 빈칸 하나(U+0020)로만 떨어진 앞의 맨꼴 덩이와 묶는다.
+            if bare_end >= 0 and start == bare_end + 1 and text[bare_end] == " ":
+                out.append((bare_word + " " + stem, form))
+            if form:
+                bare_end = -1
+            else:
+                bare_end, bare_word = j, stem
         else:
+            bare_end = -1
             before = text[i - len(run) - 1] if i - len(run) - 1 >= 0 else ""
             after = text[i] if i < n else ""
             if "0" <= run[0] <= "9" or (before and is_accented_letter(before)) or (after and is_accented_letter(after)):
@@ -179,19 +210,22 @@ class Model:
 
     def __init__(self, rows: list[dict], hidden: list[str] | None = None):
         hidden_set = set(hidden or [])
+        word_terms = [[(s, f) for s, f in row["terms"] if " " not in s] for row in rows]
+        phrase_terms = [[(s, f) for s, f in row["terms"] if " " in s] for row in rows]
         stem_forms: dict[str, set[str]] = {}
-        for row in rows:
-            for stem, form in row["terms"]:
+        for pairs in word_terms:
+            for stem, form in pairs:
                 stem_forms.setdefault(stem, set()).add(form)
 
         def resolve(stem: str, form: str) -> tuple[str, str]:
-            if form:
+            # 한 글자 조사만 (*전문가 · 고양이*) — 두 글자 조사까지 풀면 *화면에서* 가 한 말이 된다 (331 시제품).
+            if len(form) == 1:
                 raw = stem + form
                 if any(f in STRONG_SET for f in stem_forms.get(raw, ())):
                     return raw, ""
             return stem, form
 
-        resolved = [[resolve(s, f) for s, f in row["terms"]] for row in rows]
+        resolved = [[resolve(s, f) for s, f in pairs] for pairs in word_terms]
         kw_forms: dict[str, set[str]] = {}
         for pairs in resolved:
             for k, f in pairs:
@@ -207,9 +241,50 @@ class Model:
             return sum(1 for f in kw_forms[k] if f == "" or f in STRONG_SET) >= 2
 
         accepted = {k: accept(k) for k in kw_forms}
+        words = [{k for k, _ in pairs if accepted[k]} for pairs in resolved]
+        # 구절의 앞말은 낱말 키워드가 아니어도 된다 (*주간 · 개인정보* 는 늘 맨꼴로 앞에만 선다). 그 말이 든 노트 수.
+        stem_df: dict[str, int] = {}
+        for pairs in resolved:
+            for k in {k for k, _ in pairs}:
+                stem_df[k] = stem_df.get(k, 0) + 1
+        word_df: dict[str, int] = {}
+        for ks in words:
+            for k in ks:
+                word_df[k] = word_df.get(k, 0) + 1
+
+        # 구절 (331) — 앞말 · 뒷말(풀어서)이 다 받은 키워드이고 서로 다를 때 후보. 노트 수 · 함께 나온 몫을 본다.
+        def bad_front(word: str) -> bool:
+            if word[-1] in FRONT_BAD_LAST:
+                return True
+            if word[-1] in FRONT_VERB_LAST and len(word) >= 3 and word[:-1] in stem_forms:
+                return True
+            return any(len(word) > len(x) and word.endswith(x) for x in FRONT_BAD_SUFFIXES)
+
+        candidates = []
+        for pairs in phrase_terms:
+            found = set()
+            for stem, form in pairs:
+                first, second = stem.split(" ", 1)
+                second = resolve(second, form)[0]
+                if (first != second and accepted.get(second) and first not in hidden_set
+                        and first not in STOP and not is_bad_stem(first) and not bad_front(first)):
+                    found.add(first + " " + second)
+            candidates.append(found)
+        phrase_df: dict[str, int] = {}
+        for found in candidates:
+            for p in found:
+                phrase_df[p] = phrase_df.get(p, 0) + 1
+
+        def accept_phrase(p: str) -> bool:
+            first, second = p.split(" ", 1)
+            c = phrase_df[p]
+            return (p not in hidden_set and c >= PHRASE_MIN_NOTES
+                    and c * 10 >= PHRASE_SHARE_TENTHS * min(stem_df[first], word_df[second]))
+
+        good = {p for p in phrase_df if accept_phrase(p)}
         self.notes = [
-            {"path": row["path"], "day": row["day"], "keywords": {k for k, _ in pairs if accepted[k]}}
-            for row, pairs in zip(rows, resolved)
+            {"path": row["path"], "day": row["day"], "keywords": ks | (found & good)}
+            for row, ks, found in zip(rows, words, candidates)
         ]
         self.df: dict[str, int] = {}
         for note in self.notes:
@@ -223,7 +298,7 @@ class Model:
     def in_period(self, today: int, days: int) -> list[dict]:
         return [n for n in self.notes if today - n["day"] < days]
 
-    def overview(self, today: int, days: int) -> dict:
+    def overview(self, today: int, days: int, by: str = "count") -> dict:
         current = self.in_period(today, days)
         previous = [n for n in self.notes if days <= today - n["day"] < 2 * days]
         cur: dict[str, int] = {}
@@ -236,7 +311,11 @@ class Model:
                 prev[k] = prev.get(k, 0) + 1
         minimum = 1 if len(current) < 10 else 2
         chosen = [k for k, c in cur.items() if c >= minimum]
-        chosen.sort(key=lambda k: (-self.score(cur[k], k), k))
+        # 차례 (331) — `count` 많이 쓴 순(같으면 두드러진 순) · `score` 두드러진 순.
+        if by == "count":
+            chosen.sort(key=lambda k: (-cur[k], -self.score(cur[k], k), k))
+        else:
+            chosen.sort(key=lambda k: (-self.score(cur[k], k), k))
         entries = []
         for k in chosen:
             p = prev.get(k, 0)
@@ -249,7 +328,8 @@ class Model:
         co: dict[str, int] = {}
         for n in around:
             for k in n["keywords"]:
-                if k != center:
+                # 가운데와 낱말이 겹치는 것(구절과 그 안의 낱말)은 둘레에 세우지 않는다 — 늘 함께 나오니 뜻이 없다.
+                if k != center and not set(k.split(" ")) & set(center.split(" ")):
                     co[k] = co.get(k, 0) + 1
         minimum = 1 if len(around) < 4 else 2
         chosen = [k for k, c in co.items() if c >= minimum]

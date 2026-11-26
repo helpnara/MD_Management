@@ -8849,6 +8849,45 @@
         ],
         "overviews": [
           {
+            "by": "count",
+            "days": 28,
+            "entries": [
+              {
+                "count": 3,
+                "keyword": "회의",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 2,
+                "keyword": "고양이",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 2,
+                "keyword": "전문가",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 1,
+                "keyword": "pdf",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 1,
+                "keyword": "광고",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 6,
+            "previousNotes": 0
+          },
+          {
+            "by": "score",
             "days": 28,
             "entries": [
               {
@@ -8914,6 +8953,7 @@
         "keywords": [
           "노트",
           "디자인",
+          "디자인 회의",
           "여행",
           "초록",
           "회의"
@@ -8921,21 +8961,16 @@
         "name": "기간과 표시",
         "neighbors": [
           {
-            "center": "초록",
+            "center": "디자인 회의",
             "days": 28,
             "neighbors": [
               {
                 "count": 6,
-                "keyword": "디자인",
-                "level": 3
+                "keyword": "초록",
+                "level": 2
               },
               {
-                "count": 6,
-                "keyword": "회의",
-                "level": 3
-              },
-              {
-                "count": 6,
+                "count": 12,
                 "keyword": "노트",
                 "level": 3
               }
@@ -9098,11 +9133,56 @@
         ],
         "overviews": [
           {
+            "by": "count",
+            "days": 28,
+            "entries": [
+              {
+                "count": 12,
+                "keyword": "디자인 회의",
+                "mark": "new",
+                "previous": 0
+              },
+              {
+                "count": 12,
+                "keyword": "디자인",
+                "mark": "up",
+                "previous": 3
+              },
+              {
+                "count": 12,
+                "keyword": "회의",
+                "mark": "up",
+                "previous": 6
+              },
+              {
+                "count": 12,
+                "keyword": "노트",
+                "mark": "up",
+                "previous": 6
+              },
+              {
+                "count": 6,
+                "keyword": "초록",
+                "mark": "new",
+                "previous": 0
+              }
+            ],
+            "notes": 12,
+            "previousNotes": 6
+          },
+          {
+            "by": "score",
             "days": 28,
             "entries": [
               {
                 "count": 6,
                 "keyword": "초록",
+                "mark": "new",
+                "previous": 0
+              },
+              {
+                "count": 12,
+                "keyword": "디자인 회의",
                 "mark": "new",
                 "previous": 0
               },
@@ -9129,11 +9209,56 @@
             "previousNotes": 6
           },
           {
+            "by": "count",
+            "days": 91,
+            "entries": [
+              {
+                "count": 18,
+                "keyword": "회의",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 18,
+                "keyword": "노트",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 15,
+                "keyword": "디자인",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 12,
+                "keyword": "디자인 회의",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 6,
+                "keyword": "초록",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 18,
+            "previousNotes": 0
+          },
+          {
+            "by": "score",
             "days": 91,
             "entries": [
               {
                 "count": 6,
                 "keyword": "초록",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 12,
+                "keyword": "디자인 회의",
                 "mark": "",
                 "previous": 0
               },
@@ -9160,11 +9285,62 @@
             "previousNotes": 0
           },
           {
+            "by": "count",
+            "days": 365,
+            "entries": [
+              {
+                "count": 22,
+                "keyword": "노트",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 18,
+                "keyword": "회의",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 15,
+                "keyword": "디자인",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 12,
+                "keyword": "디자인 회의",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 6,
+                "keyword": "초록",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 4,
+                "keyword": "여행",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 22,
+            "previousNotes": 0
+          },
+          {
+            "by": "score",
             "days": 365,
             "entries": [
               {
                 "count": 6,
                 "keyword": "초록",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 12,
+                "keyword": "디자인 회의",
                 "mark": "",
                 "previous": 0
               },
@@ -9201,14 +9377,20 @@
           {
             "also": null,
             "days": 28,
-            "keyword": "초록",
+            "keyword": "디자인 회의",
             "paths": [
               "now/00.md",
               "now/01.md",
               "now/02.md",
               "now/03.md",
               "now/04.md",
-              "now/05.md"
+              "now/05.md",
+              "now/06.md",
+              "now/07.md",
+              "now/08.md",
+              "now/09.md",
+              "now/10.md",
+              "now/11.md"
             ]
           },
           {
@@ -9242,6 +9424,7 @@
           "단축키",
           "명조",
           "자판",
+          "자판 단축키",
           "초록",
           "팔레트"
         ],
@@ -9264,6 +9447,11 @@
               {
                 "count": 3,
                 "keyword": "자판",
+                "level": 2
+              },
+              {
+                "count": 3,
+                "keyword": "자판 단축키",
                 "level": 2
               },
               {
@@ -9369,6 +9557,57 @@
         ],
         "overviews": [
           {
+            "by": "count",
+            "days": 28,
+            "entries": [
+              {
+                "count": 10,
+                "keyword": "단축키",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 7,
+                "keyword": "글꼴",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 7,
+                "keyword": "자판",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 7,
+                "keyword": "자판 단축키",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 7,
+                "keyword": "팔레트",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 6,
+                "keyword": "명조",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 6,
+                "keyword": "초록",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 10,
+            "previousNotes": 0
+          },
+          {
+            "by": "score",
             "days": 28,
             "entries": [
               {
@@ -9392,6 +9631,12 @@
               {
                 "count": 7,
                 "keyword": "자판",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 7,
+                "keyword": "자판 단축키",
                 "mark": "",
                 "previous": 0
               },
@@ -9479,6 +9724,27 @@
         ],
         "overviews": [
           {
+            "by": "count",
+            "days": 28,
+            "entries": [
+              {
+                "count": 2,
+                "keyword": "여행",
+                "mark": "new",
+                "previous": 0
+              },
+              {
+                "count": 1,
+                "keyword": "계획",
+                "mark": "new",
+                "previous": 0
+              }
+            ],
+            "notes": 2,
+            "previousNotes": 1
+          },
+          {
+            "by": "score",
             "days": 28,
             "entries": [
               {
@@ -9519,6 +9785,14 @@
         "notes": [],
         "overviews": [
           {
+            "by": "count",
+            "days": 28,
+            "entries": [],
+            "notes": 0,
+            "previousNotes": 0
+          },
+          {
+            "by": "score",
             "days": 28,
             "entries": [],
             "notes": 0,
@@ -9600,6 +9874,33 @@
         ],
         "overviews": [
           {
+            "by": "count",
+            "days": 28,
+            "entries": [
+              {
+                "count": 2,
+                "keyword": "가방",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 2,
+                "keyword": "나무",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 2,
+                "keyword": "다리",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 2,
+            "previousNotes": 0
+          },
+          {
+            "by": "score",
             "days": 28,
             "entries": [
               {
@@ -9646,6 +9947,187 @@
           }
         ],
         "today": 10
+      },
+      {
+        "hidden": [],
+        "keywords": [
+          "계획",
+          "독서",
+          "독서 모임",
+          "모임",
+          "주간 회의",
+          "회의"
+        ],
+        "name": "구절",
+        "neighbors": [
+          {
+            "center": "독서",
+            "days": 28,
+            "neighbors": [
+              {
+                "count": 4,
+                "keyword": "모임",
+                "level": 3
+              },
+              {
+                "count": 2,
+                "keyword": "주간 회의",
+                "level": 2
+              },
+              {
+                "count": 4,
+                "keyword": "회의",
+                "level": 3
+              }
+            ]
+          },
+          {
+            "center": "독서 모임",
+            "days": 28,
+            "neighbors": [
+              {
+                "count": 2,
+                "keyword": "주간 회의",
+                "level": 2
+              },
+              {
+                "count": 3,
+                "keyword": "회의",
+                "level": 3
+              }
+            ]
+          }
+        ],
+        "notes": [
+          {
+            "day": 500,
+            "path": "a.md",
+            "text": "독서 모임을 했다. 독서를 좋아한다. 모임은 즐겁다. 주간 회의 메모."
+          },
+          {
+            "day": 499,
+            "path": "b.md",
+            "text": "독서 모임에서 책을 골랐다. 모임의 날짜. 주간 회의를 했다."
+          },
+          {
+            "day": 498,
+            "path": "c.md",
+            "text": "독서 모임 후기. 독서 노트. 모임 장소. 회의 시간."
+          },
+          {
+            "day": 497,
+            "path": "d.md",
+            "text": "독서를 했다. 모임이 없다. 회의 정리. 주간 계획을 세웠다. 계획은 길다."
+          },
+          {
+            "day": 496,
+            "path": "e.md",
+            "text": "회의를 했다. 회의 결과. 주간 회의 정리."
+          }
+        ],
+        "overviews": [
+          {
+            "by": "count",
+            "days": 28,
+            "entries": [
+              {
+                "count": 5,
+                "keyword": "회의",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 4,
+                "keyword": "독서",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 4,
+                "keyword": "모임",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 3,
+                "keyword": "독서 모임",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 3,
+                "keyword": "주간 회의",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 1,
+                "keyword": "계획",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 5,
+            "previousNotes": 0
+          },
+          {
+            "by": "score",
+            "days": 28,
+            "entries": [
+              {
+                "count": 3,
+                "keyword": "독서 모임",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 3,
+                "keyword": "주간 회의",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 1,
+                "keyword": "계획",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 4,
+                "keyword": "독서",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 4,
+                "keyword": "모임",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 5,
+                "keyword": "회의",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 5,
+            "previousNotes": 0
+          }
+        ],
+        "paths": [
+          {
+            "also": null,
+            "days": 28,
+            "keyword": "독서 모임",
+            "paths": [
+              "a.md",
+              "b.md",
+              "c.md"
+            ]
+          }
+        ],
+        "today": 500
       }
     ],
     "layout": [
@@ -9907,7 +10389,15 @@
             ""
           ],
           [
+            "집에서 쉬었다",
+            ""
+          ],
+          [
             "책을",
+            ""
+          ],
+          [
+            "책을 읽었다",
             ""
           ]
         ],
@@ -9921,6 +10411,10 @@
             ""
           ],
           [
+            "결과 문서",
+            ""
+          ],
+          [
             "고양",
             "이"
           ],
@@ -9929,11 +10423,23 @@
             ""
           ],
           [
+            "광고 화면",
+            ""
+          ],
+          [
             "문서",
             ""
           ],
           [
+            "문서 광고",
+            ""
+          ],
+          [
             "사이",
+            ""
+          ],
+          [
+            "사이 결과",
             ""
           ],
           [
@@ -9945,6 +10451,10 @@
             ""
           ],
           [
+            "이미지 캠페인",
+            ""
+          ],
+          [
             "전문",
             "가"
           ],
@@ -9953,7 +10463,15 @@
             ""
           ],
           [
+            "캠페인 전문",
+            "가"
+          ],
+          [
             "화면",
+            ""
+          ],
+          [
+            "화면 이미지",
             ""
           ]
         ],
@@ -10004,6 +10522,10 @@
           ],
           [
             "에서",
+            ""
+          ],
+          [
+            "에서 바뀐",
             ""
           ],
           [
@@ -10095,11 +10617,23 @@
             ""
           ],
           [
+            "사진 설명",
+            ""
+          ],
+          [
             "설명",
             ""
           ],
           [
+            "설명 그리고",
+            ""
+          ],
+          [
             "회의록",
+            ""
+          ],
+          [
+            "회의록 링크",
             ""
           ]
         ],
@@ -10113,7 +10647,15 @@
             ""
           ],
           [
+            "굵은글 기울임",
+            ""
+          ],
+          [
             "기울임",
+            ""
+          ],
+          [
+            "기울임 지운글",
             ""
           ],
           [
@@ -10143,6 +10685,10 @@
             ""
           ],
           [
+            "번호 항목",
+            ""
+          ],
+          [
             "운동하기",
             ""
           ],
@@ -10151,7 +10697,15 @@
             ""
           ],
           [
+            "인용한 문장",
+            ""
+          ],
+          [
             "장보기",
+            ""
+          ],
+          [
+            "장보기 목록",
             ""
           ],
           [
@@ -10221,11 +10775,23 @@
             "도"
           ],
           [
+            "만들어 갔다",
+            "가"
+          ],
+          [
             "많아서",
             ""
           ],
           [
+            "많아서 다시",
+            "는"
+          ],
+          [
             "보인다",
+            ""
+          ],
+          [
+            "보인다 않는다",
             ""
           ],
           [
@@ -10237,7 +10803,15 @@
             ""
           ],
           [
+            "않는다 있다",
+            "는"
+          ],
+          [
             "읽고",
+            ""
+          ],
+          [
+            "읽고 보인다",
             ""
           ],
           [
@@ -10263,7 +10837,15 @@
             ""
           ],
           [
+            "아랫줄 낱말",
+            ""
+          ],
+          [
             "윗줄",
+            ""
+          ],
+          [
+            "윗줄 낱말",
             ""
           ]
         ],
@@ -10289,9 +10871,115 @@
           [
             "한글",
             ""
+          ],
+          [
+            "한글 파일",
+            ""
           ]
         ],
         "text": "한글 파일"
+      },
+      {
+        "name": "구절 — 맨꼴 + 조사 붙은 뒷말",
+        "terms": [
+          [
+            "독서",
+            ""
+          ],
+          [
+            "독서 모임",
+            "을"
+          ],
+          [
+            "디자인",
+            ""
+          ],
+          [
+            "디자인",
+            "을"
+          ],
+          [
+            "디자인 시안",
+            ""
+          ],
+          [
+            "모임",
+            "을"
+          ],
+          [
+            "봤다",
+            ""
+          ],
+          [
+            "시안",
+            ""
+          ],
+          [
+            "주간",
+            ""
+          ],
+          [
+            "주간 회의",
+            "에서"
+          ],
+          [
+            "했다",
+            ""
+          ],
+          [
+            "회의",
+            "에서"
+          ]
+        ],
+        "text": "독서 모임을 했다. 주간 회의에서 디자인 시안. 회의에서 디자인을 봤다."
+      },
+      {
+        "name": "구절 — 빈칸 둘 · 문장부호 · 줄 끝은 안 이어진다",
+        "terms": [
+          [
+            "독서",
+            ""
+          ],
+          [
+            "모임",
+            ""
+          ]
+        ],
+        "text": "독서  모임 · 독서, 모임 · 독서\n모임 · 독서·모임"
+      },
+      {
+        "name": "구절 — 영문 사이 · 한 글자",
+        "terms": [
+          [
+            "ios",
+            ""
+          ],
+          [
+            "노트",
+            ""
+          ],
+          [
+            "노트 정리",
+            ""
+          ],
+          [
+            "디자인",
+            ""
+          ],
+          [
+            "디자인 시안",
+            ""
+          ],
+          [
+            "시안",
+            ""
+          ],
+          [
+            "정리",
+            ""
+          ]
+        ],
+        "text": "앱 디자인 시안 · iOS 디자인 시안 · 새 노트 정리"
       }
     ]
   },

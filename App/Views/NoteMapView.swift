@@ -27,6 +27,8 @@ struct NoteMapView: View {
     @EnvironmentObject private var library: LibraryModel
     /// 마지막에 고른 기간 — 기기마다 (설계 §3.1).
     @AppStorage("noteMap.period") private var periodDays = NoteMapPeriod.weeks.rawValue
+    /// 차례 (331 · 사용자 정함 — 기본 많이 쓴 순). 기기마다.
+    @AppStorage("noteMap.order") private var orderRaw = NoteMap.Order.count.rawValue
     @State private var snapshot: LibraryModel.NoteMapSnapshot?
     @State private var loaded = false
     @State private var shown = Self.pageSize
@@ -35,6 +37,7 @@ struct NoteMapView: View {
     static let pageSize = 30
 
     private var period: NoteMapPeriod { NoteMapPeriod(rawValue: periodDays) ?? .weeks }
+    private var order: NoteMap.Order { NoteMap.Order(rawValue: orderRaw) ?? .count }
 
     var body: some View {
         NavigationStack(path: $route) {
@@ -60,7 +63,7 @@ struct NoteMapView: View {
 
     @ViewBuilder
     private var content: some View {
-        let overview = snapshot?.model.overview(today: snapshot?.today ?? 0, days: period.rawValue)
+        let overview = snapshot?.model.overview(today: snapshot?.today ?? 0, days: period.rawValue, by: order)
         PaperList {
             if let overview, let snapshot {
                 Section {
@@ -100,12 +103,20 @@ struct NoteMapView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            Picker("기간", selection: $periodDays) {
-                ForEach(NoteMapPeriod.allCases) { p in
-                    Text(p.label).tag(p.rawValue)
+            VStack(spacing: Metrics.rowSpacing) {
+                Picker("기간", selection: $periodDays) {
+                    ForEach(NoteMapPeriod.allCases) { p in
+                        Text(p.label).tag(p.rawValue)
+                    }
                 }
+                .pickerStyle(.segmented)
+                // 331 — 차례. 막대 · 숫자는 늘 노트 수다 — *많이 쓴 순* 이면 위에서 아래로 줄어든다.
+                Picker("차례", selection: $orderRaw) {
+                    Text("많이 쓴 순").tag(NoteMap.Order.count.rawValue)
+                    Text("두드러진 순").tag(NoteMap.Order.score.rawValue)
+                }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
             .padding(.horizontal, Metrics.gutter)
             .padding(.vertical, Metrics.rowSpacing)
             .background(Palette.paperGrouped)
@@ -129,6 +140,9 @@ struct NoteMapView: View {
     private func summary(overview: NoteMap.Overview, snapshot: LibraryModel.NoteMapSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("노트 \(overview.notes)개에서")
+            if order == .score {
+                Text("앞 기간 · 다른 노트보다 이 기간에 두드러진 말이 위로 옵니다. 숫자는 노트 수입니다.")
+            }
             if snapshot.titleOnly > 0 {
                 Text("내려받지 않은 노트 \(snapshot.titleOnly)개는 빠졌습니다")
             }
@@ -143,7 +157,7 @@ struct NoteMapView: View {
         loaded = true
         // CI — 첫 키워드 화면을 손가락과 같은 길로 연다 (`-noteMapKeyword`).
         if library.launch.noteMapKeyword, route.isEmpty,
-           let first = snapshot?.model.overview(today: snapshot?.today ?? 0, days: period.rawValue).entries.first {
+           let first = snapshot?.model.overview(today: snapshot?.today ?? 0, days: period.rawValue, by: order).entries.first {
             try? await Task.sleep(for: .milliseconds(500))
             route = [first.keyword]
         }
