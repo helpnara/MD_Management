@@ -32,9 +32,12 @@ struct NoteMapView: View {
     @State private var snapshot: LibraryModel.NoteMapSnapshot?
     @State private var loaded = false
     @State private var shown = Self.pageSize
+    @State private var shownPhrases = Self.phrasePageSize
     @State private var route: [String] = []
 
     static let pageSize = 30
+    /// 332 — 구절 구역은 열 개씩.
+    static let phrasePageSize = 10
 
     private var period: NoteMapPeriod { NoteMapPeriod(rawValue: periodDays) ?? .weeks }
     private var order: NoteMap.Order { NoteMap.Order(rawValue: orderRaw) ?? .count }
@@ -59,7 +62,10 @@ struct NoteMapView: View {
         .task { await reload() }
         .onAppear { library.noteMapVisible = true }
         .onDisappear { library.noteMapVisible = false }
-        .onChange(of: periodDays) { _, _ in shown = Self.pageSize }
+        .onChange(of: periodDays) { _, _ in
+            shown = Self.pageSize
+            shownPhrases = Self.phrasePageSize
+        }
         .onChange(of: library.hiddenWords) { _, _ in Task { await reload() } }
     }
 
@@ -68,28 +74,37 @@ struct NoteMapView: View {
         let overview = snapshot?.model.overview(today: snapshot?.today ?? 0, days: period.rawValue, by: order)
         PaperList {
             if let overview, let snapshot {
-                Section {
-                    // 막대는 이 기간에 가장 많이 나온 말을 끝으로 (차례는 점수라 맨 위가 가장 많은 것은 아니다).
-                    let top = overview.entries.map(\.count).max() ?? 1
-                    ForEach(overview.entries.prefix(shown), id: \.keyword) { entry in
-                        NavigationLink(value: entry.keyword) {
-                            NoteMapKeywordRow(entry: entry, top: top)
+                // 332 — **구절과 낱말을 두 구역으로** (2026-11-26 사용자 — *구절하고 단어하고 구분이 필요할 것 같은데*).
+                // 구절은 늘 제 낱말보다 노트 수가 적어 한 목록에 섞으면 가라앉았다 (빌드 159). 구역마다 따로 겨루고 막대도 따로 잰다.
+                let phrases = overview.entries.filter { NoteMap.isPhrase($0.keyword) }
+                let words = overview.entries.filter { !NoteMap.isPhrase($0.keyword) }
+                if !phrases.isEmpty {
+                    Section {
+                        rows(phrases, limit: shownPhrases)
+                        if phrases.count > shownPhrases {
+                            Button("더 보기") { shownPhrases += Self.phrasePageSize }
+                                .font(.scaled(.body))
+                                .foregroundStyle(Palette.accent)
                         }
-                        .contextMenu {
-                            Button {
-                                Task { await library.hideWord(entry.keyword) }
-                            } label: {
-                                Label("이 말 숨기기", systemImage: "eye.slash")
-                            }
+                    } header: {
+                        VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
+                            summary(overview: overview, snapshot: snapshot)
+                            sectionTitle(String(localized: "구절 — 자주 붙여 쓰는 말"), count: phrases.count)
                         }
                     }
-                    if overview.entries.count > shown {
+                }
+                Section {
+                    rows(words, limit: shown)
+                    if words.count > shown {
                         Button("더 보기") { shown += Self.pageSize }
                             .font(.scaled(.body))
                             .foregroundStyle(Palette.accent)
                     }
                 } header: {
-                    summary(overview: overview, snapshot: snapshot)
+                    VStack(alignment: .leading, spacing: Metrics.rowSpacing) {
+                        if phrases.isEmpty { summary(overview: overview, snapshot: snapshot) }
+                        sectionTitle(String(localized: "낱말"), count: words.count)
+                    }
                 }
                 if !library.hiddenWords.isEmpty {
                     Section {
@@ -137,6 +152,38 @@ struct NoteMapView: View {
                                        description: Text("색인이 아직 준비되지 않았습니다. 잠시 뒤 다시 열어 보세요."))
             }
         }
+    }
+
+    /// 줄들 — 막대는 이 구역에서 가장 많이 나온 말을 끝으로 (구절 막대가 낱말에 견주어 늘 짧아 보이지 않게).
+    @ViewBuilder
+    private func rows(_ entries: [NoteMap.Entry], limit: Int) -> some View {
+        let top = entries.map(\.count).max() ?? 1
+        ForEach(entries.prefix(limit), id: \.keyword) { entry in
+            NavigationLink(value: entry.keyword) {
+                NoteMapKeywordRow(entry: entry, top: top)
+            }
+            .contextMenu {
+                Button {
+                    Task { await library.hideWord(entry.keyword) }
+                } label: {
+                    Label("이 말 숨기기", systemImage: "eye.slash")
+                }
+            }
+        }
+    }
+
+    private func sectionTitle(_ title: String, count: Int) -> some View {
+        HStack(spacing: Metrics.rowSpacing) {
+            Text(title)
+                .font(.scaled(.subheadline, weight: .semibold))
+                .foregroundStyle(Palette.ink)
+            Text(verbatim: "\(count)")
+                .font(.scaled(.subheadline))
+                .monospacedDigit()
+                .foregroundStyle(Palette.inkFaint)
+        }
+        .textCase(nil)
+        .padding(.top, Metrics.rowSpacing)
     }
 
     private func summary(overview: NoteMap.Overview, snapshot: LibraryModel.NoteMapSnapshot) -> some View {
@@ -399,8 +446,10 @@ struct NoteMapGraph: View {
                     if emphasized { Capsule().fill(Palette.accent.opacity(0.16)) }
                 }
             )
+            // 332 — 구절은 점선 테두리 (둘레에서도 낱말과 갈린다).
             .overlay(
-                Capsule().stroke(emphasized ? Palette.accent : Palette.rule, lineWidth: 1)
+                Capsule().stroke(emphasized ? Palette.accent : Palette.rule,
+                                 style: StrokeStyle(lineWidth: 1, dash: NoteMap.isPhrase(text) ? [4, 3] : []))
             )
     }
 }

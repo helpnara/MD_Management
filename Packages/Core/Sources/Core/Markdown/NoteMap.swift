@@ -71,6 +71,9 @@ public enum NoteMap {
     static let frontBadSuffixes = ["하면", "되면", "으면", "라면", "다면", "이면", "니면", "려면", "하고", "되고", "해서", "하며", "하게", "되게",
                                    "하지", "되지", "해도"]
 
+    /// 빈칸이 든 키워드는 구절이다 (331 — 낱말에는 빈칸이 없다).
+    public static func isPhrase(_ keyword: String) -> Bool { keyword.contains(" ") }
+
     /// 둘레 말은 여섯까지.
     public static let neighborLimit = 6
     static let scoreScale = 1_000_000.0
