@@ -10152,6 +10152,105 @@
           "홍길동 책임"
         ],
         "today": 700
+      },
+      {
+        "hidden": [],
+        "keywords": [
+          "차이",
+          "회의"
+        ],
+        "name": "334 의존 명사 + 조사 · 이라는",
+        "neighbors": [
+          {
+            "center": "차이",
+            "days": 28,
+            "neighbors": []
+          },
+          {
+            "center": "회의",
+            "days": 28,
+            "neighbors": []
+          }
+        ],
+        "notes": [
+          {
+            "day": 800,
+            "path": "a.md",
+            "text": "것이 좋다. 것을 봤다. 것은 크다. 수가 많다. 할 수도 있다."
+          },
+          {
+            "day": 799,
+            "path": "b.md",
+            "text": "그런 것이라는 말. 할 것이란 뜻. 것이 맞다. 회의를 했다. 회의 메모."
+          },
+          {
+            "day": 798,
+            "path": "c.md",
+            "text": "좋은 것이라도 괜찮다. 것이 있다. 차이가 크다. 차이를 봤다. 차이 정리."
+          }
+        ],
+        "overviews": [
+          {
+            "by": "count",
+            "days": 28,
+            "entries": [
+              {
+                "count": 1,
+                "keyword": "차이",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 1,
+                "keyword": "회의",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 3,
+            "previousNotes": 0
+          },
+          {
+            "by": "score",
+            "days": 28,
+            "entries": [
+              {
+                "count": 1,
+                "keyword": "차이",
+                "mark": "",
+                "previous": 0
+              },
+              {
+                "count": 1,
+                "keyword": "회의",
+                "mark": "",
+                "previous": 0
+              }
+            ],
+            "notes": 3,
+            "previousNotes": 0
+          }
+        ],
+        "paths": [
+          {
+            "also": null,
+            "days": 28,
+            "keyword": "차이",
+            "paths": [
+              "c.md"
+            ]
+          },
+          {
+            "also": null,
+            "days": 28,
+            "keyword": "회의",
+            "paths": [
+              "b.md"
+            ]
+          }
+        ],
+        "people": [],
+        "today": 800
       }
     ],
     "layout": [

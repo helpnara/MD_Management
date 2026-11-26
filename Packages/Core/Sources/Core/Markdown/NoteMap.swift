@@ -59,6 +59,11 @@ public enum NoteMap {
     static let doubleSurnames: Set<String> = ["남궁", "황보", "제갈", "선우", "독고", "사공", "서문"]
     /// 333 — 한 글자 조사 (두 글자 덩이 *것이 · 예를 · 일에* 를 가르는 데).
     static let oneJosa = Set("은는이가을를의에로와과랑도만나들".unicodeScalars)
+    /// 334 — 의존 명사 (*것 · 수 · 때 …*) + 한 글자 조사 두 글자 덩이는 늘 뺀다 (*것이* 가 *것이라는 · 것이라도* 때문에 빠져나갔다).
+    static let boundNouns = Set("것수때적데등뿐줄바듯분".unicodeScalars)
+    /// 334 — *이* 로 끝나는 덩이 뒤의 *라는 · 란 · 라도* 는 *이라는 · 이란 · 이라도* 가 갈라진 것 — 조사 증거로 세지 않는다.
+    static let copulaTails: Set<String> = ["라는", "란", "라도"]
+    static let i: Unicode.Scalar = "이"
     /// 333 — 동사 연결꼴 끝 (*들어 · 봐 · 해*).
     static let connectiveLast = Set("어아여해워".unicodeScalars)
     static let englishStop: Set<String> = [
@@ -465,9 +470,12 @@ public enum NoteMap {
             }
             func oneSyllableJosa(_ k: String) -> Bool {
                 let s = Array(k.unicodeScalars)
-                guard s.count == 2, NoteMap.oneJosa.contains(s[1]),
-                      !(kwForms[k] ?? []).contains(where: { NoteMap.strongSet.contains($0) }) else { return false }
-                return (josaVariants[s[0]] ?? 0) >= 3
+                guard s.count == 2, NoteMap.oneJosa.contains(s[1]) else { return false }
+                if NoteMap.boundNouns.contains(s[0]) { return true }
+                let nounEvidence = (kwForms[k] ?? []).contains { f in
+                    NoteMap.strongSet.contains(f) && !(s[1] == NoteMap.i && NoteMap.copulaTails.contains(f))
+                }
+                return !nounEvidence && (josaVariants[s[0]] ?? 0) >= 3
             }
             // 구절의 앞말 · 낱말 모두 — 동사의 꾸밈꼴 · 연결꼴 (333 부터 낱말에도).
             func badFront(_ word: String) -> Bool {
