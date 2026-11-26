@@ -83,7 +83,8 @@ actor SearchIndex {
     /// - v7 (329 · 330 노트 지도): `note.terms`(노트의 낱말 꼴 — `NoteMap.terms`) · `note.created`(머리말 날짜의 날) 열.
     ///   지도를 열 때마다 본문을 다시 읽지 않게 쓸 때 한 번 셈한다. 판을 올려 옛 노트도 다시 셈한다.
     /// - v8 (331 구절): `terms` 에 구절 후보(빈칸 든 말)가 더해졌다 — 옛 노트도 다시 셈한다.
-    private static let version = 8
+    /// - v9 (333 덜어내기): `note.context`(노트의 낱말마다 나온 횟수 · 앞뒤 이웃 — 문맥 다양성) 열.
+    private static let version = 9
 
     /// **안 받은 노트가 이보다 많으면 내려받기를 시키지 않는다** (245, 2026-10-13 사용자 — *만약 수천개라면 유사한 상황이
     /// 발생할 가능성 · a 방식이 나을 것*). 그 아래면 예전처럼 받아서 본문까지 — 노트 150개쯤인 폴더는 본문 검색이 그대로다.
@@ -171,7 +172,8 @@ actor SearchIndex {
           first_line TEXT NOT NULL DEFAULT '',
           links TEXT NOT NULL DEFAULT '',
           terms TEXT NOT NULL DEFAULT '',
-          created INTEGER
+          created INTEGER,
+          context TEXT NOT NULL DEFAULT ''
         );
         CREATE VIRTUAL TABLE IF NOT EXISTS note_fts USING fts5(
           rel_path UNINDEXED, title, body, tags, tokenize='\(tokenize)'
@@ -393,7 +395,7 @@ actor SearchIndex {
         var rows: [NoteMap.Row] = []
         var notes: [String: NoteSummary] = [:]
         var titleOnly = 0
-        for row in query("SELECT rel_path, mtime, created, terms, title, size FROM note") {
+        for row in query("SELECT rel_path, mtime, created, terms, title, size, context FROM note") {
             let mtime = Int(row[1]) ?? 0
             if mtime == Self.titleOnlyStamp {
                 titleOnly += 1
@@ -401,7 +403,7 @@ actor SearchIndex {
             }
             let modified = Date(timeIntervalSince1970: TimeInterval(mtime))
             let day = Int(row[2]) ?? Self.localDay(modified, calendar: calendar)
-            rows.append(NoteMap.Row(path: row[0], day: day, terms: NoteMap.decode(row[3])))
+            rows.append(NoteMap.Row(path: row[0], day: day, terms: NoteMap.decode(row[3]), context: NoteMap.decodeContext(row[6])))
             notes[row[0]] = NoteSummary(relativePath: row[0], title: row[4], preview: "", modifiedAt: modified,
                                         size: Int(row[5]) ?? 0, isDownloaded: true)
         }
@@ -429,13 +431,14 @@ actor SearchIndex {
         let targets = AttachmentLedger.linkTargets(of: note.relativePath, text: text)
         let links = targets.isEmpty ? "" : Self.linksSeparator + targets.joined(separator: Self.linksSeparator) + Self.linksSeparator
         run("""
-        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links, terms, created) VALUES(?,?,?,?,?,?,?,?,?)
+        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links, terms, created, context) VALUES(?,?,?,?,?,?,?,?,?,?)
         ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
           size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links,
-          terms=excluded.terms, created=excluded.created
+          terms=excluded.terms, created=excluded.created, context=excluded.context
         """, [.text(note.relativePath), .text(title), .text(String(mtime)), .text(String(note.size)), .text(tags), .text(firstLine),
               .text(links), .text(NoteMap.encode(NoteMap.terms(of: text))),
-              NoteMap.createdDay(parsed.frontMatter?.created).map { Bind.int(Int64($0)) } ?? Bind.null])
+              NoteMap.createdDay(parsed.frontMatter?.created).map { Bind.int(Int64($0)) } ?? Bind.null,
+              .text(NoteMap.encode(NoteMap.context(of: text)))])
         guard let id = rowID(of: note.relativePath) else { return firstLine }
         run("DELETE FROM note_fts WHERE rowid = ?", [.int(id)])
         run("INSERT INTO note_fts(rowid, rel_path, title, body, tags) VALUES(?,?,?,?,?)",
@@ -446,10 +449,10 @@ actor SearchIndex {
     /// **제목만** 넣는다 (245) — 본문 · 태그 · 미리보기 · 링크는 비운다. `mtime` 은 `titleOnlyStamp`.
     private func writeTitleOnly(_ note: NoteSummary) {
         run("""
-        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links, terms, created) VALUES(?,?,?,?,?,?,?,?,NULL)
+        INSERT INTO note(rel_path, title, mtime, size, tags, first_line, links, terms, created, context) VALUES(?,?,?,?,?,?,?,?,NULL,'')
         ON CONFLICT(rel_path) DO UPDATE SET title=excluded.title, mtime=excluded.mtime,
           size=excluded.size, tags=excluded.tags, first_line=excluded.first_line, links=excluded.links,
-          terms=excluded.terms, created=excluded.created
+          terms=excluded.terms, created=excluded.created, context=excluded.context
         """, [note.relativePath, Paths.normalized(note.title), String(Self.titleOnlyStamp), String(note.size), "", "", "", ""])
         guard let id = rowID(of: note.relativePath) else { return }
         run("DELETE FROM note_fts WHERE rowid = ?", [.int(id)])

@@ -288,6 +288,7 @@
     "other": "Couldn't save %lld pasted attachments."
   },
   "비우기": "Empty",
+  "사람 — 참고": "People — For Reference",
   "사용법": "Guide",
   "사진 %lld장": {
     "one": "%lld photo",
@@ -531,7 +532,7 @@
   "폴더 이름을 바꾸고 링크를 고치는 중": "Renaming the folder and fixing links",
   "폴더 이름을 바꾸지 못했습니다: %@": "Couldn't rename the folder: %@",
   "폴더 줄의 **되돌리기**는 안의 노트와 첨부를 모두 원래 폴더로 돌려놓습니다. 줄을 누르면 안의 것이 보입니다.": "**Restore** on a folder row puts all its notes and attachments back in their original folder. Tap the row to see what's inside.",
-  "폴더 화면 위의 **노트 지도** 단추를 누르면 4주 · 3개월 · 1년 동안 고친 노트에 자주 쓴 말이 막대로 보입니다. 자주 붙여 쓰는 두 낱말(**독서 모임** 같은 구절)도 함께 셉니다. 차례는 **많이 쓴 순** 과 **두드러진 순**(앞 기간 · 다른 노트보다 이 기간에 두드러진 말) 중에서 고릅니다. **↑** 는 앞 기간보다 늘어난 말, **새로** 는 앞 기간에 없던 말입니다. 말을 누르면 함께 자주 나온 말과 그 말이 든 노트가 보이고, 노트를 누르면 그 말을 찾은 채 열립니다. 말을 길게 눌러 **숨기기** 할 수 있습니다.": "Tap **Note Map** at the top of the folder screen to see, as bars, the words you used most in notes edited over the last 4 weeks, 3 months, or year. Two-word phrases you often write together (like **book club**) are counted too. Sort by **Most Used** or **Standout** (words that stand out in this period compared with the previous period and your other notes). **↑** marks words that rose from the previous period, and **New** marks words that weren't there before. Tap a word to see the words that often appear with it and the notes that contain it; tap a note to open it with that word found. Touch and hold a word to **hide** it.",
+  "폴더 화면 위의 **노트 지도** 단추를 누르면 4주 · 3개월 · 1년 동안 고친 노트에 자주 쓴 말이 막대로 보입니다. 자주 붙여 쓰는 두 낱말(**독서 모임** 같은 구절)도 함께 셉니다. 차례는 **많이 쓴 순** 과 **두드러진 순**(앞 기간 · 다른 노트보다 이 기간에 두드러진 말) 중에서 고릅니다. **↑** 는 앞 기간보다 늘어난 말, **새로** 는 앞 기간에 없던 말입니다. 말을 누르면 함께 자주 나온 말과 그 말이 든 노트가 보이고, 노트를 누르면 그 말을 찾은 채 열립니다. 말을 길게 눌러 **숨기기** 할 수 있습니다. 이름과 직함(○○ 책임 같은)은 맨 아래 **사람** 구역에 참고로 따로 모입니다.": "Tap **Note Map** at the top of the folder screen to see, as bars, the words you used most in notes edited over the last 4 weeks, 3 months, or year. Two-word phrases you often write together (like **book club**) are counted too. Sort by **Most Used** or **Standout** (words that stand out in this period compared with the previous period and your other notes). **↑** marks words that rose from the previous period, and **New** marks words that weren't there before. Tap a word to see the words that often appear with it and the notes that contain it; tap a note to open it with that word found. Touch and hold a word to **hide** it. Names with titles (like Manager Kim) are gathered separately at the bottom in **People**, for reference.",
   "폴더는 두 단계까지라 %@ 안에 만듭니다. 같은 이름이 있으면 뒤에 번호를 붙입니다.": "Folders can only go two levels deep, so it will be created in %@. If the name is taken, a number is added.",
   "폴더는 첨부할 수 없습니다: %@": "Folders can't be attached: %@",
   "폴더를 가리키는 링크를 세는 중": "Counting links to this folder",
