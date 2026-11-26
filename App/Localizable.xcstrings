@@ -2071,6 +2071,16 @@
         }
       }
     },
+    "두드러진 순" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standout"
+          }
+        }
+      }
+    },
     "둘러보기 자료입니다 · 실제 파일이 아닙니다" : {
       "localizations" : {
         "en" : {
@@ -2259,6 +2269,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Create"
+          }
+        }
+      }
+    },
+    "많이 쓴 순" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Most Used"
           }
         }
       }
@@ -3215,6 +3235,16 @@
         }
       }
     },
+    "앞 기간 · 다른 노트보다 이 기간에 두드러진 말이 위로 옵니다. 숫자는 노트 수입니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Words that stand out in this period, compared with the previous period and your other notes, come first. Numbers are note counts."
+          }
+        }
+      }
+    },
     "앱을 열면 마지막 노트로" : {
       "localizations" : {
         "en" : {
@@ -4121,6 +4151,16 @@
         }
       }
     },
+    "차례" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Order"
+          }
+        }
+      }
+    },
     "찾기" : {
       "localizations" : {
         "en" : {
@@ -4709,12 +4749,12 @@
         }
       }
     },
-    "폴더 화면 위의 **노트 지도** 단추를 누르면 4주 · 3개월 · 1년 동안 고친 노트에 자주 쓴 말이 막대로 보입니다. **↑** 는 앞 기간보다 늘어난 말, **새로** 는 앞 기간에 없던 말입니다. 말을 누르면 함께 자주 나온 말과 그 말이 든 노트가 보이고, 노트를 누르면 그 말을 찾은 채 열립니다. 말을 길게 눌러 **숨기기** 할 수 있습니다." : {
+    "폴더 화면 위의 **노트 지도** 단추를 누르면 4주 · 3개월 · 1년 동안 고친 노트에 자주 쓴 말이 막대로 보입니다. 자주 붙여 쓰는 두 낱말(**독서 모임** 같은 구절)도 함께 셉니다. 차례는 **많이 쓴 순** 과 **두드러진 순**(앞 기간 · 다른 노트보다 이 기간에 두드러진 말) 중에서 고릅니다. **↑** 는 앞 기간보다 늘어난 말, **새로** 는 앞 기간에 없던 말입니다. 말을 누르면 함께 자주 나온 말과 그 말이 든 노트가 보이고, 노트를 누르면 그 말을 찾은 채 열립니다. 말을 길게 눌러 **숨기기** 할 수 있습니다." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap **Note Map** at the top of the folder screen to see, as bars, the words you used most in notes edited over the last 4 weeks, 3 months, or year. **↑** marks words that rose from the previous period, and **New** marks words that weren't there before. Tap a word to see the words that often appear with it and the notes that contain it; tap a note to open it with that word found. Touch and hold a word to **hide** it."
+            "value" : "Tap **Note Map** at the top of the folder screen to see, as bars, the words you used most in notes edited over the last 4 weeks, 3 months, or year. Two-word phrases you often write together (like **book club**) are counted too. Sort by **Most Used** or **Standout** (words that stand out in this period compared with the previous period and your other notes). **↑** marks words that rose from the previous period, and **New** marks words that weren't there before. Tap a word to see the words that often appear with it and the notes that contain it; tap a note to open it with that word found. Touch and hold a word to **hide** it."
           }
         }
       }
