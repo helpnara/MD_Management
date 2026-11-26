@@ -118,6 +118,7 @@
 | 공유할 때 링크된 노트도 넣기 | Include Linked Notes When Sharing |
 | 공유할 파일을 만들지 못했습니다: %@ | Couldn't create the file to share: %@ |
 | 공유할 파일을 묶는 중 | Packing files to share |
+| 구절 — 자주 붙여 쓰는 말 | Phrases — Words You Often Write Together |
 | 굵게 | Bold |
 | 굵게 · 기울임 · 링크는 고른 글자를 감싸고, 고른 것이 없으면 표시만 넣습니다. 날짜 · 시각은 커서 자리에 제 줄로 들어갑니다. | Bold, Italic and Link wrap the selected text, or insert just the markers when nothing is selected. Date & Time goes in on its own line at the cursor. |
 | 굵게 · 제목 같은 마크다운 표시와 링크 주소는 세지 않고, 읽는 사람이 보는 글만 셉니다. 읽는 시간은 공백을 뺀 500자에 1분으로 셉니다. | Markdown markup such as bold or headings and link addresses aren’t counted — only the text a reader sees. Reading time assumes 500 characters per minute, not counting spaces. |

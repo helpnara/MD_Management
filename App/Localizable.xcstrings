@@ -1185,6 +1185,16 @@
         }
       }
     },
+    "구절 — 자주 붙여 쓰는 말" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phrases — Words You Often Write Together"
+          }
+        }
+      }
+    },
     "굵게" : {
       "localizations" : {
         "en" : {
