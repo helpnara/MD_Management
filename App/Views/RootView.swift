@@ -86,7 +86,8 @@ struct RootView: View {
             // **앱을 열면 마지막으로 보던 노트로** (302, 2026-11-06 사용자 — *같은 노트에 계속 업데이트가 많아*). **여기서 바로 연다** —
             // 빌드 148 은 폴더 목록 화면에 맡겼는데 아이폰은 그 화면이 덮여 있어 뒤로 가기를 눌러야 돌았다 (`LibraryModel.openLastNote`).
             // 아이폰은 모델이 폴더 · 노트를 고르면 칸이 저절로 선다 (`-openFirstNote` 와 같다). CI 인자가 있으면 그쪽이 먼저다.
-            if library.launch.searchTerm == nil, !library.launch.newNote, !library.launch.openFirstNote {
+            // `-noteMap` 은 폴더 화면에 머문다 — 노트로 넘어가는 칸 넘김과 시트 띄우기가 겹치면 시트가 버려진다 (빌드 화면 사진).
+            if library.launch.searchTerm == nil, !library.launch.newNote, !library.launch.openFirstNote, !library.launch.noteMap {
                 await library.openLastNote()
             }
         }
@@ -99,7 +100,11 @@ struct RootView: View {
         // CI — **노트 지도** (`-noteMap` · 329). 색인이 견본 노트를 다 읽을 때까지 조금 더 기다린다.
         .task {
             guard library.launch.noteMap else { return }
-            try? await Task.sleep(for: .milliseconds(3000))
+            // 색인이 견본 노트를 한 바퀴 다 읽은 뒤에 (길어야 10초).
+            for _ in 0..<40 where library.indexStatus.lastRefresh == nil {
+                try? await Task.sleep(for: .milliseconds(250))
+            }
+            try? await Task.sleep(for: .milliseconds(800))
             library.sheet = .noteMap
         }
         .task(id: library.selectedFolder) {

@@ -257,7 +257,7 @@ struct NoteMapKeywordView: View {
                     } else {
                         NoteMapGraph(center: center, neighbors: neighbors, also: also,
                                      open: { route.append($0) }, filter: { toggle($0) })
-                            .frame(height: Metrics.scaledLength(250))
+                            .frame(height: Metrics.scaledLength(300))
                             .listRowInsets(EdgeInsets())
                     }
                 } header: {
@@ -373,11 +373,15 @@ struct NoteMapGraph: View {
             .foregroundStyle(Palette.ink)
             .lineLimit(1)
             .truncationMode(.tail)
-            .frame(maxWidth: Metrics.scaledLength(100))
+            .frame(maxWidth: Metrics.scaledLength(92))
             .padding(.horizontal, Metrics.scaledLength(10))
             .padding(.vertical, Metrics.scaledLength(5))
+            // 바탕은 불투명하게 — 가운데로 모이는 선이 말 뒤로 비치지 않게 (종이를 깔고 잎 초록을 옅게 얹는다).
             .background(
-                Capsule().fill(emphasized ? Palette.accent.opacity(0.16) : Palette.paperRaised)
+                ZStack {
+                    Capsule().fill(Palette.paperRaised)
+                    if emphasized { Capsule().fill(Palette.accent.opacity(0.16)) }
+                }
             )
             .overlay(
                 Capsule().stroke(emphasized ? Palette.accent : Palette.rule, lineWidth: 1)

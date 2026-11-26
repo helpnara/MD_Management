@@ -43,7 +43,7 @@
 
 ## 관계도 자리
 
-둘레 n 개(0~6)를 12시부터 시계 방향으로 고르게 — i 번째 각 `2πi/n`, 자리 `(sin, -cos)` (화면 좌표 — y 가 아래로).
+둘레 n 개(0~6)를 12시부터 시계 방향으로 고르게 — i 번째 각 `2πi/n` (넷이면 `π/4` 를 더한다 — 3시 · 9시 자리가 가운데 칸에 붙지 않게), 자리 `(sin, -cos)` (화면 좌표 — y 가 아래로).
 """
 from __future__ import annotations
 
@@ -266,9 +266,11 @@ class Model:
 
 
 def layout(count: int) -> list[list[float]]:
+    # 넷이면 45도 돌린다 — 3시 · 9시 자리의 말이 가로로 긴 가운데 칸에 붙는다 (빌드 화면 사진).
+    start = math.pi / 4 if count == 4 else 0.0
     out = []
     for i in range(count):
-        angle = 2 * math.pi * i / count
+        angle = start + 2 * math.pi * i / count
         out.append([round(math.sin(angle), 6), round(-math.cos(angle), 6)])
     return out
 

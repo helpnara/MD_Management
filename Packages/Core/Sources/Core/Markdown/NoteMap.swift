@@ -391,9 +391,11 @@ public enum NoteMap {
     }
 
     /// 둘레 n 개를 12시부터 시계 방향으로 고르게 — 단위 원 위 (화면 좌표 — y 가 아래로).
+    /// 넷이면 45도 돌린다 — 3시 · 9시 자리의 말이 가로로 긴 가운데 칸에 붙는다 (빌드 화면 사진).
     public static func layout(count: Int) -> [Point] {
-        (0..<max(0, count)).map { i in
-            let angle = 2 * Double.pi * Double(i) / Double(count)
+        let start = count == 4 ? Double.pi / 4 : 0
+        return (0..<max(0, count)).map { i in
+            let angle = start + 2 * Double.pi * Double(i) / Double(count)
             return Point(x: sin(angle), y: -cos(angle))
         }
     }
