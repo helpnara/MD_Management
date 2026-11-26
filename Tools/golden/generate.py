@@ -4317,12 +4317,23 @@ def build_note_map_cases() -> dict:
     def terms_of(text):
         return nm.terms(text, context_roles, split_front_matter)
 
-    term_cases = [{"name": c["name"], "text": c["text"], "terms": terms_of(c["text"])} for c in spec["terms"]]
+    def context_of(text):
+        return nm.context(text, context_roles, split_front_matter)
+
+    term_cases = [{"name": c["name"], "text": c["text"], "terms": terms_of(c["text"]), "context": context_of(c["text"])}
+                  for c in spec["terms"]]
     folders = []
     for case in spec["folders"]:
-        rows = [{"path": n["path"], "day": n["day"], "terms": terms_of(n["text"])} for n in case["notes"]]
+        rows = [{"path": n["path"], "day": n["day"], "terms": terms_of(n["text"]), "context": context_of(n["text"])}
+                for n in case["notes"]]
         model = nm.Model(rows, case["hidden"])
         keywords = sorted(model.df)
+        people = sorted(model.people)
+        if "expectPeople" in case and people != case["expectPeople"]:
+            raise SystemExit(f"::error::[{case['name']}] 노트 지도 사람: 뜻 {case['expectPeople']} · 셈 {people}")
+        for word in case.get("expectAbsent", []):
+            if word in model.df:
+                raise SystemExit(f"::error::[{case['name']}] 노트 지도 — 키워드가 아니어야 하는 말이 섰다: {word}")
         if "expectKeywords" in case and keywords != case["expectKeywords"]:
             raise SystemExit(f"::error::[{case['name']}] 노트 지도 키워드: 뜻 {case['expectKeywords']} · 셈 {keywords}")
         overviews = [dict(model.overview(case["today"], d, by), days=d, by=by)
@@ -4349,7 +4360,7 @@ def build_note_map_cases() -> dict:
                  for k, a in pairs]
         folders.append({"name": case["name"], "today": case["today"], "hidden": case["hidden"], "notes": [
             {"path": n["path"], "day": n["day"], "text": n["text"]} for n in case["notes"]],
-            "keywords": keywords, "overviews": overviews, "neighbors": neighbors, "paths": paths})
+            "keywords": keywords, "people": people, "overviews": overviews, "neighbors": neighbors, "paths": paths})
     created = [{"text": c, "day": nm.created_day(c)} for c in spec["created"]]
     layout = [{"count": n, "points": nm.layout(n)} for n in spec["layout"]]
     return {"terms": term_cases, "folders": folders, "created": created, "layout": layout}

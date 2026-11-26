@@ -35,6 +35,18 @@
   `구절 노트 수 × 10 ≥ 4 × min(앞말이 든 노트 수, 뒷말 노트 수)` (드문 말이 든 노트의 40% 이상에서 함께). 숨긴 구절이면 뺀다.
 - 받은 구절은 노트의 키워드에 더해져 낱말과 똑같이 센다. 둘레(330)에서는 가운데와 낱말이 겹치는 것을 뺀다.
 
+## 333 — 덜어내기 (사용자가 숨긴 말 · 2026-11-26)
+
+- **기능 명사** (`STOP` 에 더함) · **직함은 낱말이 아니다** (`TITLES`) · **꾸밈꼴 · 연결꼴은 낱말에도** (`bad_front`).
+- **한 글자 + 한 글자 조사** (*것이 · 예를 · 일에*) — 같은 앞 글자에 다른 한 글자 조사가 붙은 두 글자 덩이가 셋 이상이고
+  그 덩이 자신은 센 조사를 받지 않을 때 (`one_syllable_josa` — *회의 · 차이* 는 *회의를 · 차이가* 를 받아 남는다). 구절 앞말로도 못 선다.
+- **문맥 다양성** (YAKE · `context`) — 폴더 전체에서 10번 이상 나온 낱말의 `(왼쪽 이웃 종류 + 오른쪽 이웃 종류) × 100 > 170 × 나온 횟수`
+  이면 뺀다 (*아무 데나 붙는 말*). 이웃은 한 줄 안에서 바로 앞 · 뒤 낱말의 줄기 (구절 후보는 빼고).
+- **굳은 표현** (`FIXED_PHRASES`) · 구절 앞말이 동사 연결꼴(`CONNECTIVE_LAST`)이고 낱말로 못 받은 말이면 거른다.
+- **사람** — 구절의 뒷말(풀어서)이 직함이고 앞말이 *성씨 + 두 글자* (두 글자 성이면 네 글자)이면 `사람` 후보. 노트 둘 이상이면 받는다.
+  받은 사람의 이름은 낱말에서 뺀다. 사람은 가운데가 사람일 때만 둘레에 선다.
+- **구절이 덮는 낱말** — 낱말이 든 노트 가운데 그 낱말을 품은 받은 구절도 든 노트가 70% 이상이면 낱말은 뺀다 (*독서* → *독서 모임*).
+
 ## 기간 · 순위 (329)
 
 - 날은 1970-01-01 부터 센 날 수 (앱이 기기 달력으로 셈해 준다). `age = today - day`. 이 기간 `age < D` (앞날도 든다) · 앞 기간 `D <= age < 2D`.
@@ -87,7 +99,28 @@ STOP = {
     "누구", "어디", "언제", "이제", "그냥", "조금", "많이", "동안", "에서", "으로", "부터", "까지", "처럼", "보다",
     "개월", "아니", "이후", "이전", "전에", "후에", "여기서", "거기서", "따로", "안에", "밖에", "위에",
     "아래", "없이", "있으면", "없으면", "처음", "마지막", "보내", "하면", "되면", "다른", "같은", "없음", "있음",
+    # 333 — 형식 · 기능 명사 (사용자가 숨긴 말 · 문맥 다양성이 못 잡는 드문 것까지)
+    "관련", "가능", "기존", "기반", "여부", "대상", "부분", "내용", "방법", "진행", "사용", "필요", "해당", "각각",
+    "일부", "전체", "현재", "최근", "그대로",
 }
+# 333 — 굳은 표현 (구절로 세우지 않는다).
+FIXED_PHRASES = {"예를 들어", "다시 말해", "그럼에도 불구", "이와 같이"}
+# 333 — 사람 이름 뒤에 붙는 직함 · 부름말 (두 글자 이상). 성씨로 시작하는 세 글자 이름 + 이 말이면 `사람` 갈래.
+TITLES = {
+    "대표", "대표님", "책임", "책임님", "선임", "선임님", "수석", "수석님", "팀장", "팀장님", "파트장", "실장", "실장님",
+    "본부장", "센터장", "부장", "부장님", "차장", "차장님", "과장", "과장님", "대리", "대리님", "주임", "사원", "이사",
+    "이사님", "상무", "상무님", "전무", "전무님", "부사장", "사장", "사장님", "회장", "회장님", "원장", "원장님",
+    "소장", "국장", "교수", "교수님", "박사", "박사님", "연구원", "매니저", "프로", "선생님", "변호사", "위원", "위원장",
+    "대리님", "님께",
+}
+# 333 — 흔한 성씨 (한 글자 · 두 글자). 사람 구절의 앞말은 성씨 + 이름 두 글자 (세 글자, 두 글자 성이면 네 글자) —
+# *노트 이사 · 스테이지 매니저* 같은 것을 거른다 (저장소 문서 시제품).
+SURNAMES = set("김이박최정강조윤장임한오서신권황안송류전홍고문양손배백허유남심노하곽성차주우구민진지엄채원천방공현함변염여추도소석선설마길연위표명기반라왕금옥육인맹제모탁국어은편용예경봉사부")
+DOUBLE_SURNAMES = {"남궁", "황보", "제갈", "선우", "독고", "사공", "서문"}
+# 333 — 동사 연결꼴 끝 (*들어 · 봐 · 해*) — 구절 앞말이 이것으로 끝나고 낱말로 못 받은 말이면 거른다 (*영어 · 단어* 는 조사를 받아 남는다).
+CONNECTIVE_LAST = set("어아여해워")
+# 333 — 한 글자 조사 (두 글자 덩이 *것이 · 예를 · 일에* 를 가르는 데).
+ONE_JOSA = set("은는이가을를의에로와과랑도만나들")
 EN_STOP = {
     "the", "and", "for", "with", "that", "this", "from", "you", "your", "are", "was", "were", "not", "but",
     "have", "has", "had", "will", "can", "all", "any", "our", "its", "into", "out", "about",
@@ -107,6 +140,14 @@ FRONT_VERB_LAST = set("한인")       # 앞부분이 따로 쓰이는 말이면 
 FRONT_BAD_SUFFIXES = ["하면", "되면", "으면", "라면", "다면", "이면", "니면", "려면", "하고", "되고", "해서", "하며", "하게", "되게",
                       "하지", "되지", "해도"]
 PHRASE_SHARE_TENTHS = 4
+# 333 — 문맥 다양성 (YAKE 의 relatedness to context). 폴더 전체에서 이만큼 넘게 나온 낱말만 잰다.
+DIVERSITY_MIN_COUNT = 10
+# (왼쪽 이웃 종류 + 오른쪽 이웃 종류) × 100 > 이것 × 나온 횟수 이면 *아무 데나 붙는 말* 로 뺀다.
+DIVERSITY_MAX_HUNDREDTHS = 170
+# 333 — 사람 (이름 + 직함) 은 노트 둘 이상에서.
+PERSON_MIN_NOTES = 2
+# 333 — 낱말이 든 노트의 70% 이상이 그 낱말을 품은 구절로 덮이면 낱말은 뺀다 (*독서* → *독서 모임*).
+COVER_TENTHS = 7
 SCORE_SCALE = 1_000_000
 
 
@@ -201,12 +242,32 @@ def terms(text: str, roles_of, split_front_matter) -> list[list[str]]:
     return [list(t) for t in sorted(found)]
 
 
+def context(text: str, roles_of, split_front_matter) -> dict:
+    """333 — 노트 하나의 문맥 — {말: [나온 횟수, [왼쪽 이웃 …], [오른쪽 이웃 …]]} (이웃은 한 줄 안 바로 앞 · 뒤 낱말의 줄기 · 코드 포인트 순)."""
+    _, body = split_front_matter(unicodedata.normalize("NFC", text))
+    lines = [line[:-1] if line.endswith("\r") else line for line in body.split("\n")]
+    roles = roles_of(lines)
+    stats: dict[str, list] = {}
+    for line, role in zip(lines, roles):
+        if role in ("code", "indentedCode", "comment") or FENCE_RE.match(line):
+            continue
+        toks = [stem for stem, _ in scan(preview(line)) if " " not in stem]
+        for i, t in enumerate(toks):
+            entry = stats.setdefault(t, [0, set(), set()])
+            entry[0] += 1
+            if i > 0:
+                entry[1].add(toks[i - 1])
+            if i + 1 < len(toks):
+                entry[2].add(toks[i + 1])
+    return {k: [v[0], sorted(v[1]), sorted(v[2])] for k, v in sorted(stats.items())}
+
+
 def is_ascii_word(word: str) -> bool:
     return all(is_ascii_alnum(c) for c in word)
 
 
 class Model:
-    """폴더 전체 — rows: [{"path", "day", "terms": [[말, 꼴], …]}]."""
+    """폴더 전체 — rows: [{"path", "day", "terms": [[말, 꼴], …], "context": {말: [횟수, 왼쪽, 오른쪽]}}]."""
 
     def __init__(self, rows: list[dict], hidden: list[str] | None = None):
         hidden_set = set(hidden or [])
@@ -231,12 +292,44 @@ class Model:
             for k, f in pairs:
                 kw_forms.setdefault(k, set()).add(f)
 
+        # 333 — 문맥 다양성: 폴더 전체의 나온 횟수 · 이웃 종류.
+        ctx_count: dict[str, int] = {}
+        ctx_left: dict[str, set[str]] = {}
+        ctx_right: dict[str, set[str]] = {}
+        for row in rows:
+            for k, (c, left, right) in row.get("context", {}).items():
+                ctx_count[k] = ctx_count.get(k, 0) + c
+                ctx_left.setdefault(k, set()).update(left)
+                ctx_right.setdefault(k, set()).update(right)
+
+        def too_diverse(k: str) -> bool:
+            c = ctx_count.get(k, 0)
+            return c >= DIVERSITY_MIN_COUNT and \
+                (len(ctx_left.get(k, ())) + len(ctx_right.get(k, ()))) * 100 > DIVERSITY_MAX_HUNDREDTHS * c
+
+        # 333 — 앞말 한 글자 + 한 글자 조사 (*것이 · 예를 · 일에*): 같은 앞 글자에 다른 조사가 붙은 두 글자 덩이가 셋 이상이고
+        # 그 덩이 자신은 센 조사를 받지 않을 때 (*회의 · 차이* 는 *회의를 · 차이가* 를 받아 남는다).
+        def one_syllable_josa(k: str) -> bool:
+            if len(k) != 2 or k[1] not in ONE_JOSA or any(f in STRONG_SET for f in kw_forms.get(k, ())):
+                return False
+            variants = {x for x in kw_forms if len(x) == 2 and x[0] == k[0] and x[1] in ONE_JOSA}
+            return len(variants) >= 3
+
+        # 구절의 앞말 · 낱말 모두 — 동사의 꾸밈꼴 · 연결꼴 (333 부터 낱말에도).
+        def bad_front(word: str) -> bool:
+            if word[-1] in FRONT_BAD_LAST:
+                return True
+            if word[-1] in FRONT_VERB_LAST and len(word) >= 3 and word[:-1] in stem_forms:
+                return True
+            return any(len(word) > len(x) and word.endswith(x) for x in FRONT_BAD_SUFFIXES)
+
         def accept(k: str) -> bool:
             if k in hidden_set:
                 return False
             if is_ascii_word(k):
-                return True
-            if len(k) < 2 or k in STOP or is_bad_stem(k):
+                return not too_diverse(k)
+            if (len(k) < 2 or k in STOP or k in TITLES or is_bad_stem(k) or bad_front(k) or one_syllable_josa(k)
+                    or too_diverse(k)):
                 return False
             return sum(1 for f in kw_forms[k] if f == "" or f in STRONG_SET) >= 2
 
@@ -253,23 +346,26 @@ class Model:
                 word_df[k] = word_df.get(k, 0) + 1
 
         # 구절 (331) — 앞말 · 뒷말(풀어서)이 다 받은 키워드이고 서로 다를 때 후보. 노트 수 · 함께 나온 몫을 본다.
-        def bad_front(word: str) -> bool:
-            if word[-1] in FRONT_BAD_LAST:
-                return True
-            if word[-1] in FRONT_VERB_LAST and len(word) >= 3 and word[:-1] in stem_forms:
-                return True
-            return any(len(word) > len(x) and word.endswith(x) for x in FRONT_BAD_SUFFIXES)
-
+        # 333 — 뒷말이 직함이면 **사람** 후보 (앞말은 두 ~ 네 글자 한글 · 뒷말은 키워드가 아니어도 된다).
         candidates = []
+        person_candidates = []
         for pairs in phrase_terms:
             found = set()
+            people = set()
             for stem, form in pairs:
                 first, second = stem.split(" ", 1)
                 second = resolve(second, form)[0]
-                if (first != second and accepted.get(second) and first not in hidden_set
-                        and first not in STOP and not is_bad_stem(first) and not bad_front(first)):
+                if (first == second or first in hidden_set or first in STOP or is_bad_stem(first) or bad_front(first)
+                        or one_syllable_josa(first) or (first[-1] in CONNECTIVE_LAST and not accepted.get(first))):
+                    continue
+                if second in TITLES:
+                    if (len(first) == 3 and first[0] in SURNAMES) or (len(first) == 4 and first[:2] in DOUBLE_SURNAMES):
+                        people.add(first + " " + second)
+                    continue
+                if accepted.get(second) and first + " " + second not in FIXED_PHRASES:
                     found.add(first + " " + second)
             candidates.append(found)
+            person_candidates.append(people)
         phrase_df: dict[str, int] = {}
         for found in candidates:
             for p in found:
@@ -282,15 +378,38 @@ class Model:
                     and c * 10 >= PHRASE_SHARE_TENTHS * min(stem_df[first], word_df[second]))
 
         good = {p for p in phrase_df if accept_phrase(p)}
+
+        person_df: dict[str, int] = {}
+        for people in person_candidates:
+            for p in people:
+                person_df[p] = person_df.get(p, 0) + 1
+        self.people = {p for p, c in person_df.items() if c >= PERSON_MIN_NOTES and p not in hidden_set}
+        names = {p.split(" ", 1)[0] for p in self.people}
+
+        # 333 — 구절이 덮는 낱말: 낱말이 든 노트의 70% 이상에 그 낱말을 품은 받은 구절이 함께 있으면 낱말은 뺀다.
+        covered: dict[str, int] = {}
+        for ks, found in zip(words, candidates):
+            parts = set()
+            for p in found & good:
+                parts.update(p.split(" ", 1))
+            for k in ks & parts:
+                covered[k] = covered.get(k, 0) + 1
+        dropped = {k for k, c in covered.items() if c * 10 >= COVER_TENTHS * word_df[k]} | names
         self.notes = [
-            {"path": row["path"], "day": row["day"], "keywords": ks | (found & good)}
-            for row, ks, found in zip(rows, words, candidates)
+            {"path": row["path"], "day": row["day"], "keywords": (ks - dropped) | (found & good) | (people & self.people)}
+            for row, ks, found, people in zip(rows, words, candidates, person_candidates)
         ]
         self.df: dict[str, int] = {}
         for note in self.notes:
             for k in note["keywords"]:
                 self.df[k] = self.df.get(k, 0) + 1
         self.total = len(self.notes)
+
+    def kind(self, keyword: str) -> str:
+        """333 — `person` (이름 + 직함) · `phrase` (두 낱말) · `word`."""
+        if keyword in self.people:
+            return "person"
+        return "phrase" if " " in keyword else "word"
 
     def score(self, count: int, keyword: str) -> int:
         return math.floor(count * math.log((self.total + 1) / self.df[keyword]) * SCORE_SCALE + 0.5)
@@ -329,7 +448,9 @@ class Model:
         for n in around:
             for k in n["keywords"]:
                 # 가운데와 낱말이 겹치는 것(구절과 그 안의 낱말)은 둘레에 세우지 않는다 — 늘 함께 나오니 뜻이 없다.
-                if k != center and not set(k.split(" ")) & set(center.split(" ")):
+                # 333 — 사람은 가운데가 사람일 때만 둘레에 (지도는 요즘 동향 · 사람은 참고용 — 사용자).
+                if k != center and not set(k.split(" ")) & set(center.split(" ")) \
+                        and (k not in self.people or center in self.people):
                     co[k] = co.get(k, 0) + 1
         minimum = 1 if len(around) < 4 else 2
         chosen = [k for k, c in co.items() if c >= minimum]

@@ -6,10 +6,30 @@ import XCTest
 final class NoteMapGoldenTests: XCTestCase {
 
     struct Golden: Decodable {
+        /// 문맥 한 줄 — 파이썬은 `[횟수, [왼쪽 …], [오른쪽 …]]` 로 적는다.
+        struct ContextJSON: Decodable, Equatable {
+            let count: Int
+            let left: [String]
+            let right: [String]
+
+            init(from decoder: Decoder) throws {
+                var c = try decoder.unkeyedContainer()
+                count = try c.decode(Int.self)
+                left = try c.decode([String].self)
+                right = try c.decode([String].self)
+            }
+
+            init(_ context: NoteMap.Context) {
+                count = context.count
+                left = context.left
+                right = context.right
+            }
+        }
         struct TermCase: Decodable {
             let name: String
             let text: String
             let terms: [[String]]
+            let context: [String: ContextJSON]
         }
         struct Note: Decodable {
             let path: String
@@ -51,6 +71,7 @@ final class NoteMapGoldenTests: XCTestCase {
             let hidden: [String]
             let notes: [Note]
             let keywords: [String]
+            let people: [String]
             let overviews: [Overview]
             let neighbors: [Neighbors]
             let paths: [Paths]
@@ -87,6 +108,10 @@ final class NoteMapGoldenTests: XCTestCase {
             // 색인 칸에 담았다 꺼내도 같다.
             let back = NoteMap.decode(NoteMap.encode(NoteMap.terms(of: item.text))).map { [$0.stem, $0.form] }
             XCTAssertEqual(back, item.terms, "[\(item.name)] 담기 · 꺼내기")
+            // 333 — 문맥 (색인 칸에 담았다 꺼낸 것도).
+            let context = NoteMap.context(of: item.text)
+            XCTAssertEqual(context.mapValues(Golden.ContextJSON.init), item.context, "[\(item.name)] 문맥")
+            XCTAssertEqual(NoteMap.decodeContext(NoteMap.encode(context)), context, "[\(item.name)] 문맥 담기 · 꺼내기")
         }
     }
 
@@ -94,10 +119,14 @@ final class NoteMapGoldenTests: XCTestCase {
         let folders = try Self.golden().folders
         XCTAssertGreaterThanOrEqual(folders.count, 5, "정답표가 모자라다")
         for folder in folders {
-            let rows = folder.notes.map { NoteMap.Row(path: $0.path, day: $0.day, terms: NoteMap.terms(of: $0.text)) }
+            let rows = folder.notes.map {
+                NoteMap.Row(path: $0.path, day: $0.day, terms: NoteMap.terms(of: $0.text), context: NoteMap.context(of: $0.text))
+            }
             let model = NoteMap.Model(rows: rows, hidden: Set(folder.hidden))
             let label = "[\(folder.name)]"
             XCTAssertEqual(model.keywords, folder.keywords, "키워드 " + label)
+            XCTAssertEqual(model.people.sorted(by: NoteMap.precedes), folder.people, "사람 " + label)
+            for p in folder.people { XCTAssertEqual(model.kind(of: p), .person, "갈래 " + label) }
             for want in folder.overviews {
                 let got = model.overview(today: folder.today, days: want.days, by: NoteMap.Order(rawValue: want.by)!)
                 XCTAssertEqual(got.notes, want.notes, "기간 노트 \(want.days) " + label)
@@ -153,7 +182,12 @@ final class NoteMapGoldenTests: XCTestCase {
         for i in 0..<10_000 {
             var terms: [NoteMap.Term] = []
             for _ in 0..<60 { terms.append(NoteMap.Term(stem: words[next() % words.count], form: forms[next() % forms.count])) }
-            rows.append(NoteMap.Row(path: "n\(i).md", day: 20_000 - next() % 400, terms: Array(Set(terms))))
+            var context: [String: NoteMap.Context] = [:]
+            for t in Set(terms.map(\.stem)) {
+                context[t] = NoteMap.Context(count: 1 + next() % 3, left: [words[next() % words.count]],
+                                             right: [words[next() % words.count]])
+            }
+            rows.append(NoteMap.Row(path: "n\(i).md", day: 20_000 - next() % 400, terms: Array(Set(terms)), context: context))
         }
         let started = Date()
         let model = NoteMap.Model(rows: rows)

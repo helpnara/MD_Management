@@ -40,7 +40,27 @@ public enum NoteMap {
         "누구", "어디", "언제", "이제", "그냥", "조금", "많이", "동안", "에서", "으로", "부터", "까지", "처럼", "보다",
         "개월", "아니", "이후", "이전", "전에", "후에", "여기서", "거기서", "따로", "안에", "밖에", "위에",
         "아래", "없이", "있으면", "없으면", "처음", "마지막", "보내", "하면", "되면", "다른", "같은", "없음", "있음",
+        // 333 — 형식 · 기능 명사 (사용자가 숨긴 말 · 문맥 다양성이 못 잡는 드문 것까지)
+        "관련", "가능", "기존", "기반", "여부", "대상", "부분", "내용", "방법", "진행", "사용", "필요", "해당", "각각",
+        "일부", "전체", "현재", "최근", "그대로",
     ]
+    /// 333 — 굳은 표현 (구절로 세우지 않는다).
+    static let fixedPhrases: Set<String> = ["예를 들어", "다시 말해", "그럼에도 불구", "이와 같이"]
+    /// 333 — 사람 이름 뒤에 붙는 직함 · 부름말. 성씨로 시작하는 세 글자 이름 + 이 말이면 `사람` 갈래. 직함은 낱말이 아니다.
+    static let titles: Set<String> = [
+        "대표", "대표님", "책임", "책임님", "선임", "선임님", "수석", "수석님", "팀장", "팀장님", "파트장", "실장", "실장님",
+        "본부장", "센터장", "부장", "부장님", "차장", "차장님", "과장", "과장님", "대리", "대리님", "주임", "사원", "이사",
+        "이사님", "상무", "상무님", "전무", "전무님", "부사장", "사장", "사장님", "회장", "회장님", "원장", "원장님",
+        "소장", "국장", "교수", "교수님", "박사", "박사님", "연구원", "매니저", "프로", "선생님", "변호사", "위원", "위원장",
+        "님께",
+    ]
+    /// 333 — 흔한 성씨 (한 글자 · 두 글자).
+    static let surnames = Set("김이박최정강조윤장임한오서신권황안송류전홍고문양손배백허유남심노하곽성차주우구민진지엄채원천방공현함변염여추도소석선설마길연위표명기반라왕금옥육인맹제모탁국어은편용예경봉사부".unicodeScalars)
+    static let doubleSurnames: Set<String> = ["남궁", "황보", "제갈", "선우", "독고", "사공", "서문"]
+    /// 333 — 한 글자 조사 (두 글자 덩이 *것이 · 예를 · 일에* 를 가르는 데).
+    static let oneJosa = Set("은는이가을를의에로와과랑도만나들".unicodeScalars)
+    /// 333 — 동사 연결꼴 끝 (*들어 · 봐 · 해*).
+    static let connectiveLast = Set("어아여해워".unicodeScalars)
     static let englishStop: Set<String> = [
         "the", "and", "for", "with", "that", "this", "from", "you", "your", "are", "was", "were", "not", "but",
         "have", "has", "had", "will", "can", "all", "any", "our", "its", "into", "out", "about",
@@ -60,6 +80,13 @@ public enum NoteMap {
     /// **숨긴 말** (329) — 사용자 폴더 안 숨김 파일. 고정한 노트(`Pins`)와 같은 자리 · 같은 꼴(글 목록 JSON)이라
     /// 읽기 · 쓰기 · 합치기는 `Pins.decode` · `encode` · `merged` 를 그대로 쓴다 (같은 일을 하는 길을 둘 두지 않는다).
     public static let hiddenFileName = ".여백/숨긴말.json"
+
+    /// 333 — 문맥 다양성 (YAKE) — 폴더 전체에서 10번 이상 나온 낱말만 · `(왼쪽 이웃 종류 + 오른쪽) × 100 > 170 × 횟수` 면 뺀다.
+    static let diversityMinCount = 10
+    static let diversityMaxHundredths = 170
+    /// 333 — 사람은 노트 둘 이상 · 구절이 70% 이상 덮는 낱말은 뺀다.
+    static let personMinNotes = 2
+    static let coverTenths = 7
 
     /// 구절 (331) — 노트 셋 이상 · 둘 중 드문 말이 든 노트의 40% 이상에서 함께.
     static let phraseMinNotes = 3
@@ -204,24 +231,31 @@ public enum NoteMap {
 
     /// **노트 하나의 낱말 꼴** — 중복 없이 · 차례 고정. 색인에 쓸 때 부른다.
     public static func terms(of text: String) -> [Term] {
-        let body = FrontMatterParser.parse(Paths.normalized(text)).body
+        var found = Set<Term>()
+        forEachVisibleLine(text) { line in
+            for term in scan(line) { found.insert(term) }
+        }
+        return found.sorted(by: Term.precedes)
+    }
+
+    /// 셈할 줄 — 머리말 뒤 · 코드 · 주석 · 울타리 줄을 빼고 · 미리보기로 보이는 글만. `terms` · `context` 가 **이것 하나**를 쓴다.
+    static func forEachVisibleLine(_ text: String, _ body: ([Unicode.Scalar]) -> Void) {
+        let main = FrontMatterParser.parse(Paths.normalized(text)).body
         var lines: [[Unicode.Scalar]] = [[]]
-        for s in body.unicodeScalars {
+        for s in main.unicodeScalars {
             if s == "\n" { lines.append([]) } else { lines[lines.count - 1].append(s) }
         }
         lines = lines.map { $0.last == "\r" ? Array($0.dropLast()) : $0 }
         let strings = lines.map { string(ArraySlice($0)) }
         let roles = BlockContext.roles(of: strings)
-        var found = Set<Term>()
         for (index, line) in lines.enumerated() {
             switch roles[index] {
             case .code, .indentedCode, .comment: continue
             default: break
             }
             if NoteStats.fence(line) != nil { continue }
-            for term in scan(Array(PreviewLine.plain(strings[index]).unicodeScalars)) { found.insert(term) }
+            body(Array(PreviewLine.plain(strings[index]).unicodeScalars))
         }
-        return found.sorted(by: Term.precedes)
     }
 
     /// 색인 칸에 담는 꼴 — `말\t꼴` 을 줄바꿈으로 잇는다 (낱말에는 빈칸 · 줄바꿈이 없다).
@@ -271,18 +305,76 @@ public enum NoteMap {
         public let path: String
         public let day: Int
         public let terms: [Term]
+        /// 333 — 노트 하나의 문맥 (`context(of:)`). 없으면 문맥 다양성을 재지 않는다.
+        public let context: [String: Context]
 
-        public init(path: String, day: Int, terms: [Term]) {
+        public init(path: String, day: Int, terms: [Term], context: [String: Context] = [:]) {
             self.path = path
             self.day = day
             self.terms = terms
+            self.context = context
         }
+    }
+
+    /// 333 — 낱말 하나의 문맥 — 나온 횟수 · 한 줄 안 바로 앞 · 뒤 낱말 줄기 (코드 포인트 순).
+    public struct Context: Equatable, Sendable {
+        public let count: Int
+        public let left: [String]
+        public let right: [String]
+
+        public init(count: Int, left: [String], right: [String]) {
+            self.count = count
+            self.left = left
+            self.right = right
+        }
+    }
+
+    /// 333 — **노트 하나의 문맥** — 색인에 쓸 때 부른다 (`terms(of:)` 와 같은 줄 · 같은 낱말).
+    public static func context(of text: String) -> [String: Context] {
+        var stats: [String: (Int, Set<String>, Set<String>)] = [:]
+        forEachVisibleLine(text) { line in
+            let toks = scan(line).map(\.stem).filter { !$0.contains(" ") }
+            for (i, t) in toks.enumerated() {
+                var entry = stats[t] ?? (0, [], [])
+                entry.0 += 1
+                if i > 0 { entry.1.insert(toks[i - 1]) }
+                if i + 1 < toks.count { entry.2.insert(toks[i + 1]) }
+                stats[t] = entry
+            }
+        }
+        return stats.mapValues { Context(count: $0.0, left: $0.1.sorted(by: precedes), right: $0.2.sorted(by: precedes)) }
+    }
+
+    /// 색인 칸에 담는 문맥 — 줄마다 `말\t횟수\t왼쪽,…\t오른쪽,…` (낱말에는 빈칸 · 쉼표 · 줄바꿈이 없다).
+    public static func encode(_ context: [String: Context]) -> String {
+        context.keys.sorted(by: precedes).map { k in
+            let c = context[k]!
+            return k + "\t" + String(c.count) + "\t" + c.left.joined(separator: ",") + "\t" + c.right.joined(separator: ",")
+        }.joined(separator: "\n")
+    }
+
+    public static func decodeContext(_ text: String) -> [String: Context] {
+        var out: [String: Context] = [:]
+        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
+            let parts = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+            guard parts.count == 4, let count = Int(parts[1]) else { continue }
+            func list(_ s: String) -> [String] { s.isEmpty ? [] : s.split(separator: ",").map(String.init) }
+            out[parts[0]] = Context(count: count, left: list(parts[2]), right: list(parts[3]))
+        }
+        return out
     }
 
     /// 차례 (331 · 사용자 정함 — 기본 많이 쓴 순). `count` 노트 수 큰 것부터(같으면 두드러진 것) · `score` 두드러진 순.
     public enum Order: String, Sendable, Equatable, CaseIterable {
         case count
         case score
+    }
+
+    /// 333 — 키워드 갈래.
+    public enum Kind: String, Sendable, Equatable {
+        case word
+        case phrase
+        case person
     }
 
     public enum Mark: String, Sendable, Equatable {
@@ -322,6 +414,8 @@ public enum NoteMap {
 
         let notes: [Note]
         let df: [String: Int]
+        /// 333 — 사람 (이름 + 직함) — 지도의 `사람` 구역 (참고용).
+        public let people: Set<String>
         public var total: Int { notes.count }
         /// 받은 키워드 전부 (코드 포인트 순).
         public var keywords: [String] { df.keys.sorted(by: NoteMap.precedes) }
@@ -346,13 +440,54 @@ public enum NoteMap {
             for pairs in resolved {
                 for term in pairs { kwForms[term.stem, default: []].insert(term.form) }
             }
+
+            // 333 — 문맥 다양성: 폴더 전체의 나온 횟수 · 이웃 종류.
+            var ctxCount: [String: Int] = [:]
+            var ctxLeft: [String: Set<String>] = [:]
+            var ctxRight: [String: Set<String>] = [:]
+            for row in rows {
+                for (k, c) in row.context {
+                    ctxCount[k, default: 0] += c.count
+                    ctxLeft[k, default: []].formUnion(c.left)
+                    ctxRight[k, default: []].formUnion(c.right)
+                }
+            }
+            func tooDiverse(_ k: String) -> Bool {
+                let c = ctxCount[k] ?? 0
+                return c >= NoteMap.diversityMinCount
+                    && ((ctxLeft[k]?.count ?? 0) + (ctxRight[k]?.count ?? 0)) * 100 > NoteMap.diversityMaxHundredths * c
+            }
+            // 333 — 한 글자 + 한 글자 조사 (*것이 · 예를 · 일에*) — *회의 · 차이* 는 센 조사를 받아 남는다.
+            var josaVariants: [Unicode.Scalar: Int] = [:]      // 앞 글자 → *그 글자 + 한 글자 조사* 덩이 수
+            for x in kwForms.keys {
+                let v = Array(x.unicodeScalars)
+                if v.count == 2, NoteMap.oneJosa.contains(v[1]) { josaVariants[v[0], default: 0] += 1 }
+            }
+            func oneSyllableJosa(_ k: String) -> Bool {
+                let s = Array(k.unicodeScalars)
+                guard s.count == 2, NoteMap.oneJosa.contains(s[1]),
+                      !(kwForms[k] ?? []).contains(where: { NoteMap.strongSet.contains($0) }) else { return false }
+                return (josaVariants[s[0]] ?? 0) >= 3
+            }
+            // 구절의 앞말 · 낱말 모두 — 동사의 꾸밈꼴 · 연결꼴 (333 부터 낱말에도).
+            func badFront(_ word: String) -> Bool {
+                let s = Array(word.unicodeScalars)
+                guard let last = s.last else { return true }
+                if NoteMap.frontBadLast.contains(last) { return true }
+                if NoteMap.frontVerbLast.contains(last), s.count >= 3, stemForms[NoteMap.string(s[..<(s.count - 1)])] != nil { return true }
+                return NoteMap.frontBadSuffixes.contains { suffix in
+                    let x = Array(suffix.unicodeScalars)
+                    return s.count > x.count && s.suffix(x.count).elementsEqual(x)
+                }
+            }
             var accepted: [String: Bool] = [:]
             for (k, forms) in kwForms {
                 if hidden.contains(k) {
                     accepted[k] = false
                 } else if NoteMap.isASCIIWord(k) {
-                    accepted[k] = true
-                } else if k.unicodeScalars.count < 2 || NoteMap.stop.contains(k) || NoteMap.isBadStem(k) {
+                    accepted[k] = !tooDiverse(k)
+                } else if k.unicodeScalars.count < 2 || NoteMap.stop.contains(k) || NoteMap.titles.contains(k)
+                            || NoteMap.isBadStem(k) || badFront(k) || oneSyllableJosa(k) || tooDiverse(k) {
                     accepted[k] = false
                 } else {
                     accepted[k] = forms.filter { $0.isEmpty || NoteMap.strongSet.contains($0) }.count >= 2
@@ -365,30 +500,35 @@ public enum NoteMap {
             var stemDF: [String: Int] = [:]
             for pairs in resolved { for k in Set(pairs.map(\.stem)) { stemDF[k, default: 0] += 1 } }
 
-            func badFront(_ word: String) -> Bool {
-                let s = Array(word.unicodeScalars)
-                guard let last = s.last else { return true }
-                if NoteMap.frontBadLast.contains(last) { return true }
-                if NoteMap.frontVerbLast.contains(last), s.count >= 3, stemForms[NoteMap.string(s[..<(s.count - 1)])] != nil { return true }
-                return NoteMap.frontBadSuffixes.contains { suffix in
-                    let x = Array(suffix.unicodeScalars)
-                    return s.count > x.count && s.suffix(x.count).elementsEqual(x)
-                }
-            }
-            // 구절 (331) — 뒷말(풀어서)이 받은 키워드이고 앞말이 쓸 만한 맨꼴일 때 후보. 노트 수 · 함께 나온 몫을 본다.
-            let candidates: [Set<String>] = phraseTerms.map { terms in
+            // 구절 (331) · 사람 (333) — 뒷말이 직함이면 사람 후보 (앞말은 성씨 + 두 글자 · 두 글자 성이면 네 글자).
+            var candidates: [Set<String>] = []
+            var personCandidates: [Set<String>] = []
+            for terms in phraseTerms {
                 var found = Set<String>()
+                var people = Set<String>()
                 for term in terms {
                     let parts = term.stem.split(separator: " ", maxSplits: 1).map(String.init)
                     guard parts.count == 2 else { continue }
                     let first = parts[0]
                     let second = resolve(Term(stem: parts[1], form: term.form)).stem
-                    if first != second, accepted[second] == true, !hidden.contains(first),
-                       !NoteMap.stop.contains(first), !NoteMap.isBadStem(first), !badFront(first) {
-                        found.insert(first + " " + second)
+                    let f = Array(first.unicodeScalars)
+                    if first == second || hidden.contains(first) || NoteMap.stop.contains(first) || NoteMap.isBadStem(first)
+                        || badFront(first) || oneSyllableJosa(first)
+                        || (f.last.map { NoteMap.connectiveLast.contains($0) } == true && accepted[first] != true) {
+                        continue
                     }
+                    if NoteMap.titles.contains(second) {
+                        if (f.count == 3 && NoteMap.surnames.contains(f[0]))
+                            || (f.count == 4 && NoteMap.doubleSurnames.contains(NoteMap.string(f[0..<2]))) {
+                            people.insert(first + " " + second)
+                        }
+                        continue
+                    }
+                    let phrase = first + " " + second
+                    if accepted[second] == true, !NoteMap.fixedPhrases.contains(phrase) { found.insert(phrase) }
                 }
-                return found
+                candidates.append(found)
+                personCandidates.append(people)
             }
             var phraseDF: [String: Int] = [:]
             for found in candidates { for p in found { phraseDF[p, default: 0] += 1 } }
@@ -398,15 +538,37 @@ public enum NoteMap {
                 if c * 10 >= NoteMap.phraseShareTenths * min(stemDF[parts[0]] ?? 0, wordDF[parts[1]] ?? 0) { good.insert(p) }
             }
 
+            var personDF: [String: Int] = [:]
+            for people in personCandidates { for p in people { personDF[p, default: 0] += 1 } }
+            let people = Set(personDF.filter { $0.value >= NoteMap.personMinNotes && !hidden.contains($0.key) }.keys)
+            let names = Set(people.compactMap { $0.split(separator: " ", maxSplits: 1).first.map(String.init) })
+
+            // 333 — 구절이 덮는 낱말: 낱말이 든 노트의 70% 이상에 그 낱말을 품은 받은 구절이 함께 있으면 낱말은 뺀다.
+            var covered: [String: Int] = [:]
+            for (ks, found) in zip(words, candidates) {
+                var parts = Set<String>()
+                for p in found.intersection(good) { parts.formUnion(p.split(separator: " ", maxSplits: 1).map(String.init)) }
+                for k in ks.intersection(parts) { covered[k, default: 0] += 1 }
+            }
+            var dropped = names
+            for (k, c) in covered where c * 10 >= NoteMap.coverTenths * (wordDF[k] ?? 0) { dropped.insert(k) }
+
             var notes: [Note] = []
             var df: [String: Int] = [:]
-            for ((row, ks), found) in zip(zip(rows, words), candidates) {
-                let keywords = ks.union(found.intersection(good))
+            for ((row, ks), (found, mine)) in zip(zip(rows, words), zip(candidates, personCandidates)) {
+                let keywords = ks.subtracting(dropped).union(found.intersection(good)).union(mine.intersection(people))
                 for k in keywords { df[k, default: 0] += 1 }
                 notes.append(Note(path: row.path, day: row.day, keywords: keywords))
             }
             self.notes = notes
             self.df = df
+            self.people = people
+        }
+
+        /// 333 — `person` (이름 + 직함) · `phrase` (두 낱말) · `word`.
+        public func kind(of keyword: String) -> Kind {
+            if people.contains(keyword) { return .person }
+            return NoteMap.isPhrase(keyword) ? .phrase : .word
         }
 
         func score(_ count: Int, _ keyword: String) -> Int {
@@ -450,8 +612,11 @@ public enum NoteMap {
             var co: [String: Int] = [:]
             // 가운데와 낱말이 겹치는 것(구절과 그 안의 낱말)은 둘레에 세우지 않는다 — 늘 함께 나오니 뜻이 없다.
             let centerWords = Set(center.split(separator: " "))
+            // 333 — 사람은 가운데가 사람일 때만 둘레에 (지도는 요즘 동향 · 사람은 참고용 — 사용자).
+            let centerIsPerson = people.contains(center)
             for note in around {
-                for k in note.keywords where k != center && centerWords.isDisjoint(with: k.split(separator: " ")) {
+                for k in note.keywords where k != center && centerWords.isDisjoint(with: k.split(separator: " "))
+                    && (centerIsPerson || !people.contains(k)) {
                     co[k, default: 0] += 1
                 }
             }
