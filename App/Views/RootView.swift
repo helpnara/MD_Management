@@ -105,7 +105,14 @@ struct RootView: View {
                 try? await Task.sleep(for: .milliseconds(250))
             }
             try? await Task.sleep(for: .milliseconds(800))
-            library.sheet = .noteMap
+            // **섰는지 보고 다시 띄운다** (331 · 빌드 화면 사진 두 번) — 아이폰이 켜지며 노트 목록 칸을 밀어 넣는 순간과 겹치면
+            // 시트가 조용히 버려진다. 그 순간은 실행마다 달라 기다리기로는 못 막는다. 시트 화면이 `onAppear` 로 알릴 때까지.
+            for _ in 0..<6 where !library.noteMapVisible {
+                library.sheet = nil
+                try? await Task.sleep(for: .milliseconds(300))
+                library.sheet = .noteMap
+                try? await Task.sleep(for: .milliseconds(1200))
+            }
         }
         .task(id: library.selectedFolder) {
             library.autoSelectsFirstNote = prefersPreselectedNote

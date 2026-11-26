@@ -57,6 +57,8 @@ struct NoteMapView: View {
                 }
         }
         .task { await reload() }
+        .onAppear { library.noteMapVisible = true }
+        .onDisappear { library.noteMapVisible = false }
         .onChange(of: periodDays) { _, _ in shown = Self.pageSize }
         .onChange(of: library.hiddenWords) { _, _ in Task { await reload() } }
     }

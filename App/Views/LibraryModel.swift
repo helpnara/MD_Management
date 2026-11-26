@@ -917,6 +917,8 @@ final class LibraryModel: ObservableObject {
     }
 
     @Published var noteMapOpen: NoteMapOpen?
+    /// 지도 시트가 실제로 화면에 섰나 — 시트 화면이 `onAppear` 에서 켠다. CI(`-noteMap`)가 시트가 버려졌는지 본다.
+    var noteMapVisible = false
     /// 지도에서 뺀 말 — `.여백/숨긴말.json`.
     @Published private(set) var hiddenWords: [String] = []
 
