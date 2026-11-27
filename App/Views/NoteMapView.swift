@@ -320,7 +320,19 @@ struct NoteMapKeywordView: View {
     var body: some View {
         let neighbors = snapshot.model.neighbors(of: center, today: snapshot.today, days: days)
         let paths = snapshot.model.notePaths(keyword: center, also: also, today: snapshot.today, days: days)
+        let states = snapshot.model.statuses(of: center, today: snapshot.today, days: days)
         PaperList {
+            // 336 — **함께 쓴 상태** (2026-11-27 사용자 — *주제어 중심으로*). 진행 · 완료 같은 말은 주제가 아니라 이 말의 상태로 — 노트 수.
+            if !states.isEmpty {
+                Section {
+                    Text(verbatim: states.map { "\($0.keyword) \($0.count)" }.joined(separator: " · "))
+                        .font(.scaled(.body))
+                        .foregroundStyle(Palette.ink)
+                        .accessibilityLabel(states.map { String(localized: "\($0.keyword) 노트 \($0.count)개") }.joined(separator: ", "))
+                } header: {
+                    Text("함께 쓴 상태").textCase(nil)
+                }
+            }
             if !neighbors.isEmpty {
                 Section {
                     // 큰 글자에서는 둘레 말이 겹친다 — 같은 내용을 줄 목록으로 (설계 §3.3).

@@ -54,10 +54,15 @@ final class NoteMapGoldenTests: XCTestCase {
             let count: Int
             let level: Int
         }
+        struct Status: Decodable {
+            let keyword: String
+            let count: Int
+        }
         struct Neighbors: Decodable {
             let center: String
             let days: Int
             let neighbors: [Neighbor]
+            let statuses: [Status]
         }
         struct Paths: Decodable {
             let keyword: String
@@ -141,6 +146,10 @@ final class NoteMapGoldenTests: XCTestCase {
                 XCTAssertEqual(got.map(\.keyword), want.neighbors.map(\.keyword), "이웃 \(want.center) " + label)
                 XCTAssertEqual(got.map(\.count), want.neighbors.map(\.count), "이웃 수 \(want.center) " + label)
                 XCTAssertEqual(got.map(\.level), want.neighbors.map(\.level), "선 굵기 \(want.center) " + label)
+                // 336 — 함께 쓴 상태.
+                let states = model.statuses(of: want.center, today: folder.today, days: want.days)
+                XCTAssertEqual(states.map(\.keyword), want.statuses.map(\.keyword), "상태 \(want.center) " + label)
+                XCTAssertEqual(states.map(\.count), want.statuses.map(\.count), "상태 수 \(want.center) " + label)
             }
             for want in folder.paths {
                 let got = model.notePaths(keyword: want.keyword, also: want.also, today: folder.today, days: want.days)
