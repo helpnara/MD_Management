@@ -851,7 +851,8 @@ https://helpnara.github.io/MD_Management/en/privacy/
 > **1.1.31** — 아래 한국어 *이 버전의 새로운 기능* 과 같은 것을 말한다. 지난 판의 글은 `docs/store/<판>-새로운-기능.txt` 끝.
 
 ```
-
+• Note Map now centers on topics. Words from your note titles count as stronger topics, and status words such as in progress, done, or review move off the list to Status Words Used With It at the top of a word's page, with note counts.
+• Common filler words (like the Korean 것이 or 수가) no longer show up as keywords.
 ```
 
 ---
