@@ -209,6 +209,27 @@ https://helpnara.github.io/MD_Management/privacy/
    (`docs/samples/README.md` — 이 앱만 English 로 바꾸고 견본 폴더를 골라 찍기 · 아이폰 3장 · 아이패드 4장 · `Tools/store/fit.py` 로 칸 크기)
 5. 출시 방식 **자동** · 단계적 출시 끔 (§6) → **심사에 제출**
 
+### 1.1.31 제출 순서 — 빌드 162 (2026-11-27 준비 · 빌드 162 확인 끝 — 사용자 *빌드 162 체크리스트 확인 완료.* · **1.1.30 승인 · 배포 뒤에 낸다**)
+
+> 334 의존 명사 + 조사 · 335 제목 · 머리글 가중 · 336 상태어 → *함께 쓴 상태* — `docs/97-build-162.md` · 설계 §12.
+> 설명 · 스토어 그림 · 키워드 · 부제 · 메모(Notes)는 그대로. 1.1.30 을 낸 뒤 §1 *이 버전의 새로운 기능* · §1-영어 *What’s New* 울타리를 아래 글로 갈아 끼운다 (지금은 1.1.30 글).
+
+1. 1.1.30 이 **배포**된 뒤 App Store Connect → 앱 → **iOS 앱 +** → 버전 `1.1.31` → **빌드** 칸에서 **162** (`1.1.31 (162)`)
+2. 한국어 칸 *이 버전의 새로운 기능* — 아래 두 줄 (`docs/store/1.1.31-새로운-기능.txt` · 160자)
+3. 오른쪽 위 언어 **English (U.S.)** → *What’s New* — 아래 영어 두 줄 (315자) → **저장**
+4. 출시 방식 **자동** · 단계적 출시 끔 · 평점 요약 초기화 고르지 않음 → **심사에 제출**
+5. 제출 → `main` 병합 (= 1.1.31) → 승인 · 배포 기다림
+
+```
+• 노트 지도가 주제어 중심으로 정리됩니다. 노트 제목에 쓴 말을 주제로 더 쳐 주고, 진행 · 완료 · 검토 같은 상태를 나타내는 말은 목록 대신 말을 누른 화면 맨 위 함께 쓴 상태에 노트 수로 보여 줍니다.
+• 것이 · 수가 처럼 뜻 없이 자주 쓰이는 말이 키워드로 서지 않습니다.
+```
+
+```
+• Note Map now centers on topics. Words from your note titles count as stronger topics, and status words such as in progress, done, or review move off the list to Status Words Used With It at the top of a word's page, with note counts.
+• Common filler words (like the Korean 것이 or 수가) no longer show up as keywords.
+```
+
 ### 1.1.30 제출 순서 — 빌드 161 (2026-11-26 준비 · 빌드 161 확인 끝 — 사용자 *체크리스트 확인 완료.* · **1.1.29 승인 · 배포 뒤에 낸다** — 한 번에 한 판만 심사에 들어간다 · 1.1.29 배포 2026-11-26 · **제출함 2026-11-26** (사용자 — *1.1.30 심사 제출 완료.*) · `main` 병합 = 1.1.30)
 
 > 333 노트 지도 덜어내기(문맥 다양성 · 기능 명사 · 동사 꼴 · 한 글자+조사 · 굳은 표현 · 구절이 덮는 낱말) · `사람 — 참고` 구역 — `docs/96-build-161.md` · 설계 `docs/92-note-map-design.md` §11.
