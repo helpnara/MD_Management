@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>노트 지도 편 쇼츠</title>
+<!--
+  느린 여백 쇼츠 · 노트 지도 연말 편 (2026-11-28). 세로 1080 × 1920 · 30fps · 34초 · 소리 없음.
+  일정표(People_mgmt docs/promo-youtube-stats.md) 12-05(토) 칸 — 원래 후보 '노트 1,000개 연말 정리, 태그 하나면' 은 주간 회의 · 회의록 찾기 편과 겹쳐
+  노트 지도(1.1.29 · 329 · 330 · 아직 쇼츠 없음)로 바꿈 · 공개 09:30 → 06:30 (사용자 11-28 · 7회차 분석). 첫 물음은 연말 장면 + 시간 숫자.
+  숫자(파이썬 대조): 노트 300개 × 1분 = 300분 = 5시간 (다시 다 읽는다면 — 가정). 0초 장면에 물음이 이미 다 떠 있다.
+  코드에서 읽은 것(NoteMapView · RootView): 폴더 화면 오른쪽 위 `노트 지도` 단추 → 시트 `노트 지도` · `닫기` · 기간 `4주 · 3개월 · 1년` ·
+  `많이 쓴 순 · 두드러진 순` · `노트 N개에서` · 구역 `구절 — 자주 붙여 쓰는 말` · `낱말` · 줄의 막대와 숫자(노트 수) · `새로` · ↑ ·
+  말을 누르면 제목이 그 말 · `함께 나온 말` 관계도 · 안내 `말을 누르면 그 말이 가운데로 옵니다. 길게 누르면 두 말이 함께 든 노트만 봅니다.` · `이 말이 든 노트 N개`.
+  screenshots/20 · 21 의 꼴. 낱말 · 노트 · 숫자는 모두 지어낸 견본이다.
+-->
+<link rel="stylesheet" href="fonts/local.css">
+<style>
+/* 앱 색은 App/DesignSystem/Palette.swift 의 밝은 판 (1.1.26 · 316) — 종이 · 먹 · 잎 초록 */
+:root{ --paper:#FAF7F1; --raised:#F1ECE3; --grouped:#F3EFE8; --ink:#24211E; --faint:#6B655C; --marker:#B0A99D;
+  --leaf:#4A7429; --leaf2:#6FA53A; --wood:#D6A266; --gold:#C49A45; --red:#E5483C; --stage:#F6F1E7; --stage2:#EDE4D4; }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--stage)}
+body{font-family:'Noto Sans KR',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;
+  background:radial-gradient(1200px 900px at 50% -10%, #FFFFFF 0%, var(--stage) 55%, var(--stage2) 100%)}
+#glow{position:absolute;right:-260px;top:-260px;width:820px;height:820px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,226,170,.5) 0%, rgba(255,226,170,0) 70%)}
+#leafline{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--leaf2),var(--gold),var(--wood))}
+.scene{position:absolute;inset:0;opacity:0}
+
+.hook{position:absolute;left:0;right:0;top:120px;text-align:center}
+.hook .kk{font-size:30px;font-weight:700;letter-spacing:10px;color:var(--leaf);margin-bottom:26px}
+.hook h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:100px;line-height:1.22;letter-spacing:-2px}
+.hook p{margin-top:26px;font-size:50px;font-weight:700;color:#3F3B36}
+.hook p b{color:var(--red)}
+
+.cap{position:absolute;left:70px;right:70px;top:170px;text-align:center}
+.cap .kicker{display:inline-block;padding:10px 30px;border-radius:40px;background:rgba(74,116,41,.12);color:var(--leaf);font-size:30px;font-weight:700;margin-bottom:26px}
+.cap h2{font-family:'Noto Serif KR',serif;font-weight:900;font-size:84px;line-height:1.22;letter-spacing:-1px}
+.cap p{margin-top:22px;font-size:38px;color:#55514B;font-weight:500;line-height:1.45}
+
+/* 폰 */
+.phone{position:absolute;left:170px;top:700px;width:740px;height:1150px;border-radius:100px;background:#1C1B1A;padding:16px;
+  box-shadow:0 40px 90px rgba(80,60,30,.24), 0 6px 18px rgba(0,0,0,.12)}
+.phone.low{top:760px}
+.screen{position:relative;width:100%;height:100%;border-radius:86px;background:var(--paper);overflow:hidden;color:var(--ink)}
+.island{position:absolute;top:24px;left:50%;margin-left:-95px;width:190px;height:54px;border-radius:30px;background:#1C1B1A;z-index:20}
+.homebar{position:absolute;bottom:20px;left:50%;margin-left:-110px;width:220px;height:10px;border-radius:5px;background:#1C1B1A;opacity:.8;z-index:19}
+.tap{position:absolute;width:120px;height:120px;border-radius:60px;background:rgba(74,116,41,.20);border:4px solid rgba(74,116,41,.55);pointer-events:none;z-index:18;opacity:0}
+.caret{display:inline-block;width:4px;height:1.05em;background:var(--leaf);vertical-align:-0.15em;margin-left:2px;border-radius:2px}
+.layer{position:absolute;inset:0}
+
+/* 홈 화면 */
+.home{background:linear-gradient(180deg,#DCE3EE,#E9E2D6)}
+.home .grid{position:absolute;top:140px;left:52px;right:52px;display:grid;grid-template-columns:repeat(4,1fr);row-gap:34px;justify-items:center}
+.home .ap{width:132px;text-align:center;font-size:24px;color:#2A2724;position:relative;height:170px}
+.home .ap .sq{width:132px;height:132px;border-radius:32px;background:#F4F1EA;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.home .ap img{width:132px;height:132px;border-radius:32px;display:block;margin-bottom:10px;box-shadow:0 6px 16px rgba(0,0,0,.12)}
+.home .ap .x{position:absolute;left:-14px;top:-14px;width:46px;height:46px;border-radius:23px;background:#8E8E93;color:#fff;font-size:28px;display:flex;align-items:center;justify-content:center;opacity:0;z-index:2}
+.home .dock{position:absolute;left:30px;right:30px;bottom:34px;height:170px;border-radius:50px;background:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:space-around;padding:0 20px}
+.home .dock .sq{width:120px;height:120px;border-radius:30px;background:#F4F1EA;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.dim{position:absolute;inset:0;background:rgba(0,0,0,.28);opacity:0;z-index:5}
+.alert{position:absolute;left:94px;right:94px;top:400px;border-radius:40px;background:rgba(246,246,248,.98);text-align:center;z-index:6;opacity:0;overflow:hidden}
+.alert b{display:block;font-size:32px;padding:38px 30px 34px}
+.alert small{display:block;font-size:24px;color:#55514B;padding:0 36px 28px;line-height:1.45}
+.alert .bt{border-top:1px solid #DCDCE0;font-size:32px;padding:24px 0}
+.alert .bt.red{color:var(--red);font-weight:700}
+
+/* 파일 앱 (이름 없는 그림) */
+.files{background:#FFFFFF}
+.files .hd{position:absolute;top:110px;left:40px;font-size:30px;color:#8A8A8E;display:flex;align-items:center;gap:6px}
+.files .hd svg{width:30px;height:30px;stroke:#8A8A8E;stroke-width:4;fill:none;stroke-linecap:round}
+.files .big{position:absolute;top:160px;left:44px;font-size:60px;font-weight:900}
+.files .lst{position:absolute;top:270px;left:40px;right:40px}
+.files .fr{display:flex;align-items:center;gap:22px;height:110px;border-bottom:1px solid #EDEDF0;font-size:34px}
+.files .fr small{margin-left:auto;font-size:26px;color:#8A8A8E}
+.files .fd{width:54px;height:68px;border-radius:8px;background:#fff;border:2px solid #D8D8DC;flex:none;position:relative}
+.files .fd:after{content:'MD';position:absolute;left:0;right:0;bottom:8px;text-align:center;font-size:14px;font-weight:700;color:#8A8A8E}
+.files .fi{width:64px;height:50px;border-radius:9px;background:#7FB6E8;flex:none}
+.files .fr.glow{background:rgba(74,116,41,.10);border-radius:16px}
+
+/* 스토어 (이름 없는 그림) */
+.store{background:#fff}
+.ssf{position:absolute;top:120px;left:40px;right:40px;height:84px;border-radius:24px;background:#EEEEF0;display:flex;align-items:center;padding:0 26px;gap:16px;font-size:34px;color:#24211E}
+.ssf svg{width:36px;height:36px;stroke:#8A8A8E;stroke-width:4;fill:none;flex:none}
+.sres{position:absolute;top:250px;left:40px;right:40px;display:flex;gap:26px;align-items:center}
+.sres img{width:150px;height:150px;border-radius:34px;box-shadow:0 8px 22px rgba(0,0,0,.14);flex:none}
+.sres .nm{font-size:38px;font-weight:700}
+.sres .sb{font-size:25px;color:#8A8A8E;margin-top:6px;line-height:1.35}
+.sres .get{margin-left:auto;flex:none;min-width:130px;height:62px;border-radius:31px;background:#EEF1F6;color:#0A7AFF;font-size:30px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 26px}
+.ring{width:58px;height:58px;border-radius:29px;border:6px solid #DDE3EC;border-top-color:#0A7AFF}
+.sshots{position:absolute;top:450px;left:40px;right:0;display:flex;gap:22px}
+.sshots i{display:block;width:300px;height:560px;border-radius:30px;background:var(--raised);flex:none}
+
+/* 앱 — 새 디자인 (종이 · 먹 · 잎 초록 · 명조 제목) */
+.app{background:var(--grouped)}
+.abar{position:absolute;top:96px;left:0;right:0;height:110px;display:flex;align-items:center;padding:0 30px;z-index:3}
+.abar .circ{width:76px;height:76px;border-radius:38px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .circ svg{width:34px;height:34px;stroke:var(--ink);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.abar .mid{position:absolute;left:0;right:0;text-align:center;pointer-events:none}
+.abar .mid b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.abar .mid small{display:block;font-size:22px;color:var(--faint)}
+.abar .pill{margin-left:auto;height:76px;padding:0 24px;border-radius:38px;background:#fff;display:flex;align-items:center;gap:26px;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.abar .pill svg{width:40px;height:40px;stroke:var(--leaf);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.asf{position:absolute;top:220px;left:30px;right:30px;height:76px;border-radius:38px;background:rgba(36,33,30,.07);display:flex;align-items:center;gap:14px;padding:0 26px;font-size:30px;color:var(--faint)}
+.asf svg{width:32px;height:32px;stroke:var(--faint);stroke-width:4;fill:none}
+.alist{position:absolute;top:330px;left:30px;right:30px;background:var(--paper);border-radius:30px;padding:0 30px}
+.arow{padding:24px 0;border-bottom:1px solid rgba(36,33,30,.10)}
+.arow:last-child{border-bottom:none}
+.arow b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.arow span{display:block;font-size:26px;color:var(--faint);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arow small{display:block;font-size:22px;color:var(--faint);margin-top:4px}
+.flabel{position:absolute;top:300px;left:60px;font-size:26px;color:var(--faint)}
+.editor{background:var(--paper)}
+.ebody{position:absolute;top:240px;left:52px;right:52px;font-size:36px;line-height:1.62}
+.eln{min-height:58px;white-space:pre}
+.eln.t{font-family:'Noto Serif KR',serif;font-weight:700;font-size:58px;line-height:1.35;min-height:90px;letter-spacing:-.5px}
+.eln .mk{color:var(--marker)}
+.ebar{position:absolute;left:0;right:0;bottom:0;height:120px;background:var(--raised);display:flex;align-items:center;justify-content:space-around;padding:0 30px 20px;font-size:32px;color:var(--leaf);font-weight:700}
+
+/* 정리 카드 */
+.bigcard{position:absolute;left:96px;right:96px;top:640px;border-radius:44px;background:#fff;box-shadow:0 40px 80px rgba(80,60,30,.18);padding:26px 50px}
+.bigcard .row{display:flex;align-items:center;gap:28px;font-size:40px;padding:30px 0;border-bottom:1px solid #EEE9E0;opacity:0}
+.bigcard .row:last-child{border-bottom:none}
+.bigcard .row .ck{flex:none;width:62px;height:62px;border-radius:31px;background:var(--leaf);color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:900}
+.bigcard .row b{min-width:170px;font-weight:700}
+.bigcard .row span{color:#4A4640}
+
+/* 끝 */
+.hero{position:absolute;left:0;right:0;top:300px;text-align:center}
+.hero img{width:300px;height:300px;border-radius:70px;box-shadow:0 40px 80px rgba(120,80,30,.28)}
+.hero h1{font-family:'Noto Serif KR',serif;font-weight:900;font-size:120px;margin-top:50px;letter-spacing:2px}
+.hero .tagline{margin-top:24px;font-family:'Noto Serif KR',serif;font-weight:700;font-size:50px;color:#4A4640}
+.hero .say{font-size:40px;margin-top:80px;font-weight:700;color:var(--leaf)}
+.hero .say2{font-size:36px;margin-top:40px;font-weight:500;color:#55514B}
+.bigsearch{display:flex;align-items:center;gap:22px;margin:24px auto 0;width:760px;height:120px;border-radius:36px;background:#fff;box-shadow:0 20px 50px rgba(80,60,30,.16);padding:0 40px;font-size:52px;font-weight:700;text-align:left}
+.bigsearch svg{width:56px;height:56px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.hero .foot{margin-top:46px;font-size:36px;color:var(--faint);font-weight:500;letter-spacing:2px}
+.pointer{display:inline-block;margin-left:12px;font-size:44px}
+
+.stack{position:absolute;left:150px;right:150px;top:930px}
+.stack .n{height:120px;border-radius:26px;background:var(--paper);box-shadow:0 10px 26px rgba(80,60,30,.12);margin-bottom:22px;padding:22px 34px}
+.stack .n b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.stack .n span{display:block;font-size:24px;color:var(--faint);margin-top:6px}
+.big2{position:absolute;left:0;right:0;top:760px;text-align:center}
+.big2 .num{font-family:'Noto Serif KR',serif;font-weight:900;font-size:220px;letter-spacing:-4px;color:var(--leaf)}
+.big2 .unit{font-size:44px;font-weight:700;color:#3F3B36;margin-top:6px}
+.days{position:absolute;left:150px;right:150px;top:1220px;display:flex;gap:18px}
+.days i{flex:1;height:150px;border-radius:24px;background:var(--leaf);opacity:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:16px;font-style:normal;color:#fff;font-size:28px;font-weight:700}
+.days i.part{background:var(--leaf2)}
+/* 폴더 화면 찾기 (screenshots/15 의 꼴) */
+.fbar{position:absolute;top:110px;left:0;right:0;text-align:center;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.sfield{position:absolute;top:180px;left:30px;right:110px;height:76px;border-radius:38px;background:rgba(36,33,30,.08);display:flex;align-items:center;gap:14px;padding:0 24px;font-size:32px}
+.sfield svg{width:32px;height:32px;stroke:var(--faint);stroke-width:4;fill:none;flex:none}
+.sfield .ph{color:var(--faint)}
+.scancel{position:absolute;top:198px;right:30px;font-size:30px;color:var(--leaf)}
+.res{position:absolute;top:300px;left:30px;right:30px;background:var(--paper);border-radius:30px;padding:0 30px}
+.rr{padding:24px 0;border-bottom:1px solid rgba(36,33,30,.10)}
+.rr:last-child{border-bottom:none}
+.rr b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px}
+.rr span{display:block;font-size:25px;color:#55514B;margin-top:8px;line-height:1.4}
+.rr span em{font-style:normal}
+.rr small{display:flex;align-items:center;gap:10px;font-size:22px;color:var(--faint);margin-top:8px}
+.rr small svg{width:28px;height:22px;stroke:var(--faint);stroke-width:2.4;fill:none}
+.rcount{position:absolute;top:270px;left:62px;font-size:24px;color:var(--faint)}
+.gfoot{position:absolute;left:46px;right:46px;bottom:70px;font-size:24px;color:var(--faint);line-height:1.45}
+/* 노트 지도 편 */
+.cloud{position:absolute;left:90px;right:90px;top:820px;height:720px}
+.cloud .n{position:absolute;padding:20px 30px;border-radius:24px;background:var(--paper);box-shadow:0 10px 26px rgba(80,60,30,.12);font-family:'Noto Serif KR',serif;font-weight:700;font-size:34px;white-space:nowrap}
+.cloud .n small{display:block;font-family:'Noto Sans KR',sans-serif;font-weight:500;font-size:22px;color:var(--faint);margin-top:4px}
+.dots{position:absolute;left:120px;right:120px;top:1150px;display:grid;grid-template-columns:repeat(20,1fr);gap:10px}
+.dots i{display:block;height:26px;border-radius:6px;background:var(--wood);opacity:0}
+.big2 .num.hr{font-size:200px;color:var(--red)}
+/* 노트 지도 시트 (NoteMapView · screenshots/20 의 꼴) */
+.mbar{position:absolute;top:96px;left:0;right:0;height:96px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:34px}
+.mbar .close{position:absolute;left:30px;height:76px;padding:0 28px;border-radius:38px;background:#fff;display:flex;align-items:center;color:var(--leaf);font-size:30px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.mbar .back{position:absolute;left:30px;width:76px;height:76px;border-radius:38px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.mbar .back svg{width:30px;height:30px;stroke:var(--ink);stroke-width:4;fill:none;stroke-linecap:round}
+.seg{position:absolute;left:30px;right:30px;height:68px;border-radius:20px;background:rgba(36,33,30,.08);display:flex;padding:5px;font-size:28px}
+.seg span{flex:1;display:flex;align-items:center;justify-content:center;border-radius:16px;color:var(--ink)}
+.seg span.on{background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.10);font-weight:700}
+.mcap{position:absolute;left:46px;font-size:24px;color:var(--faint)}
+.mhead{position:absolute;left:46px;font-size:28px;font-weight:700}
+.mhead em{font-style:normal;font-weight:500;color:var(--faint);margin-left:8px}
+.mlist{position:absolute;left:30px;right:30px;background:var(--paper);border-radius:30px;padding:0 30px}
+.mrow{display:flex;align-items:center;height:96px;border-bottom:1px solid rgba(36,33,30,.10);font-size:32px}
+.mrow:last-child{border-bottom:none}
+.mrow b{font-weight:500;flex:1}
+.mrow .bar{width:150px;height:12px;border-radius:6px;background:rgba(36,33,30,.10);margin-right:20px;overflow:hidden}
+.mrow .bar i{display:block;height:100%;border-radius:6px;background:#8FAE7A}
+.mrow .c{width:46px;text-align:right;font-size:28px;font-variant-numeric:tabular-nums}
+.mrow .t{width:70px;text-align:center;font-size:22px;color:var(--leaf);font-weight:700}
+.mrow .ch{width:20px;color:var(--marker);font-size:30px}
+/* 함께 나온 말 */
+.graph{position:absolute;left:30px;right:30px;top:270px;height:360px;border-radius:30px;background:var(--paper)}
+.graph svg{position:absolute;inset:0}
+.gn{position:absolute;padding:12px 28px;border-radius:30px;background:var(--raised);border:2px solid rgba(36,33,30,.10);font-size:28px;transform:translate(-50%,-50%);white-space:nowrap}
+.gn.c{background:rgba(111,165,58,.22);border-color:var(--leaf);font-weight:700;font-size:32px}
+.gfoot2{position:absolute;left:46px;right:46px;top:645px;font-size:22px;color:var(--faint);line-height:1.45}
+.nrows{position:absolute;left:30px;right:30px;top:762px;background:var(--paper);border-radius:30px;padding:0 30px}
+.nr{padding:22px 0;border-bottom:1px solid rgba(36,33,30,.10)}
+.nr:last-child{border-bottom:none}
+.nr b{display:block;font-family:'Noto Serif KR',serif;font-weight:700;font-size:32px}
+.nr span{display:block;font-size:22px;color:var(--faint);margin-top:6px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+
+  <!-- 0 · 0초부터 다 떠 있는 물음 + 흩어진 노트 -->
+  <section class="scene" id="s0">
+    <div class="hook"><div class="kk">올해 쓴 노트 300개</div><h1>1년 동안 가장<br>많이 쓴 말은?</h1><p>내 한 해는 <b>어떤 말</b>로 채워졌을까</p></div>
+    <div class="cloud">
+      <div class="n" style="left:30px;top:0">주간 회의<small>3월 2주</small></div>
+      <div class="n" style="left:560px;top:40px;opacity:.85">아침 산책<small>5월 11일</small></div>
+      <div class="n" style="left:140px;top:210px;opacity:.75">이사 준비<small>8월 3일</small></div>
+      <div class="n" style="left:600px;top:230px;opacity:.9">독서 모임<small>9월 넷째 주</small></div>
+      <div class="n" style="left:40px;top:390px;opacity:.6">아이 학교<small>10월 7일</small></div>
+      <div class="n" style="left:560px;top:440px;opacity:.7">주말 장보기<small>11월 16일</small></div>
+    </div>
+  </section>
+
+  <!-- 1 · 셈 — 300개 × 1분 -->
+  <section class="scene" id="s1">
+    <div class="cap" id="c1"><div class="kicker">다시 다 읽으려면</div><h2>노트 300개 × 1분</h2></div>
+    <div class="big2" id="b1" style="top:620px"><div class="num hr" id="n1">0분</div><div class="unit">연말에 한 해를 돌아보기엔 너무 긴 시간</div></div>
+    <div class="dots" id="d1"></div>
+  </section>
+
+  <!-- 2 · 노트 지도 — 1년 (NoteMapView) -->
+  <section class="scene" id="s2">
+    <div class="cap" id="c2"><div class="kicker">폴더 화면 오른쪽 위 · 노트 지도</div><h2>1년을 한 화면에</h2><p>자주 쓴 말이 막대로 — 숫자는 노트 수</p></div>
+    <div class="phone" id="p2"><div class="screen"><div class="island"></div>
+      <div class="layer app">
+        <div class="mbar"><span class="close">닫기</span>노트 지도</div>
+        <div class="seg" style="top:210px"><span id="w4" class="on">4주</span><span>3개월</span><span id="w1">1년</span></div>
+        <div class="seg" style="top:290px"><span class="on">많이 쓴 순</span><span>두드러진 순</span></div>
+        <div class="mcap" style="top:384px" id="mc">노트 21개에서</div>
+        <div class="mhead" style="top:424px">낱말<em id="wc">16</em></div>
+        <div class="mlist" style="top:474px" id="ml"></div>
+      </div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 3 · 말을 누르면 — 함께 나온 말 · 그 말이 든 노트 -->
+  <section class="scene" id="s3">
+    <div class="cap" id="c3"><div class="kicker">말을 누르면</div><h2>함께 나온 말과<br>그 말이 든 노트</h2></div>
+    <div class="phone" id="p3" style="top:760px;height:1090px"><div class="screen"><div class="island"></div>
+      <div class="layer app">
+        <div class="mbar"><span class="back"><svg viewBox="0 0 30 30"><path d="M19 6 L10 15 L19 24"/></svg></span>산책</div>
+        <div class="mhead" style="top:220px;color:var(--faint);font-weight:500">함께 나온 말</div>
+        <div class="graph" id="g3">
+          <svg viewBox="0 0 680 360"><g stroke="#BDB6AA" stroke-width="4" id="gl">
+            <line x1="340" y1="200" x2="340" y2="60"/><line x1="340" y1="200" x2="110" y2="140"/><line x1="340" y1="200" x2="570" y2="140"/>
+            <line x1="340" y1="200" x2="170" y2="300"/><line x1="340" y1="200" x2="510" y2="300"/></g></svg>
+          <div class="gn" style="left:340px;top:60px">아침</div>
+          <div class="gn" style="left:110px;top:140px">공원</div>
+          <div class="gn" style="left:570px;top:140px">아이</div>
+          <div class="gn" style="left:170px;top:300px">음악</div>
+          <div class="gn" style="left:510px;top:300px">강아지</div>
+          <div class="gn c" style="left:340px;top:200px">산책</div>
+        </div>
+        <div class="gfoot2">말을 누르면 그 말이 가운데로 옵니다. 길게 누르면 두 말이 함께 든 노트만 봅니다.</div>
+        <div class="mhead" style="top:712px;color:var(--faint);font-weight:500">이 말이 든 노트 31개</div>
+        <div class="nrows" id="nr3">
+          <div class="nr"><b>아침 산책</b><span>5월 11일 오전 7:20</span></div>
+          <div class="nr"><b>공원 한 바퀴 — 첫눈</b><span>11월 24일 오전 8:05</span></div>
+        </div>
+      </div>
+      <div class="homebar"></div>
+    </div></div>
+  </section>
+
+  <!-- 4 · 정리 -->
+  <section class="scene" id="s4">
+    <div class="cap" id="c4"><div class="kicker">연말, 5시간 대신</div><h2>한 화면으로<br>돌아보는 한 해</h2></div>
+    <div class="bigcard" id="bc4" style="top:700px">
+      <div class="row"><span class="ck">✓</span><b>기간</b><span>4주 · 3개월 · 1년</span></div>
+      <div class="row"><span class="ck">✓</span><b>막대</b><span>자주 쓴 말 · 숫자는 노트 수</span></div>
+      <div class="row"><span class="ck">✓</span><b>구절</b><span>자주 붙여 쓰는 말도 따로</span></div>
+      <div class="row"><span class="ck">✓</span><b>누르면</b><span>함께 나온 말 · 든 노트</span></div>
+      <div class="row"><span class="ck">✓</span><b>노트는</b><span>아이클라우드 .md 그대로</span></div>
+    </div>
+  </section>
+
+  <!-- 5 · 끝 -->
+  <section class="scene" id="s5">
+    <div class="hero" id="h5">
+      <img src="icon.png" alt="">
+      <h1>느린 여백</h1>
+      <div class="tagline">한 해를 한 화면에</div>
+      <div class="say">받는 링크는 설명과 고정 댓글에<span class="pointer">👇</span></div>
+      <div class="say2">또는 앱스토어 검색창에</div>
+      <div class="bigsearch"><svg viewBox="0 0 56 56"><circle cx="24" cy="24" r="14"/><path d="M35 35 L46 46"/></svg><span id="bq5"></span></div>
+      <div class="foot">아이폰 · 아이패드 · 무료</div>
+    </div>
+  </section>
+  <div id="leafline"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1) => Math.min(b, Math.max(a, x));
+const seg = (t,a,b) => clamp((t-a)/(b-a));
+const ease = x => x<.5 ? 4*x*x*x : 1-Math.pow(-2*x+2,3)/2;
+const out = x => 1-Math.pow(1-x,3);
+const typed = (str,t,a,cps) => { const arr=[...str]; return arr.slice(0, Math.floor(clamp((t-a)*cps,0,arr.length))).join(''); };
+const blink = t => (Math.floor(t*2.2)%2===0) ? 1 : 0.15;
+const SC = { s0:[0,3.6], s1:[3.6,9.4], s2:[9.4,16.6], s3:[16.6,23.0], s4:[23.0,28.8], s5:[28.8,34.0] };
+const DURATION = 34.0;
+function rise(el,t,a,d=0.7,dy=60){ const p=out(seg(t,a,a+d)); el.style.opacity=p; el.style.transform=`translateY(${(1-p)*dy}px)`; }
+const caret = t => `<span class="caret" style="opacity:${blink(t)}"></span>`;
+// 점 300개 — 노트 하나에 1분
+(function(){ let h=''; for(let i=0;i<300;i++) h+='<i></i>'; $('d1').innerHTML=h; })();
+// 4주 · 1년 목록 (지어낸 낱말 · 숫자는 노트 수)
+const W4 = [['회의',5,'↑'],['산책',4,'새로'],['장보기',3,'↑'],['독서',3,''],['아이',2,'↑'],['이사',2,'']];
+const Y1 = [['회의',46,''],['산책',31,'↑'],['독서',24,''],['이사',22,'새로'],['아이',19,'↑'],['장보기',15,'']];
+function list(rows){ const m=rows[0][1]; return rows.map(([w,c,tag])=>`<div class="mrow"><b>${w}</b><span class="bar"><i style="width:${Math.round(c/m*100)}%"></i></span><span class="c">${c}</span><span class="t">${tag}</span><span class="ch">›</span></div>`).join(''); }
+function renderS0(t){}
+function renderS1(t){
+  const s=SC.s1[0];
+  rise($('c1'),t,s+0.1); rise($('b1'),t,s+0.3,0.6,40);
+  const k=seg(t,s+0.6,s+3.2);
+  const v=Math.round(300*ease(k));
+  $('n1').textContent = k>=1 ? '5시간' : v+'분';
+  const on=Math.round(300*ease(k));
+  [...$('d1').children].forEach((el,i)=>{ el.style.opacity = i<on ? 1 : 0; });
+}
+function renderS2(t){
+  const s=SC.s2[0];
+  rise($('c2'),t,s+0.1); rise($('p2'),t,s+0.25,0.8,90);
+  const yr = t > s+2.2;
+  $('w4').className = yr ? '' : 'on'; $('w1').className = yr ? 'on' : '';
+  $('mc').textContent = yr ? '노트 300개에서' : '노트 21개에서';
+  $('wc').textContent = yr ? '128' : '16';
+  $('ml').innerHTML = list(yr ? Y1 : W4);
+  if (yr) { const p=out(seg(t,s+2.2,s+2.9)); [...$('ml').querySelectorAll('.bar i')].forEach(el=>{ el.style.transform=`scaleX(${p})`; el.style.transformOrigin='left'; }); }
+}
+function renderS3(t){
+  const s=SC.s3[0];
+  rise($('c3'),t,s+0.1); rise($('p3'),t,s+0.25,0.8,90);
+  const g=out(seg(t,s+1.0,s+1.8));
+  $('g3').querySelectorAll('.gn:not(.c)').forEach((el,i)=>{ el.style.opacity=out(seg(t,s+1.0+i*0.15,s+1.4+i*0.15)); });
+  $('gl').style.opacity=g;
+  rise($('nr3'),t,s+2.4,0.5,30);
+}
+function renderS4(t){
+  const s=SC.s4[0];
+  rise($('c4'),t,s+0.1); rise($('bc4'),t,s+0.3,0.8,80);
+  document.querySelectorAll('#bc4 .row').forEach((el,i)=>{ rise(el,t,s+0.8+i*0.5,0.45,30); });
+}
+function renderS5(t){
+  const s=SC.s5[0];
+  rise($('h5'),t,s+0.2,0.8,40);
+  $('bq5').innerHTML = typed('느린 여백',t,s+2.2,5)+caret(t);
+}
+function sceneAlpha(t,[a,b],first,last){
+  const i = first ? 1 : out(seg(t,a+0.02,a+0.4));
+  const o = last ? 1 : 1-ease(seg(t,b-0.35,b-0.02));
+  return Math.min(i,o);
+}
+const R = {s0:renderS0,s1:renderS1,s2:renderS2,s3:renderS3,s4:renderS4,s5:renderS5};
+window.render = function(t){
+  const keys=Object.keys(SC);
+  keys.forEach((k,i)=>{
+    const el=$(k); const [a,b]=SC[k];
+    const vis = t>=a && t<b;
+    const alpha = vis ? sceneAlpha(t,SC[k],i===0,i===keys.length-1) : 0;
+    el.style.opacity=alpha; el.style.visibility = alpha>0.001?'visible':'hidden';
+    if(alpha>0.001) R[k](t);
+  });
+};
+window.DURATION = DURATION;
+render(new URLSearchParams(location.search).has('t') ? parseFloat(new URLSearchParams(location.search).get('t')) : 0);
+</script>
+</body>
+</html>
